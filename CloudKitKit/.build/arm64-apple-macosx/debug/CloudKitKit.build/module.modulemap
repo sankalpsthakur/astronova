@@ -1,0 +1,4 @@
+module CloudKitKit {
+    header "/Users/sankalpthakur/Projects/iOS Apps/CloudKitKit/.build/arm64-apple-macosx/debug/CloudKitKit.build/CloudKitKit-Swift.h"
+    requires objc
+}
