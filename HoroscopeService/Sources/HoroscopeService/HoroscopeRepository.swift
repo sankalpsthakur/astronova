@@ -11,7 +11,24 @@ public final class HoroscopeRepository: ObservableObject {
     public init() {}
 
     /// Fetch today's horoscope for the given sign and language.
-    public func fetchToday(sign: String, language: String) async throws {
-        // TODO: implement core data cache lookup and CloudKit query
+    /// - Parameters:
+    ///   - sign: Zodiac sign name, e.g. "aries".
+    ///   - language: BCP-47 language identifier.
+    @MainActor
+    public func fetchToday(sign: String = "aries", language: String = Locale.current.identifier) async throws {
+        let day = Calendar.current.startOfDay(for: Date())
+
+        if let cached = HoroscopeCache.load(sign: sign, date: day, language: language) {
+            self.today = cached
+            return
+        }
+
+        let predicate = NSPredicate(format: "sign == %@ AND language == %@ AND date == %@", sign, language, day as NSDate)
+        let results = try await CKDatabaseProxy.public.query(type: Horoscope.self, predicate: predicate)
+
+        if let horoscope = results.first {
+            HoroscopeCache.save(horoscope)
+            self.today = horoscope
+        }
     }
 }
