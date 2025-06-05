@@ -5,8 +5,16 @@ import UserNotifications
 public final class DailyScheduler {
     public init() {}
 
-    /// Schedule a notification at the specified local date components.
-    public func scheduleNotification(at dateComponents: DateComponents, body: String) {
-        // TODO: implement scheduling logic
+    /// Schedule a local notification after the provided time interval. Used when push registration fails.
+    public func scheduleNotification(after interval: TimeInterval, body: String) {
+        let content = UNMutableNotificationContent()
+        content.body = body
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString,
+                                            content: content,
+                                            trigger: trigger)
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 }
