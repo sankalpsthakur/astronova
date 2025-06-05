@@ -7,6 +7,7 @@ struct MatchView: View {
     @State private var partnerName: String = ""
     @State private var partnerDOB: Date = .init()
     @State private var score: KundaliMatch?
+    @StateObject private var repo = SavedMatchRepository()
 
     var body: some View {
         NavigationView {
@@ -23,6 +24,9 @@ struct MatchView: View {
                     Section(header: Text("Score")) {
                         Text("Total Points: \(score.scoreTotal)/36")
                             .font(.title3.weight(.semibold))
+                        Button("Save Match") {
+                            Task { try? await repo.save(score) }
+                        }
                     }
                 }
             }
