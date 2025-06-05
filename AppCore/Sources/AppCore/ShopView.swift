@@ -6,6 +6,7 @@ import DataModels
 struct ShopView: View {
     @StateObject private var repo = ProductRepository()
     @State private var showError = false
+    @State private var showSuccess = false
 
     var body: some View {
         NavigationView {
@@ -27,10 +28,22 @@ struct ShopView: View {
         } message: {
             Text("Unable to complete purchase.")
         }
+        .alert("Success", isPresented: $showSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Purchase complete!")
+        }
     }
 
     private func purchase(_ product: Product) {
-        ApplePayHandler().startPayment(for: product)
+        ApplePayHandler(orderRepository: OrderRepository()).startPayment(for: product) { result in
+            switch result {
+            case .success:
+                showSuccess = true
+            case .failure:
+                showError = true
+            }
+        }
     }
 }
 
