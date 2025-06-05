@@ -20,11 +20,11 @@ public struct AppRouter {
         case .match:
             MatchView()
         case .chat:
-            Text("Chat View Placeholder") // Deferred feature
+            ChatView()
         case .shop:
             ShopView()
         case .profile:
-            Text("Profile View Placeholder")
+            ProfileView()
         }
     }
 }

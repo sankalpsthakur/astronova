@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Main tab bar hosting the three core verticals for the MVP release.
+/// Main tab bar hosting the five core verticals for the MVP release.
 struct TabBarView: View {
     @State private var selection: Int = 0
 
@@ -14,9 +14,17 @@ struct TabBarView: View {
                 .tabItem { Label("Match", systemImage: "heart.circle") }
                 .tag(1)
 
+            ChatView()
+                .tabItem { Label("Chat", systemImage: "message") }
+                .tag(2)
+
             ShopView()
                 .tabItem { Label("Shop", systemImage: "bag") }
-                .tag(2)
+                .tag(3)
+
+            ProfileView()
+                .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+                .tag(4)
         }
     }
 }
