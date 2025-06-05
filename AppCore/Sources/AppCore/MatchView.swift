@@ -1,5 +1,7 @@
 import SwiftUI
+import CoreLocation
 import DataModels
+import AstroEngine
 
 
 /// Simple UI to pick a partner birthday and display kundali match score.
@@ -35,14 +37,15 @@ struct MatchView: View {
     }
 
     private func compute() {
-        // Stub algorithm until AstroEngine is fully wired.
-        score = KundaliMatch(
-            partnerName: partnerName,
-            partnerDOB: partnerDOB,
-            scoreTotal: Int.random(in: 18...36),
-            aspectJSON: "{}",
-            createdAt: Date()
-        )
+        let me = BirthData(date: Date(),
+                           time: nil,
+                           location: CLLocation(latitude: 0, longitude: 0))
+        let partner = BirthData(date: partnerDOB,
+                                time: nil,
+                                location: CLLocation(latitude: 0, longitude: 0))
+        score = MatchService().compare(myData: me,
+                                       partnerData: partner,
+                                       partnerName: partnerName)
     }
 }
 

@@ -6,7 +6,10 @@ import CoreLocation
 final class AstroEngineTests: XCTestCase {
     func testWesternPositions() throws {
         let calc = WesternCalc()
-        let positions = calc.positions(for: Date(timeIntervalSince1970: 0))
+        let data = BirthData(date: Date(timeIntervalSince1970: 0),
+                             time: nil,
+                             location: CLLocation(latitude: 0, longitude: 0))
+        let positions = calc.positions(for: data)
         let longs = positions.map { Int($0.longitude) }
         XCTAssertEqual(longs, [0,30,60,90,120,150,180])
     }
@@ -20,27 +23,15 @@ final class AstroEngineTests: XCTestCase {
 
     func testMatchService() throws {
         let now = Date()
-        let me = UserProfile(fullName: "Me",
-                              birthDate: now,
-                              birthTime: nil,
-                              birthPlace: CLLocation(latitude: 0, longitude: 0),
-                              sunSign: "Aries",
-                              moonSign: "Aries",
-                              risingSign: "Aries",
-                              plusExpiry: nil,
-                              createdAt: now,
-                              updatedAt: now)
-        let them = UserProfile(fullName: "Them",
-                                birthDate: now,
-                                birthTime: nil,
-                                birthPlace: CLLocation(latitude: 0, longitude: 0),
-                                sunSign: "Aries",
-                                moonSign: "Aries",
-                                risingSign: "Aries",
-                                plusExpiry: nil,
-                                createdAt: now,
-                                updatedAt: now)
-        let match = MatchService().compare(me, with: them)
+        let me = BirthData(date: now,
+                           time: nil,
+                           location: CLLocation(latitude: 0, longitude: 0))
+        let them = BirthData(date: now,
+                             time: nil,
+                             location: CLLocation(latitude: 0, longitude: 0))
+        let match = MatchService().compare(myData: me,
+                                           partnerData: them,
+                                           partnerName: "Them")
         XCTAssertEqual(match.scoreTotal, 7)
     }
 }

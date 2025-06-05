@@ -5,25 +5,33 @@ import DataModels
 public final class MatchService {
     public init() {}
 
-    /// Compare two birth-date/location combos and return a match score struct.
-    public func compare(_ me: Any, with them: Any) -> KundaliMatch {
-        guard let m = me as? UserProfile, let t = them as? UserProfile else {
-            return KundaliMatch(partnerName: "Unknown",
-                               partnerDOB: Date(),
+    /// Compare two sets of birth data and return a match score struct.
+    public func compare(myData: BirthData,
+                        partnerData: BirthData,
+                        partnerName: String) -> KundaliMatch {
+        func signIndex(_ degree: Double) -> Int {
+            Int((degree / 30.0).rounded(.down)) % 12
+        }
+
+        let calc = WesternCalc()
+        let myPositions = calc.positions(for: myData)
+        let partnerPositions = calc.positions(for: partnerData)
+
+        guard let mySun = myPositions.first(where: { $0.name == "Sun" }),
+              let partnerSun = partnerPositions.first(where: { $0.name == "Sun" }),
+              let myMoon = myPositions.first(where: { $0.name == "Moon" }),
+              let partnerMoon = partnerPositions.first(where: { $0.name == "Moon" }) else {
+            return KundaliMatch(partnerName: partnerName,
+                               partnerDOB: partnerData.date,
                                scoreTotal: 0,
                                aspectJSON: "{}",
                                createdAt: Date())
         }
 
-        func idx(_ sign: String) -> Int {
-            let signs = ["aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces"]
-            return signs.firstIndex(of: sign.lowercased()) ?? 0
-        }
-
-        let s1 = idx(m.sunSign)
-        let s2 = idx(t.sunSign)
-        let m1 = idx(m.moonSign)
-        let m2 = idx(t.moonSign)
+        let s1 = signIndex(mySun.longitude)
+        let s2 = signIndex(partnerSun.longitude)
+        let m1 = signIndex(myMoon.longitude)
+        let m2 = signIndex(partnerMoon.longitude)
 
         var aspects: [String: Int] = [:]
         aspects["varna"] = (s1 % 4 == s2 % 4) ? 1 : 0
@@ -39,8 +47,8 @@ public final class MatchService {
         let jsonData = try? JSONEncoder().encode(aspects)
         let json = String(data: jsonData ?? Data(), encoding: .utf8) ?? "{}"
 
-        return KundaliMatch(partnerName: t.fullName,
-                           partnerDOB: t.birthDate,
+        return KundaliMatch(partnerName: partnerName,
+                           partnerDOB: partnerData.date,
                            scoreTotal: total,
                            aspectJSON: json,
                            createdAt: Date())
