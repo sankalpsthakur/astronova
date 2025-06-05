@@ -13,18 +13,18 @@ public enum AppRoute {
 public struct AppRouter {
     public init() {}
 
-    public func view(for route: AppRoute) -> some View {
+    public func view(for route: AppRoute) -> AnyView {
         switch route {
         case .today:
-            TodayView()
+            AnyView(TodayView())
         case .match:
-            MatchView()
+            AnyView(MatchView())
         case .chat:
-            ChatView()
+            AnyView(ChatView())
         case .shop:
-            ShopView()
+            AnyView(ShopView())
         case .profile:
-            ProfileView()
+            AnyView(ProfileView())
         }
     }
 }

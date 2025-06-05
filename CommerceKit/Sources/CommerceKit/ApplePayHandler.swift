@@ -1,5 +1,6 @@
 import Foundation
 import PassKit
+import CloudKit
 import CloudKitKit
 import DataModels
 

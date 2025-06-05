@@ -40,4 +40,18 @@ public struct KundaliMatch: CKRecordConvertible, Codable {
         record["aspectJSON"] = aspectJSON as CKRecordValue
         return record
     }
+
+    /// Convenience initializer for creating a match result on-device before it
+    /// is persisted to CloudKit.
+    public init(partnerName: String,
+                partnerDOB: Date,
+                scoreTotal: Int,
+                aspectJSON: String,
+                createdAt: Date) {
+        self.partnerName = partnerName
+        self.partnerDOB = partnerDOB
+        self.scoreTotal = scoreTotal
+        self.aspectJSON = aspectJSON
+        self.createdAt = createdAt
+    }
 }

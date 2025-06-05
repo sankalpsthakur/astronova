@@ -2,7 +2,7 @@ import Foundation
 import CloudKit
 
 /// Product listing from the public shop zone.
-public struct Product: CKRecordConvertible, Codable {
+public struct Product: CKRecordConvertible, Codable, Identifiable {
     public static let recordType = "Product"
     public let sku: String
     public let name: String

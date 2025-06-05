@@ -1,5 +1,6 @@
 import Foundation
 import StoreKit
+import CloudKit
 import CloudKitKit
 import DataModels
 import Combine
@@ -90,7 +91,7 @@ public final class StoreKitPlusManager: ObservableObject {
         if let expiry = expiry {
             record["plusExpiry"] = expiry as CKRecordValue
         } else {
-            record["plusExpiry"] = nil
+            record["plusExpiry"] = nil as CKRecordValue?
         }
         _ = try await CKDatabaseProxy.private.saveRecord(record)
         await MainActor.run { self.plusExpiry = expiry }

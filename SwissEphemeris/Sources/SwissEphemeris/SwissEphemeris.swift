@@ -4,6 +4,11 @@ import Foundation
 public struct PlanetPosition {
     public let name: String
     public let longitude: Double
+
+    public init(name: String, longitude: Double) {
+        self.name = name
+        self.longitude = longitude
+    }
 }
 
 public final class Ephemeris {

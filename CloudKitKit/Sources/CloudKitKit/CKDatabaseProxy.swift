@@ -87,7 +87,7 @@ public extension CKDatabaseProxy {
     func fetchRecord(id: CKRecord.ID) async throws -> CKRecord {
         try await performWithRetry {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKRecord, Error>) in
-                database.fetch(withRecordID: id) { record, error in
+                self.database.fetch(withRecordID: id) { record, error in
                     if let error = error {
                         continuation.resume(throwing: error)
                     } else if let record = record {
@@ -108,7 +108,7 @@ public extension CKDatabaseProxy {
         await enforceCooldown()
         let result: CKRecord = try await performWithRetry {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKRecord, Error>) in
-                database.save(record) { saved, error in
+                self.database.save(record) { saved, error in
                     if let error = error {
                         continuation.resume(throwing: error)
                     } else if let saved = saved {
@@ -131,7 +131,7 @@ public extension CKDatabaseProxy {
         await enforceCooldown()
         try await performWithRetry {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                database.delete(withRecordID: id) { _, error in
+                self.database.delete(withRecordID: id) { _, error in
                     if let error = error {
                         continuation.resume(throwing: error)
                     } else {
@@ -163,7 +163,7 @@ public extension CKDatabaseProxy {
                         continuation.resume(returning: results)
                     }
                 }
-                database.add(operation)
+                self.database.add(operation)
             }
         }
     }
