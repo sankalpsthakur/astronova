@@ -9,9 +9,10 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../CloudKitKit"),
+        .package(path: "../DataModels"),
     ],
     targets: [
-        .target(name: "SettingsKit", dependencies: ["CloudKitKit"]),
+        .target(name: "SettingsKit", dependencies: ["CloudKitKit", "DataModels"]),
         .testTarget(name: "SettingsKitTests", dependencies: ["SettingsKit"]),
     ]
 )
