@@ -1,5 +1,6 @@
 import Foundation
 import SwissEphemeris
+import DataModels
 
 /// Simple representation of a planetary aspect.
 public struct Aspect: Codable {
@@ -16,14 +17,14 @@ public final class WesternCalc {
         self.eph = ephemeris
     }
 
-    /// Planetary positions for a date in tropical zodiac.
-    public func positions(for date: Date) -> [PlanetPosition] {
-        eph.positions(for: date)
+    /// Planetary positions for a birth date in the tropical zodiac.
+    public func positions(for birth: BirthData) -> [PlanetPosition] {
+        eph.positions(for: birth.date)
     }
 
     /// Detect simple Ptolemaic aspects between planets.
-    public func aspects(for date: Date) -> [Aspect] {
-        let positions = eph.positions(for: date)
+    public func aspects(for birth: BirthData) -> [Aspect] {
+        let positions = eph.positions(for: birth.date)
         var result: [Aspect] = []
         for i in 0..<positions.count {
             for j in i+1..<positions.count {
