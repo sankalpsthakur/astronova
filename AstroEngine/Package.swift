@@ -9,9 +9,10 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../DataModels"),
+        .package(path: "../SwissEphemeris"),
     ],
     targets: [
-        .target(name: "AstroEngine", dependencies: ["DataModels"]),
+        .target(name: "AstroEngine", dependencies: ["DataModels", "SwissEphemeris"]),
         .testTarget(name: "AstroEngineTests", dependencies: ["AstroEngine"]),
     ]
 )
