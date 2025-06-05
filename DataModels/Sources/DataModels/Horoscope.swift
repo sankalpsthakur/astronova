@@ -10,6 +10,15 @@ public struct Horoscope: CKRecordConvertible, Codable {
     public let shortText: String
     public let extendedText: String?
 
+    /// Direct initializer for creating horoscope instances without CloudKit.
+    public init(sign: String, date: Date, language: String, shortText: String, extendedText: String? = nil) {
+        self.sign = sign
+        self.date = date
+        self.language = language
+        self.shortText = shortText
+        self.extendedText = extendedText
+    }
+
     public init(record: CKRecord) throws {
         guard let sign = record["sign"] as? String,
               let date = record["date"] as? Date,
