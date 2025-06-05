@@ -1,42 +1,57 @@
 # CosmoChat Swift Packages
 
-CosmoChat is organized as several independent Swift packages. The packages use Swift Package Manager and can be opened in Xcode as needed.
+CosmoChat is broken down into several independent Swift packages so each module can be developed and tested in isolation.
+The packages use **Swift Package Manager** and therefore can be opened directly in Xcode or built from the command line.
 
 ## Requirements
 
-- **Swift**: 5.10
-- **Xcode**: 15 or later
+- **Swift** 5.10
+- **Xcode** 15 or later (needed to build targets that rely on Apple frameworks such as CloudKit)
 
 ## Opening and Building
 
-1. Launch Xcode 15+.
-2. Choose **File > Open...** and select the directory of the package you want to work on (for example `AppCore`).
-3. Xcode will load the `Package.swift` and allow you to build or run tests within that package.
-4. Alternatively, from the command line you can run `swift build` inside each package directory.
+1. Launch **Xcode 15+**.
+2. Choose **File → Open...** and select any package directory (e.g. `AppCore`).
+3. Xcode detects the `Package.swift` manifest and sets up the project.
+4. Build or test inside Xcode or run `swift build` / `swift test` from the package directory in Terminal.
 
-## Directory Overview
+## Repository Structure
 
-- `AppCore` – Main application logic and SwiftUI views.
-- `AstroEngine` – Astrology calculations (Lo Shu, Vedic, Western) and matching logic.
-- `AuthKit` – Authentication helpers for Apple sign‑in and CloudKit access.
-- `CloudKitKit` – Convenience helpers for working with CloudKit databases.
-- `CommerceKit` – In‑app purchases, Apple Pay and order management.
-- `DataModels` – Shared model types such as `UserProfile`, `Horoscope` and `Order`.
-- `HoroscopeService` – Caching and fetching daily horoscopes.
-- `NotificationKit` – Local and push notification scheduling.
-- `SettingsKit` – User settings and preferences management.
-- `SwissEphemeris` – Wrapper around the Swiss Ephemeris calculations.
-- `UIComponents` – Reusable SwiftUI components used across the app.
+Each folder below contains its own `Package.swift`, a `Sources/` directory with the library code and a matching `Tests/` directory.
 
-Each folder contains its own `Package.swift`, `Sources/` and `Tests/` directories.
+- **AppCore**
+  - Hosts the `CosmicApp` entry point and main SwiftUI views such as `RootView` and the tab bar.
+  - Wires together submodules including authentication, horoscope fetching, notifications and in‑app purchases.
+- **AstroEngine**
+  - Implements astrology calculations (`LoShuCalc`, `VedicKundaliCalc`, `WesternCalc`).
+  - Provides `MatchService` for compatibility matching using the Swiss Ephemeris.
+- **AuthKit**
+  - Apple sign‑in coordination (`AppleSignInCoordinator`) and CloudKit authentication helpers.
+  - Stores credentials securely via `KeychainHelper`.
+- **CloudKitKit**
+  - Thin wrappers around CloudKit APIs (`CKContainer+Cosmic`, `CKDatabaseProxy`, `CKQueryBuilder`).
+- **CommerceKit**
+  - Handles StoreKit and Apple Pay integration with helpers like `StoreKitPlusManager` and `OrderRepository`.
+- **DataModels**
+  - Shared model types (`UserProfile`, `Horoscope`, `Order`, etc.) and `CKRecordConvertible` utilities.
+- **HoroscopeService**
+  - Fetches and caches daily horoscopes with `HoroscopeRepository` and manages saved matches.
+- **NotificationKit**
+  - Schedules local and push notifications (`DailyScheduler`, `PushCoordinator`).
+- **SettingsKit**
+  - Manages language and notification preferences via `SettingsViewModel` and related helpers.
+- **SwissEphemeris**
+  - Minimal wrapper that exposes necessary functions from the Swiss Ephemeris C library.
+- **UIComponents**
+  - Reusable SwiftUI views such as `CalcForm` and `ZodiacCard` used across the app.
 
 ## Running Tests
 
-Unit tests are provided per package. Run them with Swift Package Manager:
+Tests live in each package's `Tests/` directory. To run them:
 
 ```bash
 cd <PackageName>
 swift test
 ```
 
-Repeat for each package that you wish to test. Some packages depend on Apple frameworks and must be built on macOS with Xcode installed.
+Packages that depend on Apple frameworks must be tested on macOS with Xcode installed.
