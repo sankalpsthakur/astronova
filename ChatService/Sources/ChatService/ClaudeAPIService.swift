@@ -126,13 +126,13 @@ public final class ClaudeAPIService: ObservableObject {
             if message.role == .user || message.role == .assistant {
                 messages.append(ClaudeMessage(
                     role: message.role.rawValue,
-                    content: message.content
+                    content: [ClaudeTextContent(text: message.content)]
                 ))
             }
         }
         
         // Add new user message
-        messages.append(ClaudeMessage(role: "user", content: newMessage))
+        messages.append(ClaudeMessage(role: "user", content: [ClaudeTextContent(text: newMessage)]))
         
         return messages
     }
@@ -156,7 +156,17 @@ private struct ClaudeRequest: Codable {
 
 private struct ClaudeMessage: Codable {
     let role: String
-    let content: String
+    let content: [ClaudeTextContent]
+}
+
+private struct ClaudeTextContent: Codable {
+    let type: String
+    let text: String
+    
+    init(text: String) {
+        self.type = "text"
+        self.text = text
+    }
 }
 
 private struct ClaudeResponse: Codable {
