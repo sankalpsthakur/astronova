@@ -33,15 +33,17 @@ struct OnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Skip button
-            HStack {
-                Spacer()
-                Button("Skip") {
-                    withAnimation {
-                        currentPage = onboardingPages.count - 1
+            if currentPage < onboardingPages.count - 1 {
+                HStack {
+                    Spacer()
+                    Button("Skip") {
+                        withAnimation {
+                            currentPage = onboardingPages.count - 1
+                        }
                     }
+                    .foregroundStyle(.secondary)
+                    .padding()
                 }
-                .foregroundStyle(.secondary)
-                .padding()
             }
             
             TabView(selection: $currentPage) {

@@ -2,3 +2,9 @@
 
 # Swift Package Manager build artifacts
 .build/
+
+# Xcode user data
+**/.swiftpm/xcode/
+
+# Remove orphan submodule folder
+astronova
