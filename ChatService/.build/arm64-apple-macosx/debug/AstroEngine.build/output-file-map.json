@@ -1,0 +1,29 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/master.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/AstroEngine/Sources/AstroEngine/LoShuCalc.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/LoShuCalc.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/LoShuCalc.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/LoShuCalc~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/LoShuCalc.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/AstroEngine/Sources/AstroEngine/MatchService.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/MatchService.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/MatchService.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/MatchService~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/MatchService.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/AstroEngine/Sources/AstroEngine/VedicKundaliCalc.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/VedicKundaliCalc.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/VedicKundaliCalc.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/VedicKundaliCalc~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/VedicKundaliCalc.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/AstroEngine/Sources/AstroEngine/WesternCalc.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/WesternCalc.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/WesternCalc.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/WesternCalc~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AstroEngine.build/WesternCalc.swiftdeps"
+  }
+}

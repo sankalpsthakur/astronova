@@ -1,0 +1,4 @@
+module AuthKit {
+    header "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AuthKit-Swift.h"
+    requires objc
+}

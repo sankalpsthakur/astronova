@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/ChartVisualizationTests.build/master.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/Tests/ChartVisualizationTests/ChartVisualizationTests.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/ChartVisualizationTests.build/ChartVisualizationTests.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/ChartVisualizationTests.build/ChartVisualizationTests.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/ChartVisualizationTests.build/ChartVisualizationTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/ChartVisualizationTests.build/ChartVisualizationTests.swiftdeps"
+  }
+}

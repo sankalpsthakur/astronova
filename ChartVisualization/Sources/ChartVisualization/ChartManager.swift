@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import DataModels
 
 /// Manages chart generation, caching, and integration with chat features.
 public final class ChartManager: ObservableObject {

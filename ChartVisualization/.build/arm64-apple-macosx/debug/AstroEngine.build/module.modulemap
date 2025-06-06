@@ -1,0 +1,4 @@
+module AstroEngine {
+    header "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/AstroEngine.build/AstroEngine-Swift.h"
+    requires objc
+}

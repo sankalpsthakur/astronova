@@ -25,8 +25,22 @@ public final class UserProfileRepository: ObservableObject {
     @MainActor
     public func updateProfile(_ profile: UserProfile) async throws {
         let recordID = try await CKContainer.cosmic.fetchUserRecordID()
-        let record = profile.toRecord(in: recordID.zoneID)
-        record.recordID = recordID
+        let record = CKRecord(recordType: UserProfile.recordType, recordID: recordID)
+        
+        // Copy profile data to the record
+        record["fullName"] = profile.fullName as CKRecordValue
+        record["birthDate"] = profile.birthDate as CKRecordValue
+        if let time = profile.birthTime {
+            record["birthTime"] = time as? CKRecordValue
+        }
+        record["birthPlace"] = profile.birthPlace as CKRecordValue
+        record["sunSign"] = profile.sunSign as CKRecordValue
+        record["moonSign"] = profile.moonSign as CKRecordValue
+        record["risingSign"] = profile.risingSign as CKRecordValue
+        if let expiry = profile.plusExpiry {
+            record["plusExpiry"] = expiry as CKRecordValue
+        }
+        
         try await CKDatabaseProxy.private.saveRecord(record)
         currentProfile = profile
     }

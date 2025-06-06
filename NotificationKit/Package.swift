@@ -10,9 +10,10 @@ let package = Package(
     dependencies: [
         .package(path: "../CloudKitKit"),
         .package(path: "../DataModels"),
+        .package(path: "../HoroscopeService"),
     ],
     targets: [
-        .target(name: "NotificationKit", dependencies: ["CloudKitKit", "DataModels"]),
+        .target(name: "NotificationKit", dependencies: ["CloudKitKit", "DataModels", "HoroscopeService"]),
         .testTarget(name: "NotificationKitTests", dependencies: ["NotificationKit"]),
     ]
 )

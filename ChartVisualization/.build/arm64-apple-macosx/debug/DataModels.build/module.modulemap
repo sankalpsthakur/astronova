@@ -1,0 +1,4 @@
+module DataModels {
+    header "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/DataModels.build/DataModels-Swift.h"
+    requires objc
+}

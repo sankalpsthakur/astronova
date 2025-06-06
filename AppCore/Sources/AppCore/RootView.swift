@@ -2,10 +2,12 @@ import SwiftUI
 import AuthKit
 
 /// Decides which high-level screen to show based on authentication state.
-struct RootView: View {
+public struct RootView: View {
     @EnvironmentObject private var auth: AuthManager
 
-    var body: some View {
+    public init() {}
+
+    public var body: some View {
         Group {
             switch auth.state {
             case .loading:

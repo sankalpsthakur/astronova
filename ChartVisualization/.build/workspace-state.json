@@ -1,0 +1,66 @@
+{
+  "object" : {
+    "artifacts" : [
+
+    ],
+    "dependencies" : [
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "astroengine",
+          "kind" : "fileSystem",
+          "location" : "/Users/sankalpthakur/Projects/iOS Apps/AstroEngine",
+          "name" : "AstroEngine"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sankalpthakur/Projects/iOS Apps/AstroEngine"
+        },
+        "subpath" : "astroengine"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "cloudkitkit",
+          "kind" : "fileSystem",
+          "location" : "/Users/sankalpthakur/Projects/iOS Apps/CloudKitKit",
+          "name" : "CloudKitKit"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sankalpthakur/Projects/iOS Apps/CloudKitKit"
+        },
+        "subpath" : "cloudkitkit"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "datamodels",
+          "kind" : "fileSystem",
+          "location" : "/Users/sankalpthakur/Projects/iOS Apps/DataModels",
+          "name" : "DataModels"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sankalpthakur/Projects/iOS Apps/DataModels"
+        },
+        "subpath" : "datamodels"
+      },
+      {
+        "basedOn" : null,
+        "packageRef" : {
+          "identity" : "swissephemeris",
+          "kind" : "fileSystem",
+          "location" : "/Users/sankalpthakur/Projects/iOS Apps/SwissEphemeris",
+          "name" : "SwissEphemeris"
+        },
+        "state" : {
+          "name" : "fileSystem",
+          "path" : "/Users/sankalpthakur/Projects/iOS Apps/SwissEphemeris"
+        },
+        "subpath" : "swissephemeris"
+      }
+    ]
+  },
+  "version" : 6
+}

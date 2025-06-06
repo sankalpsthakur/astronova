@@ -1,0 +1,4 @@
+module SwissEphemeris {
+    header "/Users/sankalpthakur/Projects/iOS Apps/ChartVisualization/.build/arm64-apple-macosx/debug/SwissEphemeris.build/SwissEphemeris-Swift.h"
+    requires objc
+}

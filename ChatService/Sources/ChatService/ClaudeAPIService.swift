@@ -184,6 +184,7 @@ public enum ChatError: Error, LocalizedError {
     case httpError(Int)
     case noContent
     case apiKeyMissing
+    case custom(String)
     
     public var errorDescription: String? {
         switch self {
@@ -195,7 +196,13 @@ public enum ChatError: Error, LocalizedError {
             return "No content in response"
         case .apiKeyMissing:
             return "API key is missing"
+        case .custom(let message):
+            return message
         }
+    }
+    
+    public static func premiumRequired(_ message: String) -> ChatError {
+        return .custom(message)
     }
 }
 

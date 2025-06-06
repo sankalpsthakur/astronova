@@ -4,6 +4,10 @@ import AuthKit
 import ChartVisualization
 import Combine
 
+// Type aliases to resolve UserProfile conflicts
+typealias AppUserProfile = DataModels.UserProfile
+typealias ChartUserProfile = ChartVisualization.UserProfile
+
 /// Enhanced chat manager with chart integration and premium features.
 public final class EnhancedChatManager: ObservableObject {
     @Published public private(set) var isProcessing = false
@@ -57,8 +61,9 @@ public final class EnhancedChatManager: ObservableObject {
             let needsChart = detectChartRequest(in: content)
             
             if needsChart && userProfile != nil {
-                // Generate chart if needed
-                await generateChartForContext(userProfile: userProfile!, isPremium: isPremium)
+                // Convert to chart format and generate chart if needed
+                let chartProfile = convertToChartProfile(userProfile!)
+                await generateChartForContext(userProfile: chartProfile, isPremium: isPremium)
             }
             
             // Build enhanced context for Claude
@@ -139,9 +144,10 @@ public final class EnhancedChatManager: ObservableObject {
     @MainActor
     public func showBirthChart(sidereal: Bool = true) async {
         guard let userProfile = try? await fetchUserProfile() else { return }
+        let chartProfile = convertToChartProfile(userProfile)
         
         let chartType: ChartType = sidereal ? .siderealBirth : .tropicalBirth
-        await chartManager.generateBirthChart(for: userProfile, type: chartType)
+        await chartManager.generateBirthChart(for: chartProfile, type: chartType)
         
         if let chart = chartManager.currentChart {
             currentChart = chart
@@ -159,8 +165,9 @@ public final class EnhancedChatManager: ObservableObject {
         }
         
         guard let userProfile = try? await fetchUserProfile() else { return }
+        let chartProfile = convertToChartProfile(userProfile)
         
-        await chartManager.generateTransitChart(for: userProfile, sidereal: sidereal)
+        await chartManager.generateTransitChart(for: chartProfile, sidereal: sidereal)
         
         if let chart = chartManager.currentChart {
             currentChart = chart
@@ -195,9 +202,24 @@ public final class EnhancedChatManager: ObservableObject {
     
     // MARK: - Private Methods
     
-    private func fetchUserProfile() async throws -> UserProfile? {
+    private func fetchUserProfile() async throws -> AppUserProfile? {
         // This would integrate with your existing user profile fetching logic
         return nil
+    }
+    
+    private func convertToChartProfile(_ appProfile: AppUserProfile) -> ChartUserProfile {
+        return ChartUserProfile(
+            fullName: appProfile.fullName,
+            birthDate: appProfile.birthDate,
+            birthTime: appProfile.birthTime,
+            birthPlace: appProfile.birthPlace,
+            sunSign: appProfile.sunSign,
+            moonSign: appProfile.moonSign,
+            risingSign: appProfile.risingSign,
+            plusExpiry: appProfile.plusExpiry,
+            createdAt: appProfile.createdAt,
+            updatedAt: appProfile.updatedAt
+        )
     }
     
     private func detectChartRequest(in message: String) -> Bool {
@@ -213,13 +235,13 @@ public final class EnhancedChatManager: ObservableObject {
     }
     
     @MainActor
-    private func generateChartForContext(userProfile: UserProfile, isPremium: Bool) async {
+    private func generateChartForContext(userProfile: ChartUserProfile, isPremium: Bool) async {
         // Generate basic birth chart for context
         await chartManager.generateBirthChart(for: userProfile, type: .siderealBirth)
         currentChart = chartManager.currentChart
     }
     
-    private func buildEnhancedContext(userProfile: UserProfile?, isPremium: Bool, needsChart: Bool) -> String {
+    private func buildEnhancedContext(userProfile: AppUserProfile?, isPremium: Bool, needsChart: Bool) -> String {
         var context = ""
         
         if let profile = userProfile {
@@ -240,7 +262,7 @@ public final class EnhancedChatManager: ObservableObject {
         return context
     }
     
-    private func generateEnhancedSuggestedQuestions(userProfile: UserProfile?, isPremium: Bool) async throws -> [String] {
+    private func generateEnhancedSuggestedQuestions(userProfile: AppUserProfile?, isPremium: Bool) async throws -> [String] {
         var questions: [String] = []
         
         if let profile = userProfile {
@@ -319,20 +341,5 @@ extension ClaudeAPIService {
 }
 
 // MARK: - Enhanced Error Types
-
-extension ChatError {
-    case custom(String)
-    
-    static func premiumRequired(_ message: String) -> ChatError {
-        return .custom(message)
-    }
-    
-    public var errorDescription: String? {
-        switch self {
-        case .custom(let message):
-            return message
-        default:
-            return nil
-        }
-    }
+// Error types are now defined in ClaudeAPIService.swift
 }

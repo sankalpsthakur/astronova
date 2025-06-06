@@ -331,3 +331,42 @@ extension BirthData {
     public var birthDate: Date { date }
     public var birthTime: DateComponents? { time }
 }
+
+// MARK: - User Profile for Chart Context
+
+public struct UserProfile {
+    public let fullName: String
+    public let birthDate: Date
+    public let birthTime: DateComponents?
+    public let birthPlace: CLLocation
+    public let sunSign: String
+    public let moonSign: String
+    public let risingSign: String
+    public let plusExpiry: Date?
+    public let createdAt: Date
+    public let updatedAt: Date
+    
+    public init(
+        fullName: String,
+        birthDate: Date,
+        birthTime: DateComponents?,
+        birthPlace: CLLocation,
+        sunSign: String,
+        moonSign: String,
+        risingSign: String,
+        plusExpiry: Date? = nil,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
+    ) {
+        self.fullName = fullName
+        self.birthDate = birthDate
+        self.birthTime = birthTime
+        self.birthPlace = birthPlace
+        self.sunSign = sunSign
+        self.moonSign = moonSign
+        self.risingSign = risingSign
+        self.plusExpiry = plusExpiry
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}

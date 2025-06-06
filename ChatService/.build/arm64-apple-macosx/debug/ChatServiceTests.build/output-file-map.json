@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/ChatServiceTests.build/master.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/ChatService/Tests/ChatServiceTests/ChatServiceTests.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/ChatServiceTests.build/ChatServiceTests.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/ChatServiceTests.build/ChatServiceTests.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/ChatServiceTests.build/ChatServiceTests~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/ChatServiceTests.build/ChatServiceTests.swiftdeps"
+  }
+}

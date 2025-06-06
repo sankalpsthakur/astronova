@@ -1,0 +1,23 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/master.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/AuthKit/Sources/AuthKit/AppleSignInCoordinator.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AppleSignInCoordinator.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AppleSignInCoordinator.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AppleSignInCoordinator~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AppleSignInCoordinator.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/AuthKit/Sources/AuthKit/AuthManager.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AuthManager.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AuthManager.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AuthManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/AuthManager.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/AuthKit/Sources/AuthKit/KeychainHelper.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/KeychainHelper.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/KeychainHelper.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/KeychainHelper~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/AuthKit.build/KeychainHelper.swiftdeps"
+  }
+}

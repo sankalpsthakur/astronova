@@ -1,7 +1,6 @@
 import Foundation
 import SwissEphemeris
 import AstroEngine
-import DataModels
 
 /// Advanced chart calculator for both sidereal and tropical systems.
 public final class ChartCalculator {
