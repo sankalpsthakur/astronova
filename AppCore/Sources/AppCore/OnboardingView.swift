@@ -52,7 +52,10 @@ struct OnboardingView: View {
                         if index == onboardingPages.count - 1 {
                             // Sign in action
                             Task {
+                                guard !inProgress else { return }
+                                inProgress = true
                                 await auth.requestSignIn()
+                                inProgress = false
                             }
                         } else {
                             withAnimation {
