@@ -39,7 +39,7 @@ struct MatchView: View {
                 
                 if !repo.matches.isEmpty {
                     Section(header: Text("Saved Matches")) {
-                        ForEach(repo.matches, id: \.createdAt) { match in
+                        ForEach(repo.matches) { match in
                             SavedMatchRow(match: match) {
                                 Task {
                                     if let recordID = match.recordID {
