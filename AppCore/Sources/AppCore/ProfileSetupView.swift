@@ -5,7 +5,7 @@ import AuthKit
 import CloudKitKit
 import AstroEngine
 
-/// Collects birth information after sign-in to complete the user profile.
+/// Collects birth information after sign-in to complete the user profile with progress tracking.
 struct ProfileSetupView: View {
     @EnvironmentObject private var auth: AuthManager
     @State private var fullName = ""
@@ -16,64 +16,109 @@ struct ProfileSetupView: View {
     @State private var selectedLocation: CLLocation?
     @State private var isLoading = false
     @State private var showingLocationPicker = false
+    @State private var canSkip = false
+    
+    private var completionPercentage: Double {
+        var completed = 0.0
+        let total = 4.0
+        
+        if !fullName.isEmpty { completed += 1 }
+        if selectedLocation != nil { completed += 1 }
+        if !birthPlace.isEmpty { completed += 1 }
+        completed += 1 // Birth date always has a value
+        
+        return completed / total
+    }
     
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("Personal Information")) {
-                    TextField("Full Name", text: $fullName)
-                    
-                    DatePicker("Birth Date", 
-                              selection: $birthDate, 
-                              in: ...Date(),
-                              displayedComponents: .date)
-                    
-                    Toggle("Include Birth Time", isOn: $includeTime)
-                    
-                    if includeTime {
-                        DatePicker("Birth Time", 
-                                  selection: Binding(
-                                    get: { birthTime ?? Date() },
-                                    set: { birthTime = $0 }
-                                  ),
-                                  displayedComponents: .hourAndMinute)
-                    }
-                }
-                
-                Section(header: Text("Birth Location")) {
+            VStack(spacing: 0) {
+                // Progress indicator
+                VStack(spacing: 12) {
                     HStack {
-                        TextField("City, Country", text: $birthPlace)
-                        Button("Search") {
-                            showingLocationPicker = true
+                        Text("Profile Setup")
+                            .font(.headline)
+                        Spacer()
+                        Button("Skip") {
+                            Task { await skipSetup() }
                         }
-                        .disabled(birthPlace.isEmpty)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .disabled(isLoading)
                     }
                     
-                    if let location = selectedLocation {
-                        Text("📍 \(location.coordinate.latitude, specifier: "%.2f"), \(location.coordinate.longitude, specifier: "%.2f")")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("\(Int(completionPercentage * 100))% Complete")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        
+                        ProgressView(value: completionPercentage)
+                            .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                            .scaleEffect(y: 2.0)
                     }
                 }
+                .padding()
+                .background(Color(.systemGroupedBackground))
                 
-                Section {
-                    Button("Complete Setup") {
-                        Task { await completeSetup() }
+                Form {
+                    Section(header: Text("Personal Information")) {
+                        TextField("Full Name", text: $fullName)
+                        
+                        DatePicker("Birth Date", 
+                                  selection: $birthDate, 
+                                  in: ...Date(),
+                                  displayedComponents: .date)
+                        
+                        Toggle("Include Birth Time", isOn: $includeTime)
+                        
+                        if includeTime {
+                            DatePicker("Birth Time", 
+                                      selection: Binding(
+                                        get: { birthTime ?? Date() },
+                                        set: { birthTime = $0 }
+                                      ),
+                                      displayedComponents: .hourAndMinute)
+                        }
                     }
-                    .disabled(!isValid || isLoading)
                     
-                    if isLoading {
+                    Section(header: Text("Birth Location")) {
                         HStack {
-                            Spacer()
-                            ProgressView()
-                                .scaleEffect(0.8)
-                            Spacer()
+                            TextField("City, Country", text: $birthPlace)
+                            Button("Search") {
+                                showingLocationPicker = true
+                            }
+                            .disabled(birthPlace.isEmpty)
+                        }
+                        
+                        if let location = selectedLocation {
+                            Text("📍 \(location.coordinate.latitude, specifier: "%.2f"), \(location.coordinate.longitude, specifier: "%.2f")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    Section {
+                        Button("Complete Setup") {
+                            Task { await completeSetup() }
+                        }
+                        .disabled(!isValid || isLoading)
+                        
+                        if isLoading {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                Spacer()
+                            }
                         }
                     }
                 }
             }
-            .navigationTitle("Complete Your Profile")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("Profile Setup")
+            .navigationBarTitleDisplayMode(.inline)
         }
         .sheet(isPresented: $showingLocationPicker) {
             LocationSearchView(query: $birthPlace, selectedLocation: $selectedLocation)
@@ -133,6 +178,27 @@ struct ProfileSetupView: View {
             print("[ProfileSetupView] Setup failed: \(error)")
         }
     }
+    
+    @MainActor
+    private func skipSetup() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            // Create minimal profile
+            let recordID = try await CKContainer.cosmic.fetchUserRecordID()
+            let record = CKRecord(recordType: "UserProfile", recordID: recordID)
+            record["fullName"] = "Anonymous User" as CKRecordValue
+            record["createdAt"] = Date() as CKRecordValue
+            record["updatedAt"] = Date() as CKRecordValue
+            try await CKDatabaseProxy.private.saveRecord(record)
+            
+            auth.completeProfileSetup()
+        } catch {
+            print("[ProfileSetupView] Skip setup failed: \(error)")
+        }
+    }
+    
     
     private func zodiacSign(for longitude: Double) -> String {
         let signs = ["aries", "taurus", "gemini", "cancer", "leo", "virgo",

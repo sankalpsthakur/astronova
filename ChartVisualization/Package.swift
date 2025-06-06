@@ -10,13 +10,11 @@ let package = Package(
     dependencies: [
         .package(path: "../SwissEphemeris"),
         .package(path: "../AstroEngine"),
-        .package(path: "../DataModels"),
     ],
     targets: [
         .target(name: "ChartVisualization", dependencies: [
             "SwissEphemeris",
-            "AstroEngine", 
-            "DataModels"
+            "AstroEngine"
         ]),
         .testTarget(name: "ChartVisualizationTests", dependencies: ["ChartVisualization"]),
     ]

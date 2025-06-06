@@ -1,6 +1,5 @@
 import XCTest
 @testable import ChartVisualization
-import DataModels
 import CoreLocation
 
 final class ChartVisualizationTests: XCTestCase {
