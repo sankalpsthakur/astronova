@@ -1,4 +1,0 @@
-module ChatService {
-    header "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/ChatService.build/ChatService-Swift.h"
-    requires objc
-}

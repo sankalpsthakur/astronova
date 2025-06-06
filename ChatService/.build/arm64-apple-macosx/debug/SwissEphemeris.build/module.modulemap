@@ -1,4 +1,0 @@
-module SwissEphemeris {
-    header "/Users/sankalpthakur/Projects/iOS Apps/ChatService/.build/arm64-apple-macosx/debug/SwissEphemeris.build/SwissEphemeris-Swift.h"
-    requires objc
-}
