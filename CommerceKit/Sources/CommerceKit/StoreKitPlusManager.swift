@@ -10,7 +10,7 @@ public final class StoreKitPlusManager: ObservableObject {
     @Published public private(set) var plusExpiry: Date?
 
     private var updatesTask: Task<Void, Never>?
-    private static let productID = "com.cosmochat.plus.yearly"
+    private static let productID = "com.sankalp.astronova.plus.yearly"
 
     public init() {
         updatesTask = Task { await listenForTransactions() }

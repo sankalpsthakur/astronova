@@ -14,6 +14,9 @@ let package = Package(
         .package(path: "../CommerceKit"),
         .package(path: "../UIComponents"),
         .package(path: "../SettingsKit"),
+        .package(path: "../ChatService"),
+        .package(path: "../DataModels"),
+        .package(path: "../ChartVisualization"),
     ],
     targets: [
         .target(name: "AppCore", dependencies: [
@@ -23,6 +26,9 @@ let package = Package(
             "CommerceKit",
             "UIComponents",
             "SettingsKit",
+            "ChatService",
+            "DataModels",
+            "ChartVisualization",
         ]),
         .testTarget(name: "AppCoreTests", dependencies: ["AppCore"]),
     ]

@@ -1,11 +1,11 @@
 import CloudKit
 
-/// Provides the shared CloudKit container for CosmoChat.
+/// Provides the shared CloudKit container for Astronova.
 @available(iOS 13.0, *)
 public extension CKContainer {
-    /// The CosmoChat CloudKit container (iCloud.com.cosmochat.app).
+    /// Astronova CloudKit container (iCloud.com.sankalp.astronova).
     static var cosmic: CKContainer {
-        CKContainer(identifier: "iCloud.com.cosmochat.app")
+        CKContainer(identifier: "iCloud.com.sankalp.astronova")
     }
     /// Fetches the current user's record ID asynchronously.
     func fetchUserRecordID() async throws -> CKRecord.ID {

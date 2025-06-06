@@ -1,8 +1,10 @@
 import SwiftUI
+import AuthKit
 
 /// Main tab bar hosting the five core verticals for the MVP release.
 struct TabBarView: View {
     @State private var selection: Int = 0
+    @EnvironmentObject private var authManager: AuthManager
 
     var body: some View {
         TabView(selection: $selection) {
@@ -14,7 +16,7 @@ struct TabBarView: View {
                 .tabItem { Label("Match", systemImage: "heart.circle") }
                 .tag(1)
 
-            ChatView()
+            ChatView(authManager: authManager)
                 .tabItem { Label("Chat", systemImage: "message") }
                 .tag(2)
 

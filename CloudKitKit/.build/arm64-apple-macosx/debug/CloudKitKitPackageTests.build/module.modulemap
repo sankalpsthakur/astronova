@@ -1,4 +1,0 @@
-module CloudKitKitPackageTests {
-    header "/Users/sankalpthakur/Projects/iOS Apps/CloudKitKit/.build/arm64-apple-macosx/debug/CloudKitKitPackageTests.build/CloudKitKitPackageTests-Swift.h"
-    requires objc
-}

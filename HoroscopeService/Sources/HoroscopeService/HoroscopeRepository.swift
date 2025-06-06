@@ -1,4 +1,5 @@
 import Foundation
+import CloudKit
 import Combine
 import CloudKitKit
 import DataModels
@@ -11,12 +12,15 @@ public final class HoroscopeRepository: ObservableObject {
 
     public init() {}
 
-    /// Fetch today's horoscope for the given sign and language.
+    /// Fetch today's horoscope using the user's sun sign from their profile.
     /// - Parameters:
-    ///   - sign: Zodiac sign name, e.g. "aries".
     ///   - language: BCP-47 language identifier.
     @MainActor
-    public func fetchToday(sign: String = "aries", language: String = Locale.current.identifier) async throws {
+    public func fetchToday(language: String = Locale.current.identifier) async throws {
+        // Get user's sun sign from their profile
+        let recordID = try await CKContainer.cosmic.fetchUserRecordID()
+        let profile: UserProfile = try await CKDatabaseProxy.private.fetch(type: UserProfile.self, id: recordID)
+        let sign = profile.sunSign
         let day = Calendar.current.startOfDay(for: Date())
 
         if let cached = HoroscopeCache.load(sign: sign, date: day, language: language) {

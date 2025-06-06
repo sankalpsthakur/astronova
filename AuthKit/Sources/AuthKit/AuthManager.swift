@@ -10,6 +10,7 @@ import Combine
 public enum AuthState {
     case loading
     case signedOut
+    case needsProfileSetup
     case signedIn
 }
 
@@ -42,10 +43,9 @@ public final class AuthManager: ObservableObject {
             try KeychainHelper.store(credential.idToken, for: Self.kIDTokenKey)
             try KeychainHelper.store(credential.userID, for: Self.kUserIDKey)
 
-            // Ensure a `UserProfile` CKRecord exists.
-            try await ensurePrivateUserProfile()
-
-            state = .signedIn
+            // Check if profile setup is needed.
+            let needsSetup = try await checkProfileSetupNeeded()
+            state = needsSetup ? .needsProfileSetup : .signedIn
         } catch {
             // Fall back to signed-out so user can retry.
             state = .signedOut
@@ -83,8 +83,11 @@ public final class AuthManager: ObservableObject {
             }
 
             switch credentialState {
-            case .authorized: state = .signedIn
-            default:          await signOut()
+            case .authorized: 
+                let needsSetup = try await checkProfileSetupNeeded()
+                state = needsSetup ? .needsProfileSetup : .signedIn
+            default:          
+                await signOut()
             }
         } catch {
             print("[AuthManager] Credential check failed: \(error)")
@@ -94,11 +97,17 @@ public final class AuthManager: ObservableObject {
 
     /// Convenience.
     public var isSignedIn: Bool { state == .signedIn }
+    
+    /// Call this after the user completes profile setup to transition to signed-in state.
+    @MainActor
+    public func completeProfileSetup() {
+        state = .signedIn
+    }
 
     // MARK: – Private helpers
 
-    private static let kUserIDKey  = "cosmochat.userID"
-    private static let kIDTokenKey = "cosmochat.idToken"
+    private static let kUserIDKey  = "astronova.userID"
+    private static let kIDTokenKey = "astronova.idToken"
 
     /// Determines initial state on launch.
     @MainActor
@@ -114,20 +123,26 @@ public final class AuthManager: ObservableObject {
         await refreshCredentialState()
     }
 
-    /// Ensures that the current iCloud account has a `UserProfile` record in the private database.
+    /// Checks if the user needs to complete their profile setup.
     @MainActor
-    private func ensurePrivateUserProfile() async throws {
+    private func checkProfileSetupNeeded() async throws -> Bool {
         let container = CKContainer.cosmic
         let recordID = try await container.fetchUserRecordID()
 
         do {
-            _ = try await CKDatabaseProxy.private.fetchRecord(id: recordID)
+            let record = try await CKDatabaseProxy.private.fetchRecord(id: recordID)
+            // Check if essential profile fields are missing
+            return record["fullName"] == nil || 
+                   record["birthDate"] == nil || 
+                   record["birthPlace"] == nil ||
+                   record["sunSign"] == nil
         } catch let error as CKError where error.code == .unknownItem {
-            // First launch – create stub profile.
+            // First launch – create stub profile and indicate setup is needed.
             let record = CKRecord(recordType: "UserProfile", recordID: recordID)
-            record["createdAt"]  = Date() as CKRecordValue
-            record["updatedAt"]  = Date() as CKRecordValue
-            _ = try await CKDatabaseProxy.private.saveRecord(record)
+            record["createdAt"] = Date() as CKRecordValue
+            record["updatedAt"] = Date() as CKRecordValue
+            try await CKDatabaseProxy.private.saveRecord(record)
+            return true
         }
     }
 }
