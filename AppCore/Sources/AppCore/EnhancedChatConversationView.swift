@@ -242,8 +242,13 @@ struct EnhancedChatConversationView: View {
             }
             
             messageText = ""
-            await chatManager.sendMessage(trimmedMessage, in: conversation.id)
-            remainingFreeMessages = await chatManager.getRemainingFreeMessages()
+            do {
+                try await chatManager.sendMessage(trimmedMessage, in: conversation.id)
+                remainingFreeMessages = await chatManager.getRemainingFreeMessages()
+            } catch {
+                // TODO: present an alert or toast; at minimum log for debugging
+                print("Failed to send message: \(error)")
+            }
         }
     }
     
