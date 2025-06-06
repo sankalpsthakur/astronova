@@ -12,6 +12,8 @@ struct RootView: View {
                 LoadingView()
             case .signedOut:
                 OnboardingView()
+            case .needsProfileSetup:
+                ProfileSetupView()
             case .signedIn:
                 TabBarView()
             }

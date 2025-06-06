@@ -15,7 +15,7 @@ struct OnboardingView: View {
                 .frame(width: 120, height: 120)
                 .foregroundStyle(.tint)
 
-            Text("Welcome to CosmoChat")
+            Text("Welcome to Astronova")
                 .font(.largeTitle.weight(.semibold))
 
             Spacer()

@@ -21,12 +21,12 @@ public final class ApplePayHandler: NSObject {
     // MARK: - Public entry point
 
     public func startPayment(for product: Product,
-                             completion: @escaping (Result<Void, Error>) -> Void) {
+                             completion: ((Result<Void, Error>) -> Void)? = nil) {
         self.currentProduct = product
         self.resultHandler = completion
         guard PKPaymentAuthorizationController.canMakePayments() else {
             print("[ApplePayHandler] Device cannot make payments")
-            completion(.failure(NSError(domain: "ApplePay", code: 0, userInfo: [NSLocalizedDescriptionKey: "Device cannot make payments"])))
+            (completion? ?? <#default value#>)(.failure(NSError(domain: "ApplePay", code: 0, userInfo: [NSLocalizedDescriptionKey: "Device cannot make payments"])))
             return
         }
 
@@ -50,7 +50,7 @@ public final class ApplePayHandler: NSObject {
     }
 
     // MARK: - Private helpers
-    private static let merchantIdentifier = "merchant.com.cosmochat"
+    private static let merchantIdentifier = "merchant.com.sankalp.astronova"
 
     private func decrementStock(for product: Product) async throws {
         let zone = CKRecordZone.ID(zoneName: "Shop", ownerName: CKCurrentUserDefaultName)

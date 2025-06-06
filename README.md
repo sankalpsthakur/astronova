@@ -1,6 +1,6 @@
-# CosmoChat Swift Packages
+# Astronova Swift Packages
 
-CosmoChat is broken down into several independent Swift packages so each module can be developed and tested in isolation.
+Astronova is broken down into several independent Swift packages so each module can be developed and tested in isolation.
 The packages use **Swift Package Manager** and therefore can be opened directly in Xcode or built from the command line.
 
 ## Requirements

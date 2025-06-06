@@ -4,6 +4,7 @@ import UIKit
 import CloudKit
 import CloudKitKit
 import DataModels
+import HoroscopeService
 
 /// Manages remote push registration and handling.
 public final class PushCoordinator: NSObject {
@@ -14,6 +15,8 @@ public final class PushCoordinator: NSObject {
 
     /// Reports registration success or failure for APNs.
     public var onRegistration: ((Result<Data, Error>) -> Void)?
+    
+    private let dailyScheduler = DailyScheduler()
 
     /// Request notification authorization and register for APNs.
     public func registerForPush() {
@@ -22,6 +25,13 @@ public final class PushCoordinator: NSObject {
         center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             DispatchQueue.main.async {
                 guard granted else {
+                    // Schedule local notification fallback when push permissions denied
+                    let tomorrow8AM = Calendar.current.nextDate(after: Date(),
+                                                              matching: DateComponents(hour: 8),
+                                                              matchingPolicy: .nextTime) ?? Date().addingTimeInterval(86400)
+                    let interval = tomorrow8AM.timeIntervalSinceNow
+                    self.dailyScheduler.scheduleNotification(after: interval, body: "Your horoscope is ready!")
+                    
                     self.onRegistration?(.failure(error ?? NSError(
                         domain: "NotificationKit",
                         code: 0,
@@ -73,6 +83,28 @@ public final class PushCoordinator: NSObject {
 
     public func didFailToRegisterForRemoteNotifications(error: Error) {
         onRegistration?(.failure(error))
+    }
+    
+    /// Handle background refresh when silent push is received for new horoscope data.
+    public func didReceiveRemoteNotification(userInfo: [AnyHashable: Any], 
+                                           fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        // Check if this is a silent push notification with content-available
+        guard userInfo["aps"] as? [String: Any] != nil else {
+            completionHandler(.noData)
+            return
+        }
+        
+        // Execute background refresh in a background task
+        Task {
+            do {
+                let refreshOp = HoroscopeRefreshOp()
+                try await refreshOp.execute(for: Date())
+                completionHandler(.newData)
+            } catch {
+                print("[PushCoordinator] Background refresh failed: \(error)")
+                completionHandler(.failed)
+            }
+        }
     }
 }
 

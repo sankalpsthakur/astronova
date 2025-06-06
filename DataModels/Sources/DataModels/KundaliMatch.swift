@@ -2,13 +2,14 @@ import Foundation
 import CloudKit
 
 /// On-device Kundali match result to be saved as a private record.
-public struct KundaliMatch: CKRecordConvertible, Codable {
+public struct KundaliMatch: CKRecordConvertible {
     public static let recordType = "SavedMatch"
     public let partnerName: String
     public let partnerDOB: Date
     public let scoreTotal: Int
     public let aspectJSON: String
     public let createdAt: Date
+    public let recordID: CKRecord.ID?
 
     public init(record: CKRecord) throws {
         guard let partnerName = record["partnerName"] as? String,
@@ -24,6 +25,7 @@ public struct KundaliMatch: CKRecordConvertible, Codable {
         self.scoreTotal = scoreTotal
         self.aspectJSON = aspectJSON
         self.createdAt = record.creationDate ?? Date()
+        self.recordID = record.recordID
     }
 
     public func toRecord(in zone: CKRecordZone.ID?) -> CKRecord {
@@ -53,5 +55,6 @@ public struct KundaliMatch: CKRecordConvertible, Codable {
         self.scoreTotal = scoreTotal
         self.aspectJSON = aspectJSON
         self.createdAt = createdAt
+        self.recordID = nil
     }
 }
