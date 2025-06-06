@@ -44,8 +44,13 @@ public final class AuthManager: ObservableObject {
             try KeychainHelper.store(credential.userID, for: Self.kUserIDKey)
 
             // Check if profile setup is needed.
-            let needsSetup = try await checkProfileSetupNeeded()
-            state = needsSetup ? .needsProfileSetup : .signedIn
+            do {
+                let needsSetup = try await checkProfileSetupNeeded()
+                state = needsSetup ? .needsProfileSetup : .signedIn
+            } catch {
+                print("[AuthManager] Profile check failed: \(error)")
+                throw error
+            }
         } catch {
             // Fall back to signed-out so user can retry.
             state = .signedOut
@@ -127,6 +132,10 @@ public final class AuthManager: ObservableObject {
     @MainActor
     private func checkProfileSetupNeeded() async throws -> Bool {
         let container = CKContainer.cosmic
+        let accountStatus = try await container.accountStatus()
+        guard accountStatus == .available else {
+            throw CKError(.notAuthenticated)
+        }
         let recordID = try await container.fetchUserRecordID()
 
         do {

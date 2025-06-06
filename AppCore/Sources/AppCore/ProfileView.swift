@@ -253,8 +253,8 @@ struct CalendarGridView: View {
     }
     
     private func hasHoroscopeReading(for date: Date) -> Bool {
-        // Check if there's a horoscope reading for this date
-        !Calendar.current.isDate(date, inSameDayAs: Date().addingTimeInterval(86400)) // Future dates don't have readings
+        // Only allow past or today
+        return date <= Date()
     }
 }
 
@@ -497,7 +497,6 @@ struct InteractiveChartsView: View {
     let selectedDate: Date
     let userProfile: UserProfile?
     
-    @State private var planetPositions: [PlanetPosition] = []
     @State private var selectedChart = 0
     
     private let chartTypes = ["Birth Chart", "Transit Chart", "Progressions"]
@@ -734,7 +733,7 @@ struct BookmarkCard: View {
                 
                 Spacer()
                 
-                Text("Saved \(DateFormatter.relative.string(from: bookmark.createdAt))")
+                Text("Saved \(relativeString(from: bookmark.createdAt))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -744,6 +743,10 @@ struct BookmarkCard: View {
     }
 }
 
+private func relativeString(from date: Date) -> String {
+    RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
+}
+
 // MARK: - Supporting Views and Models
 
 struct MonthPickerView: View {
@@ -751,13 +754,17 @@ struct MonthPickerView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             DatePicker(
                 "Select Month",
                 selection: $selectedDate,
                 displayedComponents: [.date]
             )
             .datePickerStyle(.graphical)
+            .onChange(of: selectedDate) { newValue in
+                let comps = Calendar.current.dateComponents([.year, .month], from: newValue)
+                selectedDate = Calendar.current.date(from: comps) ?? newValue
+            }
             .navigationTitle("Select Date")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -861,12 +868,6 @@ extension DateFormatter {
         return formatter
     }()
     
-    static let relative: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .none
-        return formatter
-    }()
 }
 
 #if DEBUG

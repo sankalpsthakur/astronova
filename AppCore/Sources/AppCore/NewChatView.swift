@@ -66,21 +66,14 @@ struct NewChatView: View {
                 .font(.headline)
                 .padding(.horizontal)
             
-            if chatManager.suggestedQuestions.isEmpty {
-                // Fallback questions while loading
-                VStack(spacing: 8) {
-                    ForEach(fallbackQuestions, id: \.self) { question in
-                        SuggestedQuestionButton(question: question) {
-                            messageText = question
-                        }
-                    }
-                }
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(chatManager.suggestedQuestions, id: \.self) { question in
-                        SuggestedQuestionButton(question: question) {
-                            messageText = question
-                        }
+            let questions = chatManager.suggestedQuestions.isEmpty
+                ? Self.fallbackQuestions
+                : chatManager.suggestedQuestions
+
+            VStack(spacing: 8) {
+                ForEach(questions, id: \.self) { question in
+                    SuggestedQuestionButton(question: question) {
+                        messageText = question
                     }
                 }
             }
@@ -98,13 +91,11 @@ struct NewChatView: View {
         }
     }
     
-    private var fallbackQuestions: [String] {
-        [
-            "What does my birth chart say about my personality?",
-            "How do current planetary transits affect me?",
-            "What career paths align with my astrological profile?"
-        ]
-    }
+    private static let fallbackQuestions: [String] = [
+        "What does my birth chart say about my personality?",
+        "How do current planetary transits affect me?",
+        "What career paths align with my astrological profile?"
+    ]
     
     private func sendMessage() {
         let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)

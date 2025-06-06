@@ -168,7 +168,6 @@ struct ProfileSetupView: View {
             // Save to CloudKit
             let recordID = try await CKContainer.cosmic.fetchUserRecordID()
             let record = profile.toRecord(in: recordID.zoneID)
-            record.recordID = recordID
             try await CKDatabaseProxy.private.saveRecord(record)
             
             // Complete the auth flow
@@ -265,7 +264,7 @@ struct LocationSearchView: View {
         isSearching = true
         let geocoder = CLGeocoder()
         
-        geocoder.geocodeAddressString(query) { placemarks, error in
+        geocoder.geocodeAddressString(query) { placemarks, _ in
             DispatchQueue.main.async {
                 isSearching = false
                 if let placemarks = placemarks {
