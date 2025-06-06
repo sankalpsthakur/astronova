@@ -118,7 +118,9 @@ struct NewChatView: View {
                     onConversationCreated(conversation)
                 }
             }
-            isCreating = false
+            await MainActor.run {
+                isCreating = false
+            }
         }
     }
 }
