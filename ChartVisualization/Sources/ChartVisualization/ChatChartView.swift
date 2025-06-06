@@ -76,7 +76,7 @@ public struct ChatChartView: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                 
-                ForEach(chart.planets.prefix(isPremium ? 6 : 3), id: \.name) { planet in
+                ForEach(chart.planets.prefix(isPremium ? chart.planets.count : 7), id: \.name) { planet in
                     HStack(spacing: 8) {
                         Text(planet.symbol)
                             .font(.caption)
@@ -97,11 +97,17 @@ public struct ChatChartView: View {
                     }
                 }
                 
-                if !isPremium && chart.planets.count > 3 {
-                    Text("+ \(chart.planets.count - 3) more planets")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .italic()
+                if !isPremium && chart.planets.count > 7 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "info.circle")
+                            .font(.caption2)
+                            .foregroundStyle(.blue)
+                        
+                        Text("Showing 7 of \(chart.planets.count) planets")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 2)
                 }
             }
         }
