@@ -93,7 +93,6 @@ struct MatchView: View {
                                 Button("📍") {
                                     showingLocationPicker = true
                                 }
-                                .disabled(partnerLocation.isEmpty)
                             }
                         }
                         
@@ -202,7 +201,7 @@ struct MatchView: View {
     
     private func requestContactsAccess() {
         let store = CNContactStore()
-        store.requestAccess(for: .contacts) { granted, error in
+        store.requestAccess(for: .contacts) { granted, _ in
             DispatchQueue.main.async {
                 checkContactsPermission()
                 if granted {
@@ -338,10 +337,10 @@ struct CompatibilityOverview: View {
                 .padding(.horizontal)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                OverviewCard(title: "Emotional Bond", score: match.scoreTotal / 4, icon: "heart.fill", color: .pink)
-                OverviewCard(title: "Mental Harmony", score: match.scoreTotal / 3, icon: "brain.head.profile", color: .blue)
-                OverviewCard(title: "Physical Attraction", score: match.scoreTotal / 5, icon: "sparkles", color: .purple)
-                OverviewCard(title: "Long-term Potential", score: match.scoreTotal / 2, icon: "infinity", color: .green)
+                OverviewCard(title: "Emotional Bond", score: Int(round(Double(match.scoreTotal) / 36.0 * 10)), icon: "heart.fill", color: .pink)
+                OverviewCard(title: "Mental Harmony", score: Int(round(Double(match.scoreTotal) / 36.0 * 10)), icon: "brain.head.profile", color: .blue)
+                OverviewCard(title: "Physical Attraction", score: Int(round(Double(match.scoreTotal) / 36.0 * 10)), icon: "sparkles", color: .purple)
+                OverviewCard(title: "Long-term Potential", score: Int(round(Double(match.scoreTotal) / 36.0 * 10)), icon: "infinity", color: .green)
             }
             .padding(.horizontal)
         }

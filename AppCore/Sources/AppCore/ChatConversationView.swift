@@ -206,8 +206,10 @@ struct TypingIndicator: View {
             Spacer()
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.6).repeatForever()) {
-                animationPhase = (animationPhase + 1) % 3
+            Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    animationPhase = (animationPhase + 1) % 3
+                }
             }
         }
     }
@@ -217,7 +219,7 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 Image(systemName: "star.circle.fill")
                     .font(.system(size: 60))

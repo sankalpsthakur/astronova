@@ -56,7 +56,9 @@ struct EnhancedChatConversationView: View {
         .onChange(of: chatManager.showingChart) { showing in
             if showing {
                 showingChartSheet = true
-                chatManager.showingChart = false
+                DispatchQueue.main.async {
+                    chatManager.showingChart = false
+                }
             }
         }
     }

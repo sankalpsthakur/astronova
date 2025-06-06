@@ -10,13 +10,12 @@ struct ChatView: View {
     @State private var showingNewChat = false
     
     init(authManager: AuthManager) {
-        // TODO: Replace with actual API key from secure storage/environment
-        let apiKey = ProcessInfo.processInfo.environment["CLAUDE_API_KEY"] ?? ""
+        let apiKey = (try? KeychainHelper.retrieve("astronova.claudeAPIKey")) ?? ""
         self._chatManager = StateObject(wrappedValue: ChatManager(apiKey: apiKey, authManager: authManager))
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             conversationsList
                 .navigationTitle("Astrology Chat")
                 .toolbar {

@@ -7,7 +7,7 @@ struct ShopView: View {
     @StateObject private var repo = ProductRepository()
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 16) {
                     ForEach(repo.products) { product in
@@ -32,7 +32,8 @@ private struct ProductCard: View {
             Rectangle()
                 .fill(Color.blue.opacity(0.1))
                 .frame(height: 100)
-                .overlay(Text("📦"))
+                .overlay(Text("📦").accessibilityHidden(true))
+                .accessibilityLabel(Text("Image for \(product.name)"))
             Text(product.name)
                 .font(.subheadline)
                 .lineLimit(1)
