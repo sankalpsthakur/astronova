@@ -321,14 +321,12 @@ extension ClaudeAPIService {
 // MARK: - Enhanced Error Types
 
 extension ChatError {
+    case custom(String)
+    
     static func premiumRequired(_ message: String) -> ChatError {
         return .custom(message)
     }
     
-    case custom(String)
-}
-
-extension ChatError {
     public var errorDescription: String? {
         switch self {
         case .custom(let message):
