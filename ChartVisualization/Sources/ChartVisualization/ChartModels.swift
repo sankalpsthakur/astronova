@@ -79,7 +79,9 @@ public struct ChartPlanet {
         
         // Calculate sign and degree
         let normalizedLongitude = longitude.truncatingRemainder(dividingBy: 360)
-        let signIndex = Int(normalizedLongitude / 30)
+        var signIndex = Int(normalizedLongitude / 30)
+        // Ensure signIndex is within valid range (0-11)
+        signIndex = max(0, min(signIndex, ZodiacSign.allCases.count - 1))
         self.sign = ZodiacSign.allCases[signIndex]
         self.degree = normalizedLongitude.truncatingRemainder(dividingBy: 30)
         self.minute = (degree - floor(degree)) * 60
