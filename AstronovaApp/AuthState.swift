@@ -49,8 +49,14 @@ class AuthState: ObservableObject {
     }
     
     func completeProfileSetup() {
-        profileManager.saveProfile()
-        state = .signedIn
+        do {
+            try profileManager.saveProfile()
+            state = .signedIn
+        } catch {
+            print("Failed to save profile during setup completion: \(error)")
+            // Still transition to signedIn state as profile data is in memory
+            state = .signedIn
+        }
     }
     
     func signOut() {

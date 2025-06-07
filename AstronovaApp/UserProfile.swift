@@ -60,15 +60,23 @@ class UserProfileManager: ObservableObject {
         }
     }
     
-    func saveProfile() {
-        if let data = try? JSONEncoder().encode(profile) {
+    func saveProfile() throws {
+        do {
+            let data = try JSONEncoder().encode(profile)
             userDefaults.set(data, forKey: profileKey)
+        } catch {
+            print("Error saving user profile: \(error)")
+            throw error
         }
     }
     
     func updateProfile(_ newProfile: UserProfile) {
         profile = newProfile
-        saveProfile()
+        do {
+            try saveProfile()
+        } catch {
+            print("Failed to save updated profile: \(error)")
+        }
     }
     
     var isProfileComplete: Bool {

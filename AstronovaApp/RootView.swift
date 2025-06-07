@@ -33,6 +33,8 @@ struct SimpleProfileSetupView: View {
     @State private var personalizedInsight = ""
     @State private var animateStars = false
     @State private var animateGradient = false
+    @State private var saveError: String?
+    @State private var showingSaveError = false
     
     private let totalSteps = 5
     
@@ -243,11 +245,21 @@ struct SimpleProfileSetupView: View {
     }
     
     private func generatePersonalizedInsight() {
-        // Save the profile data
+        // Save the profile data with error handling
         auth.profileManager.profile.fullName = fullName
         auth.profileManager.profile.birthDate = birthDate
         auth.profileManager.profile.birthTime = birthTime
         auth.profileManager.profile.birthPlace = birthPlace
+        
+        // Attempt to save the profile with error handling
+        do {
+            try auth.profileManager.saveProfile()
+        } catch {
+            saveError = "Failed to save profile: \(error.localizedDescription)"
+            showingSaveError = true
+            print("Profile save error: \(error)")
+            // Continue with insight generation even if save fails
+        }
         
         let insights = [
             "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime)) in \(birthPlace) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
@@ -1161,6 +1173,7 @@ struct CustomTabBar: View {
                             }
                         }
                         .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                        .accessibilityHidden(true)
                         
                         // Title
                         Text(tabs[index].title)
@@ -1171,6 +1184,9 @@ struct CustomTabBar: View {
                     .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(tabs[index].title)
+                .accessibilityHint("Tab \(index + 1) of \(tabs.count)")
+                .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
         .padding(.horizontal)
@@ -2034,21 +2050,44 @@ struct NexusTab: View {
     }
     
     private func generateCosmicResponse(for message: String) -> String {
-        let cosmicResponses = [
+        let lowerMessage = message.lowercased()
+        
+        if lowerMessage.contains("love") || lowerMessage.contains("relationship") || lowerMessage.contains("romance") {
+            let loveResponses = [
+                "💖 The cosmos whispers of beautiful romantic energy surrounding you! Venus is dancing through your 7th house, bringing opportunities for deep, meaningful connections. Open your heart to the magic that awaits.",
+                "🌹 Love flows through the celestial currents toward you! The Moon's gentle influence suggests emotional harmony and the potential for a significant romantic encounter this lunar cycle.",
+                "✨ Your love chakra is radiating powerful energy! The stars indicate that someone special may enter your orbit soon. Trust the universe's timing - it's always perfect."
+            ]
+            return loveResponses.randomElement() ?? loveResponses[0]
+        }
+        
+        if lowerMessage.contains("career") || lowerMessage.contains("work") || lowerMessage.contains("job") {
+            let careerResponses = [
+                "🌟 Your professional constellation is shining brilliantly! Mars in your 10th house brings dynamic energy for career advancement. This is your time to step into your power and leadership role.",
+                "⭐ The cosmic winds are shifting in your favor professionally! Jupiter's expansive energy suggests new opportunities will manifest soon. Prepare to embrace your destiny.",
+                "✨ Your career path is illuminated by stellar influences! The Sun's position indicates recognition and success are approaching. Trust your unique talents and let them shine."
+            ]
+            return careerResponses.randomElement() ?? careerResponses[0]
+        }
+        
+        if lowerMessage.contains("today") || lowerMessage.contains("energy") || lowerMessage.contains("now") {
+            let energyResponses = [
+                "🌞 Today's cosmic energy flows with transformative power! The planetary alignments create a portal for manifestation. Set your intentions and watch the universe respond.",
+                "⚡ Electric energy courses through the celestial realm today! This is a perfect time for new beginnings and releasing what no longer serves your highest good.",
+                "🌙 The lunar energies today bring intuitive clarity and emotional balance. Trust your inner wisdom - it's your cosmic compass guiding you forward."
+            ]
+            return energyResponses.randomElement() ?? energyResponses[0]
+        }
+        
+        // Default cosmic responses
+        let generalResponses = [
             "✨ The starlight reveals that you're entering a powerful phase of growth and transformation. The universe is conspiring to support your highest good.",
             "🌟 Your cosmic blueprint shows incredible potential waiting to unfold. Trust the journey and embrace the magical synchronicities coming your way.",
             "💫 The celestial energies surrounding you pulse with infinite possibility. You're being guided toward your true purpose - can you feel it?",
             "🔮 The cosmic web connects all things, and right now, it's weaving beautiful opportunities into your reality. Stay open to the magic around you.",
-            "🌙 Your soul's journey is written in the stars, and this moment is a crucial chapter. The universe is whispering guidance - listen with your heart.",
-            "💖 The cosmos whispers of beautiful romantic energy surrounding you! Venus is dancing through your 7th house, bringing opportunities for deep, meaningful connections. Open your heart to the magic that awaits.",
-            "🌹 Love flows through the celestial currents toward you! The Moon's gentle influence suggests emotional harmony and the potential for a significant romantic encounter this lunar cycle.",
-            "🌟 Your professional constellation is shining brilliantly! Mars in your 10th house brings dynamic energy for career advancement. This is your time to step into your power and leadership role.",
-            "⭐ The cosmic winds are shifting in your favor professionally! Jupiter's expansive energy suggests new opportunities will manifest soon. Prepare to embrace your destiny.",
-            "🌞 Today's cosmic energy flows with transformative power! The planetary alignments create a portal for manifestation. Set your intentions and watch the universe respond.",
-            "⚡ Electric energy courses through the celestial realm today! This is a perfect time for new beginnings and releasing what no longer serves your highest good.",
-            "🌙 The lunar energies today bring intuitive clarity and emotional balance. Trust your inner wisdom - it's your cosmic compass guiding you forward."
+            "🌙 Your soul's journey is written in the stars, and this moment is a crucial chapter. The universe is whispering guidance - listen with your heart."
         ]
-        return cosmicResponses.randomElement() ?? cosmicResponses[0]
+        return generalResponses.randomElement() ?? generalResponses[0]
     }
 }
 
@@ -3268,19 +3307,19 @@ struct ExportDataView: View {
     private func generateExportData() {
         let profile = auth.profileManager.profile
         
-        // Create structured export data with proper sanitization
+        // Create JSON format for better structure and safety
         let exportDict: [String: Any] = [
             "app": "Astronova",
             "version": "1.0.0",
             "exportDate": Date().ISO8601Format(),
             "profile": [
-                "fullName": profile.fullName.trimmingCharacters(in: .whitespacesAndNewlines),
+                "fullName": profile.fullName,
                 "birthDate": profile.birthDate.ISO8601Format(),
                 "birthTime": profile.birthTime?.ISO8601Format() ?? "",
-                "birthPlace": profile.birthPlace?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                "sunSign": profile.sunSign?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                "moonSign": profile.moonSign?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                "risingSign": profile.risingSign?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                "birthPlace": profile.birthPlace ?? "",
+                "sunSign": profile.sunSign ?? "",
+                "moonSign": profile.moonSign ?? "",
+                "risingSign": profile.risingSign ?? ""
             ]
         ]
         
@@ -3289,10 +3328,10 @@ struct ExportDataView: View {
             if let jsonString = String(data: jsonData, encoding: .utf8) {
                 exportData = jsonString
             } else {
-                exportData = "Error: Failed to generate export data (encoding issue)"
+                exportData = "Error: Could not convert export data to string"
             }
         } catch {
-            exportData = "Error: Failed to generate export data (\(error.localizedDescription))"
+            exportData = "Error generating export data: \(error.localizedDescription)"
         }
     }
 }
