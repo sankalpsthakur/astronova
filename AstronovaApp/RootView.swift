@@ -2034,44 +2034,21 @@ struct NexusTab: View {
     }
     
     private func generateCosmicResponse(for message: String) -> String {
-        let lowerMessage = message.lowercased()
-        
-        if lowerMessage.contains("love") || lowerMessage.contains("relationship") || lowerMessage.contains("romance") {
-            let loveResponses = [
-                "💖 The cosmos whispers of beautiful romantic energy surrounding you! Venus is dancing through your 7th house, bringing opportunities for deep, meaningful connections. Open your heart to the magic that awaits.",
-                "🌹 Love flows through the celestial currents toward you! The Moon's gentle influence suggests emotional harmony and the potential for a significant romantic encounter this lunar cycle.",
-                "✨ Your love chakra is radiating powerful energy! The stars indicate that someone special may enter your orbit soon. Trust the universe's timing - it's always perfect."
-            ]
-            return loveResponses.randomElement() ?? loveResponses[0]
-        }
-        
-        if lowerMessage.contains("career") || lowerMessage.contains("work") || lowerMessage.contains("job") {
-            let careerResponses = [
-                "🌟 Your professional constellation is shining brilliantly! Mars in your 10th house brings dynamic energy for career advancement. This is your time to step into your power and leadership role.",
-                "⭐ The cosmic winds are shifting in your favor professionally! Jupiter's expansive energy suggests new opportunities will manifest soon. Prepare to embrace your destiny.",
-                "✨ Your career path is illuminated by stellar influences! The Sun's position indicates recognition and success are approaching. Trust your unique talents and let them shine."
-            ]
-            return careerResponses.randomElement() ?? careerResponses[0]
-        }
-        
-        if lowerMessage.contains("today") || lowerMessage.contains("energy") || lowerMessage.contains("now") {
-            let energyResponses = [
-                "🌞 Today's cosmic energy flows with transformative power! The planetary alignments create a portal for manifestation. Set your intentions and watch the universe respond.",
-                "⚡ Electric energy courses through the celestial realm today! This is a perfect time for new beginnings and releasing what no longer serves your highest good.",
-                "🌙 The lunar energies today bring intuitive clarity and emotional balance. Trust your inner wisdom - it's your cosmic compass guiding you forward."
-            ]
-            return energyResponses.randomElement() ?? energyResponses[0]
-        }
-        
-        // Default cosmic responses
-        let generalResponses = [
+        let cosmicResponses = [
             "✨ The starlight reveals that you're entering a powerful phase of growth and transformation. The universe is conspiring to support your highest good.",
             "🌟 Your cosmic blueprint shows incredible potential waiting to unfold. Trust the journey and embrace the magical synchronicities coming your way.",
             "💫 The celestial energies surrounding you pulse with infinite possibility. You're being guided toward your true purpose - can you feel it?",
             "🔮 The cosmic web connects all things, and right now, it's weaving beautiful opportunities into your reality. Stay open to the magic around you.",
-            "🌙 Your soul's journey is written in the stars, and this moment is a crucial chapter. The universe is whispering guidance - listen with your heart."
+            "🌙 Your soul's journey is written in the stars, and this moment is a crucial chapter. The universe is whispering guidance - listen with your heart.",
+            "💖 The cosmos whispers of beautiful romantic energy surrounding you! Venus is dancing through your 7th house, bringing opportunities for deep, meaningful connections. Open your heart to the magic that awaits.",
+            "🌹 Love flows through the celestial currents toward you! The Moon's gentle influence suggests emotional harmony and the potential for a significant romantic encounter this lunar cycle.",
+            "🌟 Your professional constellation is shining brilliantly! Mars in your 10th house brings dynamic energy for career advancement. This is your time to step into your power and leadership role.",
+            "⭐ The cosmic winds are shifting in your favor professionally! Jupiter's expansive energy suggests new opportunities will manifest soon. Prepare to embrace your destiny.",
+            "🌞 Today's cosmic energy flows with transformative power! The planetary alignments create a portal for manifestation. Set your intentions and watch the universe respond.",
+            "⚡ Electric energy courses through the celestial realm today! This is a perfect time for new beginnings and releasing what no longer serves your highest good.",
+            "🌙 The lunar energies today bring intuitive clarity and emotional balance. Trust your inner wisdom - it's your cosmic compass guiding you forward."
         ]
-        return generalResponses.randomElement() ?? generalResponses[0]
+        return cosmicResponses.randomElement() ?? cosmicResponses[0]
     }
 }
 
