@@ -1,8 +1,12 @@
-from flask import Blueprint, request, jsonify
+from __future__ import annotations
+
+import datetime as _dt
 from datetime import datetime
+from flask import Blueprint, current_app, request, send_file, abort, jsonify
 
 from backend.services.chart_service import calculate_positions, compute_aspects
 from backend.services.location_service import get_location
+from backend.services.reports_service import ReportsService
 
 misc_bp = Blueprint('misc', __name__)
 
@@ -14,6 +18,16 @@ def _parse_chart(data):
     lon = float(data.get('lon', 0.0))
     dt = datetime.fromisoformat(f"{date_str}T{time_str}")
     return calculate_positions(dt, lat, lon)
+
+
+def _get_user_profile(user_id: str) -> dict:
+    """Placeholder for fetching a user profile."""
+    return {
+        "full_name": "Test User",
+        "birth_datetime": _dt.datetime(1990, 1, 1, 12, 0),
+        "latitude": 0.0,
+        "longitude": 0.0,
+    }
 
 
 @misc_bp.route('/aspects', methods=['POST'])
@@ -37,3 +51,20 @@ def location():
         return jsonify(info)
     except Exception as exc:
         return jsonify({'error': str(exc)}), 500
+
+
+@misc_bp.route("/report", methods=["GET"])
+def generate_report():
+    user_id = request.headers.get("X-User-ID")
+    if not user_id:
+        abort(401)
+
+    profile = _get_user_profile(user_id)
+    service: ReportsService = current_app.config["reports_service"]
+    pdf_io = service.build_report(profile)
+    return send_file(
+        pdf_io,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="report.pdf",
+    )

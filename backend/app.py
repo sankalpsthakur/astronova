@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -14,18 +17,23 @@ from routes.chart import chart_bp
 from routes.reports import reports_bp
 from routes.ephemeris import ephemeris_bp
 from routes.locations import locations_bp
+from routes.misc import misc_bp
+from services.reports_service import ReportsService
 
 cache = Cache()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_app():
+def create_app(anthropic_api_key: str = None):
     app = Flask(__name__)
     app.config.from_object(Config)
     CORS(app)
     JWTManager(app)
     cache.init_app(app)
+
+    if anthropic_api_key:
+        app.config["reports_service"] = ReportsService(anthropic_api_key)
 
     limiter = Limiter(app=app, key_func=get_remote_address,
                       default_limits=["200 per day", "50 per hour"])
@@ -37,6 +45,7 @@ def create_app():
     app.register_blueprint(reports_bp, url_prefix="/api/v1/reports")
     app.register_blueprint(ephemeris_bp, url_prefix="/api/v1/ephemeris")
     app.register_blueprint(locations_bp, url_prefix="/api/v1/locations")
+    app.register_blueprint(misc_bp, url_prefix="/api/v1/misc")
 
     @app.route('/health')
     def health():
@@ -45,5 +54,7 @@ def create_app():
     return app
 
 if __name__ == '__main__':
-    app = create_app()
-    app.run(host='0.0.0.0', port=8080)
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+    app = create_app(api_key)
+    app.run(host='0.0.0.0', port=8080, debug=debug_mode)
