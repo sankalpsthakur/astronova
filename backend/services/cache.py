@@ -1,5 +1,6 @@
 import time
 from typing import Any, Optional
+from functools import lru_cache
 
 _cache = {}
 
@@ -16,3 +17,9 @@ def get(key: str) -> Optional[Any]:
 def set(key: str, value: Any, ttl: Optional[int] = None) -> None:
     expires_at = time.time() + ttl if ttl is not None else None
     _cache[key] = (value, expires_at)
+
+def cache(maxsize: int = 128):
+    """Simple cache decorator using functools.lru_cache."""
+    def decorator(func):
+        return lru_cache(maxsize=maxsize)(func)
+    return decorator

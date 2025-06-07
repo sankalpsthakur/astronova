@@ -7,6 +7,7 @@ from flask import Blueprint, current_app, request, send_file, abort, jsonify
 from backend.services.chart_service import calculate_positions, compute_aspects
 from backend.services.location_service import get_location
 from backend.services.reports_service import ReportsService
+from backend.services.ephemeris_service import get_planetary_positions
 
 misc_bp = Blueprint('misc', __name__)
 
@@ -68,3 +69,12 @@ def generate_report():
         as_attachment=True,
         download_name="report.pdf",
     )
+
+
+@misc_bp.route("/planetary-positions", methods=["GET"])
+def planetary_positions():
+    """Return planetary positions as zodiac sign and degree."""
+    dt_str = request.args.get('dt')
+    date = datetime.fromisoformat(dt_str) if dt_str else None
+    data = get_planetary_positions(date)
+    return jsonify(data)
