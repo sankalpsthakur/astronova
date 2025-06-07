@@ -4,10 +4,10 @@ import datetime as _dt
 from datetime import datetime
 from flask import Blueprint, current_app, request, send_file, abort, jsonify
 
-from backend.services.chart_service import calculate_positions, compute_aspects
-from backend.services.location_service import get_location
-from backend.services.reports_service import ReportsService
-from backend.services.ephemeris_service import get_planetary_positions
+from services.chart_service import calculate_positions, compute_aspects
+from services.location_service import get_location
+from services.reports_service import ReportsService
+from services.ephemeris_service import get_planetary_positions
 
 misc_bp = Blueprint('misc', __name__)
 

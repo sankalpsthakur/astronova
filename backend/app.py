@@ -23,7 +23,7 @@ from services.reports_service import ReportsService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_app(anthropic_api_key: str = None):
+def create_app(anthropic_api_key: str | None = None):
     app = Flask(__name__)
     app.config.from_object(Config)
     CORS(app)

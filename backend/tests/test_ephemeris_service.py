@@ -1,5 +1,5 @@
 import datetime
-from backend.services import ephemeris_service
+from services import ephemeris_service
 
 class FakeHorizons:
     def __init__(self, id, location, epochs):

@@ -3,7 +3,7 @@ from utils.validators import validate_request
 from models.schemas import MatchRequest
 from services.astro_calculator import AstroCalculator, BirthData
 from services.cloudkit_service import CloudKitService
-from services.cache import get as cache_get, set as cache_set
+from services.cache_service import cache
 
 match_bp = Blueprint('match', __name__)
 cloudkit = CloudKitService()
@@ -15,7 +15,7 @@ def match(data: MatchRequest):
         f"match:{data.user.birth_date}:{data.user.birth_time}:"
         f"{data.partner.birth_date}:{data.partner.birth_time}"
     )
-    cached = cache_get(cache_key)
+    cached = cache.get(cache_key)
     if cached:
         return jsonify(cached)
 
@@ -65,5 +65,5 @@ def match(data: MatchRequest):
     except Exception:
         pass
 
-    cache_set(cache_key, result, ttl=60 * 60 * 24)
+    cache.set(cache_key, result, timeout=60 * 60 * 24)
     return jsonify(result)

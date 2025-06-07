@@ -13,10 +13,17 @@ calculator = AstroCalculator()
 claude = ClaudeService()
 cloudkit = CloudKitService()
 
+VALID_SIGNS = [
+    'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
+    'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'
+]
 
 @horoscope_bp.route('', methods=['GET'])
 def horoscope():
     sign = request.args.get('sign', 'aries').lower()
+    
+    if sign not in VALID_SIGNS:
+        return jsonify({'error': 'Invalid zodiac sign'}), 400
     date_str = request.args.get('date')
     type_ = request.args.get('type', 'daily').lower()
 

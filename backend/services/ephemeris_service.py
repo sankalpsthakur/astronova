@@ -47,10 +47,9 @@ class EphemerisService:
             'mars': {'sign': 'Leo'}
         }
 
-    def get_positions_for_date(self, date: datetime.date):
+    def get_positions_for_date(self, date):
         return self.get_current_positions()
 
-@cache.memoize(timeout=3600)
 def get_planetary_positions(dt: datetime | None = None) -> Dict[str, Dict[str, Any]]:
     """Return zodiac sign and degree for major planets at the given datetime."""
     if dt is None:
