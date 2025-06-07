@@ -2167,7 +2167,7 @@ struct CosmicChatBackground: View {
             
             // Floating stars
             ForEach(0..<12, id: \.self) { i in
-                Image(systemName: ["star.fill", "sparkles", "star.circle.fill", "moon.stars.fill"].randomElement()!)
+                Image(systemName: ["star.fill", "sparkles", "star.circle.fill", "moon.stars.fill"].randomElement() ?? "star.fill")
                     .font(.system(size: CGFloat.random(in: 8...16)))
                     .foregroundStyle(.white.opacity(Double.random(in: 0.1...0.3)))
                     .position(
