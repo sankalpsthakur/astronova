@@ -4,7 +4,7 @@ from typing import Dict
 import requests
 from timezonefinder import TimezoneFinder
 
-from .cache import get as cache_get, set as cache_set
+from .cache_service import cache
 
 
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
@@ -14,7 +14,7 @@ CACHE_TTL = 60 * 60 * 24  # 24 hours
 def get_location(address: str) -> Dict[str, str]:
     """Resolve an address to coordinates and timezone."""
     cache_key = f"geocode:{address}"
-    cached = cache_get(cache_key)
+    cached = cache.get(cache_key)
     if cached:
         return cached
 
@@ -44,5 +44,5 @@ def get_location(address: str) -> Dict[str, str]:
         "formatted_address": result.get("formatted_address"),
     }
 
-    cache_set(cache_key, info, ttl=CACHE_TTL)
+    cache.set(cache_key, info, timeout=CACHE_TTL)
     return info

@@ -7,7 +7,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_caching import Cache
+from services.cache_service import cache
 
 from config import Config
 from routes.chat import chat_bp
@@ -19,8 +19,6 @@ from routes.ephemeris import ephemeris_bp
 from routes.locations import locations_bp
 from routes.misc import misc_bp
 from services.reports_service import ReportsService
-
-cache = Cache()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
