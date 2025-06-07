@@ -26,13 +26,15 @@ struct SimpleProfileSetupView: View {
     @State private var currentStep = 0
     @State private var fullName = ""
     @State private var birthDate = Date()
+    @State private var birthTime = Date()
+    @State private var birthPlace = ""
     @State private var showingPersonalizedInsight = false
     @State private var showingConfetti = false
     @State private var personalizedInsight = ""
     @State private var animateStars = false
     @State private var animateGradient = false
     
-    private let totalSteps = 3
+    private let totalSteps = 5
     
     private var completionPercentage: Double {
         Double(currentStep) / Double(totalSteps - 1)
@@ -111,14 +113,22 @@ struct SimpleProfileSetupView: View {
                         .tag(1)
                     
                     // Step 3: Birth date with instant insight
-                    EnhancedBirthDateStepView(
-                        birthDate: $birthDate,
+                    EnhancedBirthDateStepView(birthDate: $birthDate)
+                        .tag(2)
+                    
+                    // Step 4: Birth time input
+                    EnhancedBirthTimeStepView(birthTime: $birthTime)
+                        .tag(3)
+                    
+                    // Step 5: Birth place input with completion
+                    EnhancedBirthPlaceStepView(
+                        birthPlace: $birthPlace,
                         onComplete: { insight in
                             personalizedInsight = insight
                             showPersonalizedInsight()
                         }
                     )
-                    .tag(2)
+                    .tag(4)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 .animation(.spring(response: 0.6, dampingFraction: 0.8), value: currentStep)
@@ -212,6 +222,8 @@ struct SimpleProfileSetupView: View {
         case 0: return true
         case 1: return !fullName.isEmpty
         case 2: return true
+        case 3: return true
+        case 4: return !birthPlace.isEmpty
         default: return false
         }
     }
@@ -231,12 +243,18 @@ struct SimpleProfileSetupView: View {
     }
     
     private func generatePersonalizedInsight() {
+        // Save the profile data
+        auth.profileManager.profile.fullName = fullName
+        auth.profileManager.profile.birthDate = birthDate
+        auth.profileManager.profile.birthTime = birthTime
+        auth.profileManager.profile.birthPlace = birthPlace
+        
         let insights = [
-            "Your birth on \(formatDate(birthDate)) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
-            "Born under the influence of \(formatDate(birthDate)), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
-            "The celestial patterns on \(formatDate(birthDate)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery.",
-            "Your arrival on \(formatDate(birthDate)) marks you as someone with exceptional communication skills and a natural ability to bring harmony to challenging situations.",
-            "The cosmic energies present on \(formatDate(birthDate)) suggest you have a unique blend of analytical mind and creative spirit, making you a natural problem-solver."
+            "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime)) in \(birthPlace) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
+            "Born under the influence of \(formatDate(birthDate)) in \(birthPlace), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
+            "The celestial patterns on \(formatDate(birthDate)) at \(formatTime(birthTime)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery.",
+            "Your arrival on \(formatDate(birthDate)) in \(birthPlace) marks you as someone with exceptional communication skills and a natural ability to bring harmony to challenging situations.",
+            "The cosmic energies present on \(formatDate(birthDate)) at \(formatTime(birthTime)) suggest you have a unique blend of analytical mind and creative spirit, making you a natural problem-solver."
         ]
         
         personalizedInsight = insights.randomElement() ?? insights[0]
@@ -256,6 +274,12 @@ struct SimpleProfileSetupView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         return formatter.string(from: date)
+    }
+    
+    private func formatTime(_ time: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: time)
     }
 }
 
@@ -400,7 +424,6 @@ struct EnhancedNameStepView: View {
 
 struct EnhancedBirthDateStepView: View {
     @Binding var birthDate: Date
-    let onComplete: (String) -> Void
     @State private var animateIcon = false
     
     var body: some View {
@@ -475,6 +498,171 @@ struct EnhancedBirthDateStepView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         return formatter.string(from: birthDate)
+    }
+}
+
+struct EnhancedBirthTimeStepView: View {
+    @Binding var birthTime: Date
+    @State private var animateIcon = false
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            
+            VStack(spacing: 32) {
+                // Animated clock icon
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.1))
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(animateIcon ? 1.05 : 1.0)
+                    
+                    Image(systemName: "clock.circle.fill")
+                        .font(.system(size: 45))
+                        .foregroundStyle(.white)
+                        .symbolEffect(.pulse.wholeSymbol, options: .repeating)
+                }
+                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                
+                VStack(spacing: 16) {
+                    Text("What time were you born?")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                    
+                    Text("Your birth time is crucial for calculating your rising sign and precise planetary positions.")
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                        .padding(.horizontal, 8)
+                }
+                
+                // Beautiful time picker
+                VStack(spacing: 12) {
+                    DatePicker(
+                        "",
+                        selection: $birthTime,
+                        displayedComponents: .hourAndMinute
+                    )
+                    .datePickerStyle(.wheel)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(.white.opacity(0.1))
+                    )
+                    .colorScheme(.dark)
+                    .padding(.horizontal, 24)
+                    
+                    Text("Selected: \(formatSelectedTime())")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(.white.opacity(0.15))
+                        )
+                }
+            }
+            
+            Spacer()
+        }
+        .onAppear {
+            animateIcon = true
+        }
+    }
+    
+    private func formatSelectedTime() -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: birthTime)
+    }
+}
+
+struct EnhancedBirthPlaceStepView: View {
+    @Binding var birthPlace: String
+    let onComplete: (String) -> Void
+    @State private var animateIcon = false
+    @FocusState private var isTextFieldFocused: Bool
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            
+            VStack(spacing: 32) {
+                // Animated location icon
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.1))
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(animateIcon ? 1.05 : 1.0)
+                    
+                    Image(systemName: "location.circle.fill")
+                        .font(.system(size: 45))
+                        .foregroundStyle(.white)
+                        .symbolEffect(.bounce.down, options: .repeating)
+                }
+                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                
+                VStack(spacing: 16) {
+                    Text("Where were you born?")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                    
+                    Text("Your birth location helps us calculate the exact positions of celestial bodies at the moment of your birth.")
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                        .padding(.horizontal, 8)
+                }
+                
+                // Beautiful text field
+                VStack(spacing: 8) {
+                    TextField("", text: $birthPlace, prompt: Text("City, State/Country").foregroundColor(.white.opacity(0.6)))
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.white.opacity(0.15))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(.white.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                        .focused($isTextFieldFocused)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                    
+                    if !birthPlace.isEmpty {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                            Text("Perfect! Your cosmic map is ready to be revealed.")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.8))
+                            Spacer()
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: birthPlace.isEmpty)
+                    }
+                }
+                .padding(.horizontal, 24)
+            }
+            
+            Spacer()
+        }
+        .onAppear {
+            animateIcon = true
+            // Auto-focus text field for better UX
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isTextFieldFocused = true
+            }
+        }
     }
 }
 
@@ -695,30 +883,25 @@ struct SimpleTabBarView: View {
     @State private var guideStep = 0
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            TodayTab()
-                .tabItem { 
-                    Label("Today", systemImage: "sun.and.horizon.circle.fill")
+        VStack(spacing: 0) {
+            // Content area
+            Group {
+                switch selectedTab {
+                case 0:
+                    TodayTab()
+                case 1:
+                    FriendsTab()
+                case 2:
+                    NexusTab()
+                case 3:
+                    ProfileTab()
+                default:
+                    TodayTab()
                 }
-                .tag(0)
+            }
             
-            FriendsTab()
-                .tabItem { 
-                    Label("Friends", systemImage: "heart.circle.fill")
-                }
-                .tag(1)
-            
-            NexusTab()
-                .tabItem { 
-                    Label("Nexus", systemImage: "brain.head.profile")
-                }
-                .tag(2)
-            
-            EssenceTab()
-                .tabItem { 
-                    Label("Essence", systemImage: "person.crop.circle.badge.moon")
-                }
-                .tag(3)
+            // Custom Tab Bar
+            CustomTabBar(selectedTab: $selectedTab)
         }
         .overlay(
             // First-run tab guide overlay
@@ -777,6 +960,231 @@ struct SimpleTabBarView: View {
             showTabGuide = false
         }
         UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+    }
+}
+
+// MARK: - Custom Tab Icons
+
+struct FriendsTabIcon: View {
+    let isSelected: Bool
+    
+    var body: some View {
+        ZStack {
+            // Constellation pattern for friends
+            VStack(spacing: 2) {
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 3, height: 3)
+                    Circle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 2, height: 2)
+                }
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 2, height: 2)
+                    Circle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 4, height: 4)
+                    Circle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 2, height: 2)
+                }
+                HStack(spacing: 2) {
+                    Circle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 2, height: 2)
+                    Circle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 3, height: 3)
+                }
+            }
+            
+            // Connection lines
+            if isSelected {
+                Path { path in
+                    path.move(to: CGPoint(x: 5, y: 3))
+                    path.addLine(to: CGPoint(x: 10, y: 8))
+                    path.addLine(to: CGPoint(x: 15, y: 3))
+                    path.move(to: CGPoint(x: 5, y: 15))
+                    path.addLine(to: CGPoint(x: 15, y: 15))
+                }
+                .stroke(Color.primary.opacity(0.3), lineWidth: 0.5)
+            }
+        }
+        .frame(width: 22, height: 22)
+    }
+}
+
+struct NexusTabIcon: View {
+    let isSelected: Bool
+    
+    var body: some View {
+        ZStack {
+            // Cosmic terminal design
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(isSelected ? .primary : .secondary, lineWidth: 1.5)
+                .frame(width: 20, height: 16)
+            
+            // Terminal cursor/cosmic elements
+            VStack(spacing: 1) {
+                HStack(spacing: 1) {
+                    Rectangle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 6, height: 1)
+                    Rectangle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .opacity(isSelected ? 1.0 : 0.5)
+                        .frame(width: 3, height: 1)
+                }
+                HStack(spacing: 1) {
+                    Rectangle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .opacity(isSelected ? 1.0 : 0.7)
+                        .frame(width: 4, height: 1)
+                    Rectangle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 2, height: 1)
+                }
+                HStack(spacing: 1) {
+                    Rectangle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 1, height: 1)
+                    Rectangle()
+                        .fill(isSelected ? .primary : .secondary)
+                        .frame(width: 1, height: 1)
+                        .opacity(isSelected ? 1.0 : 0.3)
+                }
+            }
+            
+            // Cosmic sparkle
+            if isSelected {
+                Circle()
+                    .fill(.primary)
+                    .frame(width: 2, height: 2)
+                    .offset(x: 10, y: -8)
+            }
+        }
+        .frame(width: 22, height: 22)
+    }
+}
+
+struct ProfileTabIcon: View {
+    let isSelected: Bool
+    
+    var body: some View {
+        ZStack {
+            // Astrological chart wheel
+            Circle()
+                .stroke(isSelected ? .primary : .secondary, lineWidth: 1.5)
+                .frame(width: 20, height: 20)
+            
+            // Inner circle for essence/soul
+            Circle()
+                .stroke(isSelected ? .primary : .secondary, lineWidth: 1)
+                .opacity(isSelected ? 1.0 : 0.6)
+                .frame(width: 12, height: 12)
+            
+            // Zodiac divisions (simplified)
+            ForEach(0..<4, id: \.self) { index in
+                Rectangle()
+                    .fill(isSelected ? .primary : .secondary)
+                    .frame(width: 1, height: 6)
+                    .offset(y: -7)
+                    .rotationEffect(.degrees(Double(index) * 90))
+            }
+            
+            // Center soul point
+            Circle()
+                .fill(isSelected ? .primary : .secondary)
+                .frame(width: 3, height: 3)
+            
+            // Moon phase indicator
+            if isSelected {
+                Circle()
+                    .fill(.primary)
+                    .frame(width: 4, height: 4)
+                    .mask(
+                        HStack(spacing: 0) {
+                            Rectangle()
+                                .fill(.black)
+                                .frame(width: 2)
+                            Rectangle()
+                                .fill(.clear)
+                                .frame(width: 2)
+                        }
+                    )
+                    .offset(x: 12, y: -8)
+            }
+        }
+        .frame(width: 22, height: 22)
+    }
+}
+
+struct CustomTabBar: View {
+    @Binding var selectedTab: Int
+    
+    private let tabs = [
+        (title: "Today", icon: "sun.and.horizon.circle.fill", customIcon: nil),
+        (title: "Friends", icon: "", customIcon: "friends"),
+        (title: "Nexus", icon: "", customIcon: "nexus"), 
+        (title: "Profile", icon: "", customIcon: "profile")
+    ]
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(tabs.indices, id: \.self) { index in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        selectedTab = index
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        // Icon
+                        Group {
+                            if let customIcon = tabs[index].customIcon {
+                                switch customIcon {
+                                case "friends":
+                                    FriendsTabIcon(isSelected: selectedTab == index)
+                                case "nexus":
+                                    NexusTabIcon(isSelected: selectedTab == index)
+                                case "profile":
+                                    ProfileTabIcon(isSelected: selectedTab == index)
+                                default:
+                                    Image(systemName: tabs[index].icon)
+                                        .font(.title3)
+                                }
+                            } else {
+                                Image(systemName: tabs[index].icon)
+                                    .font(.title3)
+                            }
+                        }
+                        .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                        
+                        // Title
+                        Text(tabs[index].title)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+        .background(
+            .ultraThinMaterial,
+            in: Rectangle()
+        )
+        .overlay(
+            Rectangle()
+                .fill(.quaternary)
+                .frame(height: 0.5),
+            alignment: .top
+        )
     }
 }
 
@@ -2090,7 +2498,7 @@ struct CosmicInputArea: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
             .background(.ultraThinMaterial)
-            .onChange(of: textFieldFocused) { focused in
+            .onChange(of: textFieldFocused) { _, focused in
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isInputFocused = focused
                 }
@@ -2099,14 +2507,14 @@ struct CosmicInputArea: View {
     }
 }
 
-struct EssenceTab: View {
+struct ProfileTab: View {
     @EnvironmentObject private var auth: AuthState
     @State private var selectedDate = Date()
     @State private var selectedTab = 0
     @State private var showingSettings = false
     @State private var bookmarkedReadings: [BookmarkedReading] = []
     
-    private let tabs = ["Calendar", "Charts", "Bookmarks"]
+    private let tabs = ["Overview", "Birth Chart", "Daily", "Saved"]
     
     var body: some View {
         NavigationView {
@@ -2124,28 +2532,29 @@ struct EssenceTab: View {
                 Group {
                     switch selectedTab {
                     case 0:
-                        CalendarHoroscopeView(
-                            selectedDate: $selectedDate,
-                            onBookmark: bookmarkReading
-                        )
+                        ProfileOverviewView()
+                            .environmentObject(auth)
                     case 1:
                         InteractiveChartsView(
                             selectedDate: selectedDate
                         )
                     case 2:
+                        CalendarHoroscopeView(
+                            selectedDate: $selectedDate,
+                            onBookmark: bookmarkReading
+                        )
+                    case 3:
                         BookmarkedReadingsView(
                             bookmarks: bookmarkedReadings,
                             onRemove: removeBookmark
                         )
                     default:
-                        CalendarHoroscopeView(
-                            selectedDate: $selectedDate,
-                            onBookmark: bookmarkReading
-                        )
+                        ProfileOverviewView()
+                            .environmentObject(auth)
                     }
                 }
             }
-            .navigationTitle("Horoscope Hub")
+            .navigationTitle("Profile")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -2157,7 +2566,7 @@ struct EssenceTab: View {
             }
         }
         .sheet(isPresented: $showingSettings) {
-            SettingsView(auth: auth)
+            EnhancedSettingsView(auth: auth)
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToProfileSection)) { notification in
             if let sectionIndex = notification.object as? Int {
@@ -2185,25 +2594,777 @@ struct EssenceTab: View {
     }
 }
 
+// MARK: - Profile Overview View
+
+struct ProfileOverviewView: View {
+    @EnvironmentObject private var auth: AuthState
+    @State private var showingEditSheet = false
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Profile Header with Quick Actions
+                VStack(spacing: 16) {
+                    // Profile Avatar
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                colors: [.purple, .blue, .indigo],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 120, height: 120)
+                        
+                        Text(auth.profileManager.profile.fullName.prefix(2).uppercased())
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    
+                    VStack(spacing: 8) {
+                        Text(auth.profileManager.profile.fullName.isEmpty ? "Your Name" : auth.profileManager.profile.fullName)
+                            .font(.title2.weight(.semibold))
+                        
+                        if let sunSign = auth.profileManager.profile.sunSign {
+                            Text(sunSign)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Button("Edit Profile") {
+                            showingEditSheet = true
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.blue)
+                    }
+                }
+                .padding(.top)
+                
+                // Quick Insights Cards
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 16) {
+                    QuickInsightCard(
+                        title: "Sun Sign",
+                        value: auth.profileManager.profile.sunSign ?? "Unknown",
+                        icon: "sun.max.fill",
+                        color: .orange
+                    )
+                    
+                    QuickInsightCard(
+                        title: "Moon Sign", 
+                        value: auth.profileManager.profile.moonSign ?? "Calculate",
+                        icon: "moon.stars.fill",
+                        color: .blue
+                    )
+                    
+                    QuickInsightCard(
+                        title: "Rising Sign",
+                        value: auth.profileManager.profile.risingSign ?? "Calculate", 
+                        icon: "sunrise.fill",
+                        color: .pink
+                    )
+                    
+                    QuickInsightCard(
+                        title: "Birth Place",
+                        value: auth.profileManager.profile.birthPlace ?? "Not Set",
+                        icon: "location.fill",
+                        color: .green
+                    )
+                }
+                
+                // Recent Activity or Next Steps
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Your Astrological Journey")
+                            .font(.headline.weight(.semibold))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
+                    
+                    VStack(spacing: 12) {
+                        NavigationRowView(
+                            title: "Complete Birth Chart",
+                            subtitle: "Calculate your full astrological profile",
+                            icon: "chart.pie.fill",
+                            action: { /* Navigate to birth chart */ }
+                        )
+                        
+                        NavigationRowView(
+                            title: "Today's Horoscope",
+                            subtitle: "See what the stars have in store",
+                            icon: "calendar.circle.fill",
+                            action: { /* Navigate to daily */ }
+                        )
+                        
+                        NavigationRowView(
+                            title: "Compatibility Check",
+                            subtitle: "Compare with friends and partners",
+                            icon: "heart.circle.fill",
+                            action: { /* Navigate to compatibility */ }
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(.secondary.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                
+                Spacer(minLength: 100)
+            }
+            .padding(.horizontal, 20)
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            ProfileEditView()
+                .environmentObject(auth)
+        }
+    }
+}
+
+struct QuickInsightCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(color)
+            
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.secondary.opacity(0.2), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct NavigationRowView: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(.blue)
+                    .frame(width: 24)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Profile Edit View
+
+struct ProfileEditView: View {
+    @EnvironmentObject private var auth: AuthState
+    @State private var isEditing = false
+    @State private var editedProfile: UserProfile = UserProfile()
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Profile Header
+                VStack(spacing: 16) {
+                    // Profile Avatar
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(
+                                colors: [.purple, .blue, .indigo],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ))
+                            .frame(width: 120, height: 120)
+                        
+                        Text(auth.profileManager.profile.fullName.prefix(2).uppercased())
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    
+                    VStack(spacing: 4) {
+                        Text(auth.profileManager.profile.fullName.isEmpty ? "Your Name" : auth.profileManager.profile.fullName)
+                            .font(.title2.weight(.semibold))
+                        
+                        if let sunSign = auth.profileManager.profile.sunSign {
+                            Text(sunSign)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding(.top)
+                
+                // Birth Information Card
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Birth Information")
+                            .font(.headline.weight(.semibold))
+                        Spacer()
+                        Button(isEditing ? "Save" : "Edit") {
+                            if isEditing {
+                                auth.profileManager.updateProfile(editedProfile)
+                            } else {
+                                editedProfile = auth.profileManager.profile
+                            }
+                            isEditing.toggle()
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.blue)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
+                    
+                    if isEditing {
+                        VStack(spacing: 16) {
+                            // Full Name
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Full Name")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                TextField("Enter your full name", text: $editedProfile.fullName)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                            
+                            // Birth Date
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Birth Date")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                DatePicker("Birth Date", selection: $editedProfile.birthDate, displayedComponents: .date)
+                                    .datePickerStyle(.compact)
+                            }
+                            
+                            // Birth Time
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Birth Time")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                DatePicker("Birth Time", selection: Binding(
+                                    get: { editedProfile.birthTime ?? Date() },
+                                    set: { editedProfile.birthTime = $0 }
+                                ), displayedComponents: .hourAndMinute)
+                                .datePickerStyle(.compact)
+                            }
+                            
+                            // Birth Place
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Birth Place")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                TextField("City, State/Country", text: Binding(
+                                    get: { editedProfile.birthPlace ?? "" },
+                                    set: { editedProfile.birthPlace = $0.isEmpty ? nil : $0 }
+                                ))
+                                .textFieldStyle(.roundedBorder)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                    } else {
+                        VStack(spacing: 12) {
+                            ProfileInfoRow(
+                                title: "Birth Date",
+                                value: formatDate(auth.profileManager.profile.birthDate)
+                            )
+                            
+                            ProfileInfoRow(
+                                title: "Birth Time",
+                                value: auth.profileManager.profile.birthTime.map(formatTime) ?? "Not set"
+                            )
+                            
+                            ProfileInfoRow(
+                                title: "Birth Place",
+                                value: auth.profileManager.profile.birthPlace ?? "Not set"
+                            )
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                    }
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(.secondary.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                
+                // Astrological Signs Card
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Astrological Signs")
+                            .font(.headline.weight(.semibold))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
+                    
+                    VStack(spacing: 12) {
+                        ProfileInfoRow(
+                            title: "Sun Sign",
+                            value: auth.profileManager.profile.sunSign ?? "Calculate from birth info"
+                        )
+                        
+                        ProfileInfoRow(
+                            title: "Moon Sign",
+                            value: auth.profileManager.profile.moonSign ?? "Requires birth time & place"
+                        )
+                        
+                        ProfileInfoRow(
+                            title: "Rising Sign",
+                            value: auth.profileManager.profile.risingSign ?? "Requires birth time & place"
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(.secondary.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                
+                Spacer(minLength: 100)
+            }
+            .padding(.horizontal, 20)
+        }
+        .onAppear {
+            editedProfile = auth.profileManager.profile
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        return formatter.string(from: date)
+    }
+    
+    private func formatTime(_ time: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: time)
+    }
+}
+
+struct ProfileInfoRow: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+        }
+    }
+}
+
+// MARK: - Enhanced Settings View
+
+struct EnhancedSettingsView: View {
+    @ObservedObject var auth: AuthState
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingAccountDeletion = false
+    @State private var notificationsEnabled = true
+    @State private var dailyReminder = true
+    @State private var weeklyReport = false
+    @State private var selectedTheme = "Auto"
+    
+    private let themes = ["Auto", "Light", "Dark"]
+    
+    var body: some View {
+        NavigationView {
+            List {
+                // Profile Section
+                Section {
+                    ProfileSettingsRow(auth: auth)
+                } header: {
+                    Text("Profile")
+                }
+                
+                // App Preferences
+                Section {
+                    HStack {
+                        Label("Notifications", systemImage: "bell.fill")
+                        Spacer()
+                        Toggle("", isOn: $notificationsEnabled)
+                    }
+                    
+                    if notificationsEnabled {
+                        HStack {
+                            Label("Daily Horoscope", systemImage: "sun.max.fill")
+                            Spacer()
+                            Toggle("", isOn: $dailyReminder)
+                        }
+                        
+                        HStack {
+                            Label("Weekly Report", systemImage: "calendar.badge.clock")
+                            Spacer()
+                            Toggle("", isOn: $weeklyReport)
+                        }
+                    }
+                    
+                    HStack {
+                        Label("Theme", systemImage: "paintbrush.fill")
+                        Spacer()
+                        Picker("Theme", selection: $selectedTheme) {
+                            ForEach(themes, id: \.self) { theme in
+                                Text(theme).tag(theme)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+                } header: {
+                    Text("Preferences")
+                }
+                
+                // Data & Privacy
+                Section {
+                    NavigationLink {
+                        DataPrivacyView()
+                    } label: {
+                        Label("Data & Privacy", systemImage: "hand.raised.fill")
+                    }
+                    
+                    NavigationLink {
+                        ExportDataView(auth: auth)
+                    } label: {
+                        Label("Export My Data", systemImage: "square.and.arrow.up.fill")
+                    }
+                } header: {
+                    Text("Data & Privacy")
+                }
+                
+                // Support
+                Section {
+                    Link(destination: URL(string: "mailto:support@astronova.app")!) {
+                        Label("Contact Support", systemImage: "questionmark.circle.fill")
+                    }
+                    
+                    Link(destination: URL(string: "https://astronova.app/help")!) {
+                        Label("Help Center", systemImage: "book.fill")
+                    }
+                    
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        Label("About", systemImage: "info.circle.fill")
+                    }
+                } header: {
+                    Text("Support")
+                }
+                
+                // Account Actions
+                Section {
+                    Button {
+                        auth.signOut()
+                        dismiss()
+                    } label: {
+                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right.fill")
+                            .foregroundStyle(.red)
+                    }
+                    
+                    Button {
+                        showingAccountDeletion = true
+                    } label: {
+                        Label("Delete Account", systemImage: "trash.fill")
+                            .foregroundStyle(.red)
+                    }
+                } header: {
+                    Text("Account")
+                }
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .alert("Delete Account", isPresented: $showingAccountDeletion) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                // Handle account deletion
+                auth.signOut()
+                dismiss()
+            }
+        } message: {
+            Text("This action cannot be undone. All your data will be permanently deleted.")
+        }
+    }
+}
+
+struct ProfileSettingsRow: View {
+    @ObservedObject var auth: AuthState
+    @State private var showingEditProfile = false
+    
+    var body: some View {
+        Button {
+            showingEditProfile = true
+        } label: {
+            HStack(spacing: 16) {
+                // Avatar
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(
+                            colors: [.purple, .blue],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                        .frame(width: 50, height: 50)
+                    
+                    Text(auth.profileManager.profile.fullName.prefix(2).uppercased())
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(auth.profileManager.profile.fullName.isEmpty ? "Set up profile" : auth.profileManager.profile.fullName)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    
+                    Text(auth.profileManager.profile.birthPlace ?? "Add birth details")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showingEditProfile) {
+            ProfileEditView()
+                .environmentObject(auth)
+        }
+    }
+}
+
+struct DataPrivacyView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("We take your privacy seriously. Here's how we handle your data:")
+                    .font(.body)
+                
+                PrivacySection(
+                    title: "What We Collect",
+                    content: "• Birth date, time, and location\n• Astrological preferences\n• App usage analytics"
+                )
+                
+                PrivacySection(
+                    title: "How We Use It",
+                    content: "• Generate personalized horoscopes\n• Calculate astrological charts\n• Improve app experience"
+                )
+                
+                PrivacySection(
+                    title: "Data Security",
+                    content: "• All data is encrypted\n• Stored securely on your device\n• Optional cloud backup via iCloud"
+                )
+            }
+            .padding()
+        }
+        .navigationTitle("Data & Privacy")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct PrivacySection: View {
+    let title: String
+    let content: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+            
+            Text(content)
+                .font(.body)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+struct ExportDataView: View {
+    @ObservedObject var auth: AuthState
+    @State private var showingShareSheet = false
+    @State private var exportData: String = ""
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "square.and.arrow.up.circle.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.blue)
+            
+            VStack(spacing: 12) {
+                Text("Export Your Data")
+                    .font(.title2.weight(.semibold))
+                
+                Text("Download all your astrological data including birth information, preferences, and saved readings.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Button("Export Data") {
+                generateExportData()
+                showingShareSheet = true
+            }
+            .font(.headline)
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(.blue)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            
+            Spacer()
+        }
+        .padding()
+        .navigationTitle("Export Data")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(items: [exportData])
+        }
+    }
+    
+    private func generateExportData() {
+        let profile = auth.profileManager.profile
+        exportData = """
+        Astronova Profile Export
+        Generated: \(Date().formatted())
+        
+        Profile Information:
+        Name: \(profile.fullName)
+        Birth Date: \(profile.birthDate.formatted(date: .long, time: .omitted))
+        Birth Time: \(profile.birthTime?.formatted(date: .omitted, time: .shortened) ?? "Not set")
+        Birth Place: \(profile.birthPlace ?? "Not set")
+        Sun Sign: \(profile.sunSign ?? "Not calculated")
+        Moon Sign: \(profile.moonSign ?? "Not calculated")
+        Rising Sign: \(profile.risingSign ?? "Not calculated")
+        """
+    }
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct AboutView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.purple)
+                
+                VStack(spacing: 8) {
+                    Text("Astronova")
+                        .font(.title.weight(.bold))
+                    
+                    Text("Version 1.0.0")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Text("Discover what the stars reveal about your personality, relationships, and destiny through personalized cosmic insights.")
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                
+                VStack(spacing: 16) {
+                    Link("Privacy Policy", destination: URL(string: "https://astronova.app/privacy")!)
+                    Link("Terms of Service", destination: URL(string: "https://astronova.app/terms")!)
+                    Link("Acknowledgments", destination: URL(string: "https://astronova.app/acknowledgments")!)
+                }
+                .font(.subheadline)
+                
+                Spacer()
+            }
+            .padding()
+        }
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 // MARK: - Calendar Horoscope View
 
 struct CalendarHoroscopeView: View {
     @Binding var selectedDate: Date
     let onBookmark: (HoroscopeReading) -> Void
     
-    @State private var showingMonthPicker = false
-    
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
-                // Calendar Header with Month Navigation
-                CalendarHeaderView(
-                    selectedDate: $selectedDate,
-                    showingMonthPicker: $showingMonthPicker
-                )
-                
-                // Compact Calendar Grid
-                CalendarGridView(selectedDate: $selectedDate)
+                // Horizontal Date Selector
+                HorizontalDateSelector(selectedDate: $selectedDate)
                 
                 // Daily Synopsis (Free)
                 DailySynopsisCard(
@@ -2216,9 +3377,128 @@ struct CalendarHoroscopeView: View {
             }
             .padding()
         }
-        .sheet(isPresented: $showingMonthPicker) {
-            MonthPickerView(selectedDate: $selectedDate)
+    }
+}
+
+struct HorizontalDateSelector: View {
+    @Binding var selectedDate: Date
+    @State private var currentWeekOffset: Int = 0
+    
+    private var calendar: Calendar {
+        Calendar.current
+    }
+    
+    private var currentWeekDates: [Date] {
+        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: selectedDate)?.start ?? selectedDate
+        let offsetWeek = calendar.date(byAdding: .weekOfYear, value: currentWeekOffset, to: startOfWeek) ?? startOfWeek
+        
+        return (0..<7).compactMap { dayOffset in
+            calendar.date(byAdding: .day, value: dayOffset, to: offsetWeek)
         }
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Month/Year Header with Navigation
+            HStack {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        currentWeekOffset -= 1
+                    }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(.blue)
+                }
+                
+                Spacer()
+                
+                Text(selectedDate.formatted(.dateTime.month(.wide).year()))
+                    .font(.headline.weight(.semibold))
+                
+                Spacer()
+                
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        currentWeekOffset += 1
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(.blue)
+                }
+            }
+            
+            // Horizontal Date Scroll
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(currentWeekDates, id: \.self) { date in
+                        DateCard(
+                            date: date,
+                            isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
+                            isToday: calendar.isDateInToday(date)
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedDate = date
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(.secondary.opacity(0.2), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct DateCard: View {
+    let date: Date
+    let isSelected: Bool
+    let isToday: Bool
+    let action: () -> Void
+    
+    private var dayFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E"
+        return formatter
+    }
+    
+    private var dayNumber: String {
+        Calendar.current.component(.day, from: date).description
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Text(dayFormatter.string(from: date))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(isSelected ? .white : .secondary)
+                
+                Text(dayNumber)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(isSelected ? .white : .primary)
+            }
+            .frame(width: 50, height: 60)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? .blue : .clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isToday && !isSelected ? .blue : .clear, lineWidth: 2)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
 
