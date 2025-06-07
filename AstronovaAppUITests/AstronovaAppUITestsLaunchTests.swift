@@ -1,13 +1,13 @@
 //
-//  cosmochatUITestsLaunchTests.swift
-//  cosmochatUITests
+//  AstronovaAppUITestsLaunchTests.swift
+//  AstronovaAppUITests
 //
-//  Created by Sankalp Thakur on 6/5/25.
+//  Created by Sankalp Thakur on 6/6/25.
 //
 
 import XCTest
 
-final class cosmochatUITestsLaunchTests: XCTestCase {
+final class AstronovaAppUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

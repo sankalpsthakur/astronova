@@ -1,14 +1,14 @@
 //
-//  cosmochatTests.swift
-//  cosmochatTests
+//  AstronovaAppTests.swift
+//  AstronovaAppTests
 //
-//  Created by Sankalp Thakur on 6/5/25.
+//  Created by Sankalp Thakur on 6/6/25.
 //
 
 import XCTest
-@testable import cosmochat
+@testable import AstronovaApp
 
-final class cosmochatTests: XCTestCase {
+final class AstronovaAppTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
