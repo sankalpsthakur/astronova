@@ -697,19 +697,27 @@ struct SimpleTabBarView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             TodayTab()
-                .tabItem { Label("Today", systemImage: "sun.max") }
+                .tabItem { 
+                    Label("Today", systemImage: "sun.and.horizon.circle.fill")
+                }
                 .tag(0)
             
-            MatchTab()
-                .tabItem { Label("Match", systemImage: "heart.circle") }
+            FriendsTab()
+                .tabItem { 
+                    Label("Friends", systemImage: "heart.circle.fill")
+                }
                 .tag(1)
             
-            ChatTab()
-                .tabItem { Label("Chat", systemImage: "message") }
+            NexusTab()
+                .tabItem { 
+                    Label("Nexus", systemImage: "brain.head.profile")
+                }
                 .tag(2)
             
-            ProfileTab()
-                .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+            EssenceTab()
+                .tabItem { 
+                    Label("Essence", systemImage: "person.crop.circle.badge.moon")
+                }
                 .tag(3)
         }
         .overlay(
@@ -1212,7 +1220,7 @@ struct DiscoveryCard: View {
     }
 }
 
-struct MatchTab: View {
+struct FriendsTab: View {
     @State private var partnerName = ""
     @State private var partnerBirthDate = Date()
     @State private var showingResults = false
@@ -1463,7 +1471,7 @@ struct MatchTab: View {
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("Match")
+            .navigationTitle("Friends")
             .navigationBarTitleDisplayMode(.inline)
         }
         .sheet(isPresented: $showingContactsPicker) {
@@ -1501,136 +1509,597 @@ struct CompatibilityCard: View {
     }
 }
 
-struct ChatTab: View {
+struct NexusTab: View {
     @State private var messageText = ""
-    @State private var messages: [ChatMessage] = [
-        ChatMessage(id: "1", text: "Welcome! I'm your AI astrologer. How can I help guide you today?", isUser: false),
-        ChatMessage(id: "2", text: "What does my birth chart say about my career?", isUser: true),
-        ChatMessage(id: "3", text: "Based on your chart, you have strong leadership qualities with your Leo rising. Your 10th house placement suggests success in creative or executive roles. This is an excellent time to pursue your career goals!", isUser: false)
+    @State private var messages: [CosmicMessage] = [
+        CosmicMessage(id: "1", text: "✨ Welcome to the Cosmic Nexus! I'm your AI astrologer, here to illuminate your path through the stars. What cosmic wisdom can I share with you today?", isUser: false, messageType: .welcome, timestamp: Date().addingTimeInterval(-3600)),
+        CosmicMessage(id: "2", text: "What does my birth chart say about my career?", isUser: true, messageType: .question, timestamp: Date().addingTimeInterval(-1800)),
+        CosmicMessage(id: "3", text: "🌟 The celestial patterns in your chart reveal fascinating insights! With your Leo rising, you radiate natural leadership energy. Your 10th house placement indicates powerful potential in creative or executive roles. The stars are aligning beautifully for your career aspirations right now! ✨", isUser: false, messageType: .insight, timestamp: Date().addingTimeInterval(-900))
     ]
+    @State private var animateStars = false
+    @State private var animateGradient = false
+    @State private var showingTypingIndicator = false
     
     var body: some View {
         NavigationView {
-            VStack {
-                // Chat messages
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(messages) { message in
-                            HStack {
-                                if message.isUser {
-                                    Spacer()
-                                    ChatBubble(text: message.text, isUser: true)
-                                } else {
-                                    ChatBubble(text: message.text, isUser: false)
-                                    Spacer()
-                                }
+            ZStack {
+                // Cosmic animated background
+                CosmicChatBackground(animateStars: $animateStars, animateGradient: $animateGradient)
+                
+                VStack(spacing: 0) {
+                    // Chat messages with cosmic styling
+                    ScrollView {
+                        LazyVStack(spacing: 20) {
+                            ForEach(messages) { message in
+                                CosmicMessageView(message: message)
+                            }
+                            
+                            // Typing indicator
+                            if showingTypingIndicator {
+                                CosmicTypingIndicator()
+                                    .transition(.scale.combined(with: .opacity))
                             }
                         }
+                        .padding(.horizontal)
+                        .padding(.top, 20)
                     }
-                    .padding()
-                }
-                
-                // Input area
-                HStack {
-                    TextField("Ask about your chart, love life, career...", text: $messageText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    Button(action: sendMessage) {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundStyle(Color.white)
-                            .frame(width: 32, height: 32)
-                            .background(messageText.isEmpty ? Color.gray : Color.blue)
-                            .clipShape(Circle())
-                    }
-                    .disabled(messageText.isEmpty)
-                }
-                .padding()
-                
-                // Quick questions
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(quickQuestions, id: \.self) { question in
-                            Button(question) {
-                                messageText = question
-                            }
-                            .font(.caption)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(16)
+                    // Cosmic input area
+                    CosmicInputArea(
+                        messageText: $messageText,
+                        onSend: sendMessage,
+                        onQuickQuestion: { question in
+                            messageText = question
                         }
-                    }
-                    .padding(.horizontal)
+                    )
                 }
-                .padding(.bottom)
             }
-            .navigationTitle("AI Astrologer")
+            .navigationTitle("Cosmic Nexus")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2).delay(0.3)) {
+                animateStars = true
+                animateGradient = true
+            }
         }
     }
     
     private let quickQuestions = [
-        "What's my love forecast?",
-        "Career guidance?",
-        "Today's energy?",
-        "Mercury retrograde effects?",
-        "Best time for decisions?"
+        "What's my love forecast? 💖",
+        "Career guidance? ⭐",
+        "Today's energy? ☀️",
+        "Mercury retrograde effects? ☿",
+        "Best time for decisions? 🌙"
     ]
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
         
-        // Add user message
-        let userMessage = ChatMessage(id: UUID().uuidString, text: messageText, isUser: true)
-        messages.append(userMessage)
+        // Haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
         
-        // Clear input
+        // Add user message
+        let userMessage = CosmicMessage(
+            id: UUID().uuidString,
+            text: messageText,
+            isUser: true,
+            messageType: .question,
+            timestamp: Date()
+        )
+        
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            messages.append(userMessage)
+        }
+        
+        // Clear input and show typing indicator
         let currentMessage = messageText
         messageText = ""
         
-        // Simulate AI response
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            let response = generateResponse(for: currentMessage)
-            let aiMessage = ChatMessage(id: UUID().uuidString, text: response, isUser: false)
-            messages.append(aiMessage)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            showingTypingIndicator = true
+        }
+        
+        // Simulate AI response with realistic delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.5...3.0)) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showingTypingIndicator = false
+            }
+            
+            let response = generateCosmicResponse(for: currentMessage)
+            let messageType: CosmicMessageType = response.contains("🌟") ? .insight : .guidance
+            
+            let aiMessage = CosmicMessage(
+                id: UUID().uuidString,
+                text: response,
+                isUser: false,
+                messageType: messageType,
+                timestamp: Date()
+            )
+            
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                messages.append(aiMessage)
+            }
         }
     }
     
-    private func generateResponse(for message: String) -> String {
-        let responses = [
-            "The stars suggest this is a transformative time for you. Trust your intuition and embrace the changes coming your way.",
-            "Your birth chart shows strong creative energy. Channel this into projects that inspire you.",
-            "The current planetary alignments favor communication and relationships. Reach out to loved ones.",
-            "With Jupiter in your sector, expansion and growth opportunities are on the horizon.",
-            "The Moon's position suggests emotional clarity. This is a good time for important decisions."
+    private func generateCosmicResponse(for message: String) -> String {
+        let lowerMessage = message.lowercased()
+        
+        if lowerMessage.contains("love") || lowerMessage.contains("relationship") || lowerMessage.contains("romance") {
+            let loveResponses = [
+                "💖 The cosmos whispers of beautiful romantic energy surrounding you! Venus is dancing through your 7th house, bringing opportunities for deep, meaningful connections. Open your heart to the magic that awaits.",
+                "🌹 Love flows through the celestial currents toward you! The Moon's gentle influence suggests emotional harmony and the potential for a significant romantic encounter this lunar cycle.",
+                "✨ Your love chakra is radiating powerful energy! The stars indicate that someone special may enter your orbit soon. Trust the universe's timing - it's always perfect."
+            ]
+            return loveResponses.randomElement() ?? loveResponses[0]
+        }
+        
+        if lowerMessage.contains("career") || lowerMessage.contains("work") || lowerMessage.contains("job") {
+            let careerResponses = [
+                "🌟 Your professional constellation is shining brilliantly! Mars in your 10th house brings dynamic energy for career advancement. This is your time to step into your power and leadership role.",
+                "⭐ The cosmic winds are shifting in your favor professionally! Jupiter's expansive energy suggests new opportunities will manifest soon. Prepare to embrace your destiny.",
+                "✨ Your career path is illuminated by stellar influences! The Sun's position indicates recognition and success are approaching. Trust your unique talents and let them shine."
+            ]
+            return careerResponses.randomElement() ?? careerResponses[0]
+        }
+        
+        if lowerMessage.contains("today") || lowerMessage.contains("energy") || lowerMessage.contains("now") {
+            let energyResponses = [
+                "🌞 Today's cosmic energy flows with transformative power! The planetary alignments create a portal for manifestation. Set your intentions and watch the universe respond.",
+                "⚡ Electric energy courses through the celestial realm today! This is a perfect time for new beginnings and releasing what no longer serves your highest good.",
+                "🌙 The lunar energies today bring intuitive clarity and emotional balance. Trust your inner wisdom - it's your cosmic compass guiding you forward."
+            ]
+            return energyResponses.randomElement() ?? energyResponses[0]
+        }
+        
+        // Default cosmic responses
+        let generalResponses = [
+            "✨ The starlight reveals that you're entering a powerful phase of growth and transformation. The universe is conspiring to support your highest good.",
+            "🌟 Your cosmic blueprint shows incredible potential waiting to unfold. Trust the journey and embrace the magical synchronicities coming your way.",
+            "💫 The celestial energies surrounding you pulse with infinite possibility. You're being guided toward your true purpose - can you feel it?",
+            "🔮 The cosmic web connects all things, and right now, it's weaving beautiful opportunities into your reality. Stay open to the magic around you.",
+            "🌙 Your soul's journey is written in the stars, and this moment is a crucial chapter. The universe is whispering guidance - listen with your heart."
         ]
-        return responses.randomElement() ?? "The cosmos are aligning to bring you clarity and guidance."
+        return generalResponses.randomElement() ?? generalResponses[0]
     }
 }
 
-struct ChatMessage: Identifiable {
+// MARK: - Cosmic Chat Models
+
+struct CosmicMessage: Identifiable {
     let id: String
     let text: String
     let isUser: Bool
+    let messageType: CosmicMessageType
+    let timestamp: Date
 }
 
-struct ChatBubble: View {
-    let text: String
-    let isUser: Bool
+enum CosmicMessageType {
+    case welcome
+    case question
+    case insight
+    case guidance
+    case prediction
     
-    var body: some View {
-        Text(text)
-            .padding(12)
-            .background(isUser ? Color.blue : Color.gray.opacity(0.2))
-            .foregroundStyle(isUser ? Color.white : Color.primary)
-            .cornerRadius(16)
-            .frame(maxWidth: 280, alignment: isUser ? .trailing : .leading)
+    var backgroundColor: [Color] {
+        switch self {
+        case .welcome:
+            return [.purple.opacity(0.3), .indigo.opacity(0.2)]
+        case .question:
+            return [.blue.opacity(0.3), .cyan.opacity(0.2)]
+        case .insight:
+            return [.orange.opacity(0.3), .yellow.opacity(0.2)]
+        case .guidance:
+            return [.green.opacity(0.3), .mint.opacity(0.2)]
+        case .prediction:
+            return [.pink.opacity(0.3), .purple.opacity(0.2)]
+        }
+    }
+    
+    var accentColor: Color {
+        switch self {
+        case .welcome: return .purple
+        case .question: return .blue
+        case .insight: return .orange
+        case .guidance: return .green
+        case .prediction: return .pink
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .welcome: return "sparkles"
+        case .question: return "questionmark.circle"
+        case .insight: return "star.fill"
+        case .guidance: return "lightbulb.fill"
+        case .prediction: return "crystal.ball"
+        }
     }
 }
 
+// MARK: - Cosmic Chat Background
 
+struct CosmicChatBackground: View {
+    @Binding var animateStars: Bool
+    @Binding var animateGradient: Bool
+    
+    var body: some View {
+        ZStack {
+            // Base gradient background
+            LinearGradient(
+                colors: [
+                    Color(.systemIndigo).opacity(0.1),
+                    Color(.systemPurple).opacity(0.05),
+                    Color(.systemBlue).opacity(0.03)
+                ],
+                startPoint: animateGradient ? .topLeading : .bottomTrailing,
+                endPoint: animateGradient ? .bottomTrailing : .topLeading
+            )
+            .ignoresSafeArea()
+            .animation(.easeInOut(duration: 8).repeatForever(autoreverses: true), value: animateGradient)
+            
+            // Floating stars
+            ForEach(0..<12, id: \.self) { i in
+                Image(systemName: ["star.fill", "sparkles", "star.circle.fill", "moon.stars.fill"].randomElement()!)
+                    .font(.system(size: CGFloat.random(in: 8...16)))
+                    .foregroundStyle(.white.opacity(Double.random(in: 0.1...0.3)))
+                    .position(
+                        x: CGFloat.random(in: 20...350),
+                        y: CGFloat.random(in: 50...700)
+                    )
+                    .animation(
+                        .easeInOut(duration: Double.random(in: 3...6))
+                        .repeatForever(autoreverses: true)
+                        .delay(Double(i) * 0.5),
+                        value: animateStars
+                    )
+                    .offset(
+                        x: animateStars ? CGFloat.random(in: -10...10) : 0,
+                        y: animateStars ? CGFloat.random(in: -15...15) : 0
+                    )
+                    .opacity(animateStars ? Double.random(in: 0.2...0.6) : 0.1)
+            }
+        }
+    }
+}
 
+// MARK: - Cosmic Message View
 
-struct ProfileTab: View {
+struct CosmicMessageView: View {
+    let message: CosmicMessage
+    @State private var animateMessage = false
+    @State private var showTimestamp = false
+    
+    var body: some View {
+        HStack {
+            if message.isUser {
+                Spacer(minLength: 60)
+                userMessageView
+            } else {
+                aiMessageView
+                Spacer(minLength: 60)
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1)) {
+                animateMessage = true
+            }
+        }
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showTimestamp.toggle()
+            }
+        }
+    }
+    
+    private var userMessageView: some View {
+        VStack(alignment: .trailing, spacing: 8) {
+            HStack {
+                Text(message.text)
+                    .font(.callout)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(
+                        LinearGradient(
+                            colors: [.blue, .cyan],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 20)
+                    )
+                    .shadow(color: .blue.opacity(0.3), radius: 8, y: 4)
+            }
+            
+            if showTimestamp {
+                Text(formatTimestamp(message.timestamp))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .scaleEffect(animateMessage ? 1 : 0.8)
+        .opacity(animateMessage ? 1 : 0)
+    }
+    
+    private var aiMessageView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 12) {
+                // AI Avatar with cosmic effect
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: message.messageType.backgroundColor,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Circle()
+                                .stroke(.white.opacity(0.3), lineWidth: 1)
+                        )
+                    
+                    Image(systemName: message.messageType.icon)
+                        .font(.title3)
+                        .foregroundStyle(message.messageType.accentColor)
+                        .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing)
+                }
+                
+                // Message content
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(message.text)
+                        .font(.callout)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 14)
+                        .background(
+                            .regularMaterial,
+                            in: RoundedRectangle(cornerRadius: 20)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(message.messageType.accentColor.opacity(0.3), lineWidth: 1)
+                        )
+                        .shadow(color: message.messageType.accentColor.opacity(0.2), radius: 6, y: 3)
+                    
+                    // Message type indicator
+                    HStack(spacing: 4) {
+                        Image(systemName: message.messageType.icon)
+                            .font(.caption2)
+                            .foregroundStyle(message.messageType.accentColor)
+                        
+                        Text(message.messageType.displayName)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 8)
+                }
+            }
+            
+            if showTimestamp {
+                Text(formatTimestamp(message.timestamp))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 52)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .scaleEffect(animateMessage ? 1 : 0.8)
+        .opacity(animateMessage ? 1 : 0)
+    }
+    
+    private func formatTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
+
+extension CosmicMessageType {
+    var displayName: String {
+        switch self {
+        case .welcome: return "Welcome"
+        case .question: return "Question"
+        case .insight: return "Cosmic Insight"
+        case .guidance: return "Divine Guidance"
+        case .prediction: return "Celestial Prediction"
+        }
+    }
+}
+
+// MARK: - Cosmic Typing Indicator
+
+struct CosmicTypingIndicator: View {
+    @State private var animateDots = false
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            // AI Avatar
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.purple.opacity(0.3), .indigo.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Circle()
+                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                    )
+                
+                Image(systemName: "brain.head.profile")
+                    .font(.title3)
+                    .foregroundStyle(.purple)
+                    .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing, options: .repeating)
+            }
+            
+            // Typing animation
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text("✨ The cosmos is aligning your answer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    HStack(spacing: 2) {
+                        ForEach(0..<3, id: \.self) { index in
+                            Circle()
+                                .fill(.purple)
+                                .frame(width: 4, height: 4)
+                                .scaleEffect(animateDots ? 1.2 : 0.8)
+                                .animation(
+                                    .easeInOut(duration: 0.6)
+                                    .repeatForever(autoreverses: true)
+                                    .delay(Double(index) * 0.2),
+                                    value: animateDots
+                                )
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    .ultraThinMaterial,
+                    in: RoundedRectangle(cornerRadius: 20)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(.purple.opacity(0.3), lineWidth: 1)
+                )
+            }
+            
+            Spacer()
+        }
+        .onAppear {
+            animateDots = true
+        }
+    }
+}
+
+// MARK: - Cosmic Input Area
+
+struct CosmicInputArea: View {
+    @Binding var messageText: String
+    let onSend: () -> Void
+    let onQuickQuestion: (String) -> Void
+    
+    @State private var isInputFocused = false
+    @FocusState private var textFieldFocused: Bool
+    
+    private let quickQuestions = [
+        "What's my love forecast? 💖",
+        "Career guidance? ⭐",
+        "Today's energy? ☀️",
+        "Mercury retrograde effects? ☿",
+        "Best time for decisions? 🌙"
+    ]
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Quick Questions Scroll
+            if !isInputFocused {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(quickQuestions, id: \.self) { question in
+                            Button {
+                                onQuickQuestion(question)
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                                impactFeedback.impactOccurred()
+                            } label: {
+                                Text(question)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.primary)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        .regularMaterial,
+                                        in: Capsule()
+                                    )
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(.purple.opacity(0.3), lineWidth: 1)
+                                    )
+                                    .shadow(color: .purple.opacity(0.1), radius: 4, y: 2)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .padding(.vertical, 16)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.easeInOut(duration: 0.3), value: isInputFocused)
+            }
+            
+            // Input Container
+            HStack(spacing: 12) {
+                // Text Input Field
+                HStack {
+                    TextField("Ask the cosmos anything...", text: $messageText, axis: .vertical)
+                        .font(.callout)
+                        .lineLimit(1...4)
+                        .focused($textFieldFocused)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 12)
+                        .background(
+                            .regularMaterial,
+                            in: RoundedRectangle(cornerRadius: 25)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(isInputFocused ? .purple.opacity(0.5) : .gray.opacity(0.2), lineWidth: 1.5)
+                        )
+                        .shadow(color: isInputFocused ? .purple.opacity(0.2) : .clear, radius: 8, y: 4)
+                }
+                
+                // Send Button
+                Button(action: {
+                    onSend()
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: messageText.isEmpty ? [.gray.opacity(0.3)] : [.purple, .indigo],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 44, height: 44)
+                            .shadow(color: messageText.isEmpty ? .clear : .purple.opacity(0.4), radius: 8, y: 4)
+                        
+                        Image(systemName: "paperplane.fill")
+                            .font(.title3)
+                            .foregroundStyle(.white)
+                            .rotationEffect(.degrees(45))
+                    }
+                }
+                .disabled(messageText.isEmpty)
+                .scaleEffect(messageText.isEmpty ? 0.9 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: messageText.isEmpty)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+            .background(.ultraThinMaterial)
+            .onChange(of: textFieldFocused) { focused in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isInputFocused = focused
+                }
+            }
+        }
+    }
+}
+
+struct EssenceTab: View {
     @EnvironmentObject private var auth: AuthState
     @State private var selectedDate = Date()
     @State private var selectedTab = 0
@@ -2609,25 +3078,25 @@ struct TabGuideOverlay: View {
         TabGuideContent(
             title: "Welcome to Today",
             description: "Your daily cosmic insights and personalized guidance start here. Check your horoscope, lucky elements, and planetary influences.",
-            icon: "sun.max.fill",
+            icon: "sun.and.horizon.circle.fill",
             color: .orange
         ),
         TabGuideContent(
-            title: "Find Your Match",
-            description: "Discover compatibility with friends, family, or that special someone. Quick checks and detailed cosmic connections.",
-            icon: "heart.fill",
+            title: "Connect with Friends",
+            description: "Discover compatibility with friends, family, or that special someone. Explore cosmic connections and relationships.",
+            icon: "heart.circle.fill",
             color: .pink
         ),
         TabGuideContent(
-            title: "Ask the AI Astrologer",
-            description: "Get personalized answers about love, career, and life decisions from your intelligent cosmic guide.",
-            icon: "message.fill",
+            title: "Enter the Cosmic Nexus",
+            description: "Chat with your AI astrologer for personalized insights about love, career, and life decisions in a beautiful cosmic interface.",
+            icon: "brain.head.profile",
             color: .blue
         ),
         TabGuideContent(
-            title: "Your Cosmic Profile",
-            description: "Explore birth charts, save favorite readings, and track your cosmic journey over time.",
-            icon: "person.crop.circle.fill",
+            title: "Your Cosmic Essence",
+            description: "Explore birth charts, save favorite readings, and track your spiritual journey through the stars over time.",
+            icon: "person.crop.circle.badge.moon",
             color: .purple
         )
     ]
