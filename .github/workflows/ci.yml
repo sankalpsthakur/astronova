@@ -37,7 +37,9 @@ jobs:
     
     - name: Test with pytest
       run: |
-        cd backend && python -m pytest tests/ -v --cov=. --cov-report=xml
+        cd backend && SECRET_KEY=test_secret_key python -m pytest tests/ -v --cov=. --cov-report=xml
+      env:
+        SECRET_KEY: test_secret_key
     
     - name: Python syntax check
       run: python -m py_compile $(find backend -name "*.py")
