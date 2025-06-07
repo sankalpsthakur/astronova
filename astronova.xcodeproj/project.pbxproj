@@ -40,16 +40,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		5A0BE3A52DF0E80E0015F99B /* astronovaTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = astronovaTests;
-			sourceTree = "<group>";
-		};
-		5A0BE3AF2DF0E80E0015F99B /* astronovaUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = astronovaUITests;
-			sourceTree = "<group>";
-		};
 		5ADB1A062DF2EA5000AFC52F /* AstronovaApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -98,8 +88,6 @@
 		5A0BE3852DF0E80C0015F99B = {
 			isa = PBXGroup;
 			children = (
-				5A0BE3A52DF0E80E0015F99B /* astronovaTests */,
-				5A0BE3AF2DF0E80E0015F99B /* astronovaUITests */,
 				5ADB1A062DF2EA5000AFC52F /* AstronovaApp */,
 				5ADB1A1B2DF2EA5200AFC52F /* AstronovaAppTests */,
 				5ADB1A252DF2EA5200AFC52F /* AstronovaAppUITests */,
@@ -420,7 +408,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AstronovaApp/AstronovaApp.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AstronovaApp/AstronovaAppDebug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
@@ -428,6 +417,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Astronova;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -442,6 +432,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = sankalp.AstronovaApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -461,6 +452,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Astronova;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
