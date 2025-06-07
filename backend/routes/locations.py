@@ -15,4 +15,10 @@ def geocode():
         return jsonify({'error': 'not found'}), 404
     tf = TimezoneFinder()
     tz = tf.timezone_at(lng=loc.longitude, lat=loc.latitude)
-    return jsonify({'latitude': loc.latitude, 'longitude': loc.longitude, 'timezone': tz})
+    if tz is None:
+        tz = 'UTC'  # Default fallback
+    return jsonify({
+        'latitude': loc.latitude,
+        'longitude': loc.longitude,
+        'timezone': tz
+    })
