@@ -4,7 +4,7 @@ import datetime as _dt
 from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from typing import Dict, List
+from typing import Dict, List, Any
 
 from .chart_service import calculate_positions, compute_aspects, PLANETS
 from .ephemeris_service import get_planetary_positions
@@ -43,6 +43,10 @@ class AstroCalculator:
             deg = (info["degree"] - AYANAMSA_OFFSET) % 30
             info["degree"] = round(deg, 2)
         return positions
+
+    def get_positions(self, dt: datetime | None = None) -> Dict[str, Dict[str, Any]]:
+        """Return planetary positions for the given datetime."""
+        return get_planetary_positions(dt)
 
     @staticmethod
     def _to_datetime(data: BirthData) -> datetime:
