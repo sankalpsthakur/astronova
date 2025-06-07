@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5ADB1A352DF2EB0900AFC52F /* astronova in Frameworks */ = {isa = PBXBuildFile; productRef = 5ADB1A342DF2EB0900AFC52F /* astronova */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,7 +78,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5ADB1A352DF2EB0900AFC52F /* astronova in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -142,7 +140,6 @@
 			);
 			name = AstronovaApp;
 			packageProductDependencies = (
-				5ADB1A342DF2EB0900AFC52F /* astronova */,
 			);
 			productName = AstronovaApp;
 			productReference = 5ADB1A052DF2EA5000AFC52F /* AstronovaApp.app */;
@@ -227,17 +224,6 @@
 			mainGroup = 5A0BE3852DF0E80C0015F99B;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				5A0BE3C12DF0F8350015F99B /* XCLocalSwiftPackageReference "../AppCore" */,
-				5A0BE3C62DF0F85E0015F99B /* XCLocalSwiftPackageReference "../AuthKit" */,
-				5A0BE3C92DF0F8700015F99B /* XCLocalSwiftPackageReference "../CloudKitKit" */,
-				5A0BE3CC2DF0F8860015F99B /* XCLocalSwiftPackageReference "../DataModels" */,
-				5A0BE3CF2DF0F8980015F99B /* XCLocalSwiftPackageReference "../AstroEngine" */,
-				5A0BE3D22DF0F8A80015F99B /* XCLocalSwiftPackageReference "../HoroscopeService" */,
-				5A0BE3D52DF0F8B80015F99B /* XCLocalSwiftPackageReference "../NotificationKit" */,
-				5A0BE3D82DF0F8C80015F99B /* XCLocalSwiftPackageReference "../CommerceKit" */,
-				5A0BE3DB2DF0F8DC0015F99B /* XCLocalSwiftPackageReference "../UIComponents" */,
-				5A0BE3DE2DF0F8EC0015F99B /* XCLocalSwiftPackageReference "../SettingsKit" */,
-				5ADB19C12DF2E42700AFC52F /* XCLocalSwiftPackageReference "../astronova" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5A0BE38F2DF0E80C0015F99B /* Products */;
@@ -611,59 +597,7 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		5A0BE3C12DF0F8350015F99B /* XCLocalSwiftPackageReference "../AppCore" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../AppCore;
-		};
-		5A0BE3C62DF0F85E0015F99B /* XCLocalSwiftPackageReference "../AuthKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../AuthKit;
-		};
-		5A0BE3C92DF0F8700015F99B /* XCLocalSwiftPackageReference "../CloudKitKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../CloudKitKit;
-		};
-		5A0BE3CC2DF0F8860015F99B /* XCLocalSwiftPackageReference "../DataModels" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../DataModels;
-		};
-		5A0BE3CF2DF0F8980015F99B /* XCLocalSwiftPackageReference "../AstroEngine" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../AstroEngine;
-		};
-		5A0BE3D22DF0F8A80015F99B /* XCLocalSwiftPackageReference "../HoroscopeService" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../HoroscopeService;
-		};
-		5A0BE3D52DF0F8B80015F99B /* XCLocalSwiftPackageReference "../NotificationKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../NotificationKit;
-		};
-		5A0BE3D82DF0F8C80015F99B /* XCLocalSwiftPackageReference "../CommerceKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../CommerceKit;
-		};
-		5A0BE3DB2DF0F8DC0015F99B /* XCLocalSwiftPackageReference "../UIComponents" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../UIComponents;
-		};
-		5A0BE3DE2DF0F8EC0015F99B /* XCLocalSwiftPackageReference "../SettingsKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../SettingsKit;
-		};
-		5ADB19C12DF2E42700AFC52F /* XCLocalSwiftPackageReference "../astronova" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../astronova;
-		};
-/* End XCLocalSwiftPackageReference section */
 
-/* Begin XCSwiftPackageProductDependency section */
-		5ADB1A342DF2EB0900AFC52F /* astronova */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = astronova;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5A0BE3862DF0E80C0015F99B /* Project object */;
 }

@@ -331,7 +331,7 @@ struct EnhancedNameStepView: View {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
-                        .symbolEffect(.bounce.down, options: .repeating.delay(2))
+                        .symbolEffect(.bounce.down, options: .repeating)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -417,7 +417,7 @@ struct EnhancedBirthDateStepView: View {
                     Image(systemName: "calendar.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
-                        .symbolEffect(.pulse.wholeSymbol, options: .repeating.delay(1.5))
+                        .symbolEffect(.pulse.wholeSymbol, options: .repeating)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -604,8 +604,8 @@ struct ConfettiView: View {
                     .opacity(piece.opacity)
             }
         }
-        .onChange(of: isActive) { active in
-            if active {
+        .onChange(of: isActive) {
+            if isActive {
                 startConfetti()
             } else {
                 confettiPieces.removeAll()
@@ -1591,7 +1591,7 @@ struct DailySynopsisCard: View {
         .task {
             await loadDailyReading()
         }
-        .onChange(of: date) { _ in
+        .onChange(of: date) {
             Task { await loadDailyReading() }
         }
     }
