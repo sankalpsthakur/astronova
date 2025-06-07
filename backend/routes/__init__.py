@@ -5,6 +5,7 @@ from .chart import chart_bp
 from .reports import reports_bp
 from .ephemeris import ephemeris_bp
 from .locations import locations_bp
+from .misc import misc_bp
 
 __all__ = [
     'chat_bp',
@@ -13,5 +14,6 @@ __all__ = [
     'chart_bp',
     'reports_bp',
     'ephemeris_bp',
-    'locations_bp'
+    'locations_bp',
+    'misc_bp'
 ]
