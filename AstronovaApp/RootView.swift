@@ -240,6 +240,7 @@ struct SimpleProfileSetupView: View {
         ]
         
         personalizedInsight = insights.randomElement() ?? insights[0]
+        showPersonalizedInsight()
     }
     
     private func showPersonalizedInsight() {
@@ -687,32 +688,112 @@ struct LocationSearchView: View {
     }
 }
 
-/// Simplified tab bar view
+/// Simplified tab bar view with first-run guidance
 struct SimpleTabBarView: View {
+    @State private var selectedTab = 0
+    @State private var showTabGuide = false
+    @State private var guideStep = 0
+    
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             TodayTab()
                 .tabItem { Label("Today", systemImage: "sun.max") }
+                .tag(0)
             
             MatchTab()
                 .tabItem { Label("Match", systemImage: "heart.circle") }
+                .tag(1)
             
             ChatTab()
                 .tabItem { Label("Chat", systemImage: "message") }
+                .tag(2)
             
             ProfileTab()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+                .tag(3)
         }
+        .overlay(
+            // First-run tab guide overlay
+            Group {
+                if showTabGuide {
+                    TabGuideOverlay(
+                        step: guideStep,
+                        onNext: {
+                            if guideStep < 3 {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    guideStep += 1
+                                    selectedTab = guideStep
+                                }
+                            } else {
+                                dismissGuide()
+                            }
+                        },
+                        onSkip: dismissGuide
+                    )
+                }
+            }
+        )
+        .onAppear {
+            trackAppLaunch()
+            showFirstRunGuideIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToTab)) { notification in
+            if let tabIndex = notification.object as? Int {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    selectedTab = tabIndex
+                }
+            }
+        }
+    }
+    
+    private func trackAppLaunch() {
+        let count = UserDefaults.standard.integer(forKey: "app_launch_count")
+        UserDefaults.standard.set(count + 1, forKey: "app_launch_count")
+    }
+    
+    private func showFirstRunGuideIfNeeded() {
+        let launchCount = UserDefaults.standard.integer(forKey: "app_launch_count")
+        let hasSeenGuide = UserDefaults.standard.bool(forKey: "has_seen_tab_guide")
+        
+        if launchCount <= 2 && !hasSeenGuide {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    showTabGuide = true
+                }
+            }
+        }
+    }
+    
+    private func dismissGuide() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            showTabGuide = false
+        }
+        UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
     }
 }
 
 // MARK: - Simple Tab Views
 
 struct TodayTab: View {
+    @EnvironmentObject private var auth: AuthState
+    @State private var showingWelcome = false
+    @State private var animateWelcome = false
+    
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Welcome header for new users
+                    if shouldShowWelcome {
+                        WelcomeToTodayCard(onDismiss: {
+                            showingWelcome = false
+                        })
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                    
+                    // Primary CTA section
+                    PrimaryCTASection()
+                    
                     // Today's date
                     HStack {
                         Text("Today's Horoscope")
@@ -723,7 +804,7 @@ struct TodayTab: View {
                             .foregroundStyle(Color.secondary)
                     }
                     
-                    // Horoscope content
+                    // Horoscope content with enhanced visuals
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Text("🌟")
@@ -803,8 +884,11 @@ struct TodayTab: View {
                         }
                     }
                     .padding(16)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(12)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(.blue.opacity(0.1), lineWidth: 1)
+                    )
                     
                     // Planetary positions preview
                     VStack(alignment: .leading, spacing: 12) {
@@ -821,12 +905,28 @@ struct TodayTab: View {
                         }
                     }
                     
+                    // Discovery CTAs
+                    DiscoveryCTASection()
+                    
                     Spacer(minLength: 32)
                 }
                 .padding()
             }
             .navigationTitle("Today")
         }
+        .onAppear {
+            if shouldShowWelcome {
+                showingWelcome = true
+                withAnimation(.spring(response: 0.8, dampingFraction: 0.6).delay(0.5)) {
+                    animateWelcome = true
+                }
+            }
+        }
+    }
+    
+    private var shouldShowWelcome: Bool {
+        // Show welcome for first few app opens
+        UserDefaults.standard.integer(forKey: "app_launch_count") < 3
     }
 }
 
@@ -850,6 +950,265 @@ struct PlanetCard: View {
         .padding(.vertical, 8)
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
+    }
+}
+
+// MARK: - Welcome and CTA Components
+
+struct WelcomeToTodayCard: View {
+    let onDismiss: () -> Void
+    @State private var animateIcon = false
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .font(.title2)
+                    .foregroundStyle(.blue)
+                    .scaleEffect(animateIcon ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Welcome to Your Cosmic Journey!")
+                        .font(.headline.weight(.semibold))
+                    Text("Your personalized daily guidance awaits")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+                
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.gray.opacity(0.6))
+                }
+            }
+            
+            HStack(spacing: 12) {
+                Text("💫")
+                    .font(.title)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Explore the app")
+                        .font(.callout.weight(.medium))
+                    Text("• Check daily insights below")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("• Find compatibility matches")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("• Chat with your AI astrologer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+            }
+        }
+        .padding(20)
+        .background(.blue.opacity(0.05), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(.blue.opacity(0.2), lineWidth: 1)
+        )
+        .onAppear {
+            animateIcon = true
+        }
+    }
+}
+
+struct PrimaryCTASection: View {
+    @State private var animateGradient = false
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("Quick Actions")
+                    .font(.headline)
+                Spacer()
+            }
+            
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                CTACard(
+                    title: "Check Compatibility",
+                    subtitle: "With someone special",
+                    icon: "heart.circle.fill",
+                    color: .pink,
+                    action: {
+                        switchToTab(1) // Switch to Match tab
+                    }
+                )
+                
+                CTACard(
+                    title: "Ask the Stars",
+                    subtitle: "AI guidance & insights",
+                    icon: "message.circle.fill",
+                    color: .blue,
+                    action: {
+                        switchToTab(2) // Switch to Chat tab
+                    }
+                )
+            }
+        }
+    }
+    
+    private func switchToTab(_ index: Int) {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        // Post notification to switch tabs
+        NotificationCenter.default.post(name: .switchToTab, object: index)
+    }
+}
+
+struct CTACard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(color)
+                
+                VStack(spacing: 2) {
+                    Text(title)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(16)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(color.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
+struct DiscoveryCTASection: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Discover More")
+                    .font(.headline)
+                Spacer()
+            }
+            
+            VStack(spacing: 12) {
+                DiscoveryCard(
+                    title: "Explore Your Birth Chart",
+                    description: "Dive deep into your cosmic blueprint and personality insights",
+                    icon: "circle.grid.cross.fill",
+                    color: .purple,
+                    action: {
+                        switchToProfileCharts()
+                    }
+                )
+                
+                DiscoveryCard(
+                    title: "Track Planetary Transits",
+                    description: "See how current cosmic events affect your daily life",
+                    icon: "globe",
+                    color: .green,
+                    action: {
+                        switchToProfileCharts()
+                    }
+                )
+                
+                DiscoveryCard(
+                    title: "Save Your Favorite Readings",
+                    description: "Bookmark insights that resonate with you for future reference",
+                    icon: "bookmark.circle.fill",
+                    color: .orange,
+                    action: {
+                        switchToProfileBookmarks()
+                    }
+                )
+            }
+        }
+    }
+    
+    private func switchToProfileCharts() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Switch to Profile tab and then to Charts section
+        NotificationCenter.default.post(name: .switchToTab, object: 3)
+        NotificationCenter.default.post(name: .switchToProfileSection, object: 1)
+    }
+    
+    private func switchToProfileBookmarks() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        
+        // Switch to Profile tab and then to Bookmarks section
+        NotificationCenter.default.post(name: .switchToTab, object: 3)
+        NotificationCenter.default.post(name: .switchToProfileSection, object: 2)
+    }
+}
+
+struct DiscoveryCard: View {
+    let title: String
+    let description: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(color)
+                    .frame(width: 24)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.callout.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                        .lineSpacing(2)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(color.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -1330,6 +1689,13 @@ struct ProfileTab: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(auth: auth)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToProfileSection)) { notification in
+            if let sectionIndex = notification.object as? Int {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    selectedTab = sectionIndex
+                }
+            }
         }
     }
     
@@ -2229,4 +2595,146 @@ struct MockContact {
         let last = components.count > 1 ? components.last?.prefix(1) ?? "" : ""
         return String(first + last).uppercased()
     }
+}
+
+// MARK: - Tab Guide Overlay
+
+struct TabGuideOverlay: View {
+    let step: Int
+    let onNext: () -> Void
+    let onSkip: () -> Void
+    @State private var animateContent = false
+    
+    private let guides = [
+        TabGuideContent(
+            title: "Welcome to Today",
+            description: "Your daily cosmic insights and personalized guidance start here. Check your horoscope, lucky elements, and planetary influences.",
+            icon: "sun.max.fill",
+            color: .orange
+        ),
+        TabGuideContent(
+            title: "Find Your Match",
+            description: "Discover compatibility with friends, family, or that special someone. Quick checks and detailed cosmic connections.",
+            icon: "heart.fill",
+            color: .pink
+        ),
+        TabGuideContent(
+            title: "Ask the AI Astrologer",
+            description: "Get personalized answers about love, career, and life decisions from your intelligent cosmic guide.",
+            icon: "message.fill",
+            color: .blue
+        ),
+        TabGuideContent(
+            title: "Your Cosmic Profile",
+            description: "Explore birth charts, save favorite readings, and track your cosmic journey over time.",
+            icon: "person.crop.circle.fill",
+            color: .purple
+        )
+    ]
+    
+    var body: some View {
+        ZStack {
+            // Semi-transparent overlay
+            Rectangle()
+                .fill(.black.opacity(0.4))
+                .ignoresSafeArea()
+            
+            VStack {
+                Spacer()
+                
+                // Guide content card
+                VStack(spacing: 24) {
+                    // Icon and title
+                    VStack(spacing: 16) {
+                        Image(systemName: guides[step].icon)
+                            .font(.system(size: 50))
+                            .foregroundStyle(guides[step].color)
+                            .scaleEffect(animateContent ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true), value: animateContent)
+                        
+                        VStack(spacing: 8) {
+                            Text(guides[step].title)
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(.primary)
+                            
+                            Text(guides[step].description)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                        }
+                    }
+                    
+                    // Step indicator
+                    HStack(spacing: 8) {
+                        ForEach(0..<4, id: \.self) { index in
+                            Circle()
+                                .fill(index <= step ? guides[step].color : .gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(index == step ? 1.3 : 1.0)
+                                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: step)
+                        }
+                    }
+                    
+                    // Action buttons
+                    VStack(spacing: 12) {
+                        Button(action: onNext) {
+                            HStack {
+                                if step == 3 {
+                                    Text("Start Your Journey")
+                                        .font(.headline.weight(.semibold))
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .font(.title3)
+                                } else {
+                                    Text("Next")
+                                        .font(.headline.weight(.semibold))
+                                    Image(systemName: "arrow.right")
+                                        .font(.title3)
+                                }
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(guides[step].color, in: RoundedRectangle(cornerRadius: 25))
+                            .shadow(color: guides[step].color.opacity(0.3), radius: 8, y: 4)
+                        }
+                        
+                        Button("Skip Tour", action: onSkip)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(32)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(.white.opacity(0.2), lineWidth: 1)
+                )
+                .padding(.horizontal, 20)
+                .scaleEffect(animateContent ? 1 : 0.8)
+                .opacity(animateContent ? 1 : 0)
+                
+                Spacer()
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                animateContent = true
+            }
+        }
+    }
+}
+
+struct TabGuideContent {
+    let title: String
+    let description: String
+    let icon: String
+    let color: Color
+}
+
+// MARK: - Notification Extensions
+
+extension Notification.Name {
+    static let switchToTab = Notification.Name("switchToTab")
+    static let switchToProfileSection = Notification.Name("switchToProfileSection")
 }
