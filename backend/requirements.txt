@@ -13,3 +13,4 @@ anthropic>=0.25.0,<1.0.0
 pyswisseph>=2.10.0,<3.0.0
 astroquery>=0.4.0,<1.0.0
 astropy>=5.0.0,<6.0.0
+redis>=5.0.0,<6.0.0
