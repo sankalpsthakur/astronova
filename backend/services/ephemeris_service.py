@@ -7,7 +7,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, GeocentricTrueEcliptic
 import astropy.units as u
 
-from .cache import cache
+from .cache_service import cache
 
 ZODIAC_SIGNS = [
     "Aries",
@@ -50,7 +50,7 @@ class EphemerisService:
     def get_positions_for_date(self, date: datetime.date):
         return self.get_current_positions()
 
-@cache(maxsize=32)
+@cache.memoize(timeout=3600)
 def get_planetary_positions(dt: datetime | None = None) -> Dict[str, Dict[str, Any]]:
     """Return zodiac sign and degree for major planets at the given datetime."""
     if dt is None:
