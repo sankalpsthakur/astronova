@@ -5,17 +5,24 @@ import PackageDescription
 
 let package = Package(
     name: "astronova",
+    platforms: [.iOS(.v15)],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
+        // Expose the Astronova application target as a library for previews/tests.
         .library(
             name: "astronova",
-            targets: ["astronova"]),
+            targets: ["astronova"]
+        ),
+    ],
+    dependencies: [
+        // No external dependencies required
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "astronova"),
+            name: "astronova",
+            dependencies: [
+                // No external dependencies required
+            ]
+        ),
         .testTarget(
             name: "astronovaTests",
             dependencies: ["astronova"]
