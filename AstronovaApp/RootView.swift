@@ -3290,19 +3290,33 @@ struct ExportDataView: View {
     
     private func generateExportData() {
         let profile = auth.profileManager.profile
-        exportData = """
-        Astronova Profile Export
-        Generated: \(Date().formatted())
         
-        Profile Information:
-        Name: \(profile.fullName)
-        Birth Date: \(profile.birthDate.formatted(date: .long, time: .omitted))
-        Birth Time: \(profile.birthTime?.formatted(date: .omitted, time: .shortened) ?? "Not set")
-        Birth Place: \(profile.birthPlace ?? "Not set")
-        Sun Sign: \(profile.sunSign ?? "Not calculated")
-        Moon Sign: \(profile.moonSign ?? "Not calculated")
-        Rising Sign: \(profile.risingSign ?? "Not calculated")
-        """
+        // Create structured export data with proper sanitization
+        let exportDict: [String: Any] = [
+            "app": "Astronova",
+            "version": "1.0.0",
+            "exportDate": Date().ISO8601Format(),
+            "profile": [
+                "fullName": profile.fullName.trimmingCharacters(in: .whitespacesAndNewlines),
+                "birthDate": profile.birthDate.ISO8601Format(),
+                "birthTime": profile.birthTime?.ISO8601Format() ?? "",
+                "birthPlace": profile.birthPlace?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+                "sunSign": profile.sunSign?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+                "moonSign": profile.moonSign?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+                "risingSign": profile.risingSign?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            ]
+        ]
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: exportDict, options: .prettyPrinted)
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                exportData = jsonString
+            } else {
+                exportData = "Error: Failed to generate export data (encoding issue)"
+            }
+        } catch {
+            exportData = "Error: Failed to generate export data (\(error.localizedDescription))"
+        }
     }
 }
 
