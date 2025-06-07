@@ -14,19 +14,63 @@ Astronova is a delightful astrology app that provides personalized cosmic insigh
 
 ## 🏗️ Architecture
 
-### App Structure
+### Full Stack Structure
 ```
 astronova/
-├── AstronovaApp/           # Main iOS app target
+├── AstronovaApp/           # iOS App (SwiftUI + CloudKit)
 │   ├── AstronovaAppApp.swift    # App entry point
 │   ├── AuthState.swift          # Authentication state management
 │   ├── RootView.swift           # Main UI and all views
 │   ├── LoadingView.swift        # Loading states
 │   ├── OnboardingView.swift     # Initial onboarding
 │   └── Assets.xcassets/         # App icons and assets
-├── AstronovaAppTests/      # Unit tests
-└── AstronovaAppUITests/    # UI tests
+├── backend/                # Python Flask API Server
+│   ├── app.py                   # Flask application entry point
+│   ├── config.py                # Application configuration
+│   ├── routes/                  # API route handlers
+│   │   ├── chat.py             # AI chat endpoints
+│   │   ├── horoscope.py        # Daily horoscope API
+│   │   ├── match.py            # Compatibility matching
+│   │   ├── chart.py            # Birth chart generation
+│   │   ├── reports.py          # Detailed reports
+│   │   ├── ephemeris.py        # Planetary data
+│   │   ├── locations.py        # Geographic services
+│   │   └── misc.py             # Utility endpoints
+│   ├── services/               # Business logic layer
+│   │   ├── astro_calculator.py # Core astrological calculations
+│   │   ├── claude_ai.py        # AI integration service
+│   │   ├── chart_service.py    # Chart generation logic
+│   │   ├── cloudkit_service.py # iOS data sync
+│   │   ├── ephemeris_service.py# Planetary calculations
+│   │   ├── location_service.py # Geographic utilities
+│   │   ├── report_service.py   # Report generation
+│   │   └── cache_service.py    # Caching layer
+│   ├── models/                 # Data models
+│   │   └── schemas.py          # API schemas
+│   ├── tests/                  # Backend test suite
+│   ├── Dockerfile             # Container configuration
+│   └── requirements.txt       # Python dependencies
+├── AstronovaAppTests/      # iOS unit tests
+└── AstronovaAppUITests/    # iOS UI tests
 ```
+
+### Technology Stack
+
+#### **iOS Frontend**
+- **Framework**: SwiftUI + UIKit
+- **Data**: CloudKit for sync, Core Data for local storage
+- **Authentication**: Apple Sign-In with CloudKit
+- **AI Integration**: Direct Anthropic Claude API calls
+- **Deployment**: App Store (iOS 18.0+)
+
+#### **Backend API Server**
+- **Framework**: Python Flask with RESTful design
+- **AI Engine**: Anthropic Claude 3 Haiku integration
+- **Astrological Engine**: Swiss Ephemeris (swisseph)
+- **Caching**: Redis for performance optimization
+- **Testing**: Pytest with comprehensive coverage
+- **Containerization**: Docker for deployment flexibility
+- **Rate Limiting**: 200 requests/day, 50 requests/hour
 
 ### Key Components
 
@@ -208,53 +252,107 @@ flowchart TD
 
 ## 🔌 API Endpoints & Integration
 
-### Claude AI Chat Integration
+### Backend API Server (`localhost:8080`)
+
+#### **Core Endpoints**
+```bash
+# Base URL: http://localhost:8080/api/v1
+
+# Chat & AI Services
+POST /api/v1/chat              # AI-powered astrological conversations
+GET  /api/v1/chat/history      # Retrieve chat history
+
+# Horoscopes & Daily Insights  
+GET  /api/v1/horoscope/daily   # Daily horoscope by sign
+POST /api/v1/horoscope/custom  # Personalized horoscope generation
+
+# Compatibility Matching
+POST /api/v1/match/compatibility # Calculate relationship compatibility
+GET  /api/v1/match/history      # User's compatibility history
+
+# Birth Charts & Analysis
+POST /api/v1/chart/generate     # Generate natal birth chart
+GET  /api/v1/chart/{chartId}    # Retrieve generated chart
+POST /api/v1/chart/transit     # Current planetary transits
+
+# Detailed Reports
+POST /api/v1/reports/full      # Comprehensive astrological report
+GET  /api/v1/reports/{reportId} # Retrieve generated report
+
+# Planetary Data & Ephemeris
+GET  /api/v1/ephemeris/positions # Current planetary positions
+POST /api/v1/ephemeris/calculate # Historical planetary data
+
+# Location Services
+GET  /api/v1/locations/search   # Geographic location lookup
+POST /api/v1/locations/timezone # Timezone calculation
+
+# Utility Endpoints
+GET  /api/v1/misc/health       # Service health check
+GET  /api/v1/misc/zodiac-signs # Zodiac sign information
+```
+
+#### **Authentication & Security**
+```bash
+# JWT Authentication required for protected endpoints
+Authorization: Bearer <jwt_token>
+
+# Rate Limiting
+X-RateLimit-Limit: 200/day, 50/hour
+X-RateLimit-Remaining: 199
+X-RateLimit-Reset: 1640995200
+```
+
+### iOS-Backend Integration
 ```swift
-// Chat Service API
-struct ClaudeAPIService {
-    func sendMessage(_ message: String) async throws -> String
-    func generateHoroscope(for date: Date, sign: String) async throws -> String
-    func generateCompatibilityReading(user: UserProfile, partner: PartnerData) async throws -> String
+// Backend API Service
+struct AstronovaAPIService {
+    private let baseURL = "http://localhost:8080/api/v1"
+    
+    // Chat Integration
+    func sendChatMessage(_ message: String) async throws -> ChatResponse
+    func getChatHistory() async throws -> [ChatMessage]
+    
+    // Horoscope Services
+    func getDailyHoroscope(sign: ZodiacSign) async throws -> Horoscope
+    func generatePersonalizedHoroscope(birthData: BirthData) async throws -> Horoscope
+    
+    // Compatibility Analysis
+    func calculateCompatibility(user: BirthData, partner: BirthData) async throws -> CompatibilityResult
+    
+    // Chart Generation
+    func generateBirthChart(birthData: BirthData) async throws -> BirthChart
+    func getCurrentTransits() async throws -> [Transit]
 }
 ```
 
-**Endpoint**: Anthropic Messages API v1
-- **URL**: `https://api.anthropic.com/v1/messages`
-- **Method**: `POST`
-- **Headers**: 
-  ```
-  Content-Type: application/json
-  x-api-key: [API_KEY]
-  anthropic-version: 2023-06-01
-  ```
+### Claude AI Integration (Backend)
+**Service**: `backend/services/claude_ai.py`
+- **Model**: `claude-3-haiku-20240307`
+- **Max Tokens**: 1024
+- **System Prompt**: Specialized astrological guidance
+- **Rate Limiting**: Managed at backend level
 
 **Input**:
 ```json
 {
-  "model": "claude-3-haiku-20240307",
-  "max_tokens": 1024,
-  "system": "You are a wise and insightful astrologer...",
-  "messages": [
-    {
-      "role": "user", 
-      "content": "What does my birth chart say about my career?"
-    }
-  ]
+  "message": "What does my birth chart say about my career?",
+  "birth_data": {
+    "date": "1990-05-15T10:30:00Z",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "timezone": "America/New_York"
+  }
 }
 ```
 
 **Output**:
 ```json
 {
-  "id": "msg_123",
-  "type": "message",
-  "role": "assistant",
-  "content": [
-    {
-      "type": "text",
-      "text": "Based on your chart, you have strong leadership qualities..."
-    }
-  ]
+  "response": "Based on your chart, you have strong leadership qualities...",
+  "confidence": 0.95,
+  "sources": ["natal_chart", "current_transits"],
+  "timestamp": "2024-01-15T14:30:00Z"
 }
 ```
 
@@ -362,35 +460,138 @@ CompatibilityResult(
 ## 🚀 Getting Started
 
 ### Prerequisites
+
+#### **iOS Development**
 - **Xcode** 15.0 or later
 - **iOS** 18.0 or later deployment target
 - **Apple Developer Account** (for CloudKit and testing)
+
+#### **Backend Development**
+- **Python** 3.11 or later
+- **Redis** server (for caching)
+- **Docker** (optional, for containerized deployment)
 - **Anthropic API Key** (for AI features)
 
 ### Setup
+
+#### **iOS App Setup**
 1. Clone the repository
 2. Open `astronova.xcodeproj` in Xcode
 3. Configure your Apple Developer team in project settings
-4. Add your Anthropic API key to the app configuration
+4. Configure CloudKit container in capabilities
 5. Build and run on simulator or device
 
+#### **Backend Server Setup**
+```bash
+# Navigate to backend directory
+cd backend/
+
+# Create virtual environment
+python -m venv astronova-env
+source astronova-env/bin/activate  # On Windows: astronova-env\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+export SECRET_KEY="your-secret-key"
+export JWT_SECRET_KEY="your-jwt-secret"
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+export FLASK_DEBUG="true"
+
+# Start Redis server (required for caching)
+redis-server
+
+# Run the Flask application
+python app.py
+# Server starts at http://localhost:8080
+```
+
+#### **Docker Deployment**
+```bash
+# Build Docker image
+docker build -t astronova-backend .
+
+# Run container
+docker run -p 8080:8080 \
+  -e SECRET_KEY="your-secret-key" \
+  -e ANTHROPIC_API_KEY="your-api-key" \
+  astronova-backend
+```
+
 ### Configuration
+
+#### **iOS Configuration**
 ```swift
 // Add to your configuration
 struct APIConfiguration {
-    static let anthropicAPIKey = "your-api-key-here"
-    static let cloudKitContainerID = "iCloud.com.yourteam.astronova"
+    static let backendBaseURL = "http://localhost:8080/api/v1"
+    static let cloudKitContainerID = "iCloud.com.sankalp.AstronovaApp"
 }
+```
+
+#### **Backend Configuration**
+```python
+# backend/config.py
+import os
+
+class Config:
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret'
+    ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://localhost:6379'
+    
+    # Rate limiting
+    RATELIMIT_STORAGE_URL = REDIS_URL
+    RATELIMIT_DEFAULT = "200 per day;50 per hour"
 ```
 
 ## 🧪 Testing
 
+### **iOS Testing**
 ```bash
-# Run unit tests
+# Run iOS unit tests
 xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp -destination 'platform=iOS Simulator,name=iPhone 15'
 
-# Run UI tests  
+# Run iOS UI tests  
 xcodebuild test -project astronova.xcodeproj -scheme AstronovaAppUITests -destination 'platform=iOS Simulator,name=iPhone 15'
+```
+
+### **Backend Testing**
+```bash
+# Navigate to backend directory
+cd backend/
+
+# Install test dependencies
+pip install pytest pytest-cov pytest-asyncio
+
+# Run all backend tests
+pytest
+
+# Run tests with coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test files
+pytest tests/test_endpoints.py
+pytest tests/test_ephemeris_service.py
+
+# Run tests in verbose mode
+pytest -v --tb=short
+```
+
+### **Integration Testing**
+```bash
+# Start backend server
+cd backend/ && python app.py &
+
+# Run iOS app pointing to local backend
+# Update APIConfiguration.backendBaseURL = "http://localhost:8080/api/v1"
+
+# Test full workflow:
+# 1. iOS app authentication
+# 2. Backend API calls
+# 3. CloudKit sync
+# 4. AI chat functionality
 ```
 
 ## 📱 App Store Submission
