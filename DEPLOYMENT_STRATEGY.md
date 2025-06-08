@@ -56,9 +56,9 @@ App Information:
   Content Rights: Does Not Use Third-Party Content
 
 Pricing:
-  Business Model: Freemium
+  Business Model: Free
   Base Price: Free
-  In-App Purchases: Premium Features
+  In-App Purchases: None
 
 App Privacy:
   Data Collection: Minimal (Birth Date, Name, Location)
@@ -78,7 +78,6 @@ Database Schema:
 - ChatMessage (Users)
 - KundaliMatch (Users)
 - BookmarkedReading (Users)
-- Order (Users)
 
 Security Roles:
 - Authenticated Users: Read/Write own records

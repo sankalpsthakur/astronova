@@ -4,13 +4,22 @@ Astronova is a delightful astrology app that provides personalized cosmic insigh
 
 ## ✨ Features
 
-- **60-Second Onboarding**: Streamlined 3-step profile setup with instant personalized insights
+### 🎯 **Core Functionality**
+- **60-Second Onboarding**: Streamlined 5-step profile setup with instant personalized insights
+- **Real Sign in with Apple**: Authentic Apple ID integration with secure credential handling
+- **Live Contacts Integration**: Access device contacts for compatibility analysis with proper privacy permissions
 - **Daily Horoscopes**: Personalized daily guidance with cosmic themes and lucky elements
 - **AI Astrologer Chat**: Intelligent conversation with Claude-powered astrological guidance
-- **Compatibility Matching**: Check cosmic compatibility with friends, family, and partners
-- **Birth Chart Visualization**: Interactive natal charts and planetary transit tracking
+- **Compatibility Matching**: Check cosmic compatibility with friends, family, and partners using real birth data
+- **Birth Chart Visualization**: Interactive natal charts with Swiss Ephemeris calculations
+
+### 🎨 **Enhanced User Experience**
+- **Premium Navigation**: Polished bottom tab bar with gradient highlights and smooth animations
+- **Elegant Completion Effects**: Beautiful starburst animations replacing basic confetti
+- **Professional UI Polish**: Enhanced selected states, proper safe area handling, and responsive design
 - **Guided First-Run Experience**: Beautiful animated tour across all app features
-- **Cosmic Design System**: Modern UI with cosmic gradients, animations, and haptic feedback
+- **Cosmic Design System**: Modern UI with cosmic gradients, spring animations, and haptic feedback
+- **Accessibility Support**: Full VoiceOver compatibility and Dynamic Type support
 
 ## 🏗️ Architecture
 
@@ -22,7 +31,12 @@ astronova/
 │   ├── AuthState.swift          # Authentication state management
 │   ├── RootView.swift           # Main UI and all views
 │   ├── LoadingView.swift        # Loading states
-│   ├── OnboardingView.swift     # Initial onboarding
+│   ├── OnboardingView.swift     # Apple Sign-in integration
+│   ├── UserProfile.swift        # Profile management with API integration
+│   ├── NetworkClient.swift      # HTTP networking layer
+│   ├── APIServices.swift        # Backend service integration
+│   ├── APIModels.swift          # Data models matching backend schema
+│   ├── Info.plist              # App configuration with privacy permissions
 │   └── Assets.xcassets/         # App icons and assets
 ├── backend/                # Python Flask API Server
 │   ├── app.py                   # Flask application entry point
@@ -57,11 +71,13 @@ astronova/
 ### Technology Stack
 
 #### **iOS Frontend**
-- **Framework**: SwiftUI + UIKit
-- **Data**: CloudKit for sync, Core Data for local storage
-- **Authentication**: Apple Sign-In with CloudKit
-- **AI Integration**: Direct Anthropic Claude API calls
-- **Deployment**: App Store (iOS 18.0+)
+- **Framework**: SwiftUI + UIKit with modern iOS 17+ features
+- **Data**: CloudKit for sync, Core Data for local storage, UserDefaults for preferences
+- **Authentication**: Apple Sign-In with AuthenticationServices framework
+- **Networking**: Custom NetworkClient with async/await and proper error handling
+- **Privacy**: Contacts framework integration with proper permission handling
+- **AI Integration**: Backend API integration with comprehensive data models
+- **Deployment**: App Store (iOS 17.0+)
 
 #### **Backend API Server**
 - **Framework**: Python Flask with RESTful design
@@ -75,21 +91,27 @@ astronova/
 ### Key Components
 
 #### 1. Authentication Flow
-- **Apple Sign-In Integration**: Seamless authentication with Apple ID
+- **Apple Sign-In Integration**: Real AuthenticationServices framework integration
+- **Credential Handling**: Secure extraction of user ID, name, and email from Apple
+- **Profile Pre-population**: Automatic profile setup with Apple ID information
 - **CloudKit Integration**: User data sync across devices
 - **Keychain Storage**: Secure credential management
 - **State Management**: Reactive authentication state with `@EnvironmentObject`
 
 #### 2. Onboarding System
-- **SimpleProfileSetupView**: 3-step cosmic onboarding (Welcome → Name → Birth Date)
-- **Personalized Insights**: Instant cosmic reading based on birth date
-- **Animated Backgrounds**: Cosmic gradients with floating stars
-- **Confetti Celebrations**: Delightful completion animations
+- **SimpleProfileSetupView**: 5-step cosmic onboarding (Welcome → Name → Birth Date → Birth Time → Birth Place)
+- **Real Location Search**: Live API integration with autocomplete and coordinate resolution
+- **Personalized Insights**: AI-generated cosmic reading based on complete birth data
+- **Animated Backgrounds**: Cosmic gradients with floating stars and dynamic effects
+- **Elegant Completion**: Beautiful starburst animations with expanding rings and floating sparkles
 
 #### 3. Tab-Based Navigation
+- **Enhanced Tab Bar**: Premium design with gradient highlights and proper safe area handling
+- **Smooth Animations**: Spring-based transitions with scale effects and haptic feedback
+- **Real Contacts Integration**: Friends tab with device contacts and privacy permissions
 - **Today Tab**: Daily horoscopes with quick action CTAs
-- **Match Tab**: Compatibility checking with simplified form
-- **Chat Tab**: AI astrologer conversation interface
+- **Friends Tab**: Compatibility checking with real contact picker
+- **Nexus Tab**: AI astrologer conversation interface
 - **Profile Tab**: Birth charts, bookmarks, and settings
 
 #### 4. Guided Experience System
@@ -97,6 +119,16 @@ astronova/
 - **Welcome Cards**: Contextual guidance for new users
 - **CTA Integration**: Cross-tab navigation with haptic feedback
 - **Usage Analytics**: Launch counting and onboarding state tracking
+
+### 🆕 **Recent Major Updates**
+
+#### **v2.0 - Premium UI & Real Functionality** (Latest)
+- ✨ **Complete UI/UX Overhaul**: Premium navigation with gradient highlights and smooth animations
+- 🍎 **Real Sign in with Apple**: Authentic AuthenticationServices integration with credential handling
+- 📱 **Live Contacts Integration**: Real device contacts with privacy-first implementation using CNContactStore
+- 🎉 **Enhanced Animations**: Beautiful starburst completion effects replacing basic confetti
+- 🔗 **Full Backend Integration**: Complete API layer with NetworkClient, APIServices, and proper data models
+- 🎨 **Professional Polish**: Enhanced selected states, proper safe area handling, and accessibility improvements
 
 ## 🗄️ CloudKit Data Model (ERD)
 
@@ -605,22 +637,64 @@ The app is designed for App Store distribution with:
 
 ## 🎨 Design System
 
-### Color Palette
-- **Primary**: Cosmic Purple (#2d1b69)
-- **Secondary**: Stellar Blue (#1a1a2e) 
-- **Accent**: Golden (#FFD700)
-- **Background**: Deep Space (#0f0f23)
+### Sophisticated Color Palette
+
+#### **Light Theme - Celestial Dawn**
+- **Primary**: Deep Cosmos (#1a1a2e) - Rich navy for primary elements
+- **Secondary**: Starlight Blue (#3f51b5) - Vibrant blue for accents
+- **Accent**: Aurora Gold (#f39c12) - Warm gold for highlights and CTAs
+- **Surface**: Pearl White (#fafafa) - Clean background surface
+- **Surface Secondary**: Cloud Silver (#f5f5f5) - Secondary background
+- **Text Primary**: Cosmic Black (#1a1a1a) - High contrast text
+- **Text Secondary**: Stellar Gray (#6b7280) - Secondary text and labels
+
+#### **Dark Theme - Midnight Cosmos**
+- **Primary**: Celestial Purple (#8b5cf6) - Luminous purple for primary elements
+- **Secondary**: Nebula Blue (#3b82f6) - Bright blue for accents
+- **Accent**: Stellar Gold (#fbbf24) - Warm gold maintaining visibility
+- **Surface**: Deep Space (#0f0f23) - Rich dark background
+- **Surface Secondary**: Void Gray (#1e1e2e) - Elevated surfaces
+- **Text Primary**: Starlight White (#f8fafc) - High contrast text
+- **Text Secondary**: Cosmic Silver (#94a3b8) - Secondary text and labels
+
+#### **Semantic Colors (Both Themes)**
+- **Success**: Emerald (#10b981) - Positive states, confirmations
+- **Warning**: Amber (#f59e0b) - Caution, important notices
+- **Error**: Rose (#ef4444) - Errors, destructive actions
+- **Info**: Sky Blue (#0ea5e9) - Informational content
+
+#### **Gradient Palettes**
+- **Primary Gradient**: Linear blend from Primary to Secondary
+- **Cosmic Gradient**: Radial blend incorporating purple, blue, and gold
+- **Surface Gradient**: Subtle gradients for depth and dimension
+- **Aurora Gradient**: Multi-color cosmic effect for special elements
 
 ### Typography
-- **Primary Font**: SF Pro Rounded
-- **Display**: System Large Title
-- **Body**: System Body with increased line spacing
+- **Primary Font**: SF Pro Rounded - Apple's humanist font for warmth
+- **Display**: System Large Title with cosmic character spacing
+- **Headlines**: SF Pro Display for impact and clarity
+- **Body**: SF Pro Text with optimized line spacing (1.4x)
+- **Captions**: SF Pro Text with increased letter spacing for elegance
+
+### Elevation & Shadows
+- **Level 1**: Subtle shadow (0, 1, 3, rgba(0,0,0,0.1))
+- **Level 2**: Card elevation (0, 4, 6, rgba(0,0,0,0.07))
+- **Level 3**: Modal elevation (0, 10, 15, rgba(0,0,0,0.1))
+- **Level 4**: Navigation elevation (0, 20, 25, rgba(0,0,0,0.15))
 
 ### Animation Principles
-- **Spring Animations**: Natural, bouncy feel
-- **Cosmic Themes**: Floating stars, gradient backgrounds
-- **Haptic Feedback**: Medium impact for actions, light for navigation
-- **Progressive Disclosure**: Smooth reveal animations
+- **Spring Animations**: Natural, bouncy feel with 0.6s response, 0.8 damping
+- **Micro-interactions**: 0.2s ease-out for immediate feedback
+- **Page Transitions**: 0.4s spring animations with slight scale effects
+- **Cosmic Themes**: Floating stars, gradient backgrounds, particle effects
+- **Haptic Feedback**: Medium impact for actions, light for navigation, selection for toggles
+- **Progressive Disclosure**: Smooth reveal animations with staggered timing
+
+### Component Design Language
+- **Border Radius**: 12px for cards, 8px for buttons, 16px for sheets
+- **Spacing Scale**: 4, 8, 12, 16, 20, 24, 32, 40, 48 (multiples of 4)
+- **Icon Style**: SF Symbols with 2.0 weight, cosmic modifications
+- **Button Heights**: 44px minimum for touch targets, 52px for primary CTAs
 
 ## 🤝 Contributing
 

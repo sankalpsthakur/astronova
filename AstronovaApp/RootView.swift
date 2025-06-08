@@ -1,5 +1,16 @@
 import SwiftUI
 
+// MARK: - Notification.Name Helpers
+
+extension Notification.Name {
+    static let switchToTab            = Notification.Name("switchToTab")
+    static let switchToProfileSection = Notification.Name("switchToProfileSection")
+}
+
+// Duplicate Notification.Name extension removed. The definitions for
+// `switchToTab` and `switchToProfileSection` already exist at the top of this
+// file.
+
 /// Decides which high-level screen to show based on authentication state.
 struct RootView: View {
     @EnvironmentObject private var auth: AuthState
@@ -148,9 +159,12 @@ struct SimpleProfileSetupView: View {
                                     Text("Reveal My Cosmic Insight")
                                         .font(.title3.weight(.semibold))
                                 } else {
-                                    Text(currentStep == 0 ? "Begin Journey" : "Continue")
+                                    let buttonText = currentStep == 0 ? "Begin Journey" : 
+                                                    currentStep == 4 ? (birthPlace.isEmpty ? "Skip for Now" : "Continue") : 
+                                                    "Continue"
+                                    Text(buttonText)
                                         .font(.title3.weight(.semibold))
-                                    Image(systemName: "arrow.right")
+                                    Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "forward.end" : "arrow.right")
                                         .font(.title3.weight(.semibold))
                                 }
                             }
@@ -222,12 +236,44 @@ struct SimpleProfileSetupView: View {
     private var canContinue: Bool {
         switch currentStep {
         case 0: return true
-        case 1: return !fullName.isEmpty
-        case 2: return true
-        case 3: return true
-        case 4: return !birthPlace.isEmpty
+        case 1: return isValidName(fullName)
+        case 2: return isValidBirthDate(birthDate)
+        case 3: return true // Birth time is optional but always valid
+        case 4: return true // Birth place is optional - can skip or provide
         default: return false
         }
+    }
+    
+    private func isValidName(_ name: String) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.count >= 2 && 
+               trimmedName.count <= 50 && 
+               !trimmedName.contains("  ") &&
+               trimmedName.range(of: "^[a-zA-Z\\s\\-']+$", options: .regularExpression) != nil
+    }
+    
+    private func isValidBirthDate(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Check if date is in the future
+        if date > now {
+            return false
+        }
+        
+        // Check if date is too far in the past (more than 120 years ago)
+        if let earliestValidDate = calendar.date(byAdding: .year, value: -120, to: now),
+           date < earliestValidDate {
+            return false
+        }
+        
+        return true
+    }
+    
+    private func isValidLocation() -> Bool {
+        // Check if we have valid coordinates from the location selection
+        return auth.profileManager.profile.birthCoordinates != nil &&
+               auth.profileManager.profile.timezone != nil
     }
     
     private func handleContinue() {
@@ -251,26 +297,87 @@ struct SimpleProfileSetupView: View {
         auth.profileManager.profile.birthTime = birthTime
         auth.profileManager.profile.birthPlace = birthPlace
         
-        // Attempt to save the profile with error handling
-        do {
-            try auth.profileManager.saveProfile()
-        } catch {
-            saveError = "Failed to save profile: \(error.localizedDescription)"
-            showingSaveError = true
-            print("Profile save error: \(error)")
-            // Continue with insight generation even if save fails
+        // For birth place, search for coordinates and timezone only if provided
+        Task {
+            if !birthPlace.isEmpty {
+                // Search for location coordinates and timezone
+                let locations = await auth.profileManager.searchLocations(query: birthPlace)
+                if !locations.isEmpty, let location = locations.first {
+                    await MainActor.run {
+                        auth.profileManager.setBirthLocation(location)
+                    }
+                } else {
+                    print("No location found for: \(birthPlace)")
+                }
+            } else {
+                print("Birth place skipped - user can add later")
+            }
+            
+            // Attempt to save the profile with error handling
+            do {
+                try auth.profileManager.saveProfile()
+            } catch {
+                await MainActor.run {
+                    saveError = "Failed to save profile: \(error.localizedDescription)"
+                    showingSaveError = true
+                }
+                print("Profile save error: \(error)")
+            }
+            
+            // Generate real astrological insight using API
+            if auth.isAPIConnected {
+                await generateRealAstrologicalInsight()
+            } else {
+                print("API not connected, generating offline insight")
+                await generateOfflineInsight()
+            }
         }
+    }
+    
+    private func generateRealAstrologicalInsight() async {
+        // Generate chart and get real astrological data
+        await auth.profileManager.generateChart()
         
-        let insights = [
-            "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime)) in \(birthPlace) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
-            "Born under the influence of \(formatDate(birthDate)) in \(birthPlace), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
-            "The celestial patterns on \(formatDate(birthDate)) at \(formatTime(birthTime)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery.",
-            "Your arrival on \(formatDate(birthDate)) in \(birthPlace) marks you as someone with exceptional communication skills and a natural ability to bring harmony to challenging situations.",
-            "The cosmic energies present on \(formatDate(birthDate)) at \(formatTime(birthTime)) suggest you have a unique blend of analytical mind and creative spirit, making you a natural problem-solver."
+        if let chart = auth.profileManager.lastChart,
+           let westernChart = chart.westernChart {
+            
+            let sunSign = westernChart.positions["sun"]?.sign ?? "Unknown"
+            let moonSign = westernChart.positions["moon"]?.sign ?? "Unknown"
+            
+            let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
+            
+            let insight = """
+            Welcome to your cosmic journey, \(fullName)! 
+            
+            Born on \(formatDate(birthDate)) at \(formatTime(birthTime))\(locationText), the stars reveal fascinating insights about your celestial blueprint.
+            
+            Your Sun in \(sunSign) illuminates your core identity, while your Moon in \(moonSign) reflects your emotional nature. This unique combination creates a personality that is both dynamic and deeply intuitive.
+            
+            The planetary positions at your birth moment suggest you possess natural talents for leadership and creativity, with a special gift for understanding others' perspectives.
+            """
+            
+            await MainActor.run {
+                personalizedInsight = insight
+                showPersonalizedInsight()
+            }
+        } else {
+            await generateOfflineInsight()
+        }
+    }
+    
+    private func generateOfflineInsight() async {
+        let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
+        
+        let fallbackInsights = [
+            "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime))\(locationText) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
+            "Born under the influence of \(formatDate(birthDate))\(locationText), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
+            "The celestial patterns on \(formatDate(birthDate)) at \(formatTime(birthTime)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery."
         ]
         
-        personalizedInsight = insights.randomElement() ?? insights[0]
-        showPersonalizedInsight()
+        await MainActor.run {
+            personalizedInsight = fallbackInsights.randomElement() ?? fallbackInsights[0]
+            showPersonalizedInsight()
+        }
     }
     
     private func showPersonalizedInsight() {
@@ -315,7 +422,7 @@ struct EnhancedWelcomeStepView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 50, weight: .light))
                         .foregroundStyle(.white)
-                        .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing, options: .repeating)
+                        .symbolEffect(.variableColor, options: .repeating)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -352,6 +459,7 @@ struct EnhancedNameStepView: View {
     @Binding var fullName: String
     @State private var animateIcon = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var validationError: String?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -368,7 +476,8 @@ struct EnhancedNameStepView: View {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
-                        .symbolEffect(.bounce.down, options: .repeating)
+                        // `.bounce` is iOS 18+. Use `.pulse` which is available earlier.
+                        .symbolEffect(.pulse, options: .repeating)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -386,7 +495,7 @@ struct EnhancedNameStepView: View {
                         .padding(.horizontal, 8)
                 }
                 
-                // Beautiful text field
+                // Enhanced text field with validation
                 VStack(spacing: 8) {
                     TextField("", text: $fullName, prompt: Text("Enter your name").foregroundColor(.white.opacity(0.6)))
                         .font(.title3.weight(.medium))
@@ -398,14 +507,32 @@ struct EnhancedNameStepView: View {
                                 .fill(.white.opacity(0.15))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 16)
-                                        .stroke(.white.opacity(0.3), lineWidth: 1)
+                                        .stroke(
+                                            validationError != nil ? .red.opacity(0.6) : .white.opacity(0.3), 
+                                            lineWidth: validationError != nil ? 2 : 1
+                                        )
                                 )
                         )
                         .focused($isTextFieldFocused)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
+                        .onChange(of: fullName) { _, newValue in
+                            validateName(newValue)
+                        }
                     
-                    if !fullName.isEmpty {
+                    // Validation feedback
+                    if let error = validationError {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red.opacity(0.9))
+                            Spacer()
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                    } else if !fullName.isEmpty && isValidName(fullName) {
                         HStack {
                             Image(systemName: "star.fill")
                                 .font(.caption)
@@ -416,7 +543,6 @@ struct EnhancedNameStepView: View {
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: fullName.isEmpty)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -432,11 +558,55 @@ struct EnhancedNameStepView: View {
             }
         }
     }
+    
+    private func validateName(_ name: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if trimmedName.isEmpty {
+            validationError = nil
+            return
+        }
+        
+        if trimmedName.count < 2 {
+            validationError = "Name must be at least 2 characters long"
+            return
+        }
+        
+        if trimmedName.count > 50 {
+            validationError = "Name cannot exceed 50 characters"
+            return
+        }
+        
+        // Check for valid characters (letters, spaces, hyphens, apostrophes)
+        let validNameRegex = "^[a-zA-Z\\s\\-']+$"
+        let nameTest = NSPredicate(format: "SELF MATCHES %@", validNameRegex)
+        if !nameTest.evaluate(with: trimmedName) {
+            validationError = "Name can only contain letters, spaces, hyphens, and apostrophes"
+            return
+        }
+        
+        // Check for reasonable number of consecutive spaces
+        if trimmedName.contains("  ") {
+            validationError = "Name cannot contain multiple consecutive spaces"
+            return
+        }
+        
+        validationError = nil
+    }
+    
+    private func isValidName(_ name: String) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.count >= 2 && 
+               trimmedName.count <= 50 && 
+               !trimmedName.contains("  ") &&
+               trimmedName.range(of: "^[a-zA-Z\\s\\-']+$", options: .regularExpression) != nil
+    }
 }
 
 struct EnhancedBirthDateStepView: View {
     @Binding var birthDate: Date
     @State private var animateIcon = false
+    @State private var validationError: String?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -471,31 +641,56 @@ struct EnhancedBirthDateStepView: View {
                         .padding(.horizontal, 8)
                 }
                 
-                // Beautiful date picker
+                // Enhanced date picker with validation
                 VStack(spacing: 12) {
                     DatePicker(
                         "",
                         selection: $birthDate,
-                        in: ...Date(),
+                        in: getDateRange(),
                         displayedComponents: .date
                     )
                     .datePickerStyle(.wheel)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(.white.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(
+                                        validationError != nil ? .red.opacity(0.6) : .clear, 
+                                        lineWidth: 2
+                                    )
+                            )
                     )
                     .colorScheme(.dark)
                     .padding(.horizontal, 24)
+                    .onChange(of: birthDate) { _, newValue in
+                        validateBirthDate(newValue)
+                    }
                     
-                    Text("Selected: \(formatSelectedDate())")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(.white.opacity(0.15))
-                        )
+                    // Validation feedback
+                    if let error = validationError {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red.opacity(0.9))
+                            Spacer()
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                        .padding(.horizontal, 24)
+                    } else {
+                        Text("Selected: \(formatSelectedDate())")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(.white.opacity(0.15))
+                            )
+                    }
                 }
             }
             
@@ -503,7 +698,35 @@ struct EnhancedBirthDateStepView: View {
         }
         .onAppear {
             animateIcon = true
+            validateBirthDate(birthDate)
         }
+    }
+    
+    private func getDateRange() -> ClosedRange<Date> {
+        let calendar = Calendar.current
+        let earliestDate = calendar.date(byAdding: .year, value: -120, to: Date()) ?? Date()
+        let latestDate = Date()
+        return earliestDate...latestDate
+    }
+    
+    private func validateBirthDate(_ date: Date) {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Check if date is in the future
+        if date > now {
+            validationError = "Birth date cannot be in the future"
+            return
+        }
+        
+        // Check if date is too far in the past (more than 120 years ago)
+        if let earliestValidDate = calendar.date(byAdding: .year, value: -120, to: now),
+           date < earliestValidDate {
+            validationError = "Birth date cannot be more than 120 years ago"
+            return
+        }
+        
+        validationError = nil
     }
     
     private func formatSelectedDate() -> String {
@@ -596,6 +819,11 @@ struct EnhancedBirthPlaceStepView: View {
     let onComplete: (String) -> Void
     @State private var animateIcon = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var searchResults: [LocationResult] = []
+    @State private var isSearching = false
+    @State private var showDropdown = false
+    @State private var searchTask: Task<Void, Never>?
+    @EnvironmentObject private var auth: AuthState
     
     var body: some View {
         VStack(spacing: 0) {
@@ -612,7 +840,7 @@ struct EnhancedBirthPlaceStepView: View {
                     Image(systemName: "location.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
-                        .symbolEffect(.bounce.down, options: .repeating)
+                        .scaleEffect(animateIcon ? 1.1 : 1.0)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -622,7 +850,7 @@ struct EnhancedBirthPlaceStepView: View {
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                     
-                    Text("Your birth location helps us calculate the exact positions of celestial bodies at the moment of your birth.")
+                    Text("Your birth location helps us calculate precise celestial positions. You can add this later if you prefer to skip for now.")
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
@@ -630,33 +858,111 @@ struct EnhancedBirthPlaceStepView: View {
                         .padding(.horizontal, 8)
                 }
                 
-                // Beautiful text field
+                // Enhanced text field with autocomplete
                 VStack(spacing: 8) {
-                    TextField("", text: $birthPlace, prompt: Text("City, State/Country").foregroundColor(.white.opacity(0.6)))
-                        .font(.title3.weight(.medium))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
+                    ZStack(alignment: .trailing) {
+                        TextField("", text: $birthPlace, prompt: Text("City, State/Country").foregroundColor(.white.opacity(0.6)))
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.white.opacity(0.15))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                            .focused($isTextFieldFocused)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .onChange(of: birthPlace) { _, newValue in
+                                handleLocationSearch(newValue)
+                            }
+                        
+                        if isSearching {
+                            ProgressView()
+                                .foregroundStyle(.white)
+                                .padding(.trailing, 20)
+                        }
+                    }
+                    
+                    // Location dropdown
+                    if showDropdown && !searchResults.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(searchResults.prefix(5), id: \.name) { location in
+                                Button {
+                                    selectLocation(location)
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(location.name)
+                                                .font(.body.weight(.medium))
+                                                .foregroundStyle(.white)
+                                            Text(location.fullName)
+                                                .font(.caption)
+                                                .foregroundStyle(.white.opacity(0.7))
+                                        }
+                                        Spacer()
+                                        Image(systemName: "location.fill")
+                                            .font(.caption)
+                                            .foregroundStyle(.white.opacity(0.6))
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                }
+                                .background(.white.opacity(0.1))
+                                
+                                if location.name != searchResults.prefix(5).last?.name {
+                                    Divider()
+                                        .background(.white.opacity(0.2))
+                                }
+                            }
+                        }
                         .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.white.opacity(0.15))
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.white.opacity(0.1))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(.white.opacity(0.3), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(.white.opacity(0.2), lineWidth: 1)
                                 )
                         )
-                        .focused($isTextFieldFocused)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
+                        .transition(.scale.combined(with: .opacity))
+                    }
                     
-                    if !birthPlace.isEmpty {
+                    if !birthPlace.isEmpty && !showDropdown {
                         HStack {
-                            Image(systemName: "checkmark.circle.fill")
+                            if auth.profileManager.profile.birthCoordinates != nil && auth.profileManager.profile.timezone != nil {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                                Text("Perfect! Location validated with coordinates.")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.8))
+                            } else {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                                Text("Select a location from the dropdown for best results, or skip to add later.")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange.opacity(0.9))
+                            }
+                            Spacer()
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: birthPlace.isEmpty)
+                    }
+                    
+                    // Optional skip hint
+                    if birthPlace.isEmpty && !showDropdown {
+                        HStack {
+                            Image(systemName: "info.circle")
                                 .font(.caption)
-                                .foregroundStyle(.green)
-                            Text("Perfect! Your cosmic map is ready to be revealed.")
+                                .foregroundStyle(.white.opacity(0.6))
+                            Text("Birth location is optional - you can always add it later in your profile.")
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.8))
+                                .foregroundStyle(.white.opacity(0.6))
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
@@ -675,6 +981,64 @@ struct EnhancedBirthPlaceStepView: View {
                 isTextFieldFocused = true
             }
         }
+        .onTapGesture {
+            if showDropdown {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showDropdown = false
+                }
+            }
+        }
+    }
+    
+    private func handleLocationSearch(_ query: String) {
+        // Cancel previous search
+        searchTask?.cancel()
+        
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, query.count >= 2 else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showDropdown = false
+                searchResults = []
+            }
+            return
+        }
+        
+        isSearching = true
+        
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
+            
+            if !Task.isCancelled {
+                let results = await auth.profileManager.searchLocations(query: query)
+                
+                await MainActor.run {
+                    if !Task.isCancelled {
+                        searchResults = results
+                        isSearching = false
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showDropdown = !results.isEmpty
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func selectLocation(_ location: LocationResult) {
+        birthPlace = location.fullName
+        
+        // Set location data in the profile manager
+        auth.profileManager.setBirthLocation(location)
+        
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showDropdown = false
+            isTextFieldFocused = false
+        }
+        
+        searchResults = []
+        
+        // Provide haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
     }
 }
 
@@ -1152,9 +1516,19 @@ struct CustomTabBar: View {
                         selectedTab = index
                     }
                 } label: {
-                    VStack(spacing: 4) {
-                        // Icon
-                        Group {
+                    VStack(spacing: 6) {
+                        // Background highlight for selected tab
+                        ZStack {
+                            if selectedTab == index {
+                                Circle()
+                                    .fill(.blue.gradient)
+                                    .frame(width: 32, height: 32)
+                                    .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                            
+                            // Icon
+                            Group {
                             if let customIcon = tabs[index].customIcon {
                                 switch customIcon {
                                 case "friends":
@@ -1172,16 +1546,20 @@ struct CustomTabBar: View {
                                     .font(.title3)
                             }
                         }
-                        .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                        .frame(width: 32, height: 32)
+                        .foregroundStyle(selectedTab == index ? .white : .secondary)
+                        .scaleEffect(selectedTab == index ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
                         .accessibilityHidden(true)
                         
                         // Title
                         Text(tabs[index].title)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                            .font(.caption.weight(selectedTab == index ? .semibold : .medium))
+                            .foregroundStyle(selectedTab == index ? .white : .secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 4)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tabs[index].title)
@@ -1189,19 +1567,23 @@ struct CustomTabBar: View {
                 .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, max(8, (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.safeAreaInsets.bottom ?? 0))
         .background(
             .ultraThinMaterial,
-            in: Rectangle()
+            in: RoundedRectangle(cornerRadius: 0)
         )
         .overlay(
             Rectangle()
-                .fill(.quaternary)
-                .frame(height: 0.5),
+                .fill(.quaternary.opacity(0.3))
+                .frame(height: 0.33),
             alignment: .top
         )
+    .clipShape(Rectangle())
     }
+}
+
 }
 
 // MARK: - Simple Tab Views
@@ -1936,13 +2318,20 @@ struct CompatibilityCard: View {
 struct NexusTab: View {
     @State private var messageText = ""
     @State private var messages: [CosmicMessage] = [
-        CosmicMessage(id: "1", text: "✨ Welcome to the Cosmic Nexus! I'm your AI astrologer, here to illuminate your path through the stars. What cosmic wisdom can I share with you today?", isUser: false, messageType: .welcome, timestamp: Date().addingTimeInterval(-3600)),
-        CosmicMessage(id: "2", text: "What does my birth chart say about my career?", isUser: true, messageType: .question, timestamp: Date().addingTimeInterval(-1800)),
-        CosmicMessage(id: "3", text: "🌟 The celestial patterns in your chart reveal fascinating insights! With your Leo rising, you radiate natural leadership energy. Your 10th house placement indicates powerful potential in creative or executive roles. The stars are aligning beautifully for your career aspirations right now! ✨", isUser: false, messageType: .insight, timestamp: Date().addingTimeInterval(-900))
+        CosmicMessage(id: "welcome", text: "✨ Welcome to the Cosmic Nexus! I'm your AI astrologer, here to illuminate your path through the stars. What cosmic wisdom can I share with you today?", isUser: false, messageType: .welcome, timestamp: Date().addingTimeInterval(-3600))
     ]
     @State private var animateStars = false
     @State private var animateGradient = false
     @State private var showingTypingIndicator = false
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var dailyMessageCount = 0
+    @State private var hasSubscription = false
+    @State private var showingSubscriptionSheet = false
+    
+    @EnvironmentObject private var auth: AuthState
+    private let apiServices = APIServices.shared
+    private let freeMessageLimit = 5
     
     var body: some View {
         NavigationView {
@@ -1951,6 +2340,17 @@ struct NexusTab: View {
                 CosmicChatBackground(animateStars: $animateStars, animateGradient: $animateGradient)
                 
                 VStack(spacing: 0) {
+                    // Message Limit Banner (for free users)
+                    if !hasSubscription {
+                        MessageLimitBanner(
+                            used: dailyMessageCount,
+                            limit: freeMessageLimit,
+                            onUpgrade: {
+                                showingSubscriptionSheet = true
+                            }
+                        )
+                    }
+                    
                     // Chat messages with cosmic styling
                     ScrollView {
                         LazyVStack(spacing: 20) {
@@ -1962,6 +2362,13 @@ struct NexusTab: View {
                             if showingTypingIndicator {
                                 CosmicTypingIndicator()
                                     .transition(.scale.combined(with: .opacity))
+                            }
+                            
+                            // Error message
+                            if let errorMessage = errorMessage {
+                                ErrorMessageView(message: errorMessage) {
+                                    self.errorMessage = nil
+                                }
                             }
                         }
                         .padding(.horizontal)
@@ -1976,6 +2383,7 @@ struct NexusTab: View {
                             messageText = question
                         }
                     )
+                    .disabled(isLoading || (!hasSubscription && dailyMessageCount >= freeMessageLimit))
                 }
             }
             .navigationTitle("Cosmic Nexus")
@@ -1987,6 +2395,11 @@ struct NexusTab: View {
                 animateStars = true
                 animateGradient = true
             }
+            loadMessageCount()
+            checkSubscriptionStatus()
+        }
+        .sheet(isPresented: $showingSubscriptionSheet) {
+            SubscriptionSheet()
         }
     }
     
@@ -2000,6 +2413,12 @@ struct NexusTab: View {
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
+        
+        // Check message limit for free users
+        if !hasSubscription && dailyMessageCount >= freeMessageLimit {
+            errorMessage = "✨ You've reached your daily message limit! Upgrade to Astronova Plus for unlimited cosmic conversations and unlock the full power of the stars."
+            return
+        }
         
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -2021,32 +2440,101 @@ struct NexusTab: View {
         // Clear input and show typing indicator
         let currentMessage = messageText
         messageText = ""
+        errorMessage = nil
+        isLoading = true
         
         withAnimation(.easeInOut(duration: 0.3)) {
             showingTypingIndicator = true
         }
         
-        // Simulate AI response with realistic delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.5...3.0)) {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                showingTypingIndicator = false
-            }
-            
-            let response = generateCosmicResponse(for: currentMessage)
-            let messageType: CosmicMessageType = response.contains("🌟") ? .insight : .guidance
-            
-            let aiMessage = CosmicMessage(
-                id: UUID().uuidString,
-                text: response,
-                isUser: false,
-                messageType: messageType,
-                timestamp: Date()
-            )
-            
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                messages.append(aiMessage)
+        Task {
+            do {
+                let context = ChatContext(
+                    userChart: auth.profileManager.lastChart,
+                    currentTransits: nil,
+                    preferences: nil
+                )
+                
+                let response = try await apiServices.sendChatMessage(currentMessage, context: context)
+                
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showingTypingIndicator = false
+                        isLoading = false
+                    }
+                    
+                    let aiMessage = CosmicMessage(
+                        id: UUID().uuidString,
+                        text: response.response,
+                        isUser: false,
+                        messageType: .insight,
+                        timestamp: Date()
+                    )
+                    
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        messages.append(aiMessage)
+                    }
+                    
+                    // Increment message count for free users
+                    if !hasSubscription {
+                        dailyMessageCount += 1
+                        saveMessageCount()
+                    }
+                }
+                
+            } catch {
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showingTypingIndicator = false
+                        isLoading = false
+                    }
+                    
+                    // Fall back to local cosmic response if API fails
+                    let response = generateCosmicResponse(for: currentMessage)
+                    let messageType: CosmicMessageType = response.contains("🌟") ? .insight : .guidance
+                    
+                    let aiMessage = CosmicMessage(
+                        id: UUID().uuidString,
+                        text: response,
+                        isUser: false,
+                        messageType: messageType,
+                        timestamp: Date()
+                    )
+                    
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        messages.append(aiMessage)
+                    }
+                    
+                    // Increment message count for free users even on fallback
+                    if !hasSubscription {
+                        dailyMessageCount += 1
+                        saveMessageCount()
+                    }
+                    
+                    print("Chat API error: \(error)")
+                }
             }
         }
+    }
+    
+    private func loadMessageCount() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        let key = "dailyMessageCount_\(today)"
+        dailyMessageCount = UserDefaults.standard.integer(forKey: key)
+    }
+    
+    private func saveMessageCount() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        let key = "dailyMessageCount_\(today)"
+        UserDefaults.standard.set(dailyMessageCount, forKey: key)
+    }
+    
+    private func checkSubscriptionStatus() {
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
     }
     
     private func generateCosmicResponse(for message: String) -> String {
@@ -2088,6 +2576,181 @@ struct NexusTab: View {
             "🌙 Your soul's journey is written in the stars, and this moment is a crucial chapter. The universe is whispering guidance - listen with your heart."
         ]
         return generalResponses.randomElement() ?? generalResponses[0]
+    }
+}
+
+// MARK: - Message Limit Banner
+
+struct MessageLimitBanner: View {
+    let used: Int
+    let limit: Int
+    let onUpgrade: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "star.circle.fill")
+                .foregroundStyle(.orange)
+            
+            Text("\(used)/\(limit) free messages today")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            
+            Spacer()
+            
+            if used >= limit {
+                Button("Upgrade to Plus") {
+                    onUpgrade()
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.blue)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.1))
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(.orange.opacity(0.3)),
+            alignment: .bottom
+        )
+    }
+}
+
+// MARK: - Error Message View
+
+struct ErrorMessageView: View {
+    let message: String
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            
+            Spacer()
+            
+            Button("Dismiss") {
+                onDismiss()
+            }
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.blue)
+        }
+        .padding()
+        .background(.orange.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Subscription Sheet
+
+struct SubscriptionSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "star.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.orange)
+                    
+                    Text("Astronova Plus")
+                        .font(.largeTitle.weight(.bold))
+                    
+                    Text("Unlock unlimited cosmic wisdom")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+                
+                // Features
+                VStack(alignment: .leading, spacing: 16) {
+                    FeatureRow(icon: "bubble.left.and.bubble.right.fill", title: "Unlimited Chat Messages", description: "Chat with AI astrologer without daily limits")
+                    
+                    FeatureRow(icon: "heart.fill", title: "Detailed Love Forecasts", description: "Deep romantic insights and compatibility")
+                    
+                    FeatureRow(icon: "chart.line.uptrend.xyaxis", title: "Birth Chart Readings", description: "Complete natal chart analysis")
+                    
+                    FeatureRow(icon: "briefcase.fill", title: "Career Forecasts", description: "Professional guidance and timing")
+                    
+                    FeatureRow(icon: "calendar", title: "Year Ahead Reports", description: "12-month cosmic roadmap")
+                }
+                .padding()
+                .background(.ultraThinMaterial)
+                .cornerRadius(16)
+                
+                Spacer()
+                
+                // Pricing
+                VStack(spacing: 16) {
+                    Button {
+                        // TODO: Handle subscription purchase
+                    } label: {
+                        VStack(spacing: 8) {
+                            Text("Start Your Cosmic Journey")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                            
+                            Text("$9.99/month")
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(.orange)
+                        .cornerRadius(12)
+                    }
+                    
+                    Text("Cancel anytime in Settings")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .navigationTitle("Upgrade")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Feature Row
+
+struct FeatureRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(.orange)
+                .frame(width: 30)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+        }
     }
 }
 
@@ -2140,6 +2803,16 @@ enum CosmicMessageType {
         case .insight: return "star.fill"
         case .guidance: return "lightbulb.fill"
         case .prediction: return "crystal.ball"
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .welcome: return "Welcome"
+        case .question: return "Question"
+        case .insight: return "Cosmic Insight"
+        case .guidance: return "Divine Guidance"
+        case .prediction: return "Celestial Prediction"
         }
     }
 }
@@ -2271,7 +2944,7 @@ struct CosmicMessageView: View {
                     Image(systemName: message.messageType.icon)
                         .font(.title3)
                         .foregroundStyle(message.messageType.accentColor)
-                        .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing)
+                        .symbolEffect(.variableColor)
                 }
                 
                 // Message content
@@ -2324,17 +2997,7 @@ struct CosmicMessageView: View {
     }
 }
 
-extension CosmicMessageType {
-    var displayName: String {
-        switch self {
-        case .welcome: return "Welcome"
-        case .question: return "Question"
-        case .insight: return "Cosmic Insight"
-        case .guidance: return "Divine Guidance"
-        case .prediction: return "Celestial Prediction"
-        }
-    }
-}
+// Removed duplicate `displayName` computed property for `CosmicMessageType`.
 
 // MARK: - Cosmic Typing Indicator
 
@@ -2362,7 +3025,7 @@ struct CosmicTypingIndicator: View {
                 Image(systemName: "brain.head.profile")
                     .font(.title3)
                     .foregroundStyle(.purple)
-                    .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing, options: .repeating)
+                    .symbolEffect(.variableColor, options: .repeating)
             }
             
             // Typing animation
@@ -3390,6 +4053,15 @@ struct CalendarHoroscopeView: View {
     @Binding var selectedDate: Date
     let onBookmark: (HoroscopeReading) -> Void
     
+    @State private var showingReportSheet = false
+    @State private var showingReportsLibrary = false
+    @State private var selectedReportType: String = ""
+    @State private var userReports: [DetailedReport] = []
+    @State private var hasSubscription = false
+    @EnvironmentObject private var auth: AuthState
+    
+    private let apiServices = APIServices.shared
+    
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
@@ -3402,10 +4074,79 @@ struct CalendarHoroscopeView: View {
                     onBookmark: onBookmark
                 )
                 
-                // Premium Content Teasers
-                PremiumContentTeasers(date: selectedDate)
+                // Premium Insights Section
+                PremiumInsightsSection(
+                    hasSubscription: hasSubscription,
+                    onInsightTap: { reportType in
+                        selectedReportType = reportType
+                        showingReportSheet = true
+                    },
+                    onViewReports: {
+                        showingReportsLibrary = true
+                    },
+                    savedReports: userReports
+                )
+                
             }
             .padding()
+        }
+        .onAppear {
+            checkSubscriptionStatus()
+            loadUserReports()
+        }
+        .sheet(isPresented: $showingReportSheet) {
+            ReportGenerationSheet(
+                reportType: selectedReportType,
+                onGenerate: generateReport,
+                onDismiss: {
+                    showingReportSheet = false
+                }
+            )
+            .environmentObject(auth)
+        }
+        .sheet(isPresented: $showingReportsLibrary) {
+            ReportsLibraryView(reports: userReports)
+        }
+    }
+    
+    private func checkSubscriptionStatus() {
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
+    }
+    
+    private func loadUserReports() {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let response = try await apiServices.getUserReports(userId: userId)
+                await MainActor.run {
+                    userReports = response.reports
+                }
+            } catch {
+                print("Failed to load user reports: \(error)")
+            }
+        }
+    }
+    
+    private func generateReport(reportType: String) {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let birthData = try BirthData(from: auth.profileManager.profile)
+                let _ = try await apiServices.generateDetailedReport(
+                    birthData: birthData,
+                    type: reportType,
+                    userId: userId
+                )
+                
+                await MainActor.run {
+                    showingReportSheet = false
+                    loadUserReports() // Refresh the reports list
+                }
+            } catch {
+                print("Failed to generate report: \(error)")
+            }
         }
     }
 }
@@ -3766,97 +4507,567 @@ struct DailySynopsisCard: View {
     }
 }
 
-struct PremiumContentTeasers: View {
-    let date: Date
+
+// MARK: - Premium Insights Section
+
+struct PremiumInsightsSection: View {
+    let hasSubscription: Bool
+    let onInsightTap: (String) -> Void
+    let onViewReports: () -> Void
+    let savedReports: [DetailedReport]
+    
+    private let insights = [
+        InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Romantic timing & compatibility"),
+        InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Complete personality analysis"),
+        InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance & timing"),
+        InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "12-month cosmic roadmap")
+    ]
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Unlock Detailed Insights")
-                    .font(.headline)
+                Text("Detailed Insights")
+                    .font(.title2.weight(.bold))
+                
                 Spacer()
+                
+                if !savedReports.isEmpty {
+                    Button("View All (\(savedReports.count))") {
+                        onViewReports()
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.blue)
+                }
             }
             
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                PremiumTeaserCard(
-                    title: "Love Forecast",
-                    description: "Detailed romantic insights",
-                    icon: "heart.fill",
-                    color: .pink,
-                    price: "$2.99"
-                )
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+                ForEach(insights, id: \.id) { insight in
+                    InsightCard(
+                        insight: insight,
+                        hasSubscription: hasSubscription,
+                        isGenerated: savedReports.contains { $0.type == insight.id },
+                        onTap: {
+                            onInsightTap(insight.id)
+                        }
+                    )
+                }
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
+    }
+}
+
+struct InsightType {
+    let id: String
+    let title: String
+    let icon: String
+    let color: Color
+    let description: String
+}
+
+struct InsightCard: View {
+    let insight: InsightType
+    let hasSubscription: Bool
+    let isGenerated: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                HStack {
+                    Image(systemName: insight.icon)
+                        .font(.title2)
+                        .foregroundStyle(insight.color)
+                    
+                    Spacer()
+                    
+                    if isGenerated {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    } else if !hasSubscription {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
                 
-                PremiumTeaserCard(
-                    title: "Birth Chart Reading",
-                    description: "Complete natal analysis",
-                    icon: "circle.grid.cross.fill",
-                    color: .purple,
-                    price: "$9.99"
-                )
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(insight.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    
+                    Text(insight.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding()
+            .background(.regularMaterial)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(insight.color.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Report Generation Sheet
+
+struct ReportGenerationSheet: View {
+    let reportType: String
+    let onGenerate: (String) -> Void
+    let onDismiss: () -> Void
+    
+    @EnvironmentObject private var auth: AuthState
+    @State private var isGenerating = false
+    @State private var hasSubscription = false
+    @State private var showingSubscription = false
+    @Environment(\.dismiss) private var dismiss
+    
+    private var reportInfo: InsightType {
+        switch reportType {
+        case "love_forecast":
+            return InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Comprehensive romantic analysis with timing and compatibility insights")
+        case "birth_chart":
+            return InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Complete astrological blueprint revealing personality and life purpose")
+        case "career_forecast":
+            return InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance with timing for career moves and opportunities")
+        case "year_ahead":
+            return InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "Month-by-month cosmic roadmap for the next 12 months")
+        default:
+            return InsightType(id: "unknown", title: "Report", icon: "doc.fill", color: .gray, description: "Detailed astrological analysis")
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 16) {
+                    Image(systemName: reportInfo.icon)
+                        .font(.system(size: 60))
+                        .foregroundStyle(reportInfo.color)
+                    
+                    Text(reportInfo.title)
+                        .font(.largeTitle.weight(.bold))
+                    
+                    Text(reportInfo.description)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
                 
-                PremiumTeaserCard(
-                    title: "Career Forecast",
-                    description: "Professional guidance",
-                    icon: "briefcase.fill",
-                    color: .blue,
-                    price: "$4.99"
-                )
+                // Features
+                VStack(alignment: .leading, spacing: 12) {
+                    SimpleFeatureRow(icon: "brain.head.profile", text: "AI-powered personalized analysis")
+                    SimpleFeatureRow(icon: "clock", text: "Generated in under 60 seconds")
+                    SimpleFeatureRow(icon: "arrow.down.circle", text: "PDF download included")
+                    SimpleFeatureRow(icon: "bookmark", text: "Saved to your profile forever")
+                }
+                .padding()
+                .background(.regularMaterial)
+                .cornerRadius(12)
                 
-                PremiumTeaserCard(
-                    title: "Year Ahead",
-                    description: "12-month outlook",
-                    icon: "calendar",
-                    color: .green,
-                    price: "$19.99"
-                )
+                Spacer()
+                
+                // Action Buttons
+                VStack(spacing: 16) {
+                    if hasSubscription {
+                        Button {
+                            generateReport()
+                        } label: {
+                            HStack {
+                                if isGenerating {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "sparkles")
+                                }
+                                
+                                Text(isGenerating ? "Generating..." : "Generate Report")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .foregroundStyle(.white)
+                            .background(reportInfo.color)
+                            .cornerRadius(12)
+                        }
+                        .disabled(isGenerating)
+                    } else {
+                        Button {
+                            showingSubscription = true
+                        } label: {
+                            VStack(spacing: 8) {
+                                Text("Upgrade to Astronova Plus")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
+                                
+                                Text("$9.99/month")
+                                    .font(.title2.weight(.bold))
+                                    .foregroundStyle(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(.orange)
+                            .cornerRadius(12)
+                        }
+                    }
+                    
+                    Text("All reports are saved to your profile for future reference")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding()
+            .navigationTitle("Premium Insight")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Close") {
+                        onDismiss()
+                    }
+                }
+            }
+        }
+        .onAppear {
+            hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
+        }
+        .sheet(isPresented: $showingSubscription) {
+            SubscriptionSheet()
+        }
+    }
+    
+    private func generateReport() {
+        isGenerating = true
+        onGenerate(reportType)
+    }
+}
+
+struct SimpleFeatureRow: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.blue)
+                .frame(width: 24)
+            
+            Text(text)
+                .font(.body)
+                .foregroundStyle(.primary)
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Reports Library View
+
+struct ReportsLibraryView: View {
+    let reports: [DetailedReport]
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedReport: DetailedReport?
+    @State private var showingReportDetail = false
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                LazyVStack(spacing: 16) {
+                    if reports.isEmpty {
+                        VStack(spacing: 16) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 60))
+                                .foregroundStyle(.secondary)
+                            
+                            Text("No Reports Yet")
+                                .font(.title2.weight(.semibold))
+                            
+                            Text("Generate your first detailed insight to see it here")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 100)
+                    } else {
+                        ForEach(reports, id: \.reportId) { report in
+                            ReportLibraryCard(
+                                report: report,
+                                onTap: {
+                                    selectedReport = report
+                                    showingReportDetail = true
+                                }
+                            )
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("My Reports")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingReportDetail) {
+            if let report = selectedReport {
+                ReportDetailView(report: report)
             }
         }
     }
 }
 
-struct PremiumTeaserCard: View {
-    let title: String
-    let description: String
-    let icon: String
-    let color: Color
-    let price: String
+struct ReportLibraryCard: View {
+    let report: DetailedReport
+    let onTap: () -> Void
+    
+    private var reportInfo: InsightType {
+        switch report.type {
+        case "love_forecast":
+            return InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Romantic analysis")
+        case "birth_chart":
+            return InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Personality blueprint")
+        case "career_forecast":
+            return InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance")
+        case "year_ahead":
+            return InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "Cosmic roadmap")
+        default:
+            return InsightType(id: "unknown", title: "Report", icon: "doc.fill", color: .gray, description: "Analysis")
+        }
+    }
+    
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        
+        if let date = ISO8601DateFormatter().date(from: report.generatedAt) {
+            return formatter.string(from: date)
+        }
+        return report.generatedAt
+    }
     
     var body: some View {
-        Button {
-            // Handle premium purchase
-        } label: {
-            VStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(color)
-                
-                VStack(spacing: 4) {
-                    Text(title)
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.primary)
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: reportInfo.icon)
+                        .font(.title2)
+                        .foregroundStyle(reportInfo.color)
                     
-                    Text(description)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(report.title)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                        
+                        Text("Generated \(formattedDate)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
                 }
                 
-                Text(price)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(color, in: Capsule())
+                Text(report.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
+                // Key insights preview
+                if !report.keyInsights.isEmpty {
+                    HStack {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        
+                        Text("\(report.keyInsights.count) key insights")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.orange)
+                        
+                        Spacer()
+                    }
+                }
             }
-            .frame(maxWidth: .infinity)
             .padding()
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background(.regularMaterial)
+            .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(color.opacity(0.3), lineWidth: 1)
+                    .stroke(reportInfo.color.opacity(0.2), lineWidth: 1)
             )
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Report Detail View
+
+struct ReportDetailView: View {
+    let report: DetailedReport
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingShareSheet = false
+    
+    private let apiServices = APIServices.shared
+    
+    private var reportInfo: InsightType {
+        switch report.type {
+        case "love_forecast":
+            return InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Romantic analysis")
+        case "birth_chart":
+            return InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Personality blueprint")
+        case "career_forecast":
+            return InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance")
+        case "year_ahead":
+            return InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "Cosmic roadmap")
+        default:
+            return InsightType(id: "unknown", title: "Report", icon: "doc.fill", color: .gray, description: "Analysis")
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: reportInfo.icon)
+                                .font(.title)
+                                .foregroundStyle(reportInfo.color)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(report.title)
+                                    .font(.title2.weight(.bold))
+                                
+                                Text("Generated \(formatDate(report.generatedAt))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                        }
+                        
+                        Text(report.summary)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    
+                    // Key Insights
+                    if !report.keyInsights.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Key Insights")
+                                .font(.title3.weight(.bold))
+                            
+                            ForEach(report.keyInsights.indices, id: \.self) { index in
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(systemName: "lightbulb.fill")
+                                        .font(.body)
+                                        .foregroundStyle(.orange)
+                                    
+                                    Text(report.keyInsights[index])
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                    
+                                    Spacer()
+                                }
+                                .padding()
+                                .background(.orange.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                        }
+                        .padding()
+                        .background(.regularMaterial)
+                        .cornerRadius(12)
+                    }
+                    
+                    // Full Content
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Detailed Analysis")
+                            .font(.title3.weight(.bold))
+                        
+                        Text(report.content)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                    .padding()
+                    .background(.regularMaterial)
+                    .cornerRadius(12)
+                }
+                .padding()
+            }
+            .navigationTitle("Report Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button {
+                            downloadPDF()
+                        } label: {
+                            Label("Download PDF", systemImage: "arrow.down.circle")
+                        }
+                        
+                        Button {
+                            showingShareSheet = true
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
+    }
+    
+    private func formatDate(_ dateString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        
+        if let date = ISO8601DateFormatter().date(from: dateString) {
+            return formatter.string(from: date)
+        }
+        return dateString
+    }
+    
+    private func downloadPDF() {
+        // TODO: Implement PDF download
+        Task {
+            // TODO: Integrate real download endpoint. For now, just log.
+            print("Downloading PDF for report: \(report.reportId)")
+        }
     }
 }
 
@@ -4147,7 +5358,6 @@ struct SettingsView: View {
                 
                 Section("Notifications") {
                     Toggle("Daily Horoscope", isOn: .constant(true))
-                    Toggle("Premium Content", isOn: .constant(false))
                 }
                 
                 Section("About") {
@@ -4511,9 +5721,7 @@ struct TabGuideContent {
     let color: Color
 }
 
-// MARK: - Notification Extensions
+// MARK: - Duplicate Notification Extension Removed
 
-extension Notification.Name {
-    static let switchToTab = Notification.Name("switchToTab")
-    static let switchToProfileSection = Notification.Name("switchToProfileSection")
-}
+// (Original definitions for `switchToTab` and `switchToProfileSection` exist at
+// the top of this file.)
