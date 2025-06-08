@@ -1,11 +1,15 @@
 import SwiftUI
 
-// MARK: - Notification Extensions
+// MARK: - Notification.Name Helpers
 
 extension Notification.Name {
-    static let switchToTab = Notification.Name("switchToTab")
+    static let switchToTab            = Notification.Name("switchToTab")
     static let switchToProfileSection = Notification.Name("switchToProfileSection")
 }
+
+// Duplicate Notification.Name extension removed. The definitions for
+// `switchToTab` and `switchToProfileSection` already exist at the top of this
+// file.
 
 /// Decides which high-level screen to show based on authentication state.
 struct RootView: View {
@@ -418,7 +422,7 @@ struct EnhancedWelcomeStepView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 50, weight: .light))
                         .foregroundStyle(.white)
-                        .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing, options: .repeating)
+                        .symbolEffect(.variableColor, options: .repeating)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -472,7 +476,8 @@ struct EnhancedNameStepView: View {
                     Image(systemName: "person.crop.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
-                        .symbolEffect(.bounce.down, options: .repeating)
+                        // `.bounce` is iOS 18+. Use `.pulse` which is available earlier.
+                        .symbolEffect(.pulse, options: .repeating)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -1575,8 +1580,10 @@ struct CustomTabBar: View {
                 .frame(height: 0.33),
             alignment: .top
         )
-        .clipShape(Rectangle())
+    .clipShape(Rectangle())
     }
+}
+
 }
 
 // MARK: - Simple Tab Views
@@ -2937,7 +2944,7 @@ struct CosmicMessageView: View {
                     Image(systemName: message.messageType.icon)
                         .font(.title3)
                         .foregroundStyle(message.messageType.accentColor)
-                        .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing)
+                        .symbolEffect(.variableColor)
                 }
                 
                 // Message content
@@ -2990,17 +2997,7 @@ struct CosmicMessageView: View {
     }
 }
 
-extension CosmicMessageType {
-    var displayName: String {
-        switch self {
-        case .welcome: return "Welcome"
-        case .question: return "Question"
-        case .insight: return "Cosmic Insight"
-        case .guidance: return "Divine Guidance"
-        case .prediction: return "Celestial Prediction"
-        }
-    }
-}
+// Removed duplicate `displayName` computed property for `CosmicMessageType`.
 
 // MARK: - Cosmic Typing Indicator
 
@@ -3028,7 +3025,7 @@ struct CosmicTypingIndicator: View {
                 Image(systemName: "brain.head.profile")
                     .font(.title3)
                     .foregroundStyle(.purple)
-                    .symbolEffect(.variableColor.iterative.dimInactiveLayers.nonReversing, options: .repeating)
+                    .symbolEffect(.variableColor, options: .repeating)
             }
             
             // Typing animation
@@ -5068,12 +5065,8 @@ struct ReportDetailView: View {
     private func downloadPDF() {
         // TODO: Implement PDF download
         Task {
-            do {
-                // This would call the download endpoint
-                print("Downloading PDF for report: \(report.reportId)")
-            } catch {
-                print("Failed to download PDF: \(error)")
-            }
+            // TODO: Integrate real download endpoint. For now, just log.
+            print("Downloading PDF for report: \(report.reportId)")
         }
     }
 }
@@ -5728,9 +5721,7 @@ struct TabGuideContent {
     let color: Color
 }
 
-// MARK: - Notification Extensions
+// MARK: - Duplicate Notification Extension Removed
 
-extension Notification.Name {
-    static let switchToTab = Notification.Name("switchToTab")
-    static let switchToProfileSection = Notification.Name("switchToProfileSection")
-}
+// (Original definitions for `switchToTab` and `switchToProfileSection` exist at
+// the top of this file.)
