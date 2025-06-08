@@ -3,79 +3,82 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3D01F7E42C0A000000000001 /* AstronovaAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F7E32C0A000000000001 /* AstronovaAppApp.swift */; };
+		3D01F7E62C0A000000000001 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F7E52C0A000000000001 /* RootView.swift */; };
+		3D01F7E82C0A000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3D01F7E72C0A000000000001 /* Assets.xcassets */; };
+		3D01F7EB2C0A000000000001 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3D01F7EA2C0A000000000001 /* Preview Assets.xcassets */; };
+		3D01F7F52C0A000000000001 /* AstronovaAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F7F42C0A000000000001 /* AstronovaAppTests.swift */; };
+		3D01F7FF2C0A000000000001 /* AstronovaAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F7FE2C0A000000000001 /* AstronovaAppUITests.swift */; };
+		3D01F8012C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */; };
+		3D01F80E2C0A000000000002 /* AuthState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F80D2C0A000000000002 /* AuthState.swift */; };
+		3D01F80F2C0A000000000003 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F80C2C0A000000000003 /* UserProfile.swift */; };
+		3D01F8102C0A000000000004 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F80B2C0A000000000004 /* OnboardingView.swift */; };
+		3D01F8112C0A000000000005 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F80A2C0A000000000005 /* LoadingView.swift */; };
+		3D01F8122C0A000000000006 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8092C0A000000000006 /* NetworkClient.swift */; };
+		3D01F8132C0A000000000007 /* APIServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8082C0A000000000007 /* APIServices.swift */; };
+		3D01F8142C0A000000000008 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8072C0A000000000008 /* APIModels.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
-		5ADB1A192DF2EA5200AFC52F /* PBXContainerItemProxy */ = {
+		3D01F7F12C0A000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 5A0BE3862DF0E80C0015F99B /* Project object */;
+			containerPortal = 3D01F7D82C0A000000000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 5ADB1A042DF2EA5000AFC52F;
+			remoteGlobalIDString = 3D01F7DF2C0A000000000001;
 			remoteInfo = AstronovaApp;
 		};
-		5ADB1A232DF2EA5200AFC52F /* PBXContainerItemProxy */ = {
+		3D01F7FB2C0A000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 5A0BE3862DF0E80C0015F99B /* Project object */;
+			containerPortal = 3D01F7D82C0A000000000001 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 5ADB1A042DF2EA5000AFC52F;
+			remoteGlobalIDString = 3D01F7DF2C0A000000000001;
 			remoteInfo = AstronovaApp;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		5ADB1A052DF2EA5000AFC52F /* AstronovaApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AstronovaApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5ADB1A182DF2EA5200AFC52F /* AstronovaAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5ADB1A222DF2EA5200AFC52F /* AstronovaAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D01F7E02C0A000000000001 /* AstronovaApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AstronovaApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D01F7E32C0A000000000001 /* AstronovaAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaAppApp.swift; sourceTree = "<group>"; };
+		3D01F7E52C0A000000000001 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		3D01F7E72C0A000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		3D01F7EA2C0A000000000001 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		3D01F7F02C0A000000000001 /* AstronovaAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D01F7F42C0A000000000001 /* AstronovaAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaAppTests.swift; sourceTree = "<group>"; };
+		3D01F7FA2C0A000000000001 /* AstronovaAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D01F7FE2C0A000000000001 /* AstronovaAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaAppUITests.swift; sourceTree = "<group>"; };
+		3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaAppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		3D01F8072C0A000000000008 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
+		3D01F8082C0A000000000007 /* APIServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIServices.swift; sourceTree = "<group>"; };
+		3D01F8092C0A000000000006 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
+		3D01F80A2C0A000000000005 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		3D01F80B2C0A000000000004 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		3D01F80C2C0A000000000003 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		3D01F80D2C0A000000000002 /* AuthState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthState.swift; sourceTree = "<group>"; };
+		3D01F8152C0A000000000009 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		3D01F8162C0A00000000000A /* AstronovaApp.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaApp.entitlements; sourceTree = "<group>"; };
+		3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaAppDebug.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		5ADB1A302DF2EA5200AFC52F /* Exceptions for "AstronovaApp" folder in "AstronovaApp" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 5ADB1A042DF2EA5000AFC52F /* AstronovaApp */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		5ADB1A062DF2EA5000AFC52F /* AstronovaApp */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				5ADB1A302DF2EA5200AFC52F /* Exceptions for "AstronovaApp" folder in "AstronovaApp" target */,
-			);
-			path = AstronovaApp;
-			sourceTree = "<group>";
-		};
-		5ADB1A1B2DF2EA5200AFC52F /* AstronovaAppTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AstronovaAppTests;
-			sourceTree = "<group>";
-		};
-		5ADB1A252DF2EA5200AFC52F /* AstronovaAppUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AstronovaAppUITests;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
-
 /* Begin PBXFrameworksBuildPhase section */
-		5ADB1A022DF2EA5000AFC52F /* Frameworks */ = {
+		3D01F7DD2C0A000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5ADB1A152DF2EA5200AFC52F /* Frameworks */ = {
+		3D01F7ED2C0A000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5ADB1A1F2DF2EA5200AFC52F /* Frameworks */ = {
+		3D01F7F72C0A000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -85,159 +88,189 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		5A0BE3852DF0E80C0015F99B = {
+		3D01F7D72C0A000000000001 = {
 			isa = PBXGroup;
 			children = (
-				5ADB1A062DF2EA5000AFC52F /* AstronovaApp */,
-				5ADB1A1B2DF2EA5200AFC52F /* AstronovaAppTests */,
-				5ADB1A252DF2EA5200AFC52F /* AstronovaAppUITests */,
-				5A0BE38F2DF0E80C0015F99B /* Products */,
+				3D01F7E22C0A000000000001 /* AstronovaApp */,
+				3D01F7F32C0A000000000001 /* AstronovaAppTests */,
+				3D01F7FD2C0A000000000001 /* AstronovaAppUITests */,
+				3D01F7E12C0A000000000001 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		5A0BE38F2DF0E80C0015F99B /* Products */ = {
+		3D01F7E12C0A000000000001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5ADB1A052DF2EA5000AFC52F /* AstronovaApp.app */,
-				5ADB1A182DF2EA5200AFC52F /* AstronovaAppTests.xctest */,
-				5ADB1A222DF2EA5200AFC52F /* AstronovaAppUITests.xctest */,
+				3D01F7E02C0A000000000001 /* AstronovaApp.app */,
+				3D01F7F02C0A000000000001 /* AstronovaAppTests.xctest */,
+				3D01F7FA2C0A000000000001 /* AstronovaAppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3D01F7E22C0A000000000001 /* AstronovaApp */ = {
+			isa = PBXGroup;
+			children = (
+				3D01F8152C0A000000000009 /* Info.plist */,
+				3D01F8162C0A00000000000A /* AstronovaApp.entitlements */,
+				3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */,
+				3D01F7E32C0A000000000001 /* AstronovaAppApp.swift */,
+				3D01F7E52C0A000000000001 /* RootView.swift */,
+				3D01F80D2C0A000000000002 /* AuthState.swift */,
+				3D01F80C2C0A000000000003 /* UserProfile.swift */,
+				3D01F80B2C0A000000000004 /* OnboardingView.swift */,
+				3D01F80A2C0A000000000005 /* LoadingView.swift */,
+				3D01F8092C0A000000000006 /* NetworkClient.swift */,
+				3D01F8082C0A000000000007 /* APIServices.swift */,
+				3D01F8072C0A000000000008 /* APIModels.swift */,
+				3D01F7E72C0A000000000001 /* Assets.xcassets */,
+				3D01F7E92C0A000000000001 /* Preview Content */,
+			);
+			path = AstronovaApp;
+			sourceTree = "<group>";
+		};
+		3D01F7E92C0A000000000001 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				3D01F7EA2C0A000000000001 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		3D01F7F32C0A000000000001 /* AstronovaAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				3D01F7F42C0A000000000001 /* AstronovaAppTests.swift */,
+			);
+			path = AstronovaAppTests;
+			sourceTree = "<group>";
+		};
+		3D01F7FD2C0A000000000001 /* AstronovaAppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				3D01F7FE2C0A000000000001 /* AstronovaAppUITests.swift */,
+				3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */,
+			);
+			path = AstronovaAppUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5ADB1A042DF2EA5000AFC52F /* AstronovaApp */ = {
+		3D01F7DF2C0A000000000001 /* AstronovaApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5ADB1A312DF2EA5200AFC52F /* Build configuration list for PBXNativeTarget "AstronovaApp" */;
+			buildConfigurationList = 3D01F8042C0A000000000001 /* Build configuration list for PBXNativeTarget "AstronovaApp" */;
 			buildPhases = (
-				5ADB1A012DF2EA5000AFC52F /* Sources */,
-				5ADB1A022DF2EA5000AFC52F /* Frameworks */,
-				5ADB1A032DF2EA5000AFC52F /* Resources */,
+				3D01F7DC2C0A000000000001 /* Sources */,
+				3D01F7DD2C0A000000000001 /* Frameworks */,
+				3D01F7DE2C0A000000000001 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				5ADB1A062DF2EA5000AFC52F /* AstronovaApp */,
 			);
 			name = AstronovaApp;
-			packageProductDependencies = (
-			);
 			productName = AstronovaApp;
-			productReference = 5ADB1A052DF2EA5000AFC52F /* AstronovaApp.app */;
+			productReference = 3D01F7E02C0A000000000001 /* AstronovaApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5ADB1A172DF2EA5200AFC52F /* AstronovaAppTests */ = {
+		3D01F7EF2C0A000000000001 /* AstronovaAppTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5ADB1A322DF2EA5200AFC52F /* Build configuration list for PBXNativeTarget "AstronovaAppTests" */;
+			buildConfigurationList = 3D01F8072C0A000000000001 /* Build configuration list for PBXNativeTarget "AstronovaAppTests" */;
 			buildPhases = (
-				5ADB1A142DF2EA5200AFC52F /* Sources */,
-				5ADB1A152DF2EA5200AFC52F /* Frameworks */,
-				5ADB1A162DF2EA5200AFC52F /* Resources */,
+				3D01F7EC2C0A000000000001 /* Sources */,
+				3D01F7ED2C0A000000000001 /* Frameworks */,
+				3D01F7EE2C0A000000000001 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				5ADB1A1A2DF2EA5200AFC52F /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				5ADB1A1B2DF2EA5200AFC52F /* AstronovaAppTests */,
+				3D01F7F22C0A000000000001 /* PBXTargetDependency */,
 			);
 			name = AstronovaAppTests;
-			packageProductDependencies = (
-			);
 			productName = AstronovaAppTests;
-			productReference = 5ADB1A182DF2EA5200AFC52F /* AstronovaAppTests.xctest */;
+			productReference = 3D01F7F02C0A000000000001 /* AstronovaAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		5ADB1A212DF2EA5200AFC52F /* AstronovaAppUITests */ = {
+		3D01F7F92C0A000000000001 /* AstronovaAppUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5ADB1A332DF2EA5200AFC52F /* Build configuration list for PBXNativeTarget "AstronovaAppUITests" */;
+			buildConfigurationList = 3D01F80A2C0A000000000001 /* Build configuration list for PBXNativeTarget "AstronovaAppUITests" */;
 			buildPhases = (
-				5ADB1A1E2DF2EA5200AFC52F /* Sources */,
-				5ADB1A1F2DF2EA5200AFC52F /* Frameworks */,
-				5ADB1A202DF2EA5200AFC52F /* Resources */,
+				3D01F7F62C0A000000000001 /* Sources */,
+				3D01F7F72C0A000000000001 /* Frameworks */,
+				3D01F7F82C0A000000000001 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				5ADB1A242DF2EA5200AFC52F /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				5ADB1A252DF2EA5200AFC52F /* AstronovaAppUITests */,
+				3D01F7FC2C0A000000000001 /* PBXTargetDependency */,
 			);
 			name = AstronovaAppUITests;
-			packageProductDependencies = (
-			);
 			productName = AstronovaAppUITests;
-			productReference = 5ADB1A222DF2EA5200AFC52F /* AstronovaAppUITests.xctest */;
+			productReference = 3D01F7FA2C0A000000000001 /* AstronovaAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		5A0BE3862DF0E80C0015F99B /* Project object */ = {
+		3D01F7D82C0A000000000001 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
-				LastUpgradeCheck = 1620;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
 				TargetAttributes = {
-					5ADB1A042DF2EA5000AFC52F = {
-						CreatedOnToolsVersion = 16.2;
+					3D01F7DF2C0A000000000001 = {
+						CreatedOnToolsVersion = 15.4;
 					};
-					5ADB1A172DF2EA5200AFC52F = {
-						CreatedOnToolsVersion = 16.2;
-						TestTargetID = 5ADB1A042DF2EA5000AFC52F;
+					3D01F7EF2C0A000000000001 = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = 3D01F7DF2C0A000000000001;
 					};
-					5ADB1A212DF2EA5200AFC52F = {
-						CreatedOnToolsVersion = 16.2;
-						TestTargetID = 5ADB1A042DF2EA5000AFC52F;
+					3D01F7F92C0A000000000001 = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = 3D01F7DF2C0A000000000001;
 					};
 				};
 			};
-			buildConfigurationList = 5A0BE3892DF0E80C0015F99B /* Build configuration list for PBXProject "astronova" */;
+			buildConfigurationList = 3D01F7DB2C0A000000000001 /* Build configuration list for PBXProject "astronova" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
 			);
-			mainGroup = 5A0BE3852DF0E80C0015F99B;
-			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-			);
-			preferredProjectObjectVersion = 77;
-			productRefGroup = 5A0BE38F2DF0E80C0015F99B /* Products */;
+			mainGroup = 3D01F7D72C0A000000000001;
+			productRefGroup = 3D01F7E12C0A000000000001 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5ADB1A042DF2EA5000AFC52F /* AstronovaApp */,
-				5ADB1A172DF2EA5200AFC52F /* AstronovaAppTests */,
-				5ADB1A212DF2EA5200AFC52F /* AstronovaAppUITests */,
+				3D01F7DF2C0A000000000001 /* AstronovaApp */,
+				3D01F7EF2C0A000000000001 /* AstronovaAppTests */,
+				3D01F7F92C0A000000000001 /* AstronovaAppUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		5ADB1A032DF2EA5000AFC52F /* Resources */ = {
+		3D01F7DE2C0A000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D01F7EB2C0A000000000001 /* Preview Assets.xcassets in Resources */,
+				3D01F7E82C0A000000000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3D01F7EE2C0A000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5ADB1A162DF2EA5200AFC52F /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		5ADB1A202DF2EA5200AFC52F /* Resources */ = {
+		3D01F7F82C0A000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -247,44 +280,56 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		5ADB1A012DF2EA5000AFC52F /* Sources */ = {
+		3D01F7DC2C0A000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D01F7E62C0A000000000001 /* RootView.swift in Sources */,
+				3D01F8142C0A000000000008 /* APIModels.swift in Sources */,
+				3D01F8132C0A000000000007 /* APIServices.swift in Sources */,
+				3D01F8122C0A000000000006 /* NetworkClient.swift in Sources */,
+				3D01F8112C0A000000000005 /* LoadingView.swift in Sources */,
+				3D01F8102C0A000000000004 /* OnboardingView.swift in Sources */,
+				3D01F80F2C0A000000000003 /* UserProfile.swift in Sources */,
+				3D01F80E2C0A000000000002 /* AuthState.swift in Sources */,
+				3D01F7E42C0A000000000001 /* AstronovaAppApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5ADB1A142DF2EA5200AFC52F /* Sources */ = {
+		3D01F7EC2C0A000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D01F7F52C0A000000000001 /* AstronovaAppTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		5ADB1A1E2DF2EA5200AFC52F /* Sources */ = {
+		3D01F7F62C0A000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D01F8012C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift in Sources */,
+				3D01F7FF2C0A000000000001 /* AstronovaAppUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		5ADB1A1A2DF2EA5200AFC52F /* PBXTargetDependency */ = {
+		3D01F7F22C0A000000000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5ADB1A042DF2EA5000AFC52F /* AstronovaApp */;
-			targetProxy = 5ADB1A192DF2EA5200AFC52F /* PBXContainerItemProxy */;
+			target = 3D01F7DF2C0A000000000001 /* AstronovaApp */;
+			targetProxy = 3D01F7F12C0A000000000001 /* PBXContainerItemProxy */;
 		};
-		5ADB1A242DF2EA5200AFC52F /* PBXTargetDependency */ = {
+		3D01F7FC2C0A000000000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5ADB1A042DF2EA5000AFC52F /* AstronovaApp */;
-			targetProxy = 5ADB1A232DF2EA5200AFC52F /* PBXContainerItemProxy */;
+			target = 3D01F7DF2C0A000000000001 /* AstronovaApp */;
+			targetProxy = 3D01F7FB2C0A000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		5A0BE3B82DF0E80E0015F99B /* Debug */ = {
+		3D01F8022C0A000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -336,7 +381,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -347,7 +392,7 @@
 			};
 			name = Debug;
 		};
-		5A0BE3B92DF0E80E0015F99B /* Release */ = {
+		3D01F8032C0A000000000001 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -393,7 +438,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -403,43 +448,38 @@
 			};
 			name = Release;
 		};
-		5ADB1A2A2DF2EA5200AFC52F /* Debug */ = {
+		3D01F8052C0A000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AstronovaApp/AstronovaAppDebug.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
-				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Astronova;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = sankalp.AstronovaApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
-		5ADB1A2B2DF2EA5200AFC52F /* Release */ = {
+		3D01F8062C0A000000000001 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -448,24 +488,21 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
-				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Astronova;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = sankalp.AstronovaApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -473,17 +510,18 @@
 			};
 			name = Release;
 		};
-		5ADB1A2C2DF2EA5200AFC52F /* Debug */ = {
+		3D01F8082C0A000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = sankalp.AstronovaAppTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -492,17 +530,18 @@
 			};
 			name = Debug;
 		};
-		5ADB1A2D2DF2EA5200AFC52F /* Release */ = {
+		3D01F8092C0A000000000001 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = sankalp.AstronovaAppTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -511,15 +550,16 @@
 			};
 			name = Release;
 		};
-		5ADB1A2E2DF2EA5200AFC52F /* Debug */ = {
+		3D01F80B2C0A000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = sankalp.AstronovaAppUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -528,15 +568,16 @@
 			};
 			name = Debug;
 		};
-		5ADB1A2F2DF2EA5200AFC52F /* Release */ = {
+		3D01F80C2C0A000000000001 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = sankalp.AstronovaAppUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -548,43 +589,43 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5A0BE3892DF0E80C0015F99B /* Build configuration list for PBXProject "astronova" */ = {
+		3D01F7DB2C0A000000000001 /* Build configuration list for PBXProject "astronova" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5A0BE3B82DF0E80E0015F99B /* Debug */,
-				5A0BE3B92DF0E80E0015F99B /* Release */,
+				3D01F8022C0A000000000001 /* Debug */,
+				3D01F8032C0A000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5ADB1A312DF2EA5200AFC52F /* Build configuration list for PBXNativeTarget "AstronovaApp" */ = {
+		3D01F8042C0A000000000001 /* Build configuration list for PBXNativeTarget "AstronovaApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5ADB1A2A2DF2EA5200AFC52F /* Debug */,
-				5ADB1A2B2DF2EA5200AFC52F /* Release */,
+				3D01F8052C0A000000000001 /* Debug */,
+				3D01F8062C0A000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5ADB1A322DF2EA5200AFC52F /* Build configuration list for PBXNativeTarget "AstronovaAppTests" */ = {
+		3D01F8072C0A000000000001 /* Build configuration list for PBXNativeTarget "AstronovaAppTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5ADB1A2C2DF2EA5200AFC52F /* Debug */,
-				5ADB1A2D2DF2EA5200AFC52F /* Release */,
+				3D01F8082C0A000000000001 /* Debug */,
+				3D01F8092C0A000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5ADB1A332DF2EA5200AFC52F /* Build configuration list for PBXNativeTarget "AstronovaAppUITests" */ = {
+		3D01F80A2C0A000000000001 /* Build configuration list for PBXNativeTarget "AstronovaAppUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5ADB1A2E2DF2EA5200AFC52F /* Debug */,
-				5ADB1A2F2DF2EA5200AFC52F /* Release */,
+				3D01F80B2C0A000000000001 /* Debug */,
+				3D01F80C2C0A000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 5A0BE3862DF0E80C0015F99B /* Project object */;
+	rootObject = 3D01F7D82C0A000000000001 /* Project object */;
 }
