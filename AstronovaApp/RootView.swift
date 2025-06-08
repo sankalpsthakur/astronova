@@ -23,7 +23,7 @@ struct RootView: View {
             case .loading:
                 LoadingView()
             case .signedOut:
-                CompellingLandingView()
+                OnboardingView()
             case .needsProfileSetup:
                 SimpleProfileSetupView()
             case .signedIn:
@@ -1608,15 +1608,7 @@ struct TodayTab: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Welcome header for new users
-                    if shouldShowWelcome {
-                        WelcomeToTodayCard(onDismiss: {
-                            showingWelcome = false
-                        })
-                        .transition(.scale.combined(with: .opacity))
-                    }
-                    
-                    // Primary CTA section
+                    welcomeSection
                     PrimaryCTASection()
                     
                     // Today's date
@@ -1760,6 +1752,16 @@ struct TodayTab: View {
     private var shouldShowWelcome: Bool {
         // Show welcome for first few app opens
         UserDefaults.standard.integer(forKey: "app_launch_count") < 3
+    }
+    
+    @ViewBuilder
+    private var welcomeSection: some View {
+        if shouldShowWelcome {
+            WelcomeToTodayCard(onDismiss: {
+                showingWelcome = false
+            })
+            .transition(.scale.combined(with: .opacity))
+        }
     }
 }
 
