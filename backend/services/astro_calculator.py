@@ -60,6 +60,11 @@ class AstroCalculator:
         positions = calculate_positions(dt, data.latitude, data.longitude)
         chart = {}
         for planet, lon in positions.items():
+            # Ensure lon is a float, not a tuple
+            if isinstance(lon, (tuple, list)):
+                lon = lon[0] if lon else 0.0
+            lon = float(lon)
+            
             sign_index = int(lon // 30) % 12
             sign = ZODIAC_SIGNS[sign_index]
             degree = round(lon % 30, 2)

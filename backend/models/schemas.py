@@ -42,8 +42,41 @@ class MatchUser(BaseModel):
             raise ValueError('Longitude must be between -180 and 180')
         return v
 
-class MatchPartner(MatchUser):
+class MatchPartner(BaseModel):
     name: str
+    birth_date: str
+    birth_time: str
+    timezone: str
+    latitude: float
+    longitude: float
+    
+    @validator('birth_date')
+    def validate_birth_date(cls, v):
+        try:
+            datetime.strptime(v, '%Y-%m-%d')
+            return v
+        except ValueError:
+            raise ValueError('Birth date must be in YYYY-MM-DD format')
+    
+    @validator('birth_time')
+    def validate_birth_time(cls, v):
+        try:
+            datetime.strptime(v, '%H:%M')
+            return v
+        except ValueError:
+            raise ValueError('Birth time must be in HH:MM format')
+    
+    @validator('latitude')
+    def validate_latitude(cls, v):
+        if not -90 <= v <= 90:
+            raise ValueError('Latitude must be between -90 and 90')
+        return v
+    
+    @validator('longitude')
+    def validate_longitude(cls, v):
+        if not -180 <= v <= 180:
+            raise ValueError('Longitude must be between -180 and 180')
+        return v
 
 class MatchRequest(BaseModel):
     user: MatchUser
