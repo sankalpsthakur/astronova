@@ -67,33 +67,6 @@ def search_locations():
     except Exception as e:
         return jsonify({'error': f'Location search failed: {str(e)}'}), 500
 
-@locations_bp.route('/geocode', methods=['GET'])
-def geocode():
-    """Geocode a single location (legacy endpoint)"""
-    place = request.args.get('place')
-    if not place:
-        return jsonify({'error': 'place required'}), 400
-    
-    try:
-        geolocator = Nominatim(user_agent='astronova')
-        loc = geolocator.geocode(place)
-        if not loc:
-            return jsonify({'error': 'not found'}), 404
-        
-        tf = TimezoneFinder()
-        tz = tf.timezone_at(lng=loc.longitude, lat=loc.latitude)
-        if tz is None:
-            tz = 'UTC'  # Default fallback
-        
-        return jsonify({
-            'latitude': loc.latitude,
-            'longitude': loc.longitude,
-            'timezone': tz,
-            'address': loc.address
-        })
-        
-    except Exception as e:
-        return jsonify({'error': f'Geocoding failed: {str(e)}'}), 500
 
 @locations_bp.route('/timezone', methods=['GET'])
 def get_timezone():

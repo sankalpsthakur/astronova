@@ -5,16 +5,67 @@ from datetime import datetime
 ephemeris_bp = Blueprint('ephemeris', __name__)
 service = EphemerisService()
 
-@ephemeris_bp.route('/positions', methods=['GET'])
-def positions():
-    date_str = request.args.get('date')
-    if date_str:
-        try:
-            datetime.strptime(date_str, '%Y-%m-%d')
-        except ValueError:
-            return jsonify({'error': 'Invalid date format, use YYYY-MM-DD'}), 400
-    
+
+@ephemeris_bp.route('/current', methods=['GET'])
+def current_positions():
+    """
+    Get current planetary positions for iOS app
+    """
     try:
-        return jsonify(service.get_current_positions())
+        positions_data = service.get_current_positions()
+        
+        # Transform data for iOS app format
+        planets = []
+        if 'planets' in positions_data:
+            for planet_name, planet_data in positions_data['planets'].items():
+                planet_entry = {
+                    "id": planet_name.lower(),
+                    "symbol": get_planet_symbol(planet_name),
+                    "name": planet_name.title(),
+                    "sign": planet_data.get('sign', 'Unknown'),
+                    "degree": planet_data.get('degree', 0.0),
+                    "retrograde": planet_data.get('retrograde', False),
+                    "house": planet_data.get('house'),
+                    "significance": get_planet_significance(planet_name)
+                }
+                planets.append(planet_entry)
+        
+        return jsonify({
+            "planets": planets,
+            "timestamp": datetime.now().isoformat()
+        })
+        
     except Exception as e:
-        return jsonify({'error': 'Failed to get positions'}), 500
+        return jsonify({'error': f'Failed to get current positions: {str(e)}'}), 500
+
+def get_planet_symbol(planet_name: str) -> str:
+    """Get the symbol for a planet"""
+    symbols = {
+        'sun': '☉',
+        'moon': '☽', 
+        'mercury': '☿',
+        'venus': '♀',
+        'mars': '♂',
+        'jupiter': '♃',
+        'saturn': '♄',
+        'uranus': '♅',
+        'neptune': '♆',
+        'pluto': '♇'
+    }
+    return symbols.get(planet_name.lower(), '⭐')
+
+def get_planet_significance(planet_name: str) -> str:
+    """Get the significance description for a planet"""
+    significance = {
+        'sun': 'Core identity and vitality',
+        'moon': 'Emotions and intuition',
+        'mercury': 'Communication and thinking',
+        'venus': 'Love and values',
+        'mars': 'Energy and action',
+        'jupiter': 'Growth and wisdom',
+        'saturn': 'Structure and discipline',
+        'uranus': 'Innovation and change',
+        'neptune': 'Dreams and spirituality',
+        'pluto': 'Transformation and power'
+    }
+    return significance.get(planet_name.lower(), 'Cosmic influence')

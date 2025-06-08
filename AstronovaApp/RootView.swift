@@ -1602,6 +1602,7 @@ struct TodayTab: View {
     @EnvironmentObject private var auth: AuthState
     @State private var showingWelcome = false
     @State private var animateWelcome = false
+    @State private var planetaryPositions: [PlanetaryPosition] = []
     
     var body: some View {
         NavigationView {
@@ -1720,12 +1721,9 @@ struct TodayTab: View {
                             .font(.headline)
                         
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
-                            PlanetCard(symbol: "☉", name: "Sun", sign: "Sagittarius")
-                            PlanetCard(symbol: "☽", name: "Moon", sign: "Pisces")
-                            PlanetCard(symbol: "☿", name: "Mercury", sign: "Capricorn")
-                            PlanetCard(symbol: "♀", name: "Venus", sign: "Scorpio")
-                            PlanetCard(symbol: "♂", name: "Mars", sign: "Leo")
-                            PlanetCard(symbol: "♃", name: "Jupiter", sign: "Taurus")
+                            ForEach(Array(planetaryPositions.prefix(6)), id: \.id) { planet in
+                                PlanetCard(symbol: planet.symbol, name: planet.name, sign: planet.sign)
+                            }
                         }
                     }
                     
@@ -1743,6 +1741,13 @@ struct TodayTab: View {
                 showingWelcome = true
                 withAnimation(.spring(response: 0.8, dampingFraction: 0.6).delay(0.5)) {
                     animateWelcome = true
+                }
+            }
+            Task {
+                do {
+                    planetaryPositions = try await PlanetaryDataService.shared.getCurrentPlanetaryPositions()
+                } catch {
+                    print("Failed to load planetary positions: \(error)")
                 }
             }
         }
@@ -2407,19 +2412,20 @@ struct NexusTab: View {
             }
             loadMessageCount()
             checkSubscriptionStatus()
+            Task {
+                do {
+                    quickQuestions = try await ContentManagementService.shared.getQuickQuestions()
+                } catch {
+                    print("Failed to load quick questions: \(error)")
+                }
+            }
         }
         .sheet(isPresented: $showingSubscriptionSheet) {
             SubscriptionSheet()
         }
     }
     
-    private let quickQuestions = [
-        "What's my love forecast? 💖",
-        "Career guidance? ⭐",
-        "Today's energy? ☀️",
-        "Mercury retrograde effects? ☿",
-        "Best time for decisions? 🌙"
-    ]
+    @State private var quickQuestions: [QuickQuestion] = []
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
@@ -3090,13 +3096,7 @@ struct CosmicInputArea: View {
     @State private var isInputFocused = false
     @FocusState private var textFieldFocused: Bool
     
-    private let quickQuestions = [
-        "What's my love forecast? 💖",
-        "Career guidance? ⭐",
-        "Today's energy? ☀️",
-        "Mercury retrograde effects? ☿",
-        "Best time for decisions? 🌙"
-    ]
+    @State private var quickQuestions: [QuickQuestion] = []
     
     var body: some View {
         VStack(spacing: 0) {
@@ -3104,13 +3104,13 @@ struct CosmicInputArea: View {
             if !isInputFocused {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(quickQuestions, id: \.self) { question in
+                        ForEach(quickQuestions, id: \.id) { question in
                             Button {
-                                onQuickQuestion(question)
+                                onQuickQuestion(question.text)
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                 impactFeedback.impactOccurred()
                             } label: {
-                                Text(question)
+                                Text(question.text)
                                     .font(.caption.weight(.medium))
                                     .foregroundStyle(.primary)
                                     .padding(.horizontal, 14)
@@ -3190,6 +3190,15 @@ struct CosmicInputArea: View {
             .onChange(of: textFieldFocused) { _, focused in
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isInputFocused = focused
+                }
+            }
+            .onAppear {
+                Task {
+                    do {
+                        quickQuestions = try await ContentManagementService.shared.getQuickQuestions()
+                    } catch {
+                        print("Failed to load quick questions: \(error)")
+                    }
                 }
             }
         }

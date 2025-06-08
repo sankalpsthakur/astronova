@@ -11,12 +11,6 @@ reports_bp = Blueprint('reports', __name__)
 report_service = ReportService()
 detailed_reports_service = DetailedReportsService()
 
-@reports_bp.route('/generate', methods=['POST'])
-@validate_request(ReportRequest)
-def generate(data: ReportRequest):
-    pdf_bytes = report_service.generate_pdf(data.title, data.content)
-    encoded = base64.b64encode(pdf_bytes).decode()
-    return jsonify({'pdf': encoded})
 
 @reports_bp.route('/full', methods=['POST'])
 @validate_request(DetailedReportRequest)
@@ -26,9 +20,18 @@ def generate_detailed_report(data: DetailedReportRequest):
         # Generate unique report ID
         report_id = str(uuid.uuid4())
         
+        # Convert birth data to dict format
+        birth_data_dict = {
+            'date': data.birthData.date,
+            'time': data.birthData.time,
+            'timezone': data.birthData.timezone,
+            'latitude': data.birthData.latitude,
+            'longitude': data.birthData.longitude
+        }
+        
         # Generate the detailed report based on type
         report_data = detailed_reports_service.generate_detailed_report(
-            birth_data=data.birthData,
+            birth_data=birth_data_dict,
             report_type=data.reportType,
             options=data.options or {},
             user_id=data.userId

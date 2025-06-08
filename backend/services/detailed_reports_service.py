@@ -26,14 +26,18 @@ class DetailedReportsService:
                                options: Dict[str, Any] = None, user_id: str = None) -> Dict[str, Any]:
         """Generate comprehensive astrological report based on type"""
         
-        # Calculate birth chart
-        chart_data = self.astro_calculator.calculate_positions(
-            birth_data['date'], 
-            birth_data['time'],
-            birth_data['latitude'], 
-            birth_data['longitude'],
-            birth_data['timezone']
+        # Calculate birth chart using proper method
+        from services.astro_calculator import BirthData
+        
+        birth_data_obj = BirthData(
+            date=birth_data['date'],
+            time=birth_data['time'],
+            timezone=birth_data['timezone'],
+            latitude=birth_data['latitude'],
+            longitude=birth_data['longitude']
         )
+        
+        chart_data = self.astro_calculator.calculate_birth_chart(birth_data_obj)
         
         # Generate report based on type
         if report_type == "love_forecast":

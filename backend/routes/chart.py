@@ -101,10 +101,3 @@ def generate(data: ChartRequest):
         return jsonify({'error': 'Chart generation failed'}), 500
 
 
-@chart_bp.route('/aspects', methods=['POST'])
-@validate_request(ChartRequest)
-def aspects(data: ChartRequest):
-    try:
-        return jsonify({'aspects': []})
-    except Exception:
-        return jsonify({'error': 'Aspect calculation failed'}), 500
