@@ -15,6 +15,12 @@ struct AstronovaAppApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(authState)
+                .onAppear {
+                    // Initialize API connectivity check on app launch
+                    Task {
+                        await authState.checkAPIConnectivity()
+                    }
+                }
         }
     }
 }

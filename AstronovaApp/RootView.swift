@@ -251,26 +251,81 @@ struct SimpleProfileSetupView: View {
         auth.profileManager.profile.birthTime = birthTime
         auth.profileManager.profile.birthPlace = birthPlace
         
-        // Attempt to save the profile with error handling
-        do {
-            try auth.profileManager.saveProfile()
-        } catch {
-            saveError = "Failed to save profile: \(error.localizedDescription)"
-            showingSaveError = true
-            print("Profile save error: \(error)")
-            // Continue with insight generation even if save fails
+        // For birth place, we need to search for coordinates and timezone
+        Task {
+            // Search for location coordinates and timezone
+            let locations = await auth.profileManager.searchLocations(query: birthPlace)
+            if let location = locations.first {
+                await MainActor.run {
+                    auth.profileManager.setBirthLocation(location)
+                }
+            }
+            
+            // Attempt to save the profile with error handling
+            do {
+                try auth.profileManager.saveProfile()
+            } catch {
+                await MainActor.run {
+                    saveError = "Failed to save profile: \(error.localizedDescription)"
+                    showingSaveError = true
+                }
+                print("Profile save error: \(error)")
+            }
+            
+            // Generate real astrological insight using API
+            if auth.isAPIConnected {
+                await generateRealAstrologicalInsight()
+            } else {
+                await generateOfflineInsight()
+            }
         }
-        
-        let insights = [
+    }
+    
+    private func generateRealAstrologicalInsight() async {
+        do {
+            // Generate chart and get real astrological data
+            await auth.profileManager.generateChart()
+            
+            if let chart = auth.profileManager.lastChart,
+               let westernChart = chart.westernChart {
+                
+                let sunSign = westernChart.positions["sun"]?.sign ?? "Unknown"
+                let moonSign = westernChart.positions["moon"]?.sign ?? "Unknown"
+                
+                let insight = """
+                Welcome to your cosmic journey, \(fullName)! 
+                
+                Born on \(formatDate(birthDate)) at \(formatTime(birthTime)) in \(birthPlace), the stars reveal fascinating insights about your celestial blueprint.
+                
+                Your Sun in \(sunSign) illuminates your core identity, while your Moon in \(moonSign) reflects your emotional nature. This unique combination creates a personality that is both dynamic and deeply intuitive.
+                
+                The planetary positions at your birth moment suggest you possess natural talents for leadership and creativity, with a special gift for understanding others' perspectives.
+                """
+                
+                await MainActor.run {
+                    personalizedInsight = insight
+                    showPersonalizedInsight()
+                }
+            } else {
+                await generateOfflineInsight()
+            }
+        } catch {
+            print("Failed to generate real astrological insight: \(error)")
+            await generateOfflineInsight()
+        }
+    }
+    
+    private func generateOfflineInsight() async {
+        let fallbackInsights = [
             "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime)) in \(birthPlace) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
             "Born under the influence of \(formatDate(birthDate)) in \(birthPlace), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
-            "The celestial patterns on \(formatDate(birthDate)) at \(formatTime(birthTime)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery.",
-            "Your arrival on \(formatDate(birthDate)) in \(birthPlace) marks you as someone with exceptional communication skills and a natural ability to bring harmony to challenging situations.",
-            "The cosmic energies present on \(formatDate(birthDate)) at \(formatTime(birthTime)) suggest you have a unique blend of analytical mind and creative spirit, making you a natural problem-solver."
+            "The celestial patterns on \(formatDate(birthDate)) at \(formatTime(birthTime)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery."
         ]
         
-        personalizedInsight = insights.randomElement() ?? insights[0]
-        showPersonalizedInsight()
+        await MainActor.run {
+            personalizedInsight = fallbackInsights.randomElement() ?? fallbackInsights[0]
+            showPersonalizedInsight()
+        }
     }
     
     private func showPersonalizedInsight() {
