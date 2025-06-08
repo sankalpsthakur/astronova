@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 /// First-run screen with a single "Sign in with Apple" button.
 struct OnboardingView: View {
@@ -19,14 +20,20 @@ struct OnboardingView: View {
 
             Spacer()
 
-            Button("Sign In with Apple") {
-                Task {
-                    await signIn()
+            SignInWithAppleButton(
+                onRequest: { request in
+                    request.requestedScopes = [.fullName, .email]
+                    request.nonce = UUID().uuidString
+                },
+                onCompletion: { result in
+                    Task {
+                        await handleSignInResult(result)
+                    }
                 }
-            }
+            )
+            .signInWithAppleButtonStyle(.black)
             .frame(height: 45)
             .frame(maxWidth: .infinity)
-            .buttonStyle(.borderedProminent)
             .disabled(inProgress)
             .overlay(
                 Group {
@@ -42,9 +49,42 @@ struct OnboardingView: View {
         .padding()
     }
     
-    private func signIn() async {
+    private func handleSignInResult(_ result: Result<ASAuthorization, Error>) async {
         inProgress = true
-        await auth.requestSignIn()
+        
+        switch result {
+        case .success(let authorization):
+            if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+                // Extract user information
+                let userID = appleIDCredential.user
+                let fullName = appleIDCredential.fullName
+                let email = appleIDCredential.email
+                
+                // Store user information
+                if let givenName = fullName?.givenName, let familyName = fullName?.familyName {
+                    let displayName = "\(givenName) \(familyName)"
+                    UserDefaults.standard.set(displayName, forKey: "user_full_name")
+                    
+                    // Pre-populate profile with user's name
+                    await MainActor.run {
+                        auth.profileManager.profile.fullName = displayName
+                    }
+                }
+                
+                if let email = email {
+                    UserDefaults.standard.set(email, forKey: "user_email")
+                }
+                
+                UserDefaults.standard.set(userID, forKey: "apple_user_id")
+                
+                // Complete sign in
+                await auth.requestSignIn()
+            }
+        case .failure(let error):
+            print("Sign in with Apple failed: \(error)")
+            // Handle error appropriately
+        }
+        
         inProgress = false
     }
 }

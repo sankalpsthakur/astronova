@@ -1483,9 +1483,19 @@ struct CustomTabBar: View {
                         selectedTab = index
                     }
                 } label: {
-                    VStack(spacing: 4) {
-                        // Icon
-                        Group {
+                    VStack(spacing: 6) {
+                        // Background highlight for selected tab
+                        ZStack {
+                            if selectedTab == index {
+                                Circle()
+                                    .fill(.blue.gradient)
+                                    .frame(width: 32, height: 32)
+                                    .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                            
+                            // Icon
+                            Group {
                             if let customIcon = tabs[index].customIcon {
                                 switch customIcon {
                                 case "friends":
@@ -1503,16 +1513,20 @@ struct CustomTabBar: View {
                                     .font(.title3)
                             }
                         }
-                        .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                        .frame(width: 32, height: 32)
+                        .foregroundStyle(selectedTab == index ? .white : .secondary)
+                        .scaleEffect(selectedTab == index ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
                         .accessibilityHidden(true)
                         
                         // Title
                         Text(tabs[index].title)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                            .font(.caption.weight(selectedTab == index ? .semibold : .medium))
+                            .foregroundStyle(selectedTab == index ? .white : .secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 4)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tabs[index].title)
@@ -1520,18 +1534,20 @@ struct CustomTabBar: View {
                 .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
-        .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, max(8, (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.safeAreaInsets.bottom ?? 0))
         .background(
             .ultraThinMaterial,
-            in: Rectangle()
+            in: RoundedRectangle(cornerRadius: 0)
         )
         .overlay(
             Rectangle()
-                .fill(.quaternary)
-                .frame(height: 0.5),
+                .fill(.quaternary.opacity(0.3))
+                .frame(height: 0.33),
             alignment: .top
         )
+        .clipShape(Rectangle())
     }
 }
 
@@ -3733,8 +3749,6 @@ struct CalendarHoroscopeView: View {
                     onBookmark: onBookmark
                 )
                 
-                // Premium Content Teasers
-                PremiumContentTeasers(date: selectedDate)
             }
             .padding()
         }
@@ -4097,99 +4111,6 @@ struct DailySynopsisCard: View {
     }
 }
 
-struct PremiumContentTeasers: View {
-    let date: Date
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text("Unlock Detailed Insights")
-                    .font(.headline)
-                Spacer()
-            }
-            
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                PremiumTeaserCard(
-                    title: "Love Forecast",
-                    description: "Detailed romantic insights",
-                    icon: "heart.fill",
-                    color: .pink,
-                    price: "$2.99"
-                )
-                
-                PremiumTeaserCard(
-                    title: "Birth Chart Reading",
-                    description: "Complete natal analysis",
-                    icon: "circle.grid.cross.fill",
-                    color: .purple,
-                    price: "$9.99"
-                )
-                
-                PremiumTeaserCard(
-                    title: "Career Forecast",
-                    description: "Professional guidance",
-                    icon: "briefcase.fill",
-                    color: .blue,
-                    price: "$4.99"
-                )
-                
-                PremiumTeaserCard(
-                    title: "Year Ahead",
-                    description: "12-month outlook",
-                    icon: "calendar",
-                    color: .green,
-                    price: "$19.99"
-                )
-            }
-        }
-    }
-}
-
-struct PremiumTeaserCard: View {
-    let title: String
-    let description: String
-    let icon: String
-    let color: Color
-    let price: String
-    
-    var body: some View {
-        Button {
-            // Handle premium purchase
-        } label: {
-            VStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(color)
-                
-                VStack(spacing: 4) {
-                    Text(title)
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.primary)
-                    
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                
-                Text(price)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(color, in: Capsule())
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(color.opacity(0.3), lineWidth: 1)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
 
 // MARK: - Interactive Charts View
 
@@ -4478,7 +4399,6 @@ struct SettingsView: View {
                 
                 Section("Notifications") {
                     Toggle("Daily Horoscope", isOn: .constant(true))
-                    Toggle("Premium Content", isOn: .constant(false))
                 }
                 
                 Section("About") {
