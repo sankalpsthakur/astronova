@@ -134,6 +134,14 @@ struct ReportResponse: Codable {
     let generatedAt: String
 }
 
+// MARK: - Compatibility Models
+
+/// Compatibility calculation request
+struct CompatibilityRequest: Codable {
+    let person1: BirthData
+    let person2: BirthData
+}
+
 // MARK: - Error Models
 
 /// API error response

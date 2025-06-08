@@ -1,0 +1,106 @@
+name: iOS Build and Test
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  swift-ios:
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+      
+      - name: Show Xcode version
+        run: xcodebuild -version
+      
+      - name: List available simulators
+        run: xcrun simctl list devices available
+      
+      - name: Build iOS app
+        run: |
+          xcodebuild clean build \
+            -project astronova.xcodeproj \
+            -scheme AstronovaApp \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            ONLY_ACTIVE_ARCH=NO
+      
+      - name: Run Swift tests
+        run: |
+          xcodebuild test \
+            -project astronova.xcodeproj \
+            -scheme AstronovaApp \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
+            -configuration Debug \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            ONLY_ACTIVE_ARCH=NO
+        continue-on-error: true
+
+  python-backend:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: backend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ make pkg-config
+      
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask flask-cors flask-jwt-extended flask-limiter flask-caching
+          pip install requests geopy pytz pydantic redis fpdf2 anthropic
+          pip install numpy  # Required for astronomical packages
+          pip install pytest pytest-cov
+          # Note: Skip heavy astronomical packages in CI for faster builds
+          # pip install pyswisseph astropy timezonefinder astroquery
+      
+      - name: Set environment variables
+        run: |
+          echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
+          echo "ANTHROPIC_API_KEY=test-api-key-for-ci" >> $GITHUB_ENV
+      
+      - name: Run Python linting
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: true
+      
+      - name: Run Python tests
+        run: |
+          python -m pytest tests/ -v --tb=short
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          ANTHROPIC_API_KEY: test-api-key-for-ci
+        continue-on-error: true

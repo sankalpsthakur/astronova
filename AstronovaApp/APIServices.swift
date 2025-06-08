@@ -41,21 +41,20 @@ class APIServices: ObservableObject {
     }
     
     /// Get chart aspects
-    func getChartAspects(birthData: BirthData) async throws -> [String: Any] {
+    func getChartAspects(birthData: BirthData) async throws -> Data {
         let request = ChartRequest(
             birthData: birthData,
             chartType: "natal",
             systems: ["western"]
         )
         
-        // Note: Aspects endpoint might return different structure
-        // Adjust based on actual backend response
-        return try await networkClient.request(
+        // Note: Return raw Data for flexible JSON handling
+        // Can be decoded to specific types as needed
+        return try await networkClient.requestRaw(
             endpoint: "/api/v1/chart/aspects",
             method: .POST,
-            body: request,
-            responseType: [String: Any].self
-        ) as! [String: Any]
+            body: request
+        )
     }
     
     // MARK: - Location Services
@@ -183,18 +182,16 @@ class APIServices: ObservableObject {
     // MARK: - Compatibility Services
     
     /// Calculate compatibility between two birth charts
-    func calculateCompatibility(person1: BirthData, person2: BirthData) async throws -> [String: Any] {
-        let request = [
-            "person1": person1,
-            "person2": person2
-        ]
+    func calculateCompatibility(person1: BirthData, person2: BirthData) async throws -> Data {
+        let request = CompatibilityRequest(person1: person1, person2: person2)
         
-        return try await networkClient.request(
+        // Note: Return raw Data for flexible JSON handling
+        // Can be decoded to specific types as needed
+        return try await networkClient.requestRaw(
             endpoint: "/api/match/compatibility",
             method: .POST,
-            body: request,
-            responseType: [String: Any].self
-        ) as! [String: Any]
+            body: request
+        )
     }
 }
 

@@ -110,6 +110,54 @@ class NetworkClient {
         }
     }
     
+    /// Generic method to make raw API requests returning Data
+    func requestRaw(
+        endpoint: String,
+        method: HTTPMethod = .GET,
+        body: Encodable? = nil
+    ) async throws -> Data {
+        guard let url = URL(string: baseURL + endpoint) else {
+            throw NetworkError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Add body if provided
+        if let body = body {
+            do {
+                request.httpBody = try JSONEncoder().encode(body)
+            } catch {
+                throw NetworkError.networkError(error)
+            }
+        }
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NetworkError.networkError(URLError(.badServerResponse))
+            }
+            
+            guard 200...299 ~= httpResponse.statusCode else {
+                throw NetworkError.serverError(httpResponse.statusCode)
+            }
+            
+            guard !data.isEmpty else {
+                throw NetworkError.noData
+            }
+            
+            return data
+        } catch {
+            if error is NetworkError {
+                throw error
+            } else {
+                throw NetworkError.networkError(error)
+            }
+        }
+    }
+    
     /// Check if the backend is healthy
     func healthCheck() async throws -> HealthResponse {
         return try await request(
