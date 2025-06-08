@@ -59,6 +59,37 @@ struct LocationResult: Codable {
     let country: String
     let state: String?
     let timezone: String
+    
+    // Computed property for compatibility with UI
+    var fullName: String {
+        return displayName
+    }
+    
+    // Computed property for coordinates
+    var coordinate: CLLocationCoordinate2D {
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+    
+    // Initializer for Google Places compatibility
+    init(fullName: String, coordinate: CLLocationCoordinate2D, timezone: String) {
+        // Parse the full name to extract city/state/country components
+        let components = fullName.components(separatedBy: ", ")
+        self.name = components.first ?? fullName
+        self.displayName = fullName
+        self.latitude = coordinate.latitude
+        self.longitude = coordinate.longitude
+        self.timezone = timezone
+        
+        // Extract country (usually last component)
+        self.country = components.last ?? ""
+        
+        // Extract state (usually second to last if more than 2 components)
+        if components.count > 2 {
+            self.state = components[components.count - 2]
+        } else {
+            self.state = nil
+        }
+    }
 }
 
 /// Location search response

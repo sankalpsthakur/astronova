@@ -1,4 +1,6 @@
 import SwiftUI
+import Contacts
+import ContactsUI
 
 // MARK: - Notification.Name Helpers
 
@@ -1008,7 +1010,14 @@ struct EnhancedBirthPlaceStepView: View {
             try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
             
             if !Task.isCancelled {
-                let results = await auth.profileManager.searchLocations(query: query)
+                // Try Google Places API first, fallback to existing API
+                let results: [LocationResult]
+                do {
+                    results = try await GooglePlacesService.shared.searchPlaces(query: query)
+                } catch {
+                    print("Google Places search failed, using fallback: \(error)")
+                    results = await auth.profileManager.searchLocations(query: query)
+                }
                 
                 await MainActor.run {
                     if !Task.isCancelled {
@@ -1516,46 +1525,48 @@ struct CustomTabBar: View {
                         selectedTab = index
                     }
                 } label: {
-                    VStack(spacing: 6) {
-                        // Background highlight for selected tab
+                    VStack(spacing: 4) {
+                        // Icon with background
                         ZStack {
                             if selectedTab == index {
                                 Circle()
                                     .fill(.blue.gradient)
-                                    .frame(width: 32, height: 32)
-                                    .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                                    .frame(width: 28, height: 28)
+                                    .shadow(color: .blue.opacity(0.3), radius: 2, x: 0, y: 1)
                                     .transition(.scale.combined(with: .opacity))
                             }
                             
                             // Icon
                             Group {
-                            if let customIcon = tabs[index].customIcon {
-                                switch customIcon {
-                                case "friends":
-                                    FriendsTabIcon(isSelected: selectedTab == index)
-                                case "nexus":
-                                    NexusTabIcon(isSelected: selectedTab == index)
-                                case "profile":
-                                    ProfileTabIcon(isSelected: selectedTab == index)
-                                default:
+                                if let customIcon = tabs[index].customIcon {
+                                    switch customIcon {
+                                    case "friends":
+                                        FriendsTabIcon(isSelected: selectedTab == index)
+                                    case "nexus":
+                                        NexusTabIcon(isSelected: selectedTab == index)
+                                    case "profile":
+                                        ProfileTabIcon(isSelected: selectedTab == index)
+                                    default:
+                                        Image(systemName: tabs[index].icon)
+                                            .font(.system(size: 16, weight: .medium))
+                                    }
+                                } else {
                                     Image(systemName: tabs[index].icon)
-                                        .font(.title3)
+                                        .font(.system(size: 16, weight: .medium))
                                 }
-                            } else {
-                                Image(systemName: tabs[index].icon)
-                                    .font(.title3)
                             }
                         }
-                        .frame(width: 32, height: 32)
+                        .frame(width: 28, height: 28)
                         .foregroundStyle(selectedTab == index ? .white : .secondary)
-                        .scaleEffect(selectedTab == index ? 1.1 : 1.0)
+                        .scaleEffect(selectedTab == index ? 1.05 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
-                        .accessibilityHidden(true)
                         
                         // Title
                         Text(tabs[index].title)
-                            .font(.caption.weight(selectedTab == index ? .semibold : .medium))
-                            .foregroundStyle(selectedTab == index ? .white : .secondary)
+                            .font(.system(size: 10, weight: selectedTab == index ? .semibold : .medium))
+                            .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -1567,19 +1578,20 @@ struct CustomTabBar: View {
                 .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, max(8, (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.safeAreaInsets.bottom ?? 0))
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
         .background(
-            .ultraThinMaterial,
+            .regularMaterial,
             in: RoundedRectangle(cornerRadius: 0)
         )
         .overlay(
             Rectangle()
-                .fill(.quaternary.opacity(0.3))
-                .frame(height: 0.33),
+                .fill(.separator.opacity(0.5))
+                .frame(height: 0.5),
             alignment: .top
         )
+        .ignoresSafeArea(.container, edges: .bottom)
     .clipShape(Rectangle())
     }
 }
@@ -5449,7 +5461,8 @@ struct ContactsPickerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
     @State private var hasContactsAccess = false
-    @State private var mockContacts: [MockContact] = []
+    @State private var contacts: [CNContact] = []
+    @State private var authorizationStatus: CNAuthorizationStatus = .notDetermined
     
     var body: some View {
         NavigationView {
@@ -5461,9 +5474,10 @@ struct ContactsPickerView: View {
                         .padding()
                     
                     // Contacts list
-                    List(filteredContacts, id: \.id) { contact in
+                    List(filteredContacts, id: \.identifier) { contact in
                         Button {
-                            selectedName = contact.name
+                            let fullName = CNContactFormatter.string(from: contact, style: .fullName) ?? "Unknown"
+                            selectedName = fullName
                             dismiss()
                         } label: {
                             HStack {
@@ -5471,20 +5485,15 @@ struct ContactsPickerView: View {
                                     .fill(.blue.opacity(0.2))
                                     .frame(width: 40, height: 40)
                                     .overlay(
-                                        Text(contact.initials)
+                                        Text(getInitials(from: contact))
                                             .font(.callout.weight(.medium))
                                             .foregroundStyle(.blue)
                                     )
                                 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(contact.name)
+                                    Text(CNContactFormatter.string(from: contact, style: .fullName) ?? "Unknown")
                                         .font(.callout)
                                         .foregroundStyle(.primary)
-                                    if !contact.relationship.isEmpty {
-                                        Text(contact.relationship)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
                                 }
                                 
                                 Spacer()
@@ -5537,52 +5546,78 @@ struct ContactsPickerView: View {
                 }
             }
             .onAppear {
-                loadMockContacts()
+                checkContactsAuthorization()
             }
         }
     }
     
-    private var filteredContacts: [MockContact] {
+    private var filteredContacts: [CNContact] {
         if searchText.isEmpty {
-            return mockContacts
+            return contacts
         } else {
-            return mockContacts.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+            return contacts.filter { 
+                let fullName = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
+                return fullName.localizedCaseInsensitiveContains(searchText)
+            }
         }
     }
     
     private func requestContactsAccess() {
-        // Simulate contacts access grant
-        withAnimation {
-            hasContactsAccess = true
+        let store = CNContactStore()
+        store.requestAccess(for: .contacts) { granted, error in
+            DispatchQueue.main.async {
+                if granted {
+                    self.hasContactsAccess = true
+                    self.loadContacts()
+                } else {
+                    print("Contact access denied: \(error?.localizedDescription ?? "Unknown error")")
+                }
+            }
         }
     }
     
-    private func loadMockContacts() {
-        mockContacts = [
-            MockContact(name: "Sarah Johnson", relationship: "Friend"),
-            MockContact(name: "Michael Chen", relationship: "Colleague"),
-            MockContact(name: "Emma Rodriguez", relationship: "Sister"),
-            MockContact(name: "David Kim", relationship: "Partner"),
-            MockContact(name: "Lisa Thompson", relationship: "Friend"),
-            MockContact(name: "Alex Morgan", relationship: "Cousin"),
-            MockContact(name: "Rachel Green", relationship: "College Friend"),
-            MockContact(name: "James Wilson", relationship: "Neighbor"),
-            MockContact(name: "Maya Patel", relationship: "Work Friend"),
-            MockContact(name: "Tom Anderson", relationship: "Brother")
-        ]
+    private func checkContactsAuthorization() {
+        authorizationStatus = CNContactStore.authorizationStatus(for: .contacts)
+        
+        switch authorizationStatus {
+        case .authorized:
+            hasContactsAccess = true
+            loadContacts()
+        case .denied, .restricted:
+            hasContactsAccess = false
+        case .notDetermined:
+            hasContactsAccess = false
+        @unknown default:
+            hasContactsAccess = false
+        }
     }
-}
-
-struct MockContact {
-    let id = UUID()
-    let name: String
-    let relationship: String
     
-    var initials: String {
-        let components = name.components(separatedBy: " ")
-        let first = components.first?.prefix(1) ?? ""
-        let last = components.count > 1 ? components.last?.prefix(1) ?? "" : ""
-        return String(first + last).uppercased()
+    private func loadContacts() {
+        let store = CNContactStore()
+        let keys = [CNContactGivenNameKey, CNContactFamilyNameKey] as [CNKeyDescriptor]
+        let request = CNContactFetchRequest(keysToFetch: keys)
+        
+        do {
+            var fetchedContacts: [CNContact] = []
+            try store.enumerateContacts(with: request) { contact, _ in
+                fetchedContacts.append(contact)
+            }
+            DispatchQueue.main.async {
+                self.contacts = fetchedContacts.sorted {
+                    let name1 = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
+                    let name2 = CNContactFormatter.string(from: $1, style: .fullName) ?? ""
+                    return name1 < name2
+                }
+            }
+        } catch {
+            print("Failed to fetch contacts: \(error)")
+        }
+    }
+    
+    private func getInitials(from contact: CNContact) -> String {
+        let firstName = contact.givenName.prefix(1)
+        let lastName = contact.familyName.prefix(1)
+        return "\(firstName)\(lastName)".uppercased()
     }
 }
 

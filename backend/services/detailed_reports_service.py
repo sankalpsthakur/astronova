@@ -2,7 +2,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import json
 from services.astro_calculator import AstroCalculator
-from services.claude_ai import ClaudeAI
+from services.claude_ai import ClaudeService
 from fpdf import FPDF
 import redis
 import os
@@ -10,7 +10,7 @@ import os
 class DetailedReportsService:
     def __init__(self):
         self.astro_calculator = AstroCalculator()
-        self.claude_ai = ClaudeAI()
+        self.claude_ai = ClaudeService()
         # In production, use Redis for report storage
         self.redis_client = None
         try:
