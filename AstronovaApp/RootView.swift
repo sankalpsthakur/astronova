@@ -3583,16 +3583,46 @@ struct ProfileEditView: View {
                                 .datePickerStyle(.compact)
                             }
                             
-                            // Birth Place
+                            // Birth Place with Google Places Autocomplete
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Birth Place")
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.secondary)
-                                TextField("City, State/Country", text: Binding(
-                                    get: { editedProfile.birthPlace ?? "" },
-                                    set: { editedProfile.birthPlace = $0.isEmpty ? nil : $0 }
-                                ))
-                                .textFieldStyle(.roundedBorder)
+                                
+                                GooglePlacesAutocompleteView(
+                                    selectedLocation: Binding(
+                                        get: { 
+                                            // Convert current birth place to LocationResult if available
+                                            if let birthPlace = editedProfile.birthPlace,
+                                               let coordinates = editedProfile.birthCoordinates,
+                                               let timezone = editedProfile.timezone {
+                                                return LocationResult(
+                                                    fullName: birthPlace,
+                                                    coordinate: coordinates,
+                                                    timezone: timezone
+                                                )
+                                            }
+                                            return nil
+                                        },
+                                        set: { newLocation in
+                                            if let location = newLocation {
+                                                editedProfile.birthPlace = location.fullName
+                                                editedProfile.birthCoordinates = location.coordinate
+                                                editedProfile.timezone = location.timezone
+                                            } else {
+                                                editedProfile.birthPlace = nil
+                                                editedProfile.birthCoordinates = nil
+                                                editedProfile.timezone = nil
+                                            }
+                                        }
+                                    ),
+                                    placeholder: "City, State/Country"
+                                ) { location in
+                                    // Update profile when location is selected
+                                    editedProfile.birthPlace = location.fullName
+                                    editedProfile.birthCoordinates = location.coordinate
+                                    editedProfile.timezone = location.timezone
+                                }
                             }
                         }
                         .padding(.horizontal, 20)

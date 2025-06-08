@@ -10,5 +10,9 @@
 	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>Astronova needs access to your contacts to help you quickly find friends and family for compatibility analysis and chart comparisons.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Astronova needs access to your location to help find nearby places for accurate birth location selection.</string>
+	<key>GooglePlacesAPIKey</key>
+	<string>YOUR_GOOGLE_PLACES_API_KEY_HERE</string>
 </dict>
 </plist>
