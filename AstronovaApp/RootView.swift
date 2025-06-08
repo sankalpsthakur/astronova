@@ -4019,6 +4019,7 @@ struct CalendarHoroscopeView: View {
     let onBookmark: (HoroscopeReading) -> Void
     
     @State private var showingReportSheet = false
+    @State private var showingReportsLibrary = false
     @State private var selectedReportType: String = ""
     @State private var userReports: [DetailedReport] = []
     @State private var hasSubscription = false
@@ -4046,7 +4047,7 @@ struct CalendarHoroscopeView: View {
                         showingReportSheet = true
                     },
                     onViewReports: {
-                        loadUserReports()
+                        showingReportsLibrary = true
                     },
                     savedReports: userReports
                 )
@@ -4067,6 +4068,9 @@ struct CalendarHoroscopeView: View {
                 }
             )
             .environmentObject(auth)
+        }
+        .sheet(isPresented: $showingReportsLibrary) {
+            ReportsLibraryView(reports: userReports)
         }
     }
     
@@ -4468,6 +4472,573 @@ struct DailySynopsisCard: View {
     }
 }
 
+
+// MARK: - Premium Insights Section
+
+struct PremiumInsightsSection: View {
+    let hasSubscription: Bool
+    let onInsightTap: (String) -> Void
+    let onViewReports: () -> Void
+    let savedReports: [DetailedReport]
+    
+    private let insights = [
+        InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Romantic timing & compatibility"),
+        InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Complete personality analysis"),
+        InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance & timing"),
+        InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "12-month cosmic roadmap")
+    ]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Detailed Insights")
+                    .font(.title2.weight(.bold))
+                
+                Spacer()
+                
+                if !savedReports.isEmpty {
+                    Button("View All (\(savedReports.count))") {
+                        onViewReports()
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.blue)
+                }
+            }
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+                ForEach(insights, id: \.id) { insight in
+                    InsightCard(
+                        insight: insight,
+                        hasSubscription: hasSubscription,
+                        isGenerated: savedReports.contains { $0.type == insight.id },
+                        onTap: {
+                            onInsightTap(insight.id)
+                        }
+                    )
+                }
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
+    }
+}
+
+struct InsightType {
+    let id: String
+    let title: String
+    let icon: String
+    let color: Color
+    let description: String
+}
+
+struct InsightCard: View {
+    let insight: InsightType
+    let hasSubscription: Bool
+    let isGenerated: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                HStack {
+                    Image(systemName: insight.icon)
+                        .font(.title2)
+                        .foregroundStyle(insight.color)
+                    
+                    Spacer()
+                    
+                    if isGenerated {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    } else if !hasSubscription {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(insight.title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    
+                    Text(insight.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding()
+            .background(.regularMaterial)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(insight.color.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Report Generation Sheet
+
+struct ReportGenerationSheet: View {
+    let reportType: String
+    let onGenerate: (String) -> Void
+    let onDismiss: () -> Void
+    
+    @EnvironmentObject private var auth: AuthState
+    @State private var isGenerating = false
+    @State private var hasSubscription = false
+    @State private var showingSubscription = false
+    @Environment(\.dismiss) private var dismiss
+    
+    private var reportInfo: InsightType {
+        switch reportType {
+        case "love_forecast":
+            return InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Comprehensive romantic analysis with timing and compatibility insights")
+        case "birth_chart":
+            return InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Complete astrological blueprint revealing personality and life purpose")
+        case "career_forecast":
+            return InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance with timing for career moves and opportunities")
+        case "year_ahead":
+            return InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "Month-by-month cosmic roadmap for the next 12 months")
+        default:
+            return InsightType(id: "unknown", title: "Report", icon: "doc.fill", color: .gray, description: "Detailed astrological analysis")
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 16) {
+                    Image(systemName: reportInfo.icon)
+                        .font(.system(size: 60))
+                        .foregroundStyle(reportInfo.color)
+                    
+                    Text(reportInfo.title)
+                        .font(.largeTitle.weight(.bold))
+                    
+                    Text(reportInfo.description)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                
+                // Features
+                VStack(alignment: .leading, spacing: 12) {
+                    FeatureRow(icon: "brain.head.profile", text: "AI-powered personalized analysis")
+                    FeatureRow(icon: "clock", text: "Generated in under 60 seconds")
+                    FeatureRow(icon: "arrow.down.circle", text: "PDF download included")
+                    FeatureRow(icon: "bookmark", text: "Saved to your profile forever")
+                }
+                .padding()
+                .background(.regularMaterial)
+                .cornerRadius(12)
+                
+                Spacer()
+                
+                // Action Buttons
+                VStack(spacing: 16) {
+                    if hasSubscription {
+                        Button {
+                            generateReport()
+                        } label: {
+                            HStack {
+                                if isGenerating {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "sparkles")
+                                }
+                                
+                                Text(isGenerating ? "Generating..." : "Generate Report")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .foregroundStyle(.white)
+                            .background(reportInfo.color)
+                            .cornerRadius(12)
+                        }
+                        .disabled(isGenerating)
+                    } else {
+                        Button {
+                            showingSubscription = true
+                        } label: {
+                            VStack(spacing: 8) {
+                                Text("Upgrade to Astronova Plus")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
+                                
+                                Text("$9.99/month")
+                                    .font(.title2.weight(.bold))
+                                    .foregroundStyle(.white)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(.orange)
+                            .cornerRadius(12)
+                        }
+                    }
+                    
+                    Text("All reports are saved to your profile for future reference")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding()
+            .navigationTitle("Premium Insight")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Close") {
+                        onDismiss()
+                    }
+                }
+            }
+        }
+        .onAppear {
+            hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
+        }
+        .sheet(isPresented: $showingSubscription) {
+            SubscriptionSheet()
+        }
+    }
+    
+    private func generateReport() {
+        isGenerating = true
+        onGenerate(reportType)
+    }
+}
+
+struct FeatureRow: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.blue)
+                .frame(width: 24)
+            
+            Text(text)
+                .font(.body)
+                .foregroundStyle(.primary)
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Reports Library View
+
+struct ReportsLibraryView: View {
+    let reports: [DetailedReport]
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedReport: DetailedReport?
+    @State private var showingReportDetail = false
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                LazyVStack(spacing: 16) {
+                    if reports.isEmpty {
+                        VStack(spacing: 16) {
+                            Image(systemName: "doc.text")
+                                .font(.system(size: 60))
+                                .foregroundStyle(.secondary)
+                            
+                            Text("No Reports Yet")
+                                .font(.title2.weight(.semibold))
+                            
+                            Text("Generate your first detailed insight to see it here")
+                                .font(.body)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 100)
+                    } else {
+                        ForEach(reports, id: \.reportId) { report in
+                            ReportLibraryCard(
+                                report: report,
+                                onTap: {
+                                    selectedReport = report
+                                    showingReportDetail = true
+                                }
+                            )
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("My Reports")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingReportDetail) {
+            if let report = selectedReport {
+                ReportDetailView(report: report)
+            }
+        }
+    }
+}
+
+struct ReportLibraryCard: View {
+    let report: DetailedReport
+    let onTap: () -> Void
+    
+    private var reportInfo: InsightType {
+        switch report.type {
+        case "love_forecast":
+            return InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Romantic analysis")
+        case "birth_chart":
+            return InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Personality blueprint")
+        case "career_forecast":
+            return InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance")
+        case "year_ahead":
+            return InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "Cosmic roadmap")
+        default:
+            return InsightType(id: "unknown", title: "Report", icon: "doc.fill", color: .gray, description: "Analysis")
+        }
+    }
+    
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        
+        if let date = ISO8601DateFormatter().date(from: report.generatedAt) {
+            return formatter.string(from: date)
+        }
+        return report.generatedAt
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: reportInfo.icon)
+                        .font(.title2)
+                        .foregroundStyle(reportInfo.color)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(report.title)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                        
+                        Text("Generated \(formattedDate)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Text(report.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                
+                // Key insights preview
+                if !report.keyInsights.isEmpty {
+                    HStack {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        
+                        Text("\(report.keyInsights.count) key insights")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.orange)
+                        
+                        Spacer()
+                    }
+                }
+            }
+            .padding()
+            .background(.regularMaterial)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(reportInfo.color.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Report Detail View
+
+struct ReportDetailView: View {
+    let report: DetailedReport
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingShareSheet = false
+    
+    private let apiServices = APIServices.shared
+    
+    private var reportInfo: InsightType {
+        switch report.type {
+        case "love_forecast":
+            return InsightType(id: "love_forecast", title: "Love Forecast", icon: "heart.fill", color: .pink, description: "Romantic analysis")
+        case "birth_chart":
+            return InsightType(id: "birth_chart", title: "Birth Chart Reading", icon: "star.circle.fill", color: .purple, description: "Personality blueprint")
+        case "career_forecast":
+            return InsightType(id: "career_forecast", title: "Career Forecast", icon: "briefcase.fill", color: .blue, description: "Professional guidance")
+        case "year_ahead":
+            return InsightType(id: "year_ahead", title: "Year Ahead", icon: "calendar", color: .orange, description: "Cosmic roadmap")
+        default:
+            return InsightType(id: "unknown", title: "Report", icon: "doc.fill", color: .gray, description: "Analysis")
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: reportInfo.icon)
+                                .font(.title)
+                                .foregroundStyle(reportInfo.color)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(report.title)
+                                    .font(.title2.weight(.bold))
+                                
+                                Text("Generated \(formatDate(report.generatedAt))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                        }
+                        
+                        Text(report.summary)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(12)
+                    
+                    // Key Insights
+                    if !report.keyInsights.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Key Insights")
+                                .font(.title3.weight(.bold))
+                            
+                            ForEach(report.keyInsights.indices, id: \.self) { index in
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(systemName: "lightbulb.fill")
+                                        .font(.body)
+                                        .foregroundStyle(.orange)
+                                    
+                                    Text(report.keyInsights[index])
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                    
+                                    Spacer()
+                                }
+                                .padding()
+                                .background(.orange.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                        }
+                        .padding()
+                        .background(.regularMaterial)
+                        .cornerRadius(12)
+                    }
+                    
+                    // Full Content
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Detailed Analysis")
+                            .font(.title3.weight(.bold))
+                        
+                        Text(report.content)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                    .padding()
+                    .background(.regularMaterial)
+                    .cornerRadius(12)
+                }
+                .padding()
+            }
+            .navigationTitle("Report Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button {
+                            downloadPDF()
+                        } label: {
+                            Label("Download PDF", systemImage: "arrow.down.circle")
+                        }
+                        
+                        Button {
+                            showingShareSheet = true
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
+    }
+    
+    private func formatDate(_ dateString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        
+        if let date = ISO8601DateFormatter().date(from: dateString) {
+            return formatter.string(from: date)
+        }
+        return dateString
+    }
+    
+    private func downloadPDF() {
+        // TODO: Implement PDF download
+        Task {
+            do {
+                // This would call the download endpoint
+                print("Downloading PDF for report: \(report.reportId)")
+            } catch {
+                print("Failed to download PDF: \(error)")
+            }
+        }
+    }
+}
 
 // MARK: - Interactive Charts View
 
