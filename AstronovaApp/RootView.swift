@@ -2425,7 +2425,8 @@ struct NexusTab: View {
         }
     }
     
-    @State private var quickQuestions: [QuickQuestion] = []
+    // TODO: Re-enable when QuickQuestion is properly integrated
+    // @State private var quickQuestions: [QuickQuestion] = []
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
@@ -3096,7 +3097,8 @@ struct CosmicInputArea: View {
     @State private var isInputFocused = false
     @FocusState private var textFieldFocused: Bool
     
-    @State private var quickQuestions: [QuickQuestion] = []
+    // TODO: Re-enable when QuickQuestion is properly integrated
+    // @State private var quickQuestions: [QuickQuestion] = []
     
     var body: some View {
         VStack(spacing: 0) {
