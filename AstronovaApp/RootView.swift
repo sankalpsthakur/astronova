@@ -2602,7 +2602,6 @@ struct NexusTab: View {
         ]
         return generalResponses.randomElement() ?? generalResponses[0]
     }
-}
 
 // MARK: - Message Limit Banner
 
