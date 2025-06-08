@@ -2283,13 +2283,20 @@ struct CompatibilityCard: View {
 struct NexusTab: View {
     @State private var messageText = ""
     @State private var messages: [CosmicMessage] = [
-        CosmicMessage(id: "1", text: "✨ Welcome to the Cosmic Nexus! I'm your AI astrologer, here to illuminate your path through the stars. What cosmic wisdom can I share with you today?", isUser: false, messageType: .welcome, timestamp: Date().addingTimeInterval(-3600)),
-        CosmicMessage(id: "2", text: "What does my birth chart say about my career?", isUser: true, messageType: .question, timestamp: Date().addingTimeInterval(-1800)),
-        CosmicMessage(id: "3", text: "🌟 The celestial patterns in your chart reveal fascinating insights! With your Leo rising, you radiate natural leadership energy. Your 10th house placement indicates powerful potential in creative or executive roles. The stars are aligning beautifully for your career aspirations right now! ✨", isUser: false, messageType: .insight, timestamp: Date().addingTimeInterval(-900))
+        CosmicMessage(id: "welcome", text: "✨ Welcome to the Cosmic Nexus! I'm your AI astrologer, here to illuminate your path through the stars. What cosmic wisdom can I share with you today?", isUser: false, messageType: .welcome, timestamp: Date().addingTimeInterval(-3600))
     ]
     @State private var animateStars = false
     @State private var animateGradient = false
     @State private var showingTypingIndicator = false
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var dailyMessageCount = 0
+    @State private var hasSubscription = false
+    @State private var showingSubscriptionSheet = false
+    
+    @EnvironmentObject private var auth: AuthState
+    private let apiServices = APIServices.shared
+    private let freeMessageLimit = 5
     
     var body: some View {
         NavigationView {
@@ -2298,6 +2305,17 @@ struct NexusTab: View {
                 CosmicChatBackground(animateStars: $animateStars, animateGradient: $animateGradient)
                 
                 VStack(spacing: 0) {
+                    // Message Limit Banner (for free users)
+                    if !hasSubscription {
+                        MessageLimitBanner(
+                            used: dailyMessageCount,
+                            limit: freeMessageLimit,
+                            onUpgrade: {
+                                showingSubscriptionSheet = true
+                            }
+                        )
+                    }
+                    
                     // Chat messages with cosmic styling
                     ScrollView {
                         LazyVStack(spacing: 20) {
@@ -2309,6 +2327,13 @@ struct NexusTab: View {
                             if showingTypingIndicator {
                                 CosmicTypingIndicator()
                                     .transition(.scale.combined(with: .opacity))
+                            }
+                            
+                            // Error message
+                            if let errorMessage = errorMessage {
+                                ErrorMessageView(message: errorMessage) {
+                                    self.errorMessage = nil
+                                }
                             }
                         }
                         .padding(.horizontal)
@@ -2323,6 +2348,7 @@ struct NexusTab: View {
                             messageText = question
                         }
                     )
+                    .disabled(isLoading || (!hasSubscription && dailyMessageCount >= freeMessageLimit))
                 }
             }
             .navigationTitle("Cosmic Nexus")
@@ -2334,6 +2360,11 @@ struct NexusTab: View {
                 animateStars = true
                 animateGradient = true
             }
+            loadMessageCount()
+            checkSubscriptionStatus()
+        }
+        .sheet(isPresented: $showingSubscriptionSheet) {
+            SubscriptionSheet()
         }
     }
     
@@ -2347,6 +2378,12 @@ struct NexusTab: View {
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
+        
+        // Check message limit for free users
+        if !hasSubscription && dailyMessageCount >= freeMessageLimit {
+            errorMessage = "✨ You've reached your daily message limit! Upgrade to Astronova Plus for unlimited cosmic conversations and unlock the full power of the stars."
+            return
+        }
         
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -2368,32 +2405,101 @@ struct NexusTab: View {
         // Clear input and show typing indicator
         let currentMessage = messageText
         messageText = ""
+        errorMessage = nil
+        isLoading = true
         
         withAnimation(.easeInOut(duration: 0.3)) {
             showingTypingIndicator = true
         }
         
-        // Simulate AI response with realistic delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 1.5...3.0)) {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                showingTypingIndicator = false
-            }
-            
-            let response = generateCosmicResponse(for: currentMessage)
-            let messageType: CosmicMessageType = response.contains("🌟") ? .insight : .guidance
-            
-            let aiMessage = CosmicMessage(
-                id: UUID().uuidString,
-                text: response,
-                isUser: false,
-                messageType: messageType,
-                timestamp: Date()
-            )
-            
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                messages.append(aiMessage)
+        Task {
+            do {
+                let context = ChatContext(
+                    userChart: auth.profileManager.lastChart,
+                    currentTransits: nil,
+                    preferences: nil
+                )
+                
+                let response = try await apiServices.sendChatMessage(currentMessage, context: context)
+                
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showingTypingIndicator = false
+                        isLoading = false
+                    }
+                    
+                    let aiMessage = CosmicMessage(
+                        id: UUID().uuidString,
+                        text: response.response,
+                        isUser: false,
+                        messageType: .insight,
+                        timestamp: Date()
+                    )
+                    
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        messages.append(aiMessage)
+                    }
+                    
+                    // Increment message count for free users
+                    if !hasSubscription {
+                        dailyMessageCount += 1
+                        saveMessageCount()
+                    }
+                }
+                
+            } catch {
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showingTypingIndicator = false
+                        isLoading = false
+                    }
+                    
+                    // Fall back to local cosmic response if API fails
+                    let response = generateCosmicResponse(for: currentMessage)
+                    let messageType: CosmicMessageType = response.contains("🌟") ? .insight : .guidance
+                    
+                    let aiMessage = CosmicMessage(
+                        id: UUID().uuidString,
+                        text: response,
+                        isUser: false,
+                        messageType: messageType,
+                        timestamp: Date()
+                    )
+                    
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        messages.append(aiMessage)
+                    }
+                    
+                    // Increment message count for free users even on fallback
+                    if !hasSubscription {
+                        dailyMessageCount += 1
+                        saveMessageCount()
+                    }
+                    
+                    print("Chat API error: \(error)")
+                }
             }
         }
+    }
+    
+    private func loadMessageCount() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        let key = "dailyMessageCount_\(today)"
+        dailyMessageCount = UserDefaults.standard.integer(forKey: key)
+    }
+    
+    private func saveMessageCount() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        let key = "dailyMessageCount_\(today)"
+        UserDefaults.standard.set(dailyMessageCount, forKey: key)
+    }
+    
+    private func checkSubscriptionStatus() {
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
     }
     
     private func generateCosmicResponse(for message: String) -> String {
@@ -2435,6 +2541,181 @@ struct NexusTab: View {
             "🌙 Your soul's journey is written in the stars, and this moment is a crucial chapter. The universe is whispering guidance - listen with your heart."
         ]
         return generalResponses.randomElement() ?? generalResponses[0]
+    }
+}
+
+// MARK: - Message Limit Banner
+
+struct MessageLimitBanner: View {
+    let used: Int
+    let limit: Int
+    let onUpgrade: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "star.circle.fill")
+                .foregroundStyle(.orange)
+            
+            Text("\(used)/\(limit) free messages today")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            
+            Spacer()
+            
+            if used >= limit {
+                Button("Upgrade to Plus") {
+                    onUpgrade()
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.blue)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.1))
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(.orange.opacity(0.3)),
+            alignment: .bottom
+        )
+    }
+}
+
+// MARK: - Error Message View
+
+struct ErrorMessageView: View {
+    let message: String
+    let onDismiss: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            
+            Spacer()
+            
+            Button("Dismiss") {
+                onDismiss()
+            }
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.blue)
+        }
+        .padding()
+        .background(.orange.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Subscription Sheet
+
+struct SubscriptionSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "star.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(.orange)
+                    
+                    Text("Astronova Plus")
+                        .font(.largeTitle.weight(.bold))
+                    
+                    Text("Unlock unlimited cosmic wisdom")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+                
+                // Features
+                VStack(alignment: .leading, spacing: 16) {
+                    FeatureRow(icon: "bubble.left.and.bubble.right.fill", title: "Unlimited Chat Messages", description: "Chat with AI astrologer without daily limits")
+                    
+                    FeatureRow(icon: "heart.fill", title: "Detailed Love Forecasts", description: "Deep romantic insights and compatibility")
+                    
+                    FeatureRow(icon: "chart.line.uptrend.xyaxis", title: "Birth Chart Readings", description: "Complete natal chart analysis")
+                    
+                    FeatureRow(icon: "briefcase.fill", title: "Career Forecasts", description: "Professional guidance and timing")
+                    
+                    FeatureRow(icon: "calendar", title: "Year Ahead Reports", description: "12-month cosmic roadmap")
+                }
+                .padding()
+                .background(.ultraThinMaterial)
+                .cornerRadius(16)
+                
+                Spacer()
+                
+                // Pricing
+                VStack(spacing: 16) {
+                    Button {
+                        // TODO: Handle subscription purchase
+                    } label: {
+                        VStack(spacing: 8) {
+                            Text("Start Your Cosmic Journey")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                            
+                            Text("$9.99/month")
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(.orange)
+                        .cornerRadius(12)
+                    }
+                    
+                    Text("Cancel anytime in Settings")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .navigationTitle("Upgrade")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Feature Row
+
+struct FeatureRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(.orange)
+                .frame(width: 30)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+        }
     }
 }
 

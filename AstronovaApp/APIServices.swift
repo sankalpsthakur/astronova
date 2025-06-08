@@ -124,10 +124,18 @@ class APIServices: ObservableObject {
         let request = ChatRequest(message: message, context: context)
         
         return try await networkClient.request(
-            endpoint: "/api/chat/message",
+            endpoint: "/api/v1/chat",
             method: .POST,
             body: request,
             responseType: ChatResponse.self
+        )
+    }
+    
+    /// Retrieve chat history
+    func getChatHistory() async throws -> [ChatMessage] {
+        return try await networkClient.request(
+            endpoint: "/api/v1/chat/history",
+            responseType: [ChatMessage].self
         )
     }
     

@@ -95,3 +95,16 @@ class ChartRequest(BaseModel):
 class ReportRequest(BaseModel):
     title: str
     content: str
+
+class DetailedReportRequest(BaseModel):
+    birthData: ChartBirthData
+    reportType: str  # "love_forecast", "birth_chart", "career_forecast", "year_ahead"
+    options: Optional[dict] = None
+    userId: Optional[str] = None
+    
+    @validator('reportType')
+    def validate_report_type(cls, v):
+        allowed_types = ["love_forecast", "birth_chart", "career_forecast", "year_ahead"]
+        if v not in allowed_types:
+            raise ValueError(f'Report type must be one of: {", ".join(allowed_types)}')
+        return v

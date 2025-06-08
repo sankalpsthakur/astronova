@@ -108,6 +108,15 @@ struct ChatResponse: Codable {
     let suggestions: [String]?
 }
 
+/// Chat message for history
+struct ChatMessage: Codable {
+    let id: String
+    let message: String
+    let response: String
+    let timestamp: String
+    let userId: String?
+}
+
 // MARK: - Report Models
 
 /// Report generation request
