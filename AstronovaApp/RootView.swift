@@ -5628,6 +5628,7 @@ struct ContactsPickerView: View {
             hasContactsAccess = false
         @unknown default:
             hasContactsAccess = false
+            break
         }
     }
     
