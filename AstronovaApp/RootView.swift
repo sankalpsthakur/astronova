@@ -2426,7 +2426,6 @@ struct NexusTab: View {
                 }
             }
             */
-            }
         }
         .sheet(isPresented: $showingSubscriptionSheet) {
             SubscriptionSheet()
