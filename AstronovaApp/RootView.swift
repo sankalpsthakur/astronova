@@ -4018,6 +4018,14 @@ struct CalendarHoroscopeView: View {
     @Binding var selectedDate: Date
     let onBookmark: (HoroscopeReading) -> Void
     
+    @State private var showingReportSheet = false
+    @State private var selectedReportType: String = ""
+    @State private var userReports: [DetailedReport] = []
+    @State private var hasSubscription = false
+    @EnvironmentObject private var auth: AuthState
+    
+    private let apiServices = APIServices.shared
+    
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
@@ -4030,8 +4038,76 @@ struct CalendarHoroscopeView: View {
                     onBookmark: onBookmark
                 )
                 
+                // Premium Insights Section
+                PremiumInsightsSection(
+                    hasSubscription: hasSubscription,
+                    onInsightTap: { reportType in
+                        selectedReportType = reportType
+                        showingReportSheet = true
+                    },
+                    onViewReports: {
+                        loadUserReports()
+                    },
+                    savedReports: userReports
+                )
+                
             }
             .padding()
+        }
+        .onAppear {
+            checkSubscriptionStatus()
+            loadUserReports()
+        }
+        .sheet(isPresented: $showingReportSheet) {
+            ReportGenerationSheet(
+                reportType: selectedReportType,
+                onGenerate: generateReport,
+                onDismiss: {
+                    showingReportSheet = false
+                }
+            )
+            .environmentObject(auth)
+        }
+    }
+    
+    private func checkSubscriptionStatus() {
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
+    }
+    
+    private func loadUserReports() {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let response = try await apiServices.getUserReports(userId: userId)
+                await MainActor.run {
+                    userReports = response.reports
+                }
+            } catch {
+                print("Failed to load user reports: \(error)")
+            }
+        }
+    }
+    
+    private func generateReport(reportType: String) {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let birthData = try BirthData(from: auth.profileManager.profile)
+                let _ = try await apiServices.generateDetailedReport(
+                    birthData: birthData,
+                    type: reportType,
+                    userId: userId
+                )
+                
+                await MainActor.run {
+                    showingReportSheet = false
+                    loadUserReports() // Refresh the reports list
+                }
+            } catch {
+                print("Failed to generate report: \(error)")
+            }
         }
     }
 }

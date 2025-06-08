@@ -165,6 +165,39 @@ class APIServices: ObservableObject {
         )
     }
     
+    /// Generate detailed premium report
+    func generateDetailedReport(birthData: BirthData, type: String, userId: String? = nil, options: [String: String]? = nil) async throws -> DetailedReportResponse {
+        let request = DetailedReportRequest(
+            birthData: birthData,
+            reportType: type,
+            options: options,
+            userId: userId
+        )
+        
+        return try await networkClient.request(
+            endpoint: "/api/v1/reports/full",
+            method: .POST,
+            body: request,
+            responseType: DetailedReportResponse.self
+        )
+    }
+    
+    /// Get detailed report by ID
+    func getDetailedReport(reportId: String) async throws -> DetailedReport {
+        return try await networkClient.request(
+            endpoint: "/api/v1/reports/\(reportId)",
+            responseType: DetailedReport.self
+        )
+    }
+    
+    /// Get all reports for user
+    func getUserReports(userId: String) async throws -> UserReportsResponse {
+        return try await networkClient.request(
+            endpoint: "/api/v1/reports/user/\(userId)",
+            responseType: UserReportsResponse.self
+        )
+    }
+    
     // MARK: - Ephemeris Services
     
     /// Get current planetary positions
