@@ -222,12 +222,44 @@ struct SimpleProfileSetupView: View {
     private var canContinue: Bool {
         switch currentStep {
         case 0: return true
-        case 1: return !fullName.isEmpty
-        case 2: return true
-        case 3: return true
-        case 4: return !birthPlace.isEmpty
+        case 1: return isValidName(fullName)
+        case 2: return isValidBirthDate(birthDate)
+        case 3: return true // Birth time is optional but always valid
+        case 4: return !birthPlace.isEmpty && isValidLocation()
         default: return false
         }
+    }
+    
+    private func isValidName(_ name: String) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.count >= 2 && 
+               trimmedName.count <= 50 && 
+               !trimmedName.contains("  ") &&
+               trimmedName.range(of: "^[a-zA-Z\\s\\-']+$", options: .regularExpression) != nil
+    }
+    
+    private func isValidBirthDate(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Check if date is in the future
+        if date > now {
+            return false
+        }
+        
+        // Check if date is too far in the past (more than 120 years ago)
+        if let earliestValidDate = calendar.date(byAdding: .year, value: -120, to: now),
+           date < earliestValidDate {
+            return false
+        }
+        
+        return true
+    }
+    
+    private func isValidLocation() -> Bool {
+        // Check if we have valid coordinates from the location selection
+        return auth.profileManager.profile.birthCoordinates != nil &&
+               auth.profileManager.profile.timezone != nil
     }
     
     private func handleContinue() {
@@ -407,6 +439,7 @@ struct EnhancedNameStepView: View {
     @Binding var fullName: String
     @State private var animateIcon = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var validationError: String?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -441,7 +474,7 @@ struct EnhancedNameStepView: View {
                         .padding(.horizontal, 8)
                 }
                 
-                // Beautiful text field
+                // Enhanced text field with validation
                 VStack(spacing: 8) {
                     TextField("", text: $fullName, prompt: Text("Enter your name").foregroundColor(.white.opacity(0.6)))
                         .font(.title3.weight(.medium))
@@ -453,14 +486,32 @@ struct EnhancedNameStepView: View {
                                 .fill(.white.opacity(0.15))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 16)
-                                        .stroke(.white.opacity(0.3), lineWidth: 1)
+                                        .stroke(
+                                            validationError != nil ? .red.opacity(0.6) : .white.opacity(0.3), 
+                                            lineWidth: validationError != nil ? 2 : 1
+                                        )
                                 )
                         )
                         .focused($isTextFieldFocused)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
+                        .onChange(of: fullName) { _, newValue in
+                            validateName(newValue)
+                        }
                     
-                    if !fullName.isEmpty {
+                    // Validation feedback
+                    if let error = validationError {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red.opacity(0.9))
+                            Spacer()
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                    } else if !fullName.isEmpty && isValidName(fullName) {
                         HStack {
                             Image(systemName: "star.fill")
                                 .font(.caption)
@@ -471,7 +522,6 @@ struct EnhancedNameStepView: View {
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: fullName.isEmpty)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -487,11 +537,55 @@ struct EnhancedNameStepView: View {
             }
         }
     }
+    
+    private func validateName(_ name: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if trimmedName.isEmpty {
+            validationError = nil
+            return
+        }
+        
+        if trimmedName.count < 2 {
+            validationError = "Name must be at least 2 characters long"
+            return
+        }
+        
+        if trimmedName.count > 50 {
+            validationError = "Name cannot exceed 50 characters"
+            return
+        }
+        
+        // Check for valid characters (letters, spaces, hyphens, apostrophes)
+        let validNameRegex = "^[a-zA-Z\\s\\-']+$"
+        let nameTest = NSPredicate(format: "SELF MATCHES %@", validNameRegex)
+        if !nameTest.evaluate(with: trimmedName) {
+            validationError = "Name can only contain letters, spaces, hyphens, and apostrophes"
+            return
+        }
+        
+        // Check for reasonable number of consecutive spaces
+        if trimmedName.contains("  ") {
+            validationError = "Name cannot contain multiple consecutive spaces"
+            return
+        }
+        
+        validationError = nil
+    }
+    
+    private func isValidName(_ name: String) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedName.count >= 2 && 
+               trimmedName.count <= 50 && 
+               !trimmedName.contains("  ") &&
+               trimmedName.range(of: "^[a-zA-Z\\s\\-']+$", options: .regularExpression) != nil
+    }
 }
 
 struct EnhancedBirthDateStepView: View {
     @Binding var birthDate: Date
     @State private var animateIcon = false
+    @State private var validationError: String?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -526,31 +620,56 @@ struct EnhancedBirthDateStepView: View {
                         .padding(.horizontal, 8)
                 }
                 
-                // Beautiful date picker
+                // Enhanced date picker with validation
                 VStack(spacing: 12) {
                     DatePicker(
                         "",
                         selection: $birthDate,
-                        in: ...Date(),
+                        in: getDateRange(),
                         displayedComponents: .date
                     )
                     .datePickerStyle(.wheel)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
                             .fill(.white.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(
+                                        validationError != nil ? .red.opacity(0.6) : .clear, 
+                                        lineWidth: 2
+                                    )
+                            )
                     )
                     .colorScheme(.dark)
                     .padding(.horizontal, 24)
+                    .onChange(of: birthDate) { _, newValue in
+                        validateBirthDate(newValue)
+                    }
                     
-                    Text("Selected: \(formatSelectedDate())")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.7))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(.white.opacity(0.15))
-                        )
+                    // Validation feedback
+                    if let error = validationError {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red.opacity(0.9))
+                            Spacer()
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                        .padding(.horizontal, 24)
+                    } else {
+                        Text("Selected: \(formatSelectedDate())")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(.white.opacity(0.15))
+                            )
+                    }
                 }
             }
             
@@ -558,7 +677,35 @@ struct EnhancedBirthDateStepView: View {
         }
         .onAppear {
             animateIcon = true
+            validateBirthDate(birthDate)
         }
+    }
+    
+    private func getDateRange() -> ClosedRange<Date> {
+        let calendar = Calendar.current
+        let earliestDate = calendar.date(byAdding: .year, value: -120, to: Date()) ?? Date()
+        let latestDate = Date()
+        return earliestDate...latestDate
+    }
+    
+    private func validateBirthDate(_ date: Date) {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Check if date is in the future
+        if date > now {
+            validationError = "Birth date cannot be in the future"
+            return
+        }
+        
+        // Check if date is too far in the past (more than 120 years ago)
+        if let earliestValidDate = calendar.date(byAdding: .year, value: -120, to: now),
+           date < earliestValidDate {
+            validationError = "Birth date cannot be more than 120 years ago"
+            return
+        }
+        
+        validationError = nil
     }
     
     private func formatSelectedDate() -> String {
@@ -651,6 +798,11 @@ struct EnhancedBirthPlaceStepView: View {
     let onComplete: (String) -> Void
     @State private var animateIcon = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var searchResults: [LocationResult] = []
+    @State private var isSearching = false
+    @State private var showDropdown = false
+    @State private var searchTask: Task<Void, Never>?
+    @EnvironmentObject private var auth: AuthState
     
     var body: some View {
         VStack(spacing: 0) {
@@ -685,33 +837,96 @@ struct EnhancedBirthPlaceStepView: View {
                         .padding(.horizontal, 8)
                 }
                 
-                // Beautiful text field
+                // Enhanced text field with autocomplete
                 VStack(spacing: 8) {
-                    TextField("", text: $birthPlace, prompt: Text("City, State/Country").foregroundColor(.white.opacity(0.6)))
-                        .font(.title3.weight(.medium))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
+                    ZStack(alignment: .trailing) {
+                        TextField("", text: $birthPlace, prompt: Text("City, State/Country").foregroundColor(.white.opacity(0.6)))
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.white.opacity(0.15))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                            .focused($isTextFieldFocused)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .onChange(of: birthPlace) { _, newValue in
+                                handleLocationSearch(newValue)
+                            }
+                        
+                        if isSearching {
+                            ProgressView()
+                                .foregroundStyle(.white)
+                                .padding(.trailing, 20)
+                        }
+                    }
+                    
+                    // Location dropdown
+                    if showDropdown && !searchResults.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(searchResults.prefix(5), id: \.name) { location in
+                                Button {
+                                    selectLocation(location)
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(location.name)
+                                                .font(.body.weight(.medium))
+                                                .foregroundStyle(.white)
+                                            Text(location.fullName)
+                                                .font(.caption)
+                                                .foregroundStyle(.white.opacity(0.7))
+                                        }
+                                        Spacer()
+                                        Image(systemName: "location.fill")
+                                            .font(.caption)
+                                            .foregroundStyle(.white.opacity(0.6))
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                }
+                                .background(.white.opacity(0.1))
+                                
+                                if location.name != searchResults.prefix(5).last?.name {
+                                    Divider()
+                                        .background(.white.opacity(0.2))
+                                }
+                            }
+                        }
                         .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.white.opacity(0.15))
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.white.opacity(0.1))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(.white.opacity(0.3), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(.white.opacity(0.2), lineWidth: 1)
                                 )
                         )
-                        .focused($isTextFieldFocused)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
+                        .transition(.scale.combined(with: .opacity))
+                    }
                     
-                    if !birthPlace.isEmpty {
+                    if !birthPlace.isEmpty && !showDropdown {
                         HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(.green)
-                            Text("Perfect! Your cosmic map is ready to be revealed.")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.8))
+                            if auth.profileManager.profile.birthCoordinates != nil && auth.profileManager.profile.timezone != nil {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                                Text("Perfect! Location validated with coordinates.")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.8))
+                            } else {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                                Text("Please select a location from the dropdown for accurate coordinates.")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange.opacity(0.9))
+                            }
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
@@ -730,6 +945,64 @@ struct EnhancedBirthPlaceStepView: View {
                 isTextFieldFocused = true
             }
         }
+        .onTapGesture {
+            if showDropdown {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showDropdown = false
+                }
+            }
+        }
+    }
+    
+    private func handleLocationSearch(_ query: String) {
+        // Cancel previous search
+        searchTask?.cancel()
+        
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, query.count >= 2 else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showDropdown = false
+                searchResults = []
+            }
+            return
+        }
+        
+        isSearching = true
+        
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
+            
+            if !Task.isCancelled {
+                let results = await auth.profileManager.searchLocations(query: query)
+                
+                await MainActor.run {
+                    if !Task.isCancelled {
+                        searchResults = results
+                        isSearching = false
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showDropdown = !results.isEmpty
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func selectLocation(_ location: LocationResult) {
+        birthPlace = location.fullName
+        
+        // Set location data in the profile manager
+        auth.profileManager.setBirthLocation(location)
+        
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showDropdown = false
+            isTextFieldFocused = false
+        }
+        
+        searchResults = []
+        
+        // Provide haptic feedback
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
     }
 }
 
