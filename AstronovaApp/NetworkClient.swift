@@ -26,10 +26,10 @@ enum NetworkError: Error, LocalizedError {
 
 /// HTTP methods supported by the API
 enum HTTPMethod: String {
-    case GET = "GET"
-    case POST = "POST"
-    case PUT = "PUT"
-    case DELETE = "DELETE"
+    case GET
+    case POST
+    case PUT
+    case DELETE
 }
 
 /// NetworkClient handles all HTTP communication with the backend

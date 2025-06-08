@@ -64,7 +64,8 @@ class AuthState: ObservableObject {
         // Check API connectivity first
         await checkAPIConnectivity()
         
-        if !isAPIConnected {
+        let apiConnected = await MainActor.run { self.isAPIConnected }
+        if !apiConnected {
             // Still allow offline functionality
             print("API not connected, proceeding with offline mode")
         }
@@ -120,6 +121,8 @@ class AuthState: ObservableObject {
     func signOut() {
         UserDefaults.standard.set(false, forKey: "has_signed_in")
         profileManager = UserProfileManager() // Reset profile
+        isAPIConnected = false
+        connectionError = nil
         state = .signedOut
     }
     

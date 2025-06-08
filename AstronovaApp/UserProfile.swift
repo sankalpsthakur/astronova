@@ -82,11 +82,12 @@ class UserProfileManager: ObservableObject {
     }
     
     func updateProfile(_ newProfile: UserProfile) {
+        let oldProfile = profile
         profile = newProfile
         do {
             try saveProfile()
             // Clear cached chart when profile changes significantly
-            if profileSignificantlyChanged(newProfile) {
+            if profileSignificantlyChanged(old: oldProfile, new: newProfile) {
                 lastChart = nil
                 userDefaults.removeObject(forKey: chartKey)
             }
@@ -190,10 +191,10 @@ class UserProfileManager: ObservableObject {
     }
     
     /// Check if profile changes require new chart generation
-    private func profileSignificantlyChanged(_ newProfile: UserProfile) -> Bool {
-        return newProfile.birthDate != profile.birthDate ||
-               newProfile.birthTime != profile.birthTime ||
-               newProfile.birthCoordinates?.latitude != profile.birthCoordinates?.latitude ||
-               newProfile.birthCoordinates?.longitude != profile.birthCoordinates?.longitude
+    private func profileSignificantlyChanged(old: UserProfile, new: UserProfile) -> Bool {
+        return new.birthDate != old.birthDate ||
+               new.birthTime != old.birthTime ||
+               new.birthCoordinates?.latitude != old.birthCoordinates?.latitude ||
+               new.birthCoordinates?.longitude != old.birthCoordinates?.longitude
     }
 }

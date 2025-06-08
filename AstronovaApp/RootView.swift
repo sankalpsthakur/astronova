@@ -287,10 +287,12 @@ struct SimpleProfileSetupView: View {
         Task {
             // Search for location coordinates and timezone
             let locations = await auth.profileManager.searchLocations(query: birthPlace)
-            if let location = locations.first {
+            if !locations.isEmpty, let location = locations.first {
                 await MainActor.run {
                     auth.profileManager.setBirthLocation(location)
                 }
+            } else {
+                print("No location found for: \(birthPlace)")
             }
             
             // Attempt to save the profile with error handling
@@ -308,6 +310,7 @@ struct SimpleProfileSetupView: View {
             if auth.isAPIConnected {
                 await generateRealAstrologicalInsight()
             } else {
+                print("API not connected, generating offline insight")
                 await generateOfflineInsight()
             }
         }
