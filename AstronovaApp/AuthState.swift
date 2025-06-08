@@ -12,6 +12,7 @@ class AuthState: ObservableObject {
     @Published var profileManager = UserProfileManager()
     @Published var isAPIConnected = false
     @Published var connectionError: String?
+    @Published var isAnonymousUser = false
     
     private let apiServices = APIServices.shared
     
@@ -22,6 +23,7 @@ class AuthState: ObservableObject {
     private func checkAuthState() {
         // Check if user is signed in and has complete profile
         let hasSignedIn = UserDefaults.standard.bool(forKey: "has_signed_in")
+        isAnonymousUser = UserDefaults.standard.bool(forKey: "is_anonymous_user")
         
         // Check API connectivity in background
         Task {
@@ -120,9 +122,11 @@ class AuthState: ObservableObject {
     
     func signOut() {
         UserDefaults.standard.set(false, forKey: "has_signed_in")
+        UserDefaults.standard.set(false, forKey: "is_anonymous_user")
         profileManager = UserProfileManager() // Reset profile
         isAPIConnected = false
         connectionError = nil
+        isAnonymousUser = false
         state = .signedOut
     }
     
@@ -147,5 +151,15 @@ class AuthState: ObservableObject {
     /// Whether the app can provide full functionality
     var hasFullFunctionality: Bool {
         return isAPIConnected && profileManager.isProfileComplete
+    }
+    
+    /// Whether user has premium features (signed-in users only)
+    var hasPremiumFeatures: Bool {
+        return !isAnonymousUser && hasFullFunctionality
+    }
+    
+    /// Whether user can access basic features
+    var hasBasicFeatures: Bool {
+        return profileManager.isProfileComplete
     }
 }

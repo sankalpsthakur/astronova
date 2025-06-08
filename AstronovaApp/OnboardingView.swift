@@ -20,29 +20,39 @@ struct OnboardingView: View {
 
             Spacer()
 
-            SignInWithAppleButton(
-                onRequest: { request in
-                    request.requestedScopes = [.fullName, .email]
-                    request.nonce = UUID().uuidString
-                },
-                onCompletion: { result in
+            VStack(spacing: 16) {
+                SignInWithAppleButton(
+                    onRequest: { request in
+                        request.requestedScopes = [.fullName, .email]
+                        request.nonce = UUID().uuidString
+                    },
+                    onCompletion: { result in
+                        Task {
+                            await handleSignInResult(result)
+                        }
+                    }
+                )
+                .signInWithAppleButtonStyle(.black)
+                .frame(height: 45)
+                .frame(maxWidth: .infinity)
+                .disabled(inProgress)
+                .overlay(
+                    Group {
+                        if inProgress { 
+                            ProgressView()
+                                .foregroundStyle(Color.white)
+                        }
+                    }
+                )
+                
+                Button("Continue without signing in") {
                     Task {
-                        await handleSignInResult(result)
+                        await handleSkipSignIn()
                     }
                 }
-            )
-            .signInWithAppleButtonStyle(.black)
-            .frame(height: 45)
-            .frame(maxWidth: .infinity)
-            .disabled(inProgress)
-            .overlay(
-                Group {
-                    if inProgress { 
-                        ProgressView()
-                            .foregroundStyle(Color.white)
-                    }
-                }
-            )
+                .foregroundColor(.secondary)
+                .disabled(inProgress)
+            }
 
             Spacer(minLength: 32)
         }
@@ -84,6 +94,18 @@ struct OnboardingView: View {
             print("Sign in with Apple failed: \(error)")
             // Handle error appropriately
         }
+        
+        inProgress = false
+    }
+    
+    private func handleSkipSignIn() async {
+        inProgress = true
+        
+        // Set anonymous user flag
+        UserDefaults.standard.set(true, forKey: "is_anonymous_user")
+        
+        // Complete sign in without Apple ID
+        await auth.requestSignIn()
         
         inProgress = false
     }
