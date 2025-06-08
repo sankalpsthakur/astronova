@@ -13,6 +13,7 @@ struct GoogleMapsLocationPicker: View {
     @State private var selectedCoordinate: CLLocationCoordinate2D?
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
+    @State private var errorMessage: String?
     @FocusState private var isSearchFocused: Bool
     
     let onLocationSelected: (LocationResult) -> Void
@@ -61,6 +62,20 @@ struct GoogleMapsLocationPicker: View {
                     .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(radius: 4)
+                }
+                
+                // Error message
+                if let errorMessage = errorMessage {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
                 }
             }
             .padding(.horizontal, 16)
@@ -175,6 +190,7 @@ struct GoogleMapsLocationPicker: View {
         
         await MainActor.run {
             isSearching = true
+            errorMessage = nil
         }
         
         do {
@@ -184,6 +200,7 @@ struct GoogleMapsLocationPicker: View {
             await MainActor.run {
                 searchResults = results
                 isSearching = false
+                errorMessage = results.isEmpty ? "No locations found" : nil
             }
         } catch {
             // Fallback to MKLocalSearch if Google Places fails
@@ -208,11 +225,13 @@ struct GoogleMapsLocationPicker: View {
                 await MainActor.run {
                     searchResults = results
                     isSearching = false
+                    errorMessage = results.isEmpty ? "No locations found" : nil
                 }
             } catch {
                 await MainActor.run {
                     searchResults = []
                     isSearching = false
+                    errorMessage = "Search failed. Please try again."
                 }
                 print("Both Google Places and MKLocalSearch failed: \(error)")
             }

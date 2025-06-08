@@ -307,21 +307,6 @@ extension BirthData {
     }
 }
 
-extension LocationResult {
-    /// Convert to CLLocationCoordinate2D
-    var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-    
-    /// Full display name with country
-    var fullName: String {
-        if let state = state {
-            return "\(name), \(state), \(country)"
-        } else {
-            return "\(name), \(country)"
-        }
-    }
-}
 
 extension ChartResponse {
     /// Get Western chart if available

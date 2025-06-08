@@ -8,14 +8,17 @@ struct GooglePlacesService {
     
     private init() {
         // Get API key from Info.plist or environment
+        // NOTE: For production apps, consider proxying requests through your backend
+        // to avoid exposing the API key in the client binary
         if let path = Bundle.main.path(forResource: "Info", ofType: "plist"),
            let plist = NSDictionary(contentsOfFile: path),
-           let key = plist["GooglePlacesAPIKey"] as? String {
+           let key = plist["GooglePlacesAPIKey"] as? String,
+           !key.isEmpty && key != "YOUR_GOOGLE_PLACES_API_KEY_HERE" {
             self.apiKey = key
         } else {
-            // Fallback - should be set in Info.plist
+            // No API key configured - will fallback to MKLocalSearch
             self.apiKey = ""
-            print("Warning: Google Places API key not found in Info.plist")
+            print("Warning: Google Places API key not configured. Using MKLocalSearch fallback.")
         }
     }
     

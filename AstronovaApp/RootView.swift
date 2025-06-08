@@ -1596,8 +1596,6 @@ struct CustomTabBar: View {
     }
 }
 
-}
-
 // MARK: - Simple Tab Views
 
 struct TodayTab: View {
@@ -5623,24 +5621,29 @@ struct ContactsPickerView: View {
     }
     
     private func loadContacts() {
-        let store = CNContactStore()
-        let keys = [CNContactGivenNameKey, CNContactFamilyNameKey] as [CNKeyDescriptor]
-        let request = CNContactFetchRequest(keysToFetch: keys)
-        
-        do {
-            var fetchedContacts: [CNContact] = []
-            try store.enumerateContacts(with: request) { contact, _ in
-                fetchedContacts.append(contact)
-            }
-            DispatchQueue.main.async {
-                self.contacts = fetchedContacts.sorted {
+        Task.detached {
+            let store = CNContactStore()
+            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey] as [CNKeyDescriptor]
+            let request = CNContactFetchRequest(keysToFetch: keys)
+            
+            do {
+                var fetchedContacts: [CNContact] = []
+                try store.enumerateContacts(with: request) { contact, _ in
+                    fetchedContacts.append(contact)
+                }
+                
+                let sortedContacts = fetchedContacts.sorted {
                     let name1 = CNContactFormatter.string(from: $0, style: .fullName) ?? ""
                     let name2 = CNContactFormatter.string(from: $1, style: .fullName) ?? ""
                     return name1 < name2
                 }
+                
+                await MainActor.run {
+                    self.contacts = sortedContacts
+                }
+            } catch {
+                print("Failed to fetch contacts: \(error)")
             }
-        } catch {
-            print("Failed to fetch contacts: \(error)")
         }
     }
     
