@@ -88,6 +88,46 @@ INSIGHTS = [
         "category": "spiritual",
         "priority": 4,
         "is_active": True
+    },
+    {
+        "id": "5",
+        "title": "Cosmic Awakening",
+        "content": "The universe has been orchestrating this exact moment in time for your soul's awakening. Ancient celestial patterns align to unlock dormant potentials within your cosmic blueprint.",
+        "category": "landing",
+        "priority": 1,
+        "is_active": True
+    },
+    {
+        "id": "6",
+        "title": "Destiny Portal",
+        "content": "A powerful portal of manifestation opens before you. The cosmic winds carry whispers of your deepest intentions back to you, magnified by stellar energy.",
+        "category": "landing",
+        "priority": 2,
+        "is_active": True
+    },
+    {
+        "id": "7",
+        "title": "Celestial Recognition",
+        "content": "Your unique energy signature resonates through dimensions. The cosmos recognizes your frequency and responds with synchronicities designed to guide your next evolutionary leap.",
+        "category": "landing",
+        "priority": 3,
+        "is_active": True
+    },
+    {
+        "id": "8",
+        "title": "Universal Alignment",
+        "content": "Cosmic currents shift in your favor as ancient wisdom awakens within you. This moment marks a significant turning point - trust the divine timing of your journey.",
+        "category": "landing",
+        "priority": 4,
+        "is_active": True
+    },
+    {
+        "id": "9",
+        "title": "Stellar Activation",
+        "content": "The stars have conspired to create this perfect moment of activation. Your soul's mission becomes clear as celestial forces align to support your highest purpose.",
+        "category": "landing",
+        "priority": 5,
+        "is_active": True
     }
 ]
 

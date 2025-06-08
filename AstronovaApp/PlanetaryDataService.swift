@@ -46,9 +46,19 @@ class PlanetaryDataService {
     private var lastFetchTime: Date?
     private let cacheTimeout: TimeInterval = 3600 // 1 hour
     
+    // MARK: - Static Data Storage
+    private let userDefaults = UserDefaults.standard
+    private let customPlanetsKey = "custom_planetary_positions"
+    private let customPlanetsEnabledKey = "use_custom_planetary_positions"
+    
     private init() {}
     
     func getCurrentPlanetaryPositions() async throws -> [PlanetaryPosition] {
+        // Check if we should use custom static data
+        if isUsingCustomPositions() {
+            return getCustomPlanetaryPositions()
+        }
+        
         if shouldRefreshCache() {
             try await refreshCurrentPositions()
         }
@@ -125,5 +135,70 @@ class PlanetaryDataService {
             PlanetaryPosition(id: "neptune", symbol: "♆", name: "Neptune", sign: "Pisces", degree: 29.7, retrograde: false, house: 4, significance: "Dreams and spirituality"),
             PlanetaryPosition(id: "pluto", symbol: "♇", name: "Pluto", sign: "Capricorn", degree: 28.1, retrograde: false, house: 2, significance: "Transformation and power")
         ]
+    }
+    
+    // MARK: - Static Data CRUD Operations
+    
+    /// Check if custom planetary positions are enabled
+    func isUsingCustomPositions() -> Bool {
+        return userDefaults.bool(forKey: customPlanetsEnabledKey)
+    }
+    
+    /// Enable or disable custom planetary positions
+    func setUseCustomPositions(_ enabled: Bool) {
+        userDefaults.set(enabled, forKey: customPlanetsEnabledKey)
+    }
+    
+    /// Get custom planetary positions from storage
+    func getCustomPlanetaryPositions() -> [PlanetaryPosition] {
+        guard let data = userDefaults.data(forKey: customPlanetsKey),
+              let positions = try? JSONDecoder().decode([PlanetaryPosition].self, from: data) else {
+            return getDefaultPlanetaryPositions()
+        }
+        return positions
+    }
+    
+    /// Save custom planetary positions to storage
+    func setCustomPlanetaryPositions(_ positions: [PlanetaryPosition]) throws {
+        let data = try JSONEncoder().encode(positions)
+        userDefaults.set(data, forKey: customPlanetsKey)
+    }
+    
+    /// Update a specific planet's position in custom data
+    func updateCustomPlanetPosition(id: String, position: PlanetaryPosition) throws {
+        var positions = getCustomPlanetaryPositions()
+        
+        if let index = positions.firstIndex(where: { $0.id == id }) {
+            positions[index] = position
+        } else {
+            positions.append(position)
+        }
+        
+        try setCustomPlanetaryPositions(positions)
+    }
+    
+    /// Remove a planet from custom data
+    func removeCustomPlanetPosition(id: String) throws {
+        var positions = getCustomPlanetaryPositions()
+        positions.removeAll { $0.id == id }
+        try setCustomPlanetaryPositions(positions)
+    }
+    
+    /// Reset custom positions to default values
+    func resetToDefaultPositions() throws {
+        let defaultPositions = getDefaultPlanetaryPositions()
+        try setCustomPlanetaryPositions(defaultPositions)
+    }
+    
+    /// Clear all custom data and disable custom mode
+    func clearCustomPlanetaryData() {
+        userDefaults.removeObject(forKey: customPlanetsKey)
+        userDefaults.removeObject(forKey: customPlanetsEnabledKey)
+    }
+    
+    /// Get a specific planet position by ID from current data source
+    func getPlanetPosition(id: String) async throws -> PlanetaryPosition? {
+        let positions = try await getCurrentPlanetaryPositions()
+        return positions.first { $0.id == id }
     }
 }
