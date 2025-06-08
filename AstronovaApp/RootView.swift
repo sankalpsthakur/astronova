@@ -1743,6 +1743,8 @@ struct TodayTab: View {
                     animateWelcome = true
                 }
             }
+            // TODO: Re-enable when PlanetaryDataService is properly integrated
+            /*
             Task {
                 do {
                     planetaryPositions = try await PlanetaryDataService.shared.getCurrentPlanetaryPositions()
@@ -1750,6 +1752,8 @@ struct TodayTab: View {
                     print("Failed to load planetary positions: \(error)")
                 }
             }
+            */
+            planetaryPositions = [] // Temporary fallback
         }
     }
     
@@ -2412,12 +2416,16 @@ struct NexusTab: View {
             }
             loadMessageCount()
             checkSubscriptionStatus()
+            // TODO: Re-enable when ContentManagementService is properly integrated
+            /*
             Task {
                 do {
                     quickQuestions = try await ContentManagementService.shared.getQuickQuestions()
                 } catch {
                     print("Failed to load quick questions: \(error)")
                 }
+            }
+            */
             }
         }
         .sheet(isPresented: $showingSubscriptionSheet) {
@@ -3106,6 +3114,8 @@ struct CosmicInputArea: View {
             if !isInputFocused {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
+                        // TODO: Re-enable when quickQuestions is properly integrated
+                        /*
                         ForEach(quickQuestions, id: \.id) { question in
                             Button {
                                 onQuickQuestion(question.text)
@@ -3129,6 +3139,7 @@ struct CosmicInputArea: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
+                        */
                     }
                     .padding(.horizontal, 20)
                 }
@@ -3195,6 +3206,8 @@ struct CosmicInputArea: View {
                 }
             }
             .onAppear {
+                // TODO: Re-enable when ContentManagementService is properly integrated
+                /*
                 Task {
                     do {
                         quickQuestions = try await ContentManagementService.shared.getQuickQuestions()
@@ -3202,6 +3215,7 @@ struct CosmicInputArea: View {
                         print("Failed to load quick questions: \(error)")
                     }
                 }
+                */
             }
         }
     }
@@ -5622,13 +5636,10 @@ struct ContactsPickerView: View {
         case .authorized:
             hasContactsAccess = true
             loadContacts()
-        case .denied, .restricted:
-            hasContactsAccess = false
-        case .notDetermined:
+        case .denied, .restricted, .notDetermined:
             hasContactsAccess = false
         @unknown default:
             hasContactsAccess = false
-            break
         }
     }
     
