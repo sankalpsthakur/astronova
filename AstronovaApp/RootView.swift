@@ -1,5 +1,12 @@
 import SwiftUI
 
+// MARK: - Notification Extensions
+
+extension Notification.Name {
+    static let switchToTab = Notification.Name("switchToTab")
+    static let switchToProfileSection = Notification.Name("switchToProfileSection")
+}
+
 /// Decides which high-level screen to show based on authentication state.
 struct RootView: View {
     @EnvironmentObject private var auth: AuthState
@@ -148,9 +155,12 @@ struct SimpleProfileSetupView: View {
                                     Text("Reveal My Cosmic Insight")
                                         .font(.title3.weight(.semibold))
                                 } else {
-                                    Text(currentStep == 0 ? "Begin Journey" : "Continue")
+                                    let buttonText = currentStep == 0 ? "Begin Journey" : 
+                                                    currentStep == 4 ? (birthPlace.isEmpty ? "Skip for Now" : "Continue") : 
+                                                    "Continue"
+                                    Text(buttonText)
                                         .font(.title3.weight(.semibold))
-                                    Image(systemName: "arrow.right")
+                                    Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "forward.end" : "arrow.right")
                                         .font(.title3.weight(.semibold))
                                 }
                             }
@@ -225,7 +235,7 @@ struct SimpleProfileSetupView: View {
         case 1: return isValidName(fullName)
         case 2: return isValidBirthDate(birthDate)
         case 3: return true // Birth time is optional but always valid
-        case 4: return !birthPlace.isEmpty && isValidLocation()
+        case 4: return true // Birth place is optional - can skip or provide
         default: return false
         }
     }
@@ -283,16 +293,20 @@ struct SimpleProfileSetupView: View {
         auth.profileManager.profile.birthTime = birthTime
         auth.profileManager.profile.birthPlace = birthPlace
         
-        // For birth place, we need to search for coordinates and timezone
+        // For birth place, search for coordinates and timezone only if provided
         Task {
-            // Search for location coordinates and timezone
-            let locations = await auth.profileManager.searchLocations(query: birthPlace)
-            if !locations.isEmpty, let location = locations.first {
-                await MainActor.run {
-                    auth.profileManager.setBirthLocation(location)
+            if !birthPlace.isEmpty {
+                // Search for location coordinates and timezone
+                let locations = await auth.profileManager.searchLocations(query: birthPlace)
+                if !locations.isEmpty, let location = locations.first {
+                    await MainActor.run {
+                        auth.profileManager.setBirthLocation(location)
+                    }
+                } else {
+                    print("No location found for: \(birthPlace)")
                 }
             } else {
-                print("No location found for: \(birthPlace)")
+                print("Birth place skipped - user can add later")
             }
             
             // Attempt to save the profile with error handling
@@ -317,43 +331,42 @@ struct SimpleProfileSetupView: View {
     }
     
     private func generateRealAstrologicalInsight() async {
-        do {
-            // Generate chart and get real astrological data
-            await auth.profileManager.generateChart()
+        // Generate chart and get real astrological data
+        await auth.profileManager.generateChart()
+        
+        if let chart = auth.profileManager.lastChart,
+           let westernChart = chart.westernChart {
             
-            if let chart = auth.profileManager.lastChart,
-               let westernChart = chart.westernChart {
-                
-                let sunSign = westernChart.positions["sun"]?.sign ?? "Unknown"
-                let moonSign = westernChart.positions["moon"]?.sign ?? "Unknown"
-                
-                let insight = """
-                Welcome to your cosmic journey, \(fullName)! 
-                
-                Born on \(formatDate(birthDate)) at \(formatTime(birthTime)) in \(birthPlace), the stars reveal fascinating insights about your celestial blueprint.
-                
-                Your Sun in \(sunSign) illuminates your core identity, while your Moon in \(moonSign) reflects your emotional nature. This unique combination creates a personality that is both dynamic and deeply intuitive.
-                
-                The planetary positions at your birth moment suggest you possess natural talents for leadership and creativity, with a special gift for understanding others' perspectives.
-                """
-                
-                await MainActor.run {
-                    personalizedInsight = insight
-                    showPersonalizedInsight()
-                }
-            } else {
-                await generateOfflineInsight()
+            let sunSign = westernChart.positions["sun"]?.sign ?? "Unknown"
+            let moonSign = westernChart.positions["moon"]?.sign ?? "Unknown"
+            
+            let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
+            
+            let insight = """
+            Welcome to your cosmic journey, \(fullName)! 
+            
+            Born on \(formatDate(birthDate)) at \(formatTime(birthTime))\(locationText), the stars reveal fascinating insights about your celestial blueprint.
+            
+            Your Sun in \(sunSign) illuminates your core identity, while your Moon in \(moonSign) reflects your emotional nature. This unique combination creates a personality that is both dynamic and deeply intuitive.
+            
+            The planetary positions at your birth moment suggest you possess natural talents for leadership and creativity, with a special gift for understanding others' perspectives.
+            """
+            
+            await MainActor.run {
+                personalizedInsight = insight
+                showPersonalizedInsight()
             }
-        } catch {
-            print("Failed to generate real astrological insight: \(error)")
+        } else {
             await generateOfflineInsight()
         }
     }
     
     private func generateOfflineInsight() async {
+        let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
+        
         let fallbackInsights = [
-            "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime)) in \(birthPlace) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
-            "Born under the influence of \(formatDate(birthDate)) in \(birthPlace), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
+            "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime))\(locationText) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
+            "Born under the influence of \(formatDate(birthDate))\(locationText), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
             "The celestial patterns on \(formatDate(birthDate)) at \(formatTime(birthTime)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery."
         ]
         
@@ -822,7 +835,7 @@ struct EnhancedBirthPlaceStepView: View {
                     Image(systemName: "location.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
-                        .symbolEffect(.bounce.down, options: .repeating)
+                        .scaleEffect(animateIcon ? 1.1 : 1.0)
                 }
                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
                 
@@ -832,7 +845,7 @@ struct EnhancedBirthPlaceStepView: View {
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                     
-                    Text("Your birth location helps us calculate the exact positions of celestial bodies at the moment of your birth.")
+                    Text("Your birth location helps us calculate precise celestial positions. You can add this later if you prefer to skip for now.")
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
@@ -926,10 +939,25 @@ struct EnhancedBirthPlaceStepView: View {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .font(.caption)
                                     .foregroundStyle(.orange)
-                                Text("Please select a location from the dropdown for accurate coordinates.")
+                                Text("Select a location from the dropdown for best results, or skip to add later.")
                                     .font(.caption)
                                     .foregroundStyle(.orange.opacity(0.9))
                             }
+                            Spacer()
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: birthPlace.isEmpty)
+                    }
+                    
+                    // Optional skip hint
+                    if birthPlace.isEmpty && !showDropdown {
+                        HStack {
+                            Image(systemName: "info.circle")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.6))
+                            Text("Birth location is optional - you can always add it later in your profile.")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.6))
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
@@ -2768,6 +2796,16 @@ enum CosmicMessageType {
         case .insight: return "star.fill"
         case .guidance: return "lightbulb.fill"
         case .prediction: return "crystal.ball"
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .welcome: return "Welcome"
+        case .question: return "Question"
+        case .insight: return "Cosmic Insight"
+        case .guidance: return "Divine Guidance"
+        case .prediction: return "Celestial Prediction"
         }
     }
 }
@@ -4632,10 +4670,10 @@ struct ReportGenerationSheet: View {
                 
                 // Features
                 VStack(alignment: .leading, spacing: 12) {
-                    FeatureRow(icon: "brain.head.profile", text: "AI-powered personalized analysis")
-                    FeatureRow(icon: "clock", text: "Generated in under 60 seconds")
-                    FeatureRow(icon: "arrow.down.circle", text: "PDF download included")
-                    FeatureRow(icon: "bookmark", text: "Saved to your profile forever")
+                    SimpleFeatureRow(icon: "brain.head.profile", text: "AI-powered personalized analysis")
+                    SimpleFeatureRow(icon: "clock", text: "Generated in under 60 seconds")
+                    SimpleFeatureRow(icon: "arrow.down.circle", text: "PDF download included")
+                    SimpleFeatureRow(icon: "bookmark", text: "Saved to your profile forever")
                 }
                 .padding()
                 .background(.regularMaterial)
@@ -4720,7 +4758,7 @@ struct ReportGenerationSheet: View {
     }
 }
 
-struct FeatureRow: View {
+struct SimpleFeatureRow: View {
     let icon: String
     let text: String
     
