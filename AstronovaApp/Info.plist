@@ -8,5 +8,7 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSContactsUsageDescription</key>
+	<string>Astronova needs access to your contacts to help you quickly find friends and family for compatibility analysis and chart comparisons.</string>
 </dict>
 </plist>
