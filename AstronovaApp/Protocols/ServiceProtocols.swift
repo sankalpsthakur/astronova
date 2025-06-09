@@ -51,22 +51,7 @@ struct ProtocolChatResponse: Codable {
     }
 }
 
-// MARK: - Network Client Protocol
-
-protocol NetworkClientProtocol {
-    func healthCheck() async throws -> HealthResponse
-    func request<T: Codable>(
-        endpoint: String,
-        method: HTTPMethod,
-        body: Encodable?,
-        responseType: T.Type
-    ) async throws -> T
-    func requestData(
-        endpoint: String,
-        method: HTTPMethod,
-        body: Encodable?
-    ) async throws -> Data
-}
+// NetworkClientProtocol is now defined in NetworkClient.swift to avoid circular dependencies
 
 // MARK: - API Services Protocol
 

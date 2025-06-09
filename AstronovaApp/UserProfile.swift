@@ -138,8 +138,8 @@ class UserProfileManager: ObservableObject {
     /// Search for locations using real API
     func searchLocations(query: String) async -> [LocationResult] {
         do {
-            let response = try await apiServices.searchLocations(query: query, limit: 10)
-            return response.locations
+            let locations = try await apiServices.searchLocations(query: query)
+            return locations
         } catch {
             print("Failed to search locations: \(error)")
             return []

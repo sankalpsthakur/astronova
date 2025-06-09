@@ -35,6 +35,27 @@ enum HTTPMethod: String {
     case DELETE
 }
 
+// MARK: - Network Client Protocol
+
+protocol NetworkClientProtocol {
+    func healthCheck() async throws -> HealthResponse
+    func request<T: Codable>(
+        endpoint: String,
+        method: HTTPMethod,
+        body: Encodable?,
+        responseType: T.Type
+    ) async throws -> T
+    func request<T: Codable>(
+        endpoint: String,
+        responseType: T.Type
+    ) async throws -> T
+    func requestData(
+        endpoint: String,
+        method: HTTPMethod,
+        body: Encodable?
+    ) async throws -> Data
+}
+
 /// NetworkClient handles all HTTP communication with the backend
 class NetworkClient: NetworkClientProtocol {
     static let shared = NetworkClient()
@@ -119,6 +140,19 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.networkError(error)
             }
         }
+    }
+    
+    /// Convenience method for GET requests without body
+    func request<T: Codable>(
+        endpoint: String,
+        responseType: T.Type
+    ) async throws -> T {
+        return try await request(
+            endpoint: endpoint,
+            method: .GET,
+            body: nil,
+            responseType: responseType
+        )
     }
     
     /// Generic method to make raw API requests returning Data
