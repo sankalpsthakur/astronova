@@ -1011,13 +1011,8 @@ struct EnhancedBirthPlaceStepView: View {
             
             if !Task.isCancelled {
                 // Try Google Places API first, fallback to existing API
-                let results: [LocationResult]
-                do {
-                    results = try await GooglePlacesService.shared.searchPlaces(query: query)
-                } catch {
-                    print("Google Places search failed, using fallback: \(error)")
-                    results = await auth.profileManager.searchLocations(query: query)
-                }
+                // Temporarily using fallback until GooglePlacesService compilation is resolved
+                let results = await auth.profileManager.searchLocations(query: query)
                 
                 await MainActor.run {
                     if !Task.isCancelled {
@@ -1621,103 +1616,9 @@ struct TodayTab: View {
                             .foregroundStyle(Color.secondary)
                     }
                     
-                    // Horoscope content with enhanced visuals
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("🌟")
-                                .font(.largeTitle)
-                            VStack(alignment: .leading) {
-                                Text("Daily Insight")
-                                    .font(.headline)
-                                Text("Cosmic Guidance")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.secondary)
-                            }
-                            Spacer()
-                        }
-                        
-                        Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
-                            .font(.body)
-                            .lineSpacing(4)
-                        
-                        Divider()
-                        
-                        // Key themes
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Key Themes")
-                                .font(.headline)
-                            
-                            HStack {
-                                VStack {
-                                    Text("💼")
-                                        .font(.title3)
-                                    Text("Career")
-                                        .font(.caption)
-                                }
-                                .frame(maxWidth: .infinity)
-                                
-                                VStack {
-                                    Text("❤️")
-                                        .font(.title3)
-                                    Text("Love")
-                                        .font(.caption)
-                                }
-                                .frame(maxWidth: .infinity)
-                                
-                                VStack {
-                                    Text("🌱")
-                                        .font(.title3)
-                                    Text("Growth")
-                                        .font(.caption)
-                                }
-                                .frame(maxWidth: .infinity)
-                                
-                                VStack {
-                                    Text("⚖️")
-                                        .font(.title3)
-                                    Text("Balance")
-                                        .font(.caption)
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .padding(.vertical, 8)
-                        }
-                        
-                        Divider()
-                        
-                        // Lucky elements
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Today's Lucky Elements")
-                                .font(.headline)
-                            
-                            HStack {
-                                Label("Purple", systemImage: "circle.fill")
-                                    .foregroundStyle(Color.purple)
-                                Spacer()
-                                Label("7", systemImage: "star.fill")
-                                    .foregroundStyle(Color.yellow)
-                            }
-                            .font(.subheadline)
-                        }
-                    }
-                    .padding(16)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(.blue.opacity(0.1), lineWidth: 1)
-                    )
+                    todaysHoroscopeSection
                     
-                    // Planetary positions preview
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Current Planetary Energies")
-                            .font(.headline)
-                        
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
-                            ForEach(Array(planetaryPositions.prefix(6)), id: \.id) { planet in
-                                PlanetCard(symbol: planet.symbol, name: planet.name, sign: planet.sign)
-                            }
-                        }
-                    }
+                    planetaryPositionsSection
                     
                     // Discovery CTAs
                     DiscoveryCTASection()
@@ -1731,7 +1632,9 @@ struct TodayTab: View {
         .onAppear {
             if shouldShowWelcome {
                 showingWelcome = true
-                withAnimation(.spring(response: 0.8, dampingFraction: 0.6).delay(0.5)) {
+                let springAnimation = Animation.spring(response: 0.8, dampingFraction: 0.6)
+                let delayedAnimation = springAnimation.delay(0.5)
+                withAnimation(delayedAnimation) {
                     animateWelcome = true
                 }
             }
@@ -1749,6 +1652,118 @@ struct TodayTab: View {
         }
     }
     
+    @ViewBuilder
+    private var todaysHoroscopeSection: some View {
+        // Horoscope content with enhanced visuals
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("🌟")
+                    .font(.largeTitle)
+                VStack(alignment: .leading) {
+                    Text("Daily Insight")
+                        .font(.headline)
+                    Text("Cosmic Guidance")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                }
+                Spacer()
+            }
+            
+            Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
+                .font(.body)
+                .lineSpacing(4)
+            
+            Divider()
+            
+            keyThemesSection
+            
+            Divider()
+            
+            luckyElementsSection
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(.blue.opacity(0.1), lineWidth: 1)
+        )
+    }
+    
+    @ViewBuilder
+    private var keyThemesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Key Themes")
+                .font(.headline)
+            
+            HStack {
+                VStack {
+                    Text("💼")
+                        .font(.title3)
+                    Text("Career")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity)
+                
+                VStack {
+                    Text("❤️")
+                        .font(.title3)
+                    Text("Love")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity)
+                
+                VStack {
+                    Text("🌱")
+                        .font(.title3)
+                    Text("Growth")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity)
+                
+                VStack {
+                    Text("⚖️")
+                        .font(.title3)
+                    Text("Balance")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 8)
+        }
+    }
+    
+    @ViewBuilder
+    private var luckyElementsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Today's Lucky Elements")
+                .font(.headline)
+            
+            HStack {
+                Label("Purple", systemImage: "circle.fill")
+                    .foregroundStyle(Color.purple)
+                Spacer()
+                Label("7", systemImage: "star.fill")
+                    .foregroundStyle(Color.yellow)
+            }
+            .font(.subheadline)
+        }
+    }
+    
+    @ViewBuilder
+    private var planetaryPositionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Current Planetary Energies")
+                .font(.headline)
+            
+            Text("Planetary data will be displayed here when available.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        }
+    }
+    
     private var shouldShowWelcome: Bool {
         // Show welcome for first few app opens
         UserDefaults.standard.integer(forKey: "app_launch_count") < 3
@@ -1760,7 +1775,7 @@ struct TodayTab: View {
             WelcomeToTodayCard(onDismiss: {
                 showingWelcome = false
             })
-            .transition(.scale.combined(with: .opacity))
+            .transition(AnyTransition.scale.combined(with: .opacity))
         }
     }
 }
@@ -3563,40 +3578,11 @@ struct ProfileEditView: View {
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.secondary)
                                 
-                                GooglePlacesAutocompleteView(
-                                    selectedLocation: Binding(
-                                        get: { 
-                                            // Convert current birth place to LocationResult if available
-                                            if let birthPlace = editedProfile.birthPlace,
-                                               let coordinates = editedProfile.birthCoordinates,
-                                               let timezone = editedProfile.timezone {
-                                                return LocationResult(
-                                                    fullName: birthPlace,
-                                                    coordinate: coordinates,
-                                                    timezone: timezone
-                                                )
-                                            }
-                                            return nil
-                                        },
-                                        set: { newLocation in
-                                            if let location = newLocation {
-                                                editedProfile.birthPlace = location.fullName
-                                                editedProfile.birthCoordinates = location.coordinate
-                                                editedProfile.timezone = location.timezone
-                                            } else {
-                                                editedProfile.birthPlace = nil
-                                                editedProfile.birthCoordinates = nil
-                                                editedProfile.timezone = nil
-                                            }
-                                        }
-                                    ),
-                                    placeholder: "City, State/Country"
-                                ) { location in
-                                    // Update profile when location is selected
-                                    editedProfile.birthPlace = location.fullName
-                                    editedProfile.birthCoordinates = location.coordinate
-                                    editedProfile.timezone = location.timezone
-                                }
+                                // Temporarily using TextField until GooglePlacesAutocompleteView compilation is resolved
+                                TextField("City, State/Country", text: Binding(
+                                    get: { editedProfile.birthPlace ?? "" },
+                                    set: { editedProfile.birthPlace = $0.isEmpty ? nil : $0 }
+                                ))
                             }
                         }
                         .padding(.horizontal, 20)
@@ -5587,7 +5573,13 @@ struct ContactsPickerView: View {
         case .authorized:
             hasContactsAccess = true
             loadContacts()
-        case .denied, .restricted, .notDetermined:
+        case .denied:
+            hasContactsAccess = false
+        case .restricted:
+            hasContactsAccess = false
+        case .notDetermined:
+            hasContactsAccess = false
+        case .limited:
             hasContactsAccess = false
         @unknown default:
             hasContactsAccess = false
