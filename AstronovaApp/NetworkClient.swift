@@ -33,7 +33,7 @@ enum HTTPMethod: String {
 }
 
 /// NetworkClient handles all HTTP communication with the backend
-class NetworkClient: NetworkClientProtocol {
+class NetworkClient {
     static let shared = NetworkClient()
     
     private let baseURL: String

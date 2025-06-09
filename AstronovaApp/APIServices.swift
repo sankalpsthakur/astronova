@@ -2,14 +2,12 @@ import Foundation
 import CoreLocation
 
 /// Main API service class that handles all backend communication
-class APIServices: ObservableObject, APIServicesProtocol {
+class APIServices: ObservableObject {
     static let shared = APIServices()
     
-    private let networkClient: NetworkClientProtocol
+    private let networkClient = NetworkClient.shared
     
-    init(networkClient: NetworkClientProtocol = NetworkClient.shared) {
-        self.networkClient = networkClient
-    }
+    private init() {}
     
     // MARK: - Health Check
     
@@ -329,97 +327,6 @@ class APIServices: ObservableObject, APIServicesProtocol {
         return try JSONEncoder().encode(matchResponse)
     }
     
-    // MARK: - Protocol Conformance Methods
-    
-    /// Generic horoscope method for protocol conformance
-    func getHoroscope(sign: String, period: String) async throws -> SimpleHoroscopeResponse {
-        let response = switch period.lowercased() {
-        case "daily", "day":
-            try await getDailyHoroscope(for: sign)
-        case "weekly", "week":
-            try await getWeeklyHoroscope(for: sign)
-        case "monthly", "month":
-            try await getMonthlyHoroscope(for: sign)
-        default:
-            try await getDailyHoroscope(for: sign)
-        }
-        
-        // Convert to simple HoroscopeResponse for protocol
-        return SimpleHoroscopeResponse(
-            sign: response.sign,
-            period: period,
-            content: response.horoscope,
-            date: Date()
-        )
-    }
-    
-    /// Compatibility report for protocol conformance
-    func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse {
-        let user = MatchUser(
-            birth_date: person1.date,
-            birth_time: person1.time,
-            timezone: person1.timezone,
-            latitude: person1.latitude,
-            longitude: person1.longitude
-        )
-        
-        let partner = MatchPartner(
-            name: person2.name,
-            birth_date: person2.date,
-            birth_time: person2.time,
-            timezone: person2.timezone,
-            latitude: person2.latitude,
-            longitude: person2.longitude
-        )
-        
-        let matchResponse = try await calculateMatch(user: user, partner: partner)
-        
-        // Convert MatchResponse to CompatibilityResponse
-        return CompatibilityResponse(
-            compatibility_score: Double(matchResponse.overallScore) / 100.0,
-            summary: "Overall compatibility score: \(matchResponse.overallScore)%",
-            detailed_analysis: "Vedic score: \(matchResponse.vedicScore)%, Chinese score: \(matchResponse.chineseScore)%",
-            strengths: matchResponse.synastryAspects.filter { !$0.contains("opposition") && !$0.contains("square") },
-            challenges: matchResponse.synastryAspects.filter { $0.contains("opposition") || $0.contains("square") }
-        )
-    }
-    
-    /// Detailed report for protocol conformance
-    func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse {
-        return try await generateDetailedReport(
-            birthData: birthData,
-            type: reportType
-        )
-    }
-    
-    /// Search locations for protocol conformance
-    func searchLocations(query: String) async throws -> [LocationResult] {
-        let response = try await searchLocations(query: query, limit: 10)
-        return response.locations
-    }
-    
-    /// Get current transits
-    func getCurrentTransits() async throws -> TransitsResponse {
-        return try await networkClient.request(
-            endpoint: "/api/v1/ephemeris/transits",
-            responseType: TransitsResponse.self
-        )
-    }
-    
-    /// Get chat response for protocol conformance
-    func getChatResponse(messages: [ChatMessage]) async throws -> ChatResponse {
-        // Convert to legacy format for now
-        guard let lastMessage = messages.last else {
-            throw NetworkError.noData
-        }
-        
-        let legacyResponse = try await sendChatMessage(lastMessage.content)
-        
-        return ChatResponse(
-            response: legacyResponse.reply,
-            conversation_id: legacyResponse.messageId
-        )
-    }
 }
 
 // MARK: - Convenience Extensions

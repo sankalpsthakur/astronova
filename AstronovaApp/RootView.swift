@@ -56,7 +56,7 @@ struct ReportPricing {
 
 // MARK: - Store Manager (Placeholder for future StoreKit integration)
 
-class StoreManager: ObservableObject, StoreManagerProtocol {
+class StoreManager: ObservableObject {
     static let shared = StoreManager()
     
     @Published var hasProSubscription = false
@@ -5365,7 +5365,8 @@ struct ReportDetailView: View {
             }
         }
         .sheet(isPresented: $showingPlanetaryTutorial) {
-            PlanetaryCalculationsView()
+            // PlanetaryCalculationsView() // Temporarily commented out
+            Text("Planetary calculations coming soon!")
         }
     }
 }

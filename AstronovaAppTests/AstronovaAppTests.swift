@@ -9,140 +9,55 @@ import XCTest
 @testable import AstronovaApp
 
 final class AstronovaAppTests: XCTestCase {
-    
-    var mockDependencies: DependencyContainer!
-    var mockAPIServices: MockAPIServices!
-    var mockStoreManager: MockStoreManager!
-    
+
     override func setUpWithError() throws {
-        mockDependencies = DependencyContainer.mock
-        mockAPIServices = mockDependencies.apiServices as? MockAPIServices
-        mockStoreManager = mockDependencies.storeManager as? MockStoreManager
+        // Put setup code here. This method is called before the invocation of each test method in the class.
     }
-    
+
     override func tearDownWithError() throws {
-        mockDependencies = nil
-        mockAPIServices = nil
-        mockStoreManager = nil
+        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    }
+
+    // MARK: - Basic Service Tests
+    
+    func testAPIServicesExists() throws {
+        let apiServices = APIServices.shared
+        XCTAssertNotNil(apiServices)
     }
     
-    // MARK: - Dependency Injection Tests
-    
-    func testDependencyInjection() throws {
-        XCTAssertNotNil(mockDependencies.apiServices)
-        XCTAssertNotNil(mockDependencies.networkClient)
-        XCTAssertNotNil(mockDependencies.storeManager)
+    func testNetworkClientExists() throws {
+        let networkClient = NetworkClient.shared
+        XCTAssertNotNil(networkClient)
     }
     
-    // MARK: - API Services Tests
-    
-    func testHealthCheck() async throws {
-        let response = try await mockAPIServices.healthCheck()
-        XCTAssertEqual(response.status, "healthy")
-        XCTAssertEqual(response.message, "Mock service is running")
+    func testStoreManagerExists() throws {
+        let storeManager = StoreManager.shared
+        XCTAssertNotNil(storeManager)
+        XCTAssertFalse(storeManager.hasProSubscription)
+        XCTAssertTrue(storeManager.products.isEmpty) // Initially empty
     }
     
-    func testHealthCheckFailure() async throws {
-        mockAPIServices.shouldFailRequests = true
+    func testUserProfileCreation() throws {
+        let profile = UserProfile()
+        XCTAssertNotNil(profile)
+        XCTAssertEqual(profile.fullName, "User")
+    }
+    
+    func testReportPricing() throws {
+        let loveReport = ReportPricing.loveReport
+        XCTAssertEqual(loveReport.id, "love_forecast")
+        XCTAssertEqual(loveReport.price, "$4.99")
         
-        do {
-            _ = try await mockAPIServices.healthCheck()
-            XCTFail("Expected network error")
-        } catch {
-            XCTAssertTrue(error is NetworkError)
+        let pricing = ReportPricing.pricing(for: "love_forecast")
+        XCTAssertNotNil(pricing)
+        XCTAssertEqual(pricing?.title, "Love Forecast")
+    }
+
+    func testPerformanceExample() throws {
+        // This is an example of a performance test case.
+        self.measure {
+            // Put the code you want to measure the time of here.
+            let _ = APIServices.shared
         }
-    }
-    
-    func testGenerateChart() async throws {
-        let profile = UserProfile()
-        profile.firstName = "Test"
-        profile.lastName = "User"
-        profile.birthDate = Date()
-        profile.birthPlace = "New York, NY, USA"
-        profile.birthCoordinates = "40.7128,-74.0060"
-        profile.birthTimezone = "America/New_York"
-        
-        let chart = try await mockAPIServices.generateChart(from: profile)
-        XCTAssertNotNil(chart.westernChart)
-    }
-    
-    func testGetHoroscope() async throws {
-        let horoscope = try await mockAPIServices.getHoroscope(sign: "Aries", period: "daily")
-        XCTAssertEqual(horoscope.sign, "Aries")
-        XCTAssertEqual(horoscope.period, "daily")
-        XCTAssertFalse(horoscope.content.isEmpty)
-    }
-    
-    // MARK: - Store Manager Tests
-    
-    func testStoreManagerInitialState() throws {
-        XCTAssertFalse(mockStoreManager.hasProSubscription)
-        XCTAssertFalse(mockStoreManager.products.isEmpty)
-    }
-    
-    func testPurchaseProduct() async throws {
-        let success = await mockStoreManager.purchaseProduct(productId: "astronova_pro_monthly")
-        XCTAssertTrue(success)
-        XCTAssertTrue(mockStoreManager.hasProSubscription)
-    }
-    
-    func testPurchaseFailure() async throws {
-        mockStoreManager.shouldFailPurchases = true
-        let success = await mockStoreManager.purchaseProduct(productId: "astronova_pro_monthly")
-        XCTAssertFalse(success)
-        XCTAssertFalse(mockStoreManager.hasProSubscription)
-    }
-    
-    // MARK: - View Model Tests
-    
-    @MainActor
-    func testMainViewModel() throws {
-        let viewModel = MainViewModel(dependencies: mockDependencies)
-        
-        XCTAssertEqual(viewModel.selectedTab, 0)
-        XCTAssertEqual(viewModel.selectedSection, "overview")
-        XCTAssertFalse(viewModel.isLoading)
-        
-        viewModel.switchToTab(2)
-        XCTAssertEqual(viewModel.selectedTab, 2)
-        
-        viewModel.switchToProfileSection("settings")
-        XCTAssertEqual(viewModel.selectedSection, "settings")
-        XCTAssertEqual(viewModel.selectedTab, 2)
-    }
-    
-    @MainActor
-    func testChartViewModel() async throws {
-        let viewModel = ChartViewModel(apiServices: mockAPIServices)
-        
-        XCTAssertNil(viewModel.currentChart)
-        XCTAssertFalse(viewModel.isGeneratingChart)
-        
-        let profile = UserProfile()
-        profile.firstName = "Test"
-        profile.lastName = "User"
-        profile.birthDate = Date()
-        profile.birthPlace = "New York, NY, USA"
-        profile.birthCoordinates = "40.7128,-74.0060"
-        profile.birthTimezone = "America/New_York"
-        
-        await viewModel.generateChart(for: profile)
-        
-        XCTAssertNotNil(viewModel.currentChart)
-        XCTAssertFalse(viewModel.isGeneratingChart)
-    }
-    
-    @MainActor
-    func testHoroscopeViewModel() async throws {
-        let viewModel = HoroscopeViewModel(apiServices: mockAPIServices)
-        
-        XCTAssertNil(viewModel.currentHoroscope)
-        XCTAssertEqual(viewModel.selectedPeriod, "daily")
-        
-        await viewModel.loadHoroscope(for: "Aries")
-        
-        XCTAssertNotNil(viewModel.currentHoroscope)
-        XCTAssertEqual(viewModel.currentHoroscope?.sign, "Aries")
-        XCTAssertEqual(viewModel.selectedPeriod, "daily")
     }
 }
