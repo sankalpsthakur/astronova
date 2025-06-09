@@ -155,7 +155,7 @@ class AuthState: ObservableObject {
     
     /// Whether the app can provide full functionality
     var hasFullFunctionality: Bool {
-        return isAPIConnected && profileManager.isProfileComplete
+        return isAPIConnected && profileManager.isProfileComplete && profileManager.hasCompleteLocationData
     }
     
     /// Whether user has premium features (signed-in users only)
