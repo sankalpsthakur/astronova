@@ -1098,18 +1098,14 @@ struct EnhancedBirthPlaceStepView: View {
             try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
             
             if !Task.isCancelled {
-                // Try Google Places API first, fallback to existing API
+                // Use MapKit for location search, fallback to existing API
                 let results: [LocationResult]
-                // TODO: Re-enable GooglePlacesService when compilation issues are resolved
-                /*
                 do {
-                    results = try await GooglePlacesService.shared.searchPlaces(query: query)
+                    results = try await MapKitLocationService.shared.searchPlaces(query: query)
                 } catch {
-                    print("Google Places search failed, using fallback: \(error)")
+                    print("MapKit search failed, using fallback: \(error)")
                     results = await auth.profileManager.searchLocations(query: query)
                 }
-                */
-                results = await auth.profileManager.searchLocations(query: query)
                 
                 await MainActor.run {
                     if !Task.isCancelled {
@@ -3762,9 +3758,7 @@ struct ProfileEditView: View {
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.secondary)
                                 
-                                // TODO: Re-enable GooglePlacesAutocompleteView when compilation issues are resolved
-                                /*
-                                GooglePlacesAutocompleteView(
+                                MapKitAutocompleteView(
                                     selectedLocation: Binding(
                                         get: { 
                                             // Convert current birth place to LocationResult if available
@@ -3798,11 +3792,6 @@ struct ProfileEditView: View {
                                     editedProfile.birthCoordinates = location.coordinate
                                     editedProfile.timezone = location.timezone
                                 }
-                                */
-                                TextField("City, State/Country", text: Binding(
-                                    get: { editedProfile.birthPlace ?? "" },
-                                    set: { editedProfile.birthPlace = $0.isEmpty ? nil : $0 }
-                                ))
                             }
                         }
                         .padding(.horizontal, 20)
@@ -5438,8 +5427,8 @@ struct ReportDetailView: View {
             }
         }
         .sheet(isPresented: $showingPlanetaryTutorial) {
-            // PlanetaryCalculationsView() // Temporarily commented out
-            Text("Planetary calculations coming soon!")
+            PlanetaryCalculationsView()
+                .environmentObject(auth)
         }
     }
 }
