@@ -161,7 +161,7 @@ class NetworkClient {
     /// Check if the backend is healthy
     func healthCheck() async throws -> HealthResponse {
         return try await request(
-            endpoint: "/api/health",
+            endpoint: "/health",
             responseType: HealthResponse.self
         )
     }
@@ -171,4 +171,14 @@ class NetworkClient {
 struct HealthResponse: Codable {
     let status: String
     let message: String?
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decode(String.self, forKey: .status)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case status, message
+    }
 }

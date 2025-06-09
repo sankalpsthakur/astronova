@@ -39,7 +39,11 @@ def calculate_positions(dt: datetime, lat: float, lon: float) -> Dict[str, float
     jd = _julian_day(dt)
     positions = {}
     for name, code in PLANETS.items():
-        lon, lat, _ = swe.calc_ut(jd, code)
+        result = swe.calc_ut(jd, code)
+        if len(result) >= 2:
+            lon, lat = result[0], result[1]
+        else:
+            lon = result[0] if result else 0.0
         positions[name] = lon  # ecliptic longitude in degrees
     return positions
 

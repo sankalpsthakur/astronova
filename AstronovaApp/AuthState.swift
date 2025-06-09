@@ -34,7 +34,12 @@ class AuthState: ObservableObject {
             if profileManager.isProfileComplete {
                 state = .signedIn
             } else {
-                state = .needsProfileSetup
+                // For anonymous users, allow them to use the app even without complete profile
+                if isAnonymousUser {
+                    state = .signedIn
+                } else {
+                    state = .needsProfileSetup
+                }
             }
         } else {
             state = .signedOut

@@ -59,6 +59,46 @@ struct LocationResult: Codable {
     let country: String
     let state: String?
     let timezone: String
+    
+    // Computed property for compatibility with UI
+    var fullName: String {
+        return displayName
+    }
+    
+    // Computed property for coordinates
+    var coordinate: CLLocationCoordinate2D {
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+    
+    // Initializer for Google Places compatibility
+    init(fullName: String, coordinate: CLLocationCoordinate2D, timezone: String) {
+        // Parse the full name to extract city/state/country components
+        let components = fullName.components(separatedBy: ", ").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        
+        self.displayName = fullName
+        self.latitude = coordinate.latitude
+        self.longitude = coordinate.longitude
+        self.timezone = timezone
+        
+        // Extract city name (first component, or fallback to full name)
+        self.name = components.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? fullName
+        
+        // Extract country (usually last component, with validation)
+        if let lastComponent = components.last?.trimmingCharacters(in: .whitespacesAndNewlines), !lastComponent.isEmpty {
+            self.country = lastComponent
+        } else {
+            self.country = "Unknown"
+        }
+        
+        // Extract state (usually second to last if more than 2 components)
+        if components.count > 2,
+           let stateComponent = components.dropLast().last?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !stateComponent.isEmpty {
+            self.state = stateComponent
+        } else {
+            self.state = nil
+        }
+    }
 }
 
 /// Location search response
@@ -78,9 +118,9 @@ struct HoroscopeRequest: Codable {
 /// Horoscope response
 struct HoroscopeResponse: Codable {
     let sign: String
-    let period: String
+    let type: String // "daily", "weekly", "monthly"
     let date: String
-    let content: String
+    let horoscope: String
     let keywords: [String]?
     let luckyNumbers: [Int]?
     let compatibility: [String]?
@@ -103,9 +143,9 @@ struct ChatContext: Codable {
 
 /// Chat response
 struct ChatResponse: Codable {
-    let response: String
-    let confidence: Double?
-    let suggestions: [String]?
+    let reply: String
+    let messageId: String
+    let suggestedFollowUps: [String]
 }
 
 /// Chat message for history
@@ -184,7 +224,44 @@ struct UserReportsResponse: Codable {
 
 // MARK: - Compatibility Models
 
-/// Compatibility calculation request
+/// Match user for compatibility calculation
+struct MatchUser: Codable {
+    let birth_date: String // YYYY-MM-DD format
+    let birth_time: String // HH:MM format
+    let timezone: String
+    let latitude: Double
+    let longitude: Double
+}
+
+/// Match partner (extends MatchUser with name)
+struct MatchPartner: Codable {
+    let name: String
+    let birth_date: String // YYYY-MM-DD format
+    let birth_time: String // HH:MM format
+    let timezone: String
+    let latitude: Double
+    let longitude: Double
+}
+
+/// Match/compatibility calculation request
+struct MatchRequest: Codable {
+    let user: MatchUser
+    let partner: MatchPartner
+    let matchType: String
+    let systems: [String]
+}
+
+/// Match/compatibility response
+struct MatchResponse: Codable {
+    let overallScore: Int
+    let vedicScore: Int
+    let chineseScore: Int
+    let synastryAspects: [String]
+    let userChart: [String: [String: Double]]?
+    let partnerChart: [String: [String: Double]]?
+}
+
+/// Legacy compatibility calculation request (for backward compatibility)
 struct CompatibilityRequest: Codable {
     let person1: BirthData
     let person2: BirthData
@@ -239,21 +316,6 @@ extension BirthData {
     }
 }
 
-extension LocationResult {
-    /// Convert to CLLocationCoordinate2D
-    var coordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-    
-    /// Full display name with country
-    var fullName: String {
-        if let state = state {
-            return "\(name), \(state), \(country)"
-        } else {
-            return "\(name), \(country)"
-        }
-    }
-}
 
 extension ChartResponse {
     /// Get Western chart if available
