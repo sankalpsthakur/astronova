@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-struct GoogleMapsLocationPicker: View {
+struct MapKitLocationPicker: View {
     @Binding var selectedLocation: LocationResult?
     @State private var searchText = ""
     @State private var searchResults: [LocationResult] = []
@@ -127,40 +127,31 @@ struct GoogleMapsLocationPicker: View {
     private func handleMapTap(at coordinate: CLLocationCoordinate2D) {
         selectedCoordinate = coordinate
         
-        // Reverse geocode the coordinate
-        let geocoder = CLGeocoder()
-        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        
-        geocoder.reverseGeocodeLocation(location) { placemarks, error in
-            guard let placemark = placemarks?.first, error == nil else { return }
-            
-            let locationResult = LocationResult(
-                fullName: formatPlacemarkName(placemark),
-                coordinate: coordinate,
-                timezone: TimeZone.current.identifier // This should be improved with proper timezone lookup
-            )
-            
-            DispatchQueue.main.async {
-                selectLocation(locationResult)
+        // Reverse geocode the coordinate using MapKitLocationService
+        Task {
+            do {
+                let locationResult = try await MapKitLocationService.shared.reverseGeocode(coordinate: coordinate)
+                
+                await MainActor.run {
+                    selectLocation(locationResult)
+                }
+            } catch {
+                print("Reverse geocoding failed: \(error)")
+                
+                // Fallback location
+                let fallbackLocation = LocationResult(
+                    fullName: "Selected Location",
+                    coordinate: coordinate,
+                    timezone: TimeZone.current.identifier
+                )
+                
+                await MainActor.run {
+                    selectLocation(fallbackLocation)
+                }
             }
         }
     }
     
-    private func formatPlacemarkName(_ placemark: CLPlacemark) -> String {
-        var components: [String] = []
-        
-        if let locality = placemark.locality {
-            components.append(locality)
-        }
-        if let administrativeArea = placemark.administrativeArea {
-            components.append(administrativeArea)
-        }
-        if let country = placemark.country {
-            components.append(country)
-        }
-        
-        return components.joined(separator: ", ")
-    }
     
     private func debounceSearch(_ query: String) {
         searchTask?.cancel()
@@ -194,8 +185,8 @@ struct GoogleMapsLocationPicker: View {
         }
         
         do {
-            // Try Google Places API first
-            let results = try await GooglePlacesService.shared.searchPlaces(query: query)
+            // Use MapKit for location search
+            let results = try await MapKitLocationService.shared.searchPlaces(query: query)
             
             await MainActor.run {
                 searchResults = results
@@ -203,38 +194,12 @@ struct GoogleMapsLocationPicker: View {
                 errorMessage = results.isEmpty ? "No locations found" : nil
             }
         } catch {
-            // Fallback to MKLocalSearch if Google Places fails
-            print("Google Places search failed, falling back to MKLocalSearch: \(error)")
-            
-            let request = MKLocalSearch.Request()
-            request.naturalLanguageQuery = query
-            request.region = region
-            
-            do {
-                let search = MKLocalSearch(request: request)
-                let response = try await search.start()
-                
-                let results = response.mapItems.map { item in
-                    LocationResult(
-                        fullName: item.name ?? "Unknown Location",
-                        coordinate: item.placemark.coordinate,
-                        timezone: TimeZone.current.identifier
-                    )
-                }
-                
-                await MainActor.run {
-                    searchResults = results
-                    isSearching = false
-                    errorMessage = results.isEmpty ? "No locations found" : nil
-                }
-            } catch {
-                await MainActor.run {
-                    searchResults = []
-                    isSearching = false
-                    errorMessage = "Search failed. Please try again."
-                }
-                print("Both Google Places and MKLocalSearch failed: \(error)")
+            await MainActor.run {
+                searchResults = []
+                isSearching = false
+                errorMessage = "Search failed. Please try again."
             }
+            print("MapKit location search failed: \(error)")
         }
     }
     
@@ -285,7 +250,7 @@ struct MapAnnotation: Identifiable {
 
 #Preview {
     NavigationView {
-        GoogleMapsLocationPicker(selectedLocation: .constant(nil)) { location in
+        MapKitLocationPicker(selectedLocation: .constant(nil)) { location in
             print("Selected: \(location)")
         }
     }

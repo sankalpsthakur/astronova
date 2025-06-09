@@ -5,6 +5,7 @@ import Combine
 import StoreKit
 import AuthenticationServices
 import CoreLocation
+import MapKit
 
 // MARK: - Pricing Models
 
@@ -59,13 +60,8 @@ struct ReportPricing {
 class StoreManager: ObservableObject, StoreManagerProtocol {
     static let shared = StoreManager()
     
-    @Published var hasProSubscription = false
+    @AppStorage("hasAstronovaPro") var hasProSubscription = false
     @Published var products: [String: String] = [:]  // Product ID to localized price
-    
-    init() {
-        // Load subscription status from UserDefaults for now
-        hasProSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
-    }
     
     func loadProducts() {
         // TODO: Implement StoreKit product loading
@@ -84,7 +80,6 @@ class StoreManager: ObservableObject, StoreManagerProtocol {
         // For now, simulate successful purchase for individual reports
         if productId == "astronova_pro_monthly" {
             hasProSubscription = true
-            UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
         }
         return true
     }
@@ -1394,20 +1389,13 @@ struct LocationSearchView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
-                TextField("Search for a city", text: $query)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                
-                List(searchResults, id: \.self) { result in
-                    Button(result) {
-                        query = result
-                        dismiss()
-                    }
+            List(searchResults, id: \.self) { result in
+                Button(result) {
+                    query = result
+                    dismiss()
                 }
-                
-                Spacer()
             }
+            .searchable(text: $query, prompt: "Search for a city")
             .navigationTitle("Select Location")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1427,6 +1415,8 @@ struct SimpleTabBarView: View {
     @State private var selectedTab = 0
     @State private var showTabGuide = false
     @State private var guideStep = 0
+    @AppStorage("app_launch_count") private var appLaunchCount = 0
+    @AppStorage("has_seen_tab_guide") private var hasSeenTabGuide = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1485,15 +1475,11 @@ struct SimpleTabBarView: View {
     }
     
     private func trackAppLaunch() {
-        let count = UserDefaults.standard.integer(forKey: "app_launch_count")
-        UserDefaults.standard.set(count + 1, forKey: "app_launch_count")
+        appLaunchCount += 1
     }
     
     private func showFirstRunGuideIfNeeded() {
-        let launchCount = UserDefaults.standard.integer(forKey: "app_launch_count")
-        let hasSeenGuide = UserDefaults.standard.bool(forKey: "has_seen_tab_guide")
-        
-        if launchCount <= 2 && !hasSeenGuide {
+        if appLaunchCount <= 2 && !hasSeenTabGuide {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     showTabGuide = true
@@ -1506,7 +1492,7 @@ struct SimpleTabBarView: View {
         withAnimation(.easeOut(duration: 0.3)) {
             showTabGuide = false
         }
-        UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+        hasSeenTabGuide = true
     }
 }
 
@@ -1769,7 +1755,7 @@ struct TodayTab: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                LazyVStack(alignment: .leading, spacing: 24) {
                     welcomeSection
                     PrimaryCTASection()
                     
@@ -3752,7 +3738,7 @@ struct ProfileEditView: View {
                                 .datePickerStyle(.compact)
                             }
                             
-                            // Birth Place with Google Places Autocomplete
+                            // Birth Place with MapKit Autocomplete
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Birth Place")
                                     .font(.subheadline.weight(.medium))
@@ -5227,6 +5213,7 @@ struct ReportLibraryCard: View {
 struct ReportDetailView: View {
     let report: DetailedReport
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var auth: AuthState
     @State private var showingShareSheet = false
     @State private var showingPlanetaryTutorial = false
     
@@ -5427,8 +5414,27 @@ struct ReportDetailView: View {
             }
         }
         .sheet(isPresented: $showingPlanetaryTutorial) {
-            PlanetaryCalculationsView()
-                .environmentObject(auth)
+            NavigationView {
+                VStack {
+                    Text("Planetary Calculations Tutorial")
+                        .font(.title)
+                        .padding()
+                    
+                    Text("Tutorial content will be available soon.")
+                        .padding()
+                    
+                    Spacer()
+                }
+                .navigationTitle("Tutorial")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            showingPlanetaryTutorial = false
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -5818,11 +5824,6 @@ struct ContactsPickerView: View {
         NavigationView {
             VStack {
                 if hasContactsAccess {
-                    // Search bar
-                    TextField("Search contacts", text: $searchText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding()
-                    
                     // Contacts list
                     List(filteredContacts, id: \.identifier) { contact in
                         Button {
@@ -5852,6 +5853,7 @@ struct ContactsPickerView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
+                    .searchable(text: $searchText, prompt: "Search contacts")
                 } else {
                     // Access request view
                     VStack(spacing: 20) {
@@ -5933,9 +5935,7 @@ struct ContactsPickerView: View {
         case .authorized:
             hasContactsAccess = true
             loadContacts()
-        case .denied:
-            hasContactsAccess = false
-        case .restricted:
+        case .denied, .restricted:
             hasContactsAccess = false
         case .notDetermined:
             hasContactsAccess = false

@@ -124,7 +124,7 @@ struct LocationResult: Codable {
         return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
     
-    // Initializer for Google Places compatibility
+    // Initializer for location service compatibility
     init(fullName: String, coordinate: CLLocationCoordinate2D, timezone: String) {
         // Parse the full name to extract city/state/country components
         let components = fullName.components(separatedBy: ", ").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
