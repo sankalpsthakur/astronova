@@ -33,24 +33,32 @@ enum HTTPMethod: String {
 }
 
 /// NetworkClient handles all HTTP communication with the backend
-class NetworkClient {
+class NetworkClient: NetworkClientProtocol {
     static let shared = NetworkClient()
     
     private let baseURL: String
     private let session: URLSession
     
-    private init() {
+    init(baseURL: String? = nil, session: URLSession? = nil) {
         // Configuration for development - update for production
-        #if DEBUG
-        self.baseURL = "http://127.0.0.1:8080"
-        #else
-        self.baseURL = "https://api.astronova.app" // Update with production URL
-        #endif
+        if let baseURL = baseURL {
+            self.baseURL = baseURL
+        } else {
+            #if DEBUG
+            self.baseURL = "http://127.0.0.1:8080"
+            #else
+            self.baseURL = "https://api.astronova.app" // Update with production URL
+            #endif
+        }
         
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
-        self.session = URLSession(configuration: config)
+        if let session = session {
+            self.session = session
+        } else {
+            let config = URLSessionConfiguration.default
+            config.timeoutIntervalForRequest = 30
+            config.timeoutIntervalForResource = 60
+            self.session = URLSession(configuration: config)
+        }
     }
     
     /// Generic method to make API requests
@@ -111,7 +119,7 @@ class NetworkClient {
     }
     
     /// Generic method to make raw API requests returning Data
-    func requestRaw(
+    func requestData(
         endpoint: String,
         method: HTTPMethod = .GET,
         body: Encodable? = nil
@@ -171,6 +179,11 @@ class NetworkClient {
 struct HealthResponse: Codable {
     let status: String
     let message: String?
+    
+    init(status: String, message: String? = nil) {
+        self.status = status
+        self.message = message
+    }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

@@ -56,13 +56,13 @@ struct ReportPricing {
 
 // MARK: - Store Manager (Placeholder for future StoreKit integration)
 
-class StoreManager: ObservableObject {
+class StoreManager: ObservableObject, StoreManagerProtocol {
     static let shared = StoreManager()
     
     @Published var hasProSubscription = false
     @Published var products: [String: String] = [:]  // Product ID to localized price
     
-    private init() {
+    init() {
         // Load subscription status from UserDefaults for now
         hasProSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
     }
@@ -5166,6 +5166,7 @@ struct ReportDetailView: View {
     let report: DetailedReport
     @Environment(\.dismiss) private var dismiss
     @State private var showingShareSheet = false
+    @State private var showingPlanetaryTutorial = false
     
     private let apiServices = APIServices.shared
     
@@ -5255,6 +5256,11 @@ struct ReportDetailView: View {
                     .padding()
                     .background(.regularMaterial)
                     .cornerRadius(12)
+                    
+                    // Tutorial Entry Point (only for birth chart reports)
+                    if report.type == "birth_chart" {
+                        tutorialEntryPoint
+                    }
                 }
                 .padding()
             }
@@ -5304,6 +5310,62 @@ struct ReportDetailView: View {
         Task {
             // TODO: Integrate real download endpoint. For now, just log.
             print("Downloading PDF for report: \(report.reportId)")
+        }
+    }
+    
+    // MARK: - Tutorial Entry Point
+    
+    private var tutorialEntryPoint: some View {
+        VStack(spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "graduationcap.fill")
+                            .font(.title2)
+                            .foregroundStyle(.purple)
+                        
+                        Text("Learn How This Was Calculated")
+                            .font(.headline.weight(.semibold))
+                    }
+                    
+                    Text("Discover the ancient art of birth chart calculations with our interactive tutorial")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.purple)
+            }
+            .padding()
+            .background(
+                LinearGradient(
+                    colors: [.purple.opacity(0.1), .blue.opacity(0.05)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.purple.opacity(0.3), .blue.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .onTapGesture {
+                showingPlanetaryTutorial = true
+            }
+        }
+        .sheet(isPresented: $showingPlanetaryTutorial) {
+            PlanetaryCalculationsView()
         }
     }
 }
