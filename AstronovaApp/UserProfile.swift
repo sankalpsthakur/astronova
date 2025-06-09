@@ -138,8 +138,8 @@ class UserProfileManager: ObservableObject {
     /// Search for locations using real API
     func searchLocations(query: String) async -> [LocationResult] {
         do {
-            let response = try await apiServices.searchLocations(query: query, limit: 10)
-            return response.locations
+            let locations = try await apiServices.searchLocations(query: query)
+            return locations
         } catch {
             print("Failed to search locations: \(error)")
             return []
@@ -183,9 +183,14 @@ class UserProfileManager: ObservableObject {
     }
     
     var isProfileComplete: Bool {
-        return !profile.fullName.isEmpty && 
-               profile.birthTime != nil && 
-               profile.birthPlace != nil &&
+        // Essential fields for basic functionality
+        return !profile.fullName.isEmpty && profile.birthTime != nil
+        // Birth place, coordinates, and timezone are optional and can be added later
+    }
+    
+    /// Whether profile has all location data needed for advanced astrological calculations
+    var hasCompleteLocationData: Bool {
+        return profile.birthPlace != nil &&
                profile.birthCoordinates != nil &&
                profile.timezone != nil
     }

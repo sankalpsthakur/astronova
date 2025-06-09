@@ -18,19 +18,115 @@ final class AstronovaAppTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    // MARK: - Dependency Injection Tests
+    
+    func testDependencyContainerCreation() throws {
+        let container = DependencyContainer()
+        XCTAssertNotNil(container.networkClient)
+        XCTAssertNotNil(container.apiServices)
+        XCTAssertNotNil(container.storeManager)
+    }
+    
+    func testMockDependencyContainer() throws {
+        let mockContainer = DependencyContainer.mock
+        XCTAssertNotNil(mockContainer.networkClient)
+        XCTAssertNotNil(mockContainer.apiServices)
+        XCTAssertNotNil(mockContainer.storeManager)
+        
+        // Verify it's using mock services
+        XCTAssertTrue(mockContainer.networkClient is MockNetworkClient)
+        XCTAssertTrue(mockContainer.apiServices is MockAPIServices)
+        XCTAssertTrue(mockContainer.storeManager is MockStoreManager)
+    }
+    
+    func testNetworkClientProtocolConformance() throws {
+        let networkClient: NetworkClientProtocol = NetworkClient()
+        XCTAssertNotNil(networkClient)
+    }
+    
+    func testAPIServicesProtocolConformance() throws {
+        let mockNetworkClient = MockNetworkClient()
+        let apiServices: APIServicesProtocol = APIServices(networkClient: mockNetworkClient)
+        XCTAssertNotNil(apiServices)
+    }
+    
+    func testStoreManagerProtocolConformance() throws {
+        let storeManager: StoreManagerProtocol = StoreManager()
+        XCTAssertNotNil(storeManager)
+        XCTAssertFalse(storeManager.hasProSubscription)
+    }
+    
+    // MARK: - ViewModel Tests
+    
+    func testMainViewModelCreation() throws {
+        let mockContainer = DependencyContainer.mock
+        let viewModel = MainViewModel(dependencies: mockContainer)
+        XCTAssertNotNil(viewModel)
+        XCTAssertEqual(viewModel.selectedTab, 0)
+        XCTAssertEqual(viewModel.selectedSection, "overview")
+    }
+    
+    func testChartViewModelCreation() throws {
+        let mockContainer = DependencyContainer.mock
+        let viewModel = ChartViewModel(apiServices: mockContainer.apiServices)
+        XCTAssertNotNil(viewModel)
+        XCTAssertNil(viewModel.currentChart)
+        XCTAssertFalse(viewModel.isGeneratingChart)
+    }
+    
+    func testHoroscopeViewModelCreation() throws {
+        let mockContainer = DependencyContainer.mock
+        let viewModel = HoroscopeViewModel(apiServices: mockContainer.apiServices)
+        XCTAssertNotNil(viewModel)
+        XCTAssertEqual(viewModel.selectedPeriod, "daily")
+        XCTAssertFalse(viewModel.isLoadingHoroscope)
+    }
+    
+    // MARK: - Model Tests
+    
+    func testUserProfileCreation() throws {
+        let profile = UserProfile()
+        XCTAssertNotNil(profile)
+        XCTAssertEqual(profile.fullName, "")
+    }
+    
+    func testReportPricing() throws {
+        let loveReport = ReportPricing.loveReport
+        XCTAssertEqual(loveReport.id, "love_forecast")
+        XCTAssertEqual(loveReport.price, "$4.99")
+        
+        let pricing = ReportPricing.pricing(for: "love_forecast")
+        XCTAssertNotNil(pricing)
+        XCTAssertEqual(pricing?.title, "Love Forecast")
+    }
+    
+    // MARK: - Mock Service Tests
+    
+    func testMockNetworkClientHealthCheck() async throws {
+        let mockClient = MockNetworkClient()
+        let response = try await mockClient.healthCheck()
+        XCTAssertEqual(response.status, "healthy")
+        XCTAssertEqual(response.message, "Mock service is running")
+    }
+    
+    func testMockAPIServicesHoroscope() async throws {
+        let mockServices = MockAPIServices()
+        let horoscope = try await mockServices.getHoroscope(sign: "aries", period: "daily")
+        XCTAssertEqual(horoscope.sign, "aries")
+        XCTAssertEqual(horoscope.period, "daily")
+        XCTAssertTrue(horoscope.content.contains("Mock horoscope content"))
+    }
+    
+    func testMockStoreManagerPurchase() async throws {
+        let mockStore = MockStoreManager()
+        let success = await mockStore.purchaseProduct(productId: "astronova_pro_monthly")
+        XCTAssertTrue(success)
+        XCTAssertTrue(mockStore.hasProSubscription)
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
+    func testDependencyInjectionPerformance() throws {
         self.measure {
-            // Put the code you want to measure the time of here.
+            let _ = DependencyContainer()
         }
     }
-
 }

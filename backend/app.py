@@ -18,6 +18,7 @@ from routes.reports import reports_bp
 from routes.ephemeris import ephemeris_bp
 from routes.locations import locations_bp
 from routes.content import content_bp
+from routes.misc import misc_bp
 from services.reports_service import ReportsService
 
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +45,7 @@ def create_app(anthropic_api_key: str | None = None):
     app.register_blueprint(ephemeris_bp, url_prefix="/api/v1/ephemeris")
     app.register_blueprint(locations_bp, url_prefix="/api/v1/locations")
     app.register_blueprint(content_bp, url_prefix="/api/v1/content")
+    app.register_blueprint(misc_bp, url_prefix="/api/v1/misc")
 
     @app.route('/health')
     def health():

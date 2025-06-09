@@ -6,19 +6,19 @@ def test_health_endpoint(client):
     assert res.get_json()['status'] == 'ok'
 
 def test_ephemeris_positions(client):
-    res = client.get('/api/v1/ephemeris/positions')
+    res = client.get('/api/v1/ephemeris/current')
     assert res.status_code == 200
     data = res.get_json()
-    assert 'sun' in data
+    assert 'planets' in data
 
 
 def test_location_missing_address(client):
-    res = client.get('/api/v1/misc/location')
+    res = client.get('/api/v1/locations/search')
     assert res.status_code == 400
 
 
 def test_rate_limiting(client):
     for _ in range(2):
-        assert client.get('/api/v1/ephemeris/positions').status_code == 200
-    res = client.get('/api/v1/ephemeris/positions')
+        assert client.get('/api/v1/ephemeris/current').status_code == 200
+    res = client.get('/api/v1/ephemeris/current')
     assert res.status_code == 429

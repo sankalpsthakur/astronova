@@ -901,14 +901,49 @@ CompatibilityResult(
 
 ### Setup
 
-#### **iOS App Setup**
-1. Clone the repository
-2. Open `astronova.xcodeproj` in Xcode
-3. Configure your Apple Developer team in project settings
-4. Configure CloudKit container in capabilities
-5. Build and run on simulator or device
+#### **🚀 Automated Setup (Recommended)**
 
-#### **Backend Server Setup**
+**One-Command Setup**: Use our automated setup script for fastest configuration:
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd astronova
+
+# Run the automated setup script
+./setup-astronova.sh
+```
+
+**What the setup script does:**
+- ✅ **Prerequisites Check**: Verifies Python 3.11+, pip, Redis, Docker
+- ✅ **Auto-Installation**: Installs Redis if missing (macOS/Linux)
+- ✅ **Virtual Environment**: Creates and configures Python virtual environment
+- ✅ **Dependencies**: Installs all required packages including dev tools
+- ✅ **Security**: Generates secure keys automatically
+- ✅ **Configuration**: Interactive API key setup with secure .env file
+- ✅ **Services**: Starts Redis server automatically
+- ✅ **Validation**: Comprehensive environment validation
+- ✅ **Helper Scripts**: Creates `start-dev.sh` and `stop-dev.sh`
+
+**After setup, start development:**
+```bash
+# Start the development environment
+./start-dev.sh
+
+# Validate your setup anytime
+cd backend && python validate_setup.py
+```
+
+#### **📱 iOS App Setup**
+1. Open `astronova.xcodeproj` in Xcode
+2. Configure your Apple Developer team in project settings
+3. Configure CloudKit container in capabilities
+4. Build and run on simulator or device
+
+#### **🔧 Manual Backend Setup (Alternative)**
+
+If you prefer manual setup or need to troubleshoot:
+
 ```bash
 # Navigate to backend directory
 cd backend/
@@ -971,6 +1006,91 @@ class Config:
     # Rate limiting
     RATELIMIT_STORAGE_URL = REDIS_URL
     RATELIMIT_DEFAULT = "200 per day;50 per hour"
+```
+
+#### **Environment Variables (.env)**
+Create a `.env` file in the backend directory with the following configuration:
+
+```bash
+# Security
+SECRET_KEY=minimum-32-character-secret-key
+JWT_SECRET_KEY=your-jwt-secret-key
+
+# APIs
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
+GOOGLE_PLACES_API_KEY=AIzaSyxxxxx
+
+# Infrastructure
+REDIS_URL=redis://localhost:6379/0
+EPHEMERIS_PATH=./ephemeris
+
+# Environment
+FLASK_ENV=development
+FLASK_DEBUG=true
+```
+
+**Important**: 
+- Replace placeholder values with your actual API keys
+- Never commit `.env` files to version control
+- Use production-ready secrets in deployment environments
+
+#### **🔍 Environment Validation**
+
+**Comprehensive Setup Validation**: Use our validation script to ensure everything is configured correctly:
+
+```bash
+# Validate your complete setup
+cd backend && python validate_setup.py
+```
+
+**What the validation script checks:**
+- 🐍 **Python Environment**: Version compatibility and virtual environment
+- 📦 **Dependencies**: All required packages installed
+- 🔑 **Environment Variables**: Required and optional configuration
+- 🗄️ **Redis Connection**: Database connectivity and operations
+- 🌐 **Network Ports**: Flask (8080) and Redis (6379) availability
+- 📁 **File Structure**: Critical project files and directories
+- 🔐 **API Keys**: Format validation for external services
+- 📊 **Swiss Ephemeris**: Astronomical data setup
+- 🚀 **Flask Application**: Import and configuration validation
+- 🧪 **Test Discovery**: pytest integration and test collection
+
+**Validation Output Example:**
+```
+🚀 Astronova Backend Setup Validation
+⭐ Python Environment
+✅ Python version: 3.13.2
+✅ Virtual environment active
+
+⭐ Dependencies  
+✅ All 10 required packages installed
+
+⭐ Environment Variables
+✅ Flask secret key: Set
+⚠️ Anthropic AI API key: Missing (add to .env)
+
+✅ 32/33 checks passed - Ready for development!
+```
+
+#### **🛠️ Helper Commands**
+
+After setup, use these commands for development:
+
+```bash
+# Start development environment
+./start-dev.sh              # Starts Redis + Flask backend
+
+# Stop development environment  
+./stop-dev.sh               # Stops all services
+
+# Validate setup anytime
+cd backend && python validate_setup.py
+
+# Run backend tests
+cd backend && pytest
+
+# Check API health
+curl http://localhost:8080/api/v1/misc/health
 ```
 
 ## 🧪 Testing

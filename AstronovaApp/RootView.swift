@@ -56,13 +56,13 @@ struct ReportPricing {
 
 // MARK: - Store Manager (Placeholder for future StoreKit integration)
 
-class StoreManager: ObservableObject {
+class StoreManager: ObservableObject, StoreManagerProtocol {
     static let shared = StoreManager()
     
     @Published var hasProSubscription = false
     @Published var products: [String: String] = [:]  // Product ID to localized price
     
-    private init() {
+    init() {
         // Load subscription status from UserDefaults for now
         hasProSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
     }
@@ -244,9 +244,9 @@ struct SimpleProfileSetupView: View {
                         } label: {
                             HStack {
                                 if currentStep == totalSteps - 1 {
-                                    Image(systemName: "sparkles")
+                                    Image(systemName: "star.circle.fill")
                                         .font(.title3.weight(.semibold))
-                                    Text("Reveal My Cosmic Insight")
+                                    Text("Create My Profile")
                                         .font(.title3.weight(.semibold))
                                 } else {
                                     let buttonText = currentStep == 0 ? "Begin Journey" : 
@@ -1151,6 +1151,9 @@ struct PersonalizedInsightView: View {
     let onContinue: () -> Void
     @State private var animateElements = false
     @State private var showContent = false
+    @State private var isAnalyzing = true
+    @State private var scanProgress: CGFloat = 0
+    @State private var pulseScale: CGFloat = 1.0
     
     var body: some View {
         ZStack {
@@ -1163,80 +1166,141 @@ struct PersonalizedInsightView: View {
             VStack(spacing: 0) {
                 Spacer()
                 
-                // Main insight card
-                VStack(spacing: 24) {
-                    // Header with stars
-                    VStack(spacing: 16) {
-                        HStack(spacing: 4) {
-                            ForEach(0..<5, id: \.self) { _ in
-                                Image(systemName: "star.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(.yellow)
-                                    .scaleEffect(animateElements ? 1.2 : 1.0)
-                            }
+                if isAnalyzing {
+                    // Beautiful scanning animation
+                    VStack(spacing: 32) {
+                        // Cosmic scanner animation
+                        ZStack {
+                            // Outer ring
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.purple.opacity(0.3), .blue.opacity(0.3), .cyan.opacity(0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 3
+                                )
+                                .frame(width: 120, height: 120)
+                                .scaleEffect(pulseScale)
+                                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: pulseScale)
+                            
+                            // Inner cosmic symbol
+                            Text("🌟")
+                                .font(.system(size: 40))
+                                .rotationEffect(.degrees(scanProgress * 360))
+                                .animation(.linear(duration: 3).repeatForever(autoreverses: false), value: scanProgress)
+                            
+                            // Scanning line
+                            Rectangle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.clear, .cyan, .purple, .clear],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .frame(width: 140, height: 2)
+                                .offset(y: -60 + (scanProgress * 120))
+                                .mask(Circle().frame(width: 120, height: 120))
+                                .animation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true), value: scanProgress)
                         }
-                        .animation(.easeInOut(duration: 1).delay(0.5), value: animateElements)
                         
-                        Text("Your Cosmic Insight")
-                            .font(.title.weight(.bold))
-                            .foregroundStyle(.white)
-                            .opacity(showContent ? 1 : 0)
-                    }
-                    
-                    // Personalized content
-                    VStack(spacing: 16) {
-                        Text("Hello, \(name.components(separatedBy: " ").first ?? name)! ✨")
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .opacity(showContent ? 1 : 0)
-                        
-                        Text(insight)
-                            .font(.body)
-                            .foregroundStyle(.white.opacity(0.9))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(6)
-                            .opacity(showContent ? 1 : 0)
-                            .padding(.horizontal, 8)
-                    }
-                    
-                    // Continue button
-                    Button {
-                        onContinue()
-                    } label: {
-                        HStack {
-                            Text("Explore Your Cosmic Journey")
-                                .font(.headline.weight(.semibold))
-                            Image(systemName: "arrow.right.circle.fill")
-                                .font(.title3)
+                        VStack(spacing: 12) {
+                            Text("Analyzing Your Cosmic Blueprint")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .multilineTextAlignment(.center)
+                            
+                            Text("Reading planetary positions and celestial influences...")
+                                .font(.subheadline)
+                                .foregroundStyle(.white.opacity(0.8))
+                                .multilineTextAlignment(.center)
                         }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(
-                            LinearGradient(
-                                colors: [.indigo, .purple, .pink],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                    }
+                    .padding(32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(.white.opacity(0.2), lineWidth: 1)
                             )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 26))
-                        .shadow(color: .purple.opacity(0.4), radius: 12, y: 6)
+                    )
+                    .padding(.horizontal, 20)
+                    .scaleEffect(animateElements ? 1 : 0.8)
+                    .opacity(animateElements ? 1 : 0)
+                } else {
+                    // Results view
+                    VStack(spacing: 24) {
+                        // Success header
+                        VStack(spacing: 16) {
+                            Text("✨")
+                                .font(.system(size: 50))
+                                .scaleEffect(showContent ? 1.2 : 1.0)
+                                .animation(.spring(response: 0.6, dampingFraction: 0.6), value: showContent)
+                            
+                            Text("Profile Created!")
+                                .font(.title.weight(.bold))
+                                .foregroundStyle(.white)
+                                .opacity(showContent ? 1 : 0)
+                        }
+                        
+                        // Personalized content
+                        VStack(spacing: 16) {
+                            Text("Welcome, \(name.components(separatedBy: " ").first ?? name)!")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .opacity(showContent ? 1 : 0)
+                            
+                            Text(insight)
+                                .font(.body)
+                                .foregroundStyle(.white.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(6)
+                                .opacity(showContent ? 1 : 0)
+                                .padding(.horizontal, 8)
+                        }
+                        
+                        // Continue button
+                        Button {
+                            onContinue()
+                        } label: {
+                            HStack {
+                                Text("Start Your Journey")
+                                    .font(.headline.weight(.semibold))
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.title3)
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(
+                                LinearGradient(
+                                    colors: [.indigo, .purple, .pink],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 26))
+                            .shadow(color: .purple.opacity(0.4), radius: 12, y: 6)
+                        }
+                        .scaleEffect(showContent ? 1 : 0.8)
+                        .opacity(showContent ? 1 : 0)
                     }
-                    .scaleEffect(showContent ? 1 : 0.8)
-                    .opacity(showContent ? 1 : 0)
+                    .padding(32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(.white.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, 20)
+                    .scaleEffect(animateElements ? 1 : 0.8)
+                    .opacity(animateElements ? 1 : 0)
                 }
-                .padding(32)
-                .background(
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 24)
-                                .stroke(.white.opacity(0.2), lineWidth: 1)
-                        )
-                )
-                .padding(.horizontal, 20)
-                .scaleEffect(animateElements ? 1 : 0.8)
-                .opacity(animateElements ? 1 : 0)
                 
                 Spacer()
             }
@@ -1244,10 +1308,19 @@ struct PersonalizedInsightView: View {
         .onAppear {
             withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
                 animateElements = true
+                pulseScale = 1.2
+                scanProgress = 1.0
             }
             
-            withAnimation(.easeInOut(duration: 0.8).delay(0.3)) {
-                showContent = true
+            // Show analyzing phase for 3 seconds, then reveal results
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                    isAnalyzing = false
+                }
+                
+                withAnimation(.easeInOut(duration: 0.8).delay(0.3)) {
+                    showContent = true
+                }
             }
         }
     }
@@ -5166,6 +5239,7 @@ struct ReportDetailView: View {
     let report: DetailedReport
     @Environment(\.dismiss) private var dismiss
     @State private var showingShareSheet = false
+    @State private var showingPlanetaryTutorial = false
     
     private let apiServices = APIServices.shared
     
@@ -5255,6 +5329,11 @@ struct ReportDetailView: View {
                     .padding()
                     .background(.regularMaterial)
                     .cornerRadius(12)
+                    
+                    // Tutorial Entry Point (only for birth chart reports)
+                    if report.type == "birth_chart" {
+                        tutorialEntryPoint
+                    }
                 }
                 .padding()
             }
@@ -5304,6 +5383,63 @@ struct ReportDetailView: View {
         Task {
             // TODO: Integrate real download endpoint. For now, just log.
             print("Downloading PDF for report: \(report.reportId)")
+        }
+    }
+    
+    // MARK: - Tutorial Entry Point
+    
+    private var tutorialEntryPoint: some View {
+        VStack(spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "graduationcap.fill")
+                            .font(.title2)
+                            .foregroundStyle(.purple)
+                        
+                        Text("Learn How This Was Calculated")
+                            .font(.headline.weight(.semibold))
+                    }
+                    
+                    Text("Discover the ancient art of birth chart calculations with our interactive tutorial")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.purple)
+            }
+            .padding()
+            .background(
+                LinearGradient(
+                    colors: [.purple.opacity(0.1), .blue.opacity(0.05)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.purple.opacity(0.3), .blue.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .onTapGesture {
+                showingPlanetaryTutorial = true
+            }
+        }
+        .sheet(isPresented: $showingPlanetaryTutorial) {
+            // PlanetaryCalculationsView() // Temporarily commented out
+            Text("Planetary calculations coming soon!")
         }
     }
 }
@@ -5814,8 +5950,6 @@ struct ContactsPickerView: View {
             hasContactsAccess = false
         case .notDetermined:
             hasContactsAccess = false
-        case .limited:
-            hasContactsAccess = false
         @unknown default:
             hasContactsAccess = false
         }
@@ -6107,11 +6241,12 @@ struct CompellingLandingView: View {
     // MARK: - Instant Cosmic Experience
     
     private var cosmicHookPhase: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                // Immediate cosmic hook
-                VStack(spacing: 20) {
-                    // Pulsing cosmic symbol
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                Spacer()
+                
+                VStack(spacing: 32) {
+                    // Cosmic symbol
                     ZStack {
                         Circle()
                             .fill(
@@ -6122,87 +6257,74 @@ struct CompellingLandingView: View {
                                     endRadius: 60
                                 )
                             )
-                            .frame(width: 120, height: 120)
+                            .frame(width: 100, height: 100)
                             .scaleEffect(animateStars ? 1.1 : 0.9)
                             .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateStars)
                         
-                        Text("✨")
-                            .font(.system(size: 40))
+                        Text("🌟")
+                            .font(.system(size: 32))
                             .rotationEffect(.degrees(animateStars ? 360 : 0))
                             .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: animateStars)
                     }
                     
-                    VStack(spacing: 8) {
-                        Text("The universe speaks to you")
-                            .font(.title2.weight(.light))
-                            .foregroundStyle(.white.opacity(0.9))
+                    // Main headline
+                    VStack(spacing: 12) {
+                        Text("Your Cosmic Journey Starts Here")
+                            .font(.title.weight(.bold))
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
                         
-                        Text("Right now")
-                            .font(.largeTitle.weight(.bold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.purple, .blue, .cyan],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                        Text("Discover your astrological blueprint and unlock the wisdom of the stars")
+                            .font(.body)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
                     }
-                }
-                .padding(.top, 20)
-                
-                // Live celestial data - show value immediately
-                cosmicDataDisplay
-                
-                // Instant personalized insight
-                VStack(spacing: 16) {
-                    Text("Your Personal Reading")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
                     
-                    Text(personalizedInsight.isEmpty ? "The universe recognizes your unique frequency. This moment marks a significant turning point in your spiritual journey - trust the process." : personalizedInsight)
-                        .font(.body)
-                        .lineSpacing(4)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.ultraThinMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [.pink.opacity(0.5), .purple.opacity(0.5), .cyan.opacity(0.5)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1
-                                        )
-                                )
-                        )
-                        .shadow(color: .purple.opacity(0.2), radius: 8, y: 4)
-                }
-                
-                // Single call to action
-                VStack(spacing: 12) {
-                    Text("Get Your Complete Astrological Profile")
+                    // Quick cosmic data preview
+                    HStack(spacing: 20) {
+                        VStack(spacing: 4) {
+                            Text(currentMoonPhase)
+                                .font(.title2)
+                            Text("Moon")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        
+                        VStack(spacing: 4) {
+                            Text("⚡")
+                                .font(.title2)
+                                .foregroundStyle(.yellow)
+                            Text("Energy")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        
+                        VStack(spacing: 4) {
+                            Text("🌟")
+                                .font(.title2)
+                            Text("Insight")
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                    }
+                    .padding(16)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    
+                    // Call to action
+                    Text("Begin Your Cosmic Profile")
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                     
-                    Text("Unlock personalized insights, birth chart analysis, and celestial guidance")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
+                    // Sign in buttons
+                    signInButtons
                 }
+                .padding(.horizontal, 24)
                 
-                // Sign in buttons
-                signInButtons
-                
-                Spacer(minLength: 40)
+                Spacer()
             }
-            .padding()
+            .frame(height: geometry.size.height)
         }
     }
     

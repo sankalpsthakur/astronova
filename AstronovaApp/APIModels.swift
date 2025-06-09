@@ -40,6 +40,60 @@ struct ChartResponse: Codable {
     let chartId: String
     let charts: [String: ChartSystem] // "western", "vedic"
     let type: String
+    let westernChart: WesternChart?
+    let vedicChart: VedicChart?
+    let chineseChart: ChineseChart?
+}
+
+/// Western chart structure
+struct WesternChart: Codable {
+    let positions: [String: Position]
+    let houses: [String: House]
+    let aspects: [Aspect]
+}
+
+/// Vedic chart structure  
+struct VedicChart: Codable {
+    let positions: [String: Position]
+    let houses: [String: House]
+    let dashas: [Dasha]
+}
+
+/// Chinese chart structure
+struct ChineseChart: Codable {
+    let year: String
+    let month: String
+    let day: String
+    let hour: String
+    let element: String
+}
+
+/// Position structure
+struct Position: Codable {
+    let sign: String
+    let degree: Double
+    let house: Int
+}
+
+/// House structure
+struct House: Codable {
+    let sign: String
+    let degree: Double
+}
+
+/// Aspect structure
+struct Aspect: Codable {
+    let planet1: String
+    let planet2: String
+    let type: String
+    let orb: Double
+}
+
+/// Dasha structure for Vedic astrology
+struct Dasha: Codable {
+    let planet: String
+    let startDate: String
+    let endDate: String
 }
 
 // MARK: - Location Models
@@ -317,17 +371,6 @@ extension BirthData {
 }
 
 
-extension ChartResponse {
-    /// Get Western chart if available
-    var westernChart: ChartSystem? {
-        charts["western"]
-    }
-    
-    /// Get Vedic chart if available
-    var vedicChart: ChartSystem? {
-        charts["vedic"]
-    }
-}
 
 extension PlanetaryPosition {
     /// Format degree as readable string
@@ -339,4 +382,38 @@ extension PlanetaryPosition {
     var description: String {
         "\(sign) \(formattedDegree)"
     }
+}
+
+// MARK: - Additional Response Types for Protocol Conformance
+
+/// Compatibility response structure
+struct CompatibilityResponse: Codable {
+    let compatibility_score: Double
+    let summary: String
+    let detailed_analysis: String
+    let strengths: [String]
+    let challenges: [String]
+}
+
+
+/// Report section structure
+struct ReportSection: Codable {
+    let title: String
+    let content: String
+    let category: String
+}
+
+/// Transits response structure
+struct TransitsResponse: Codable {
+    let date: Date
+    let transits: [Transit]
+}
+
+/// Transit structure
+struct Transit: Codable {
+    let planet: String
+    let aspect: String
+    let target: String
+    let orb: Double
+    let isExact: Bool
 }

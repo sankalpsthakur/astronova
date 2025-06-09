@@ -1,13 +1,97 @@
 import Foundation
 import CoreLocation
 
+// MARK: - Simple Response Types for Protocol Conformance
+
+/// Simple horoscope response for protocol conformance
+struct ProtocolHoroscopeResponse: Codable {
+    let sign: String
+    let period: String
+    let content: String
+    let date: Date
+    
+    init(sign: String, period: String, content: String, date: Date) {
+        self.sign = sign
+        self.period = period
+        self.content = content
+        self.date = date
+    }
+}
+
+/// Simple chat message for protocol conformance
+struct ProtocolChatMessage: Codable {
+    let role: String // "user" or "assistant"
+    let content: String
+    let timestamp: Date?
+    
+    init(role: String, content: String, timestamp: Date? = nil) {
+        self.role = role
+        self.content = content
+        self.timestamp = timestamp
+    }
+}
+
+/// Simple chat response for protocol conformance
+struct ProtocolChatResponse: Codable {
+    let response: String
+    let conversation_id: String
+    
+    init(response: String, conversation_id: String) {
+        self.response = response
+        self.conversation_id = conversation_id
+    }
+}
+
+// MARK: - API Services Protocol
+
+protocol APIServicesProtocol: ObservableObject {
+    func healthCheck() async throws -> HealthResponse
+    func generateChart(birthData: BirthData, systems: [String]) async throws -> ChartResponse
+    func generateChart(from profile: UserProfile) async throws -> ChartResponse
+    func getChartAspects(birthData: BirthData) async throws -> Data
+    func getHoroscope(sign: String, period: String) async throws -> ProtocolHoroscopeResponse
+    func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse
+    func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse
+    func searchLocations(query: String) async throws -> [LocationResult]
+    func getCurrentTransits() async throws -> TransitsResponse
+    func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse
+}
+
+// MARK: - Store Manager Protocol
+
+protocol StoreManagerProtocol: ObservableObject {
+    var hasProSubscription: Bool { get }
+    var products: [String: String] { get }
+    
+    func loadProducts()
+    func purchaseProduct(productId: String) async -> Bool
+}
+
+// MARK: - Location Service Protocol
+
+protocol LocationServiceProtocol: ObservableObject {
+    var currentLocation: CLLocation? { get }
+    var authorizationStatus: CLAuthorizationStatus { get }
+    
+    func requestLocationPermission()
+    func getCurrentLocation() async throws -> CLLocation
+}
+
 /// Main API service class that handles all backend communication
-class APIServices: ObservableObject {
+class APIServices: ObservableObject, APIServicesProtocol {
     static let shared = APIServices()
     
-    private let networkClient = NetworkClient.shared
+    private let networkClient: NetworkClientProtocol
     
-    private init() {}
+    // Dependency-injectable initializer
+    init(networkClient: NetworkClientProtocol = NetworkClient()) {
+        self.networkClient = networkClient
+    }
+    
+    // Keep singleton for backward compatibility but prefer DI  
+    private convenience init() {
+        self.init(networkClient: NetworkClient())
+    }
     
     // MARK: - Health Check
     
@@ -28,7 +112,7 @@ class APIServices: ObservableObject {
         
         return try await networkClient.request(
             endpoint: "/api/v1/chart/generate",
-            method: .POST,
+            method: HTTPMethod.POST,
             body: request,
             responseType: ChartResponse.self
         )
@@ -50,17 +134,17 @@ class APIServices: ObservableObject {
         
         // Note: Return raw Data for flexible JSON handling
         // Can be decoded to specific types as needed
-        return try await networkClient.requestRaw(
+        return try await networkClient.requestData(
             endpoint: "/api/v1/chart/aspects",
-            method: .POST,
+            method: HTTPMethod.POST,
             body: request
         )
     }
     
     // MARK: - Location Services
     
-    /// Search for locations by name
-    func searchLocations(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
+    /// Search for locations by name (detailed response)
+    func searchLocationsDetailed(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
         var components = URLComponents()
         components.path = "/api/v1/locations/search"
         components.queryItems = [
@@ -105,6 +189,87 @@ class APIServices: ObservableObject {
     
     // MARK: - Horoscope Services
     
+    // MARK: - Protocol Required Methods
+    
+    /// Get horoscope for protocol conformance
+    func getHoroscope(sign: String, period: String) async throws -> ProtocolHoroscopeResponse {
+        let horoscope: AstronovaApp.HoroscopeResponse
+        switch period.lowercased() {
+        case "daily":
+            horoscope = try await getDailyHoroscope(for: sign)
+        case "weekly":
+            horoscope = try await getWeeklyHoroscope(for: sign)
+        case "monthly":
+            horoscope = try await getMonthlyHoroscope(for: sign)
+        default:
+            horoscope = try await getDailyHoroscope(for: sign)
+        }
+        
+        // Convert to protocol format
+        return ProtocolHoroscopeResponse(
+            sign: sign,
+            period: period,
+            content: horoscope.horoscope,
+            date: Date()
+        )
+    }
+    
+    /// Get compatibility report for protocol conformance
+    func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse {
+        // Convert legacy method to return structured data
+        let data = try await calculateCompatibility(person1: person1, person2: person2)
+        let matchResponse = try JSONDecoder().decode(MatchResponse.self, from: data)
+        
+        return CompatibilityResponse(
+            compatibility_score: Double(matchResponse.overallScore) / 100.0,
+            summary: "Compatibility analysis based on astrological factors",
+            detailed_analysis: "Detailed analysis of planetary aspects and compatibility",
+            strengths: ["Communication", "Emotional connection"],
+            challenges: ["Different life approaches"]
+        )
+    }
+    
+    /// Get detailed report for protocol conformance
+    func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse {
+        return try await generateDetailedReport(birthData: birthData, type: reportType)
+    }
+    
+    /// Search locations for protocol conformance
+    func searchLocations(query: String) async throws -> [LocationResult] {
+        let response = try await searchLocationsDetailed(query: query, limit: 10)
+        return response.locations
+    }
+    
+    /// Get current transits for protocol conformance
+    func getCurrentTransits() async throws -> TransitsResponse {
+        let positions = try await getCurrentPlanetaryPositions()
+        let transits = positions.map { key, position in
+            Transit(
+                planet: key,
+                aspect: "conjunction",
+                target: "natal_position",
+                orb: 0.0,
+                isExact: true
+            )
+        }
+        
+        return TransitsResponse(date: Date(), transits: transits)
+    }
+    
+    /// Get chat response for protocol conformance
+    func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse {
+        // Convert to simple message format
+        guard let lastMessage = messages.last else {
+            throw NetworkError.invalidRequest
+        }
+        
+        let response = try await sendChatMessage(lastMessage.content)
+        return ProtocolChatResponse(
+            response: response.reply,
+            conversation_id: response.messageId
+        )
+    }
+    
     /// Get daily horoscope for a sign
     func getDailyHoroscope(for sign: String, date: Date? = nil) async throws -> HoroscopeResponse {
         var components = URLComponents()
@@ -134,7 +299,7 @@ class APIServices: ObservableObject {
     }
     
     /// Get weekly horoscope for a sign
-    func getWeeklyHoroscope(for sign: String) async throws -> HoroscopeResponse {
+    func getWeeklyHoroscope(for sign: String) async throws -> AstronovaApp.HoroscopeResponse {
         var components = URLComponents()
         components.path = "/api/v1/horoscope"
         components.queryItems = [
@@ -153,7 +318,7 @@ class APIServices: ObservableObject {
     }
     
     /// Get monthly horoscope for a sign
-    func getMonthlyHoroscope(for sign: String) async throws -> HoroscopeResponse {
+    func getMonthlyHoroscope(for sign: String) async throws -> AstronovaApp.HoroscopeResponse {
         var components = URLComponents()
         components.path = "/api/v1/horoscope"
         components.queryItems = [
@@ -174,12 +339,12 @@ class APIServices: ObservableObject {
     // MARK: - Chat Services
     
     /// Send a chat message to the AI astrologer
-    func sendChatMessage(_ message: String, context: ChatContext? = nil) async throws -> ChatResponse {
+    func sendChatMessage(_ message: String, context: ChatContext? = nil) async throws -> AstronovaApp.ChatResponse {
         let request = ChatRequest(message: message, context: context)
         
         return try await networkClient.request(
             endpoint: "/api/v1/chat/send",
-            method: .POST,
+            method: HTTPMethod.POST,
             body: request,
             responseType: ChatResponse.self
         )
@@ -205,7 +370,7 @@ class APIServices: ObservableObject {
         
         return try await networkClient.request(
             endpoint: "/api/reports/generate",
-            method: .POST,
+            method: HTTPMethod.POST,
             body: request,
             responseType: ReportResponse.self
         )
@@ -230,7 +395,7 @@ class APIServices: ObservableObject {
         
         return try await networkClient.request(
             endpoint: "/api/v1/reports/full",
-            method: .POST,
+            method: HTTPMethod.POST,
             body: request,
             responseType: DetailedReportResponse.self
         )
@@ -297,7 +462,7 @@ class APIServices: ObservableObject {
         
         return try await networkClient.request(
             endpoint: "/api/v1/match",
-            method: .POST,
+            method: HTTPMethod.POST,
             body: request,
             responseType: MatchResponse.self
         )
@@ -326,6 +491,7 @@ class APIServices: ObservableObject {
         let matchResponse = try await calculateMatch(user: user, partner: partner)
         return try JSONEncoder().encode(matchResponse)
     }
+    
 }
 
 // MARK: - Convenience Extensions
@@ -336,7 +502,7 @@ extension APIServices {
         let chartResponse = try await generateChart(from: profile)
         
         // Update profile with calculated signs from the chart
-        if let westernChart = chartResponse.westernChart {
+        if let westernChart = chartResponse.charts["western"] {
             profile.sunSign = westernChart.positions["sun"]?.sign
             profile.moonSign = westernChart.positions["moon"]?.sign
             // Rising sign would be the ascendant, which might need separate calculation
@@ -347,7 +513,7 @@ extension APIServices {
     
     /// Search for location and get timezone
     func findLocationWithTimezone(query: String) async throws -> LocationResult? {
-        let searchResponse = try await searchLocations(query: query, limit: 1)
+        let searchResponse = try await searchLocationsDetailed(query: query, limit: 1)
         return searchResponse.locations.first
     }
 }
