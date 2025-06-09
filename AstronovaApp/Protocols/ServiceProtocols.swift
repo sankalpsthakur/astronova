@@ -19,7 +19,7 @@ struct HoroscopeResponse: Codable {
 }
 
 /// Simple chat message for protocol conformance
-struct ChatMessage: Codable {
+struct ProtocolChatMessage: Codable {
     let role: String // "user" or "assistant"
     let content: String
     let timestamp: Date?
@@ -32,16 +32,16 @@ struct ChatMessage: Codable {
 }
 
 /// Simple chat request for protocol conformance
-struct ChatRequest: Codable {
-    let messages: [ChatMessage]
+struct ProtocolChatRequest: Codable {
+    let messages: [ProtocolChatMessage]
     
-    init(messages: [ChatMessage]) {
+    init(messages: [ProtocolChatMessage]) {
         self.messages = messages
     }
 }
 
 /// Simple chat response for protocol conformance
-struct ChatResponse: Codable {
+struct ProtocolChatResponse: Codable {
     let response: String
     let conversation_id: String
     
@@ -80,7 +80,7 @@ protocol APIServicesProtocol: ObservableObject {
     func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse
     func searchLocations(query: String) async throws -> [LocationResult]
     func getCurrentTransits() async throws -> TransitsResponse
-    func getChatResponse(messages: [ChatMessage]) async throws -> ChatResponse
+    func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse
 }
 
 // MARK: - Store Manager Protocol

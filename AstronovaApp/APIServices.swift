@@ -172,17 +172,16 @@ class APIServices: ObservableObject, APIServicesProtocol {
     }
     
     /// Get chat response for protocol conformance
-    func getChatResponse(messages: [ChatMessage]) async throws -> ChatResponse {
+    func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse {
         // Convert to simple message format
         guard let lastMessage = messages.last else {
             throw NetworkError.invalidRequest
         }
         
         let response = try await sendChatMessage(lastMessage.content)
-        return ChatResponse(
-            reply: response.reply,
-            messageId: response.messageId,
-            suggestedFollowUps: response.suggestedFollowUps
+        return ProtocolChatResponse(
+            response: response.reply,
+            conversation_id: response.messageId
         )
     }
     

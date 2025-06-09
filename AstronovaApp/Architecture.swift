@@ -411,12 +411,12 @@ class MockAPIServices: ObservableObject, APIServicesProtocol {
         )
     }
     
-    func getChatResponse(messages: [ChatMessage]) async throws -> ChatResponse {
+    func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse {
         if shouldFailRequests {
             throw NetworkError.serverError(500)
         }
         
-        return ChatResponse(
+        return ProtocolChatResponse(
             response: "Mock AI response",
             conversation_id: "mock-conversation-id"
         )
