@@ -1,5 +1,22 @@
 import SwiftUI
 
+// MARK: - Supporting Types
+
+struct DetailedPlanetaryPosition: Codable, Identifiable {
+    let id: String
+    let symbol: String
+    let name: String
+    let sign: String
+    let degree: Double
+    let retrograde: Bool
+    let house: Int?
+    let significance: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, symbol, name, sign, degree, retrograde, house, significance
+    }
+}
+
 struct PlanetaryCalculationsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var auth: AuthState
@@ -776,9 +793,9 @@ struct PlanetaryCalculationView: View {
         do {
             let profile = userProfileManager.profile
             guard let birthTime = profile.birthTime,
-                  let coordinates = profile.birthCoordinates,
-                  let timezone = profile.timezone,
-                  let birthPlace = profile.birthPlace else {
+                  let _ = profile.birthCoordinates,
+                  let _ = profile.timezone,
+                  let _ = profile.birthPlace else {
                 isLoading = false
                 return
             }
@@ -786,11 +803,11 @@ struct PlanetaryCalculationView: View {
             // Format dates for API
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
-            let birthDateString = dateFormatter.string(from: profile.birthDate)
+            _ = dateFormatter.string(from: profile.birthDate)
             
             let timeFormatter = DateFormatter()
             timeFormatter.dateFormat = "HH:mm"
-            let birthTimeString = timeFormatter.string(from: birthTime)
+            _ = timeFormatter.string(from: birthTime)
             
             // Get planetary positions from API
             // Note: Temporarily disabled - requires proper PlanetaryDataService integration
@@ -801,7 +818,7 @@ struct PlanetaryCalculationView: View {
             //     longitude: coordinates.longitude,
             //     timezone: timezone
             // )
-            let positions: [PlanetaryPosition] = [] // Placeholder
+            let positions: [DetailedPlanetaryPosition] = [] // Placeholder
             
             // Create calculation data
             await MainActor.run {
@@ -868,7 +885,7 @@ struct PlanetaryCalculationView: View {
                 .foregroundStyle(.white)
             
             VStack(spacing: 8) {
-                ForEach(calculations.planetaryPositions, id: \.id) { (position: PlanetaryPosition) in
+                ForEach(calculations.planetaryPositions, id: \.id) { (position: DetailedPlanetaryPosition) in
                     HStack {
                         Text(position.name)
                             .font(.subheadline.weight(.medium))
@@ -1020,12 +1037,12 @@ struct PlanetaryCalculationView: View {
 
 struct UserCalculationData {
     let profile: UserProfile
-    let planetaryPositions: [PlanetaryPosition]
+    let planetaryPositions: [DetailedPlanetaryPosition]
     let julianDate: Double
     let ayanamsa: Double
     let siderealPositions: [SiderealPlanetData]
     
-    init(profile: UserProfile, planetaryPositions: [PlanetaryPosition]) {
+    init(profile: UserProfile, planetaryPositions: [DetailedPlanetaryPosition]) {
         self.profile = profile
         self.planetaryPositions = planetaryPositions
         self.julianDate = Self.calculateJulianDate(from: profile)
@@ -1116,7 +1133,7 @@ struct UserCalculationData {
     }
     
     private static func calculateSiderealPositions(
-        from positions: [PlanetaryPosition],
+        from positions: [DetailedPlanetaryPosition],
         ayanamsa: Double
     ) -> [SiderealPlanetData] {
         return positions.map { position in

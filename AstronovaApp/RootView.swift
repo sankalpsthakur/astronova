@@ -5943,7 +5943,8 @@ struct ContactsPickerView: View {
         case .notDetermined:
             hasContactsAccess = false
         case .limited:
-            <#code#>
+            hasContactsAccess = true
+            loadContacts()
         @unknown default:
             hasContactsAccess = false
         }

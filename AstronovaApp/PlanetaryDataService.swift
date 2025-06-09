@@ -1,6 +1,6 @@
 import Foundation
 
-struct PlanetaryPosition: Codable, Identifiable {
+struct DetailedPlanetaryPosition: Codable, Identifiable {
     let id: String
     let symbol: String
     let name: String
@@ -16,7 +16,7 @@ struct PlanetaryPosition: Codable, Identifiable {
 }
 
 struct PlanetaryDataResponse: Codable {
-    let planets: [PlanetaryPosition]
+    let planets: [DetailedPlanetaryPosition]
     let timestamp: String
     
     enum CodingKeys: String, CodingKey {
@@ -53,7 +53,7 @@ class PlanetaryDataService {
     
     private init() {}
     
-    func getCurrentPlanetaryPositions() async throws -> [PlanetaryPosition] {
+    func getCurrentPlanetaryPositions() async throws -> [DetailedPlanetaryPosition] {
         // Check if we should use custom static data
         if isUsingCustomPositions() {
             return getCustomPlanetaryPositions()
@@ -76,7 +76,7 @@ class PlanetaryDataService {
         latitude: Double,
         longitude: Double,
         timezone: String
-    ) async throws -> [PlanetaryPosition] {
+    ) async throws -> [DetailedPlanetaryPosition] {
         let request = BirthChartRequest(
             birthDate: birthDate,
             birthTime: birthTime,
@@ -122,18 +122,18 @@ class PlanetaryDataService {
         }
     }
     
-    private func getDefaultPlanetaryPositions() -> [PlanetaryPosition] {
+    private func getDefaultPlanetaryPositions() -> [DetailedPlanetaryPosition] {
         return [
-            PlanetaryPosition(id: "sun", symbol: "☉", name: "Sun", sign: "Sagittarius", degree: 15.5, retrograde: false, house: 1, significance: "Core identity and vitality"),
-            PlanetaryPosition(id: "moon", symbol: "☽", name: "Moon", sign: "Pisces", degree: 22.3, retrograde: false, house: 4, significance: "Emotions and intuition"),
-            PlanetaryPosition(id: "mercury", symbol: "☿", name: "Mercury", sign: "Scorpio", degree: 8.7, retrograde: false, house: 12, significance: "Communication and thinking"),
-            PlanetaryPosition(id: "venus", symbol: "♀", name: "Venus", sign: "Capricorn", degree: 2.1, retrograde: false, house: 2, significance: "Love and values"),
-            PlanetaryPosition(id: "mars", symbol: "♂", name: "Mars", sign: "Leo", degree: 18.9, retrograde: false, house: 9, significance: "Energy and action"),
-            PlanetaryPosition(id: "jupiter", symbol: "♃", name: "Jupiter", sign: "Gemini", degree: 12.4, retrograde: true, house: 7, significance: "Growth and wisdom"),
-            PlanetaryPosition(id: "saturn", symbol: "♄", name: "Saturn", sign: "Aquarius", degree: 6.8, retrograde: false, house: 3, significance: "Structure and discipline"),
-            PlanetaryPosition(id: "uranus", symbol: "♅", name: "Uranus", sign: "Taurus", degree: 25.2, retrograde: true, house: 6, significance: "Innovation and change"),
-            PlanetaryPosition(id: "neptune", symbol: "♆", name: "Neptune", sign: "Pisces", degree: 29.7, retrograde: false, house: 4, significance: "Dreams and spirituality"),
-            PlanetaryPosition(id: "pluto", symbol: "♇", name: "Pluto", sign: "Capricorn", degree: 28.1, retrograde: false, house: 2, significance: "Transformation and power")
+            DetailedPlanetaryPosition(id: "sun", symbol: "☉", name: "Sun", sign: "Sagittarius", degree: 15.5, retrograde: false, house: 1, significance: "Core identity and vitality"),
+            DetailedPlanetaryPosition(id: "moon", symbol: "☽", name: "Moon", sign: "Pisces", degree: 22.3, retrograde: false, house: 4, significance: "Emotions and intuition"),
+            DetailedPlanetaryPosition(id: "mercury", symbol: "☿", name: "Mercury", sign: "Scorpio", degree: 8.7, retrograde: false, house: 12, significance: "Communication and thinking"),
+            DetailedPlanetaryPosition(id: "venus", symbol: "♀", name: "Venus", sign: "Capricorn", degree: 2.1, retrograde: false, house: 2, significance: "Love and values"),
+            DetailedPlanetaryPosition(id: "mars", symbol: "♂", name: "Mars", sign: "Leo", degree: 18.9, retrograde: false, house: 9, significance: "Energy and action"),
+            DetailedPlanetaryPosition(id: "jupiter", symbol: "♃", name: "Jupiter", sign: "Gemini", degree: 12.4, retrograde: true, house: 7, significance: "Growth and wisdom"),
+            DetailedPlanetaryPosition(id: "saturn", symbol: "♄", name: "Saturn", sign: "Aquarius", degree: 6.8, retrograde: false, house: 3, significance: "Structure and discipline"),
+            DetailedPlanetaryPosition(id: "uranus", symbol: "♅", name: "Uranus", sign: "Taurus", degree: 25.2, retrograde: true, house: 6, significance: "Innovation and change"),
+            DetailedPlanetaryPosition(id: "neptune", symbol: "♆", name: "Neptune", sign: "Pisces", degree: 29.7, retrograde: false, house: 4, significance: "Dreams and spirituality"),
+            DetailedPlanetaryPosition(id: "pluto", symbol: "♇", name: "Pluto", sign: "Capricorn", degree: 28.1, retrograde: false, house: 2, significance: "Transformation and power")
         ]
     }
     
@@ -150,22 +150,22 @@ class PlanetaryDataService {
     }
     
     /// Get custom planetary positions from storage
-    func getCustomPlanetaryPositions() -> [PlanetaryPosition] {
+    func getCustomPlanetaryPositions() -> [DetailedPlanetaryPosition] {
         guard let data = userDefaults.data(forKey: customPlanetsKey),
-              let positions = try? JSONDecoder().decode([PlanetaryPosition].self, from: data) else {
+              let positions = try? JSONDecoder().decode([DetailedPlanetaryPosition].self, from: data) else {
             return getDefaultPlanetaryPositions()
         }
         return positions
     }
     
     /// Save custom planetary positions to storage
-    func setCustomPlanetaryPositions(_ positions: [PlanetaryPosition]) throws {
+    func setCustomPlanetaryPositions(_ positions: [DetailedPlanetaryPosition]) throws {
         let data = try JSONEncoder().encode(positions)
         userDefaults.set(data, forKey: customPlanetsKey)
     }
     
     /// Update a specific planet's position in custom data
-    func updateCustomPlanetPosition(id: String, position: PlanetaryPosition) throws {
+    func updateCustomPlanetPosition(id: String, position: DetailedPlanetaryPosition) throws {
         var positions = getCustomPlanetaryPositions()
         
         if let index = positions.firstIndex(where: { $0.id == id }) {
@@ -197,7 +197,7 @@ class PlanetaryDataService {
     }
     
     /// Get a specific planet position by ID from current data source
-    func getPlanetPosition(id: String) async throws -> PlanetaryPosition? {
+    func getPlanetPosition(id: String) async throws -> DetailedPlanetaryPosition? {
         let positions = try await getCurrentPlanetaryPositions()
         return positions.first { $0.id == id }
     }
