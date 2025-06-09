@@ -30,7 +30,7 @@ struct PlanetaryCalculationsView: View {
                             .tag(1)
                         
                         // Steps 3-6: Pro Content
-                        if auth.subscriptionManager.isProUser {
+                        if auth.state == .signedIn {
                             SiderealTimeAnimationView()
                                 .tag(2)
                             
@@ -188,10 +188,9 @@ struct PlanetaryCalculationsView: View {
                 
                 // Next Button or Pro Upsell
                 if currentStep < totalSteps - 1 {
-                    if currentStep >= freeSteps && !auth.subscriptionManager.isProUser {
+                    if currentStep >= freeSteps && auth.state != .signedIn {
                         Button {
-                            // Show Pro upgrade flow
-                            auth.subscriptionManager.showPaywall()
+                            // TODO: Show paywall when subscription system is integrated
                         } label: {
                             HStack(spacing: 8) {
                                 Text("Unlock Pro")
@@ -244,7 +243,7 @@ struct PlanetaryCalculationsView: View {
             return .green
         } else if step == currentStep {
             return .white
-        } else if step >= freeSteps && !auth.subscriptionManager.isProUser {
+        } else if step >= freeSteps && auth.state != .signedIn {
             return .gray.opacity(0.5)
         } else {
             return .gray.opacity(0.3)
@@ -513,11 +512,11 @@ struct PlanetaryCalculationView: View {
     @State private var isLoading = false
     
     @EnvironmentObject private var userProfileManager: UserProfileManager
-    @Environment(\.dependencies) private var dependencies
     
-    private var planetaryService: PlanetaryDataService {
-        return PlanetaryDataService.shared
-    }
+    // Note: PlanetaryDataService access moved to methods to avoid build issues
+    // private var planetaryService: PlanetaryDataService {
+    //     return PlanetaryDataService.shared
+    // }
     
     var body: some View {
         ScrollView {
@@ -794,13 +793,15 @@ struct PlanetaryCalculationView: View {
             let birthTimeString = timeFormatter.string(from: birthTime)
             
             // Get planetary positions from API
-            let positions = try await planetaryService.getBirthChartPositions(
-                birthDate: birthDateString,
-                birthTime: birthTimeString,
-                latitude: coordinates.latitude,
-                longitude: coordinates.longitude,
-                timezone: timezone
-            )
+            // Note: Temporarily disabled - requires proper PlanetaryDataService integration
+            // let positions = try await PlanetaryDataService.shared.getBirthChartPositions(
+            //     birthDate: birthDateString,
+            //     birthTime: birthTimeString,
+            //     latitude: coordinates.latitude,
+            //     longitude: coordinates.longitude,
+            //     timezone: timezone
+            // )
+            let positions: [PlanetaryPosition] = [] // Placeholder
             
             // Create calculation data
             await MainActor.run {
@@ -867,7 +868,7 @@ struct PlanetaryCalculationView: View {
                 .foregroundStyle(.white)
             
             VStack(spacing: 8) {
-                ForEach(calculations.planetaryPositions, id: \.id) { position in
+                ForEach(calculations.planetaryPositions, id: \.id) { (position: PlanetaryPosition) in
                     HStack {
                         Text(position.name)
                             .font(.subheadline.weight(.medium))
@@ -875,7 +876,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(String(format: "%.1f°", position.degree))
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.cyan)
                             .frame(width: 80, alignment: .leading)
                         
@@ -918,7 +919,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(String(format: "%.1f°", data.siderealDegree))
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.green)
                             .frame(width: 100, alignment: .leading)
                         
@@ -955,7 +956,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(data.longitude)
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.cyan)
                             .frame(width: 80, alignment: .leading)
                         
@@ -992,7 +993,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(data.longitude)
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.green)
                             .frame(width: 100, alignment: .leading)
                         
@@ -1196,6 +1197,7 @@ struct AspectVisualizationView: View {
     @State private var currentInterpretation = 0
     @State private var showChart = false
     @State private var selectedPlanet: String? = nil
+    @State private var userCalculations: UserCalculationData? = nil
     
     private let interpretations = [
         InterpretationData(
@@ -1354,6 +1356,11 @@ struct AspectVisualizationView: View {
     }
     
     private var chartWheelView: some View {
+        VStack {
+            Text("Chart Wheel Coming Soon")
+                .foregroundStyle(.white)
+        }
+        /*
         ZStack {
             // Outer circle (chart boundary)
             Circle()
@@ -1444,6 +1451,7 @@ struct AspectVisualizationView: View {
                 .foregroundStyle(.white.opacity(0.6))
                 .padding(.top, 8)
         }
+        */
     }
     
     private func interpretationCard(interpretation: InterpretationData, index: Int) -> some View {
@@ -1602,7 +1610,7 @@ struct ProUpsellView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             
             Button {
-                auth.subscriptionManager.showPaywall()
+                // TODO: Show paywall when subscription system is integrated
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "crown.fill")

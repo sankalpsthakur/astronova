@@ -98,14 +98,6 @@ class StoreManager: ObservableObject, StoreManagerProtocol {
 
 // MARK: - Notification.Name Helpers
 
-extension Notification.Name {
-    static let switchToTab            = Notification.Name("switchToTab")
-    static let switchToProfileSection = Notification.Name("switchToProfileSection")
-}
-
-// Duplicate Notification.Name extension removed. The definitions for
-// `switchToTab` and `switchToProfileSection` already exist at the top of this
-// file.
 
 /// Decides which high-level screen to show based on authentication state.
 struct RootView: View {
@@ -5950,6 +5942,8 @@ struct ContactsPickerView: View {
             hasContactsAccess = false
         case .notDetermined:
             hasContactsAccess = false
+        case .limited:
+            <#code#>
         @unknown default:
             hasContactsAccess = false
         }

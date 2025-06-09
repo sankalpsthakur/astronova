@@ -25,22 +25,24 @@ struct MapKitLocationService {
         do {
             let response = try await search.start()
             
-            let results = response.mapItems.compactMap { item -> LocationResult? in
+            var results: [LocationResult] = []
+            for item in response.mapItems {
                 let coordinate = item.placemark.coordinate
                 
                 // Skip invalid coordinates
                 guard coordinate.latitude != 0 || coordinate.longitude != 0 else {
-                    return nil
+                    continue
                 }
                 
                 let fullName = formatPlacemarkName(item.placemark)
                 let timezone = await getTimezoneForCoordinate(coordinate)
                 
-                return LocationResult(
+                let locationResult = LocationResult(
                     fullName: fullName.isEmpty ? (item.name ?? "Unknown Location") : fullName,
                     coordinate: coordinate,
                     timezone: timezone
                 )
+                results.append(locationResult)
             }
             
             logger.info("Found \(results.count) results for query: \(query)")
@@ -115,7 +117,7 @@ struct MapKitLocationService {
             }
             
             let fullName = formatPlacemarkName(placemark)
-            let timezone = getTimezoneForCoordinate(coordinate)
+            let timezone = await getTimezoneForCoordinate(coordinate)
             
             return LocationResult(
                 fullName: fullName.isEmpty ? "Unknown Location" : fullName,

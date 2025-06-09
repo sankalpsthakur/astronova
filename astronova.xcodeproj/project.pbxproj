@@ -21,10 +21,10 @@
 		3D01F8122C0A000000000006 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8092C0A000000000006 /* NetworkClient.swift */; };
 		3D01F8132C0A000000000007 /* APIServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8082C0A000000000007 /* APIServices.swift */; };
 		3D01F8142C0A000000000008 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8072C0A000000000008 /* APIModels.swift */; };
-		5A2A65F22DF7645100B900A5 /* MapKitLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A65F02DF7645100B900A5 /* MapKitLocationService.swift */; };
-		5A2A65F32DF7645100B900A5 /* MapKitAutocompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A65EE2DF7645100B900A5 /* MapKitAutocompleteView.swift */; };
+		5A2A65F22DF7645100B900A5 /* MapKitLocationService 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A65F02DF7645100B900A5 /* MapKitLocationService 2.swift */; };
+		5A2A65F32DF7645100B900A5 /* MapKitAutocompleteView 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A65EE2DF7645100B900A5 /* MapKitAutocompleteView 2.swift */; };
 		5A2A65F42DF7645100B900A5 /* PlanetaryCalculationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A65F12DF7645100B900A5 /* PlanetaryCalculationsView.swift */; };
-		5A2A65F52DF7645100B900A5 /* MapKitLocationPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A65EF2DF7645100B900A5 /* MapKitLocationPicker.swift */; };
+		5A2A65F52DF7645100B900A5 /* MapKitLocationPicker 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2A65EF2DF7645100B900A5 /* MapKitLocationPicker 2.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,9 +65,9 @@
 		3D01F8152C0A000000000009 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3D01F8162C0A00000000000A /* AstronovaApp.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaApp.entitlements; sourceTree = "<group>"; };
 		3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaAppDebug.entitlements; sourceTree = "<group>"; };
-		5A2A65EE2DF7645100B900A5 /* MapKitAutocompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitAutocompleteView.swift; sourceTree = "<group>"; };
-		5A2A65EF2DF7645100B900A5 /* MapKitLocationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitLocationPicker.swift; sourceTree = "<group>"; };
-		5A2A65F02DF7645100B900A5 /* MapKitLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitLocationService.swift; sourceTree = "<group>"; };
+		5A2A65EE2DF7645100B900A5 /* MapKitAutocompleteView 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MapKitAutocompleteView 2.swift"; sourceTree = "<group>"; };
+		5A2A65EF2DF7645100B900A5 /* MapKitLocationPicker 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MapKitLocationPicker 2.swift"; sourceTree = "<group>"; };
+		5A2A65F02DF7645100B900A5 /* MapKitLocationService 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MapKitLocationService 2.swift"; sourceTree = "<group>"; };
 		5A2A65F12DF7645100B900A5 /* PlanetaryCalculationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanetaryCalculationsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -103,9 +103,6 @@
 				3D01F7F32C0A000000000001 /* AstronovaAppTests */,
 				3D01F7FD2C0A000000000001 /* AstronovaAppUITests */,
 				3D01F7E12C0A000000000001 /* Products */,
-				5A2A65EE2DF7645100B900A5 /* MapKitAutocompleteView.swift */,
-				5A2A65EF2DF7645100B900A5 /* MapKitLocationPicker.swift */,
-				5A2A65F02DF7645100B900A5 /* MapKitLocationService.swift */,
 				5A2A65F12DF7645100B900A5 /* PlanetaryCalculationsView.swift */,
 			);
 			sourceTree = "<group>";
@@ -113,6 +110,9 @@
 		3D01F7E12C0A000000000001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				5A2A65EE2DF7645100B900A5 /* MapKitAutocompleteView 2.swift */,
+				5A2A65EF2DF7645100B900A5 /* MapKitLocationPicker 2.swift */,
+				5A2A65F02DF7645100B900A5 /* MapKitLocationService 2.swift */,
 				3D01F7E02C0A000000000001 /* AstronovaApp.app */,
 				3D01F7F02C0A000000000001 /* AstronovaAppTests.xctest */,
 				3D01F7FA2C0A000000000001 /* AstronovaAppUITests.xctest */,
@@ -299,10 +299,10 @@
 				3D01F7E62C0A000000000001 /* RootView.swift in Sources */,
 				3D01F8142C0A000000000008 /* APIModels.swift in Sources */,
 				3D01F8132C0A000000000007 /* APIServices.swift in Sources */,
-				5A2A65F22DF7645100B900A5 /* MapKitLocationService.swift in Sources */,
-				5A2A65F32DF7645100B900A5 /* MapKitAutocompleteView.swift in Sources */,
+				5A2A65F22DF7645100B900A5 /* MapKitLocationService 2.swift in Sources */,
+				5A2A65F32DF7645100B900A5 /* MapKitAutocompleteView 2.swift in Sources */,
 				5A2A65F42DF7645100B900A5 /* PlanetaryCalculationsView.swift in Sources */,
-				5A2A65F52DF7645100B900A5 /* MapKitLocationPicker.swift in Sources */,
+				5A2A65F52DF7645100B900A5 /* MapKitLocationPicker 2.swift in Sources */,
 				3D01F8122C0A000000000006 /* NetworkClient.swift in Sources */,
 				3D01F8112C0A000000000005 /* LoadingView.swift in Sources */,
 				3D01F8102C0A000000000004 /* OnboardingView.swift in Sources */,
