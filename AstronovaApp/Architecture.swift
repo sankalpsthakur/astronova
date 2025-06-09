@@ -3,99 +3,7 @@ import SwiftUI
 import Combine
 import CoreLocation
 
-// MARK: - Protocols
-
-// MARK: - Simple Response Types for Protocol Conformance
-
-/// Simple horoscope response for protocol conformance
-struct SimpleHoroscopeResponse: Codable {
-    let sign: String
-    let period: String
-    let content: String
-    let date: Date
-    
-    init(sign: String, period: String, content: String, date: Date) {
-        self.sign = sign
-        self.period = period
-        self.content = content
-        self.date = date
-    }
-}
-
-/// Simple chat message for protocol conformance
-struct SimpleChatMessage: Codable {
-    let role: String // "user" or "assistant"
-    let content: String
-    let timestamp: Date?
-    
-    init(role: String, content: String, timestamp: Date? = nil) {
-        self.role = role
-        self.content = content
-        self.timestamp = timestamp
-    }
-}
-
-/// Simple chat request for protocol conformance
-struct SimpleChatRequest: Codable {
-    let messages: [SimpleChatMessage]
-    
-    init(messages: [SimpleChatMessage]) {
-        self.messages = messages
-    }
-}
-
-/// Simple chat response for protocol conformance
-struct SimpleChatResponse: Codable {
-    let response: String
-    let conversation_id: String
-    
-    init(response: String, conversation_id: String) {
-        self.response = response
-        self.conversation_id = conversation_id
-    }
-}
-
-// MARK: - Network Client Protocol
-
-protocol NetworkClientProtocol {
-    func healthCheck() async throws -> HealthResponse
-    func request<T: Codable>(
-        endpoint: String,
-        method: HTTPMethod,
-        body: Encodable?,
-        responseType: T.Type
-    ) async throws -> T
-    func requestData(
-        endpoint: String,
-        method: HTTPMethod,
-        body: Encodable?
-    ) async throws -> Data
-}
-
-// MARK: - API Services Protocol
-
-protocol APIServicesProtocol: ObservableObject {
-    func healthCheck() async throws -> HealthResponse
-    func generateChart(birthData: BirthData, systems: [String]) async throws -> ChartResponse
-    func generateChart(from profile: UserProfile) async throws -> ChartResponse
-    func getChartAspects(birthData: BirthData) async throws -> Data
-    func getHoroscope(sign: String, period: String) async throws -> SimpleHoroscopeResponse
-    func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse
-    func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse
-    func searchLocations(query: String) async throws -> [LocationResult]
-    func getCurrentTransits() async throws -> TransitsResponse
-    func getChatResponse(messages: [SimpleChatMessage]) async throws -> SimpleChatResponse
-}
-
-// MARK: - Store Manager Protocol
-
-protocol StoreManagerProtocol: ObservableObject {
-    var hasProSubscription: Bool { get }
-    var products: [String: String] { get }
-    
-    func loadProducts()
-    func purchaseProduct(productId: String) async -> Bool
-}
+// MARK: - Architecture Components
 
 // MARK: - Dependency Container
 
@@ -113,16 +21,21 @@ class DependencyContainer: ObservableObject {
     init(
         networkClient: NetworkClientProtocol = NetworkClient(),
         apiServices: APIServicesProtocol? = nil,
-        storeManager: StoreManagerProtocol = StoreManager()
+        storeManager: StoreManagerProtocol? = nil
     ) {
         self._networkClient = networkClient
-        self._storeManager = storeManager
         
-        // Initialize APIServices with the provided networkClient
+        // Initialize services with dependency injection
         if let apiServices = apiServices {
             self._apiServices = apiServices
         } else {
             self._apiServices = APIServices(networkClient: networkClient)
+        }
+        
+        if let storeManager = storeManager {
+            self._storeManager = storeManager
+        } else {
+            self._storeManager = StoreManager.shared
         }
     }
     
@@ -317,140 +230,13 @@ extension View {
     }
 }
 
-// MARK: - ViewModels
+// MARK: - Notification Extensions
 
-// MARK: - Main View Model
-
-@MainActor
-class MainViewModel: ObservableObject {
-    // MARK: - Published Properties
-    
-    @Published var selectedTab: Int = 0
-    @Published var selectedSection: String = "overview"
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    @Published var showingError = false
-    
-    // MARK: - Dependencies
-    
-    private let apiServices: APIServicesProtocol
-    private let storeManager: StoreManagerProtocol
-    private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Initialization
-    
-    init(dependencies: DependencyContainer = .shared) {
-        self.apiServices = dependencies.apiServices
-        self.storeManager = dependencies.storeManager
-        
-        setupNotificationObservers()
-    }
-    
-    // MARK: - Public Methods
-    
-    func switchToTab(_ tab: Int) {
-        selectedTab = tab
-    }
-    
-    func switchToProfileSection(_ section: String) {
-        selectedSection = section
-        selectedTab = 2 // Profile tab
-    }
-    
-    func showError(_ message: String) {
-        errorMessage = message
-        showingError = true
-    }
-    
-    func clearError() {
-        errorMessage = nil
-        showingError = false
-    }
-    
-    // MARK: - Private Methods
-    
-    private func setupNotificationObservers() {
-        NotificationCenter.default.publisher(for: .switchToTab)
-            .compactMap { $0.object as? Int }
-            .sink { [weak self] tab in
-                self?.switchToTab(tab)
-            }
-            .store(in: &cancellables)
-        
-        NotificationCenter.default.publisher(for: .switchToProfileSection)
-            .compactMap { $0.object as? String }
-            .sink { [weak self] section in
-                self?.switchToProfileSection(section)
-            }
-            .store(in: &cancellables)
-    }
+extension Notification.Name {
+    static let switchToTab = Notification.Name("switchToTab")
+    static let switchToProfileSection = Notification.Name("switchToProfileSection")
 }
 
-// MARK: - Chart View Model
-
-@MainActor
-class ChartViewModel: ObservableObject {
-    // MARK: - Published Properties
-    
-    @Published var currentChart: ChartResponse?
-    @Published var isGeneratingChart = false
-    @Published var chartError: String?
-    @Published var showingChartError = false
-    
-    // MARK: - Dependencies
-    
-    private let apiServices: APIServicesProtocol
-    private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Initialization
-    
-    init(apiServices: APIServicesProtocol) {
-        self.apiServices = apiServices
-    }
-    
-    // MARK: - Public Methods
-    
-    func generateChart(for profile: UserProfile) async {
-        isGeneratingChart = true
-        chartError = nil
-        
-        do {
-            let chart = try await apiServices.generateChart(from: profile)
-            currentChart = chart
-        } catch {
-            chartError = "Failed to generate chart: \(error.localizedDescription)"
-            showingChartError = true
-        }
-        
-        isGeneratingChart = false
-    }
-    
-    func generateChart(with birthData: BirthData, systems: [String] = ["western", "vedic"]) async {
-        isGeneratingChart = true
-        chartError = nil
-        
-        do {
-            let chart = try await apiServices.generateChart(birthData: birthData, systems: systems)
-            currentChart = chart
-        } catch {
-            chartError = "Failed to generate chart: \(error.localizedDescription)"
-            showingChartError = true
-        }
-        
-        isGeneratingChart = false
-    }
-    
-    func clearChart() {
-        currentChart = nil
-        chartError = nil
-        showingChartError = false
-    }
-    
-    func clearError() {
-        chartError = nil
-        showingChartError = false
-    }
-}
 
 // MARK: - Mock Services
 
@@ -556,12 +342,12 @@ class MockAPIServices: ObservableObject, APIServicesProtocol {
         return Data()
     }
     
-    func getHoroscope(sign: String, period: String) async throws -> SimpleHoroscopeResponse {
+    func getHoroscope(sign: String, period: String) async throws -> HoroscopeResponse {
         if shouldFailRequests {
             throw NetworkError.serverError(500)
         }
         
-        return SimpleHoroscopeResponse(
+        return HoroscopeResponse(
             sign: sign,
             period: period,
             content: "Mock horoscope content for \(sign)",
@@ -607,10 +393,8 @@ class MockAPIServices: ObservableObject, APIServicesProtocol {
         
         return [
             LocationResult(
-                name: "Mock City",
-                country: "Mock Country",
-                latitude: 40.7128,
-                longitude: -74.0060,
+                fullName: "Mock City, Mock State, Mock Country",
+                coordinate: CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060),
                 timezone: "America/New_York"
             )
         ]
@@ -627,12 +411,12 @@ class MockAPIServices: ObservableObject, APIServicesProtocol {
         )
     }
     
-    func getChatResponse(messages: [SimpleChatMessage]) async throws -> SimpleChatResponse {
+    func getChatResponse(messages: [ChatMessage]) async throws -> ChatResponse {
         if shouldFailRequests {
             throw NetworkError.serverError(500)
         }
         
-        return SimpleChatResponse(
+        return ChatResponse(
             response: "Mock AI response",
             conversation_id: "mock-conversation-id"
         )

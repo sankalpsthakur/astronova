@@ -2,12 +2,20 @@ import Foundation
 import CoreLocation
 
 /// Main API service class that handles all backend communication
-class APIServices: ObservableObject {
+class APIServices: ObservableObject, APIServicesProtocol {
     static let shared = APIServices()
     
-    private let networkClient = NetworkClient.shared
+    private let networkClient: NetworkClientProtocol
     
-    private init() {}
+    // Dependency-injectable initializer
+    init(networkClient: NetworkClientProtocol = NetworkClient.shared) {
+        self.networkClient = networkClient
+    }
+    
+    // Keep singleton for backward compatibility but prefer DI
+    private convenience init() {
+        self.init(networkClient: NetworkClient.shared)
+    }
     
     // MARK: - Health Check
     
@@ -59,8 +67,8 @@ class APIServices: ObservableObject {
     
     // MARK: - Location Services
     
-    /// Search for locations by name
-    func searchLocations(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
+    /// Search for locations by name (detailed response)
+    func searchLocationsDetailed(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
         var components = URLComponents()
         components.path = "/api/v1/locations/search"
         components.queryItems = [
@@ -105,8 +113,81 @@ class APIServices: ObservableObject {
     
     // MARK: - Horoscope Services
     
+    // MARK: - Protocol Required Methods
+    
+    /// Get horoscope for protocol conformance
+    func getHoroscope(sign: String, period: String) async throws -> HoroscopeResponse {
+        switch period.lowercased() {
+        case "daily":
+            return try await getDailyHoroscope(for: sign)
+        case "weekly":
+            return try await getWeeklyHoroscope(for: sign)
+        case "monthly":
+            return try await getMonthlyHoroscope(for: sign)
+        default:
+            return try await getDailyHoroscope(for: sign)
+        }
+    }
+    
+    /// Get compatibility report for protocol conformance
+    func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse {
+        // Convert legacy method to return structured data
+        let data = try await calculateCompatibility(person1: person1, person2: person2)
+        let matchResponse = try JSONDecoder().decode(MatchResponse.self, from: data)
+        
+        return CompatibilityResponse(
+            compatibility_score: Double(matchResponse.overallScore) / 100.0,
+            summary: "Compatibility analysis based on astrological factors",
+            detailed_analysis: "Detailed analysis of planetary aspects and compatibility",
+            strengths: ["Communication", "Emotional connection"],
+            challenges: ["Different life approaches"]
+        )
+    }
+    
+    /// Get detailed report for protocol conformance
+    func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse {
+        return try await generateDetailedReport(birthData: birthData, type: reportType)
+    }
+    
+    /// Search locations for protocol conformance
+    func searchLocations(query: String) async throws -> [LocationResult] {
+        let response = try await searchLocationsDetailed(query: query, limit: 10)
+        return response.locations
+    }
+    
+    /// Get current transits for protocol conformance
+    func getCurrentTransits() async throws -> TransitsResponse {
+        let positions = try await getCurrentPlanetaryPositions()
+        let transits = positions.map { key, position in
+            Transit(
+                planet: key,
+                aspect: "conjunction",
+                target: "natal_position",
+                orb: 0.0,
+                isExact: true
+            )
+        }
+        
+        return TransitsResponse(date: Date(), transits: transits)
+    }
+    
+    /// Get chat response for protocol conformance
+    func getChatResponse(messages: [ChatMessage]) async throws -> ChatResponse {
+        // Convert to simple message format
+        guard let lastMessage = messages.last else {
+            throw NetworkError.invalidRequest
+        }
+        
+        let response = try await sendChatMessage(lastMessage.content)
+        return ChatResponse(
+            reply: response.reply,
+            messageId: response.messageId,
+            suggestedFollowUps: response.suggestedFollowUps
+        )
+    }
+    
     /// Get daily horoscope for a sign
-    func getDailyHoroscope(for sign: String, date: Date? = nil) async throws -> AstronovaApp.HoroscopeResponse {
+    func getDailyHoroscope(for sign: String, date: Date? = nil) async throws -> HoroscopeResponse {
         var components = URLComponents()
         components.path = "/api/v1/horoscope"
         
@@ -348,7 +429,7 @@ extension APIServices {
     
     /// Search for location and get timezone
     func findLocationWithTimezone(query: String) async throws -> LocationResult? {
-        let searchResponse = try await searchLocations(query: query, limit: 1)
+        let searchResponse = try await searchLocationsDetailed(query: query, limit: 1)
         return searchResponse.locations.first
     }
 }

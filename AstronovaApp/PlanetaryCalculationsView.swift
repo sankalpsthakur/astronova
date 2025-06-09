@@ -513,7 +513,11 @@ struct PlanetaryCalculationView: View {
     @State private var isLoading = false
     
     @EnvironmentObject private var userProfileManager: UserProfileManager
-    private let planetaryService = PlanetaryDataService.shared
+    @Environment(\.dependencies) private var dependencies
+    
+    private var planetaryService: PlanetaryDataService {
+        return PlanetaryDataService.shared
+    }
     
     var body: some View {
         ScrollView {

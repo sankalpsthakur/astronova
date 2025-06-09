@@ -3,6 +3,7 @@ import Foundation
 /// NetworkError enum for handling API errors
 enum NetworkError: Error, LocalizedError {
     case invalidURL
+    case invalidRequest
     case noData
     case decodingError
     case serverError(Int)
@@ -12,6 +13,8 @@ enum NetworkError: Error, LocalizedError {
         switch self {
         case .invalidURL:
             return "Invalid URL"
+        case .invalidRequest:
+            return "Invalid request"
         case .noData:
             return "No data received"
         case .decodingError:
@@ -33,13 +36,13 @@ enum HTTPMethod: String {
 }
 
 /// NetworkClient handles all HTTP communication with the backend
-class NetworkClient {
+class NetworkClient: NetworkClientProtocol {
     static let shared = NetworkClient()
     
     private let baseURL: String
     private let session: URLSession
     
-    init(baseURL: String? = nil, session: URLSession? = nil) {
+    public init(baseURL: String? = nil, session: URLSession? = nil) {
         // Configuration for development - update for production
         if let baseURL = baseURL {
             self.baseURL = baseURL

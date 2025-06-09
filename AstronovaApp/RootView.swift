@@ -56,7 +56,7 @@ struct ReportPricing {
 
 // MARK: - Store Manager (Placeholder for future StoreKit integration)
 
-class StoreManager: ObservableObject {
+class StoreManager: ObservableObject, StoreManagerProtocol {
     static let shared = StoreManager()
     
     @Published var hasProSubscription = false
