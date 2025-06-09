@@ -17,7 +17,7 @@ class DependencyContainer: ObservableObject {
     init(
         networkClient: NetworkClientProtocol = NetworkClient(),
         apiServices: APIServicesProtocol? = nil,
-        storeManager: StoreManagerProtocol = StoreManager()
+        storeManager: StoreManagerProtocol = StoreKitManager.shared
     ) {
         self._networkClient = networkClient
         self._storeManager = storeManager

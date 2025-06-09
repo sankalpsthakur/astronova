@@ -83,6 +83,17 @@ class StoreManager: ObservableObject, StoreManagerProtocol {
         }
         return true
     }
+    
+    func hasProduct(_ productId: String) -> Bool {
+        if productId == "astronova_pro_monthly" {
+            return hasProSubscription
+        }
+        return true // Stub: assume all products are available
+    }
+    
+    func restorePurchases() async {
+        // Stub implementation - do nothing
+    }
 }
 
 // MARK: - Notification.Name Helpers
