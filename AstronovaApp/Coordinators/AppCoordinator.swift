@@ -44,7 +44,6 @@ enum TabSelection: Int, CaseIterable {
 
 // MARK: - App Coordinator
 
-@MainActor
 class AppCoordinator: ObservableObject {
     // MARK: - Published Properties
     

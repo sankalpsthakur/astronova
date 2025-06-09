@@ -10,7 +10,7 @@ struct PlanetaryCalculationsView: View {
     private let freeSteps = 2 // Free users see steps 0 and 1
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Cosmic Background
                 cosmicBackground

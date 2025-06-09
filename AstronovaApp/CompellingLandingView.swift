@@ -16,6 +16,7 @@ struct CompellingLandingView: View {
     @State private var personalizedInsight = ""
     @State private var currentMoonPhase = "🌙"
     @State private var currentEnergy = "Transformative"
+    @Namespace private var cosmicElements
     
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -28,12 +29,28 @@ struct CompellingLandingView: View {
                 switch currentPhase {
                 case 0:
                     cosmicHookPhase
+                        .transition(.asymmetric(
+                            insertion: .scale.combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
                 case 1:
                     celestialMomentPhase
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
                 case 2:
                     personalizedInsightPhase
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
                 default:
                     signInPhase
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
                 }
             }
         }
@@ -124,7 +141,7 @@ struct CompellingLandingView: View {
             Spacer()
             
             VStack(spacing: 20) {
-                // Pulsing cosmic symbol
+                // Pulsing cosmic symbol with matched geometry
                 ZStack {
                     Circle()
                         .fill(
@@ -138,11 +155,13 @@ struct CompellingLandingView: View {
                         .frame(width: 160, height: 160)
                         .scaleEffect(animateStars ? 1.1 : 0.9)
                         .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateStars)
+                        .matchedGeometryEffect(id: "cosmicAura", in: cosmicElements)
                     
                     Text("✨")
                         .font(.system(size: 60))
                         .rotationEffect(.degrees(animateStars ? 360 : 0))
                         .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: animateStars)
+                        .matchedGeometryEffect(id: "mainCosmicSymbol", in: cosmicElements)
                 }
                 
                 VStack(spacing: 12) {
@@ -182,7 +201,8 @@ struct CompellingLandingView: View {
             
             // Tap to continue
             Button {
-                withAnimation(.easeInOut(duration: 0.8)) {
+                HapticFeedbackService.shared.phaseTransition()
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {
                     currentPhase = 1
                 }
             } label: {
@@ -213,6 +233,11 @@ struct CompellingLandingView: View {
             }
             .opacity(currentPhase >= 0 ? 1 : 0)
             .animation(.easeInOut(duration: 1).delay(2), value: currentPhase)
+            .overlay(
+                StarburstAnimationView(style: .cosmic, duration: 1.5, particleCount: 15)
+                    .opacity(currentPhase == 1 ? 1 : 0)
+                    .allowsHitTesting(false)
+            )
             
             Spacer(minLength: 50)
         }
@@ -240,14 +265,16 @@ struct CompellingLandingView: View {
                         )
                     )
                     .multilineTextAlignment(.center)
+                    .matchedGeometryEffect(id: "mainCosmicSymbol", in: cosmicElements)
             }
             
             // Live cosmic data display
             cosmicDataDisplay
             
             Button {
+                HapticFeedbackService.shared.horoscopeReveal()
                 generatePersonalizedInsight()
-                withAnimation(.easeInOut(duration: 0.8)) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {
                     currentPhase = 2
                 }
             } label: {
@@ -477,7 +504,7 @@ struct CompellingLandingView: View {
             .overlay(
                 Group {
                     if inProgress {
-                        ProgressView()
+                        LoadingView(style: .inline, message: "Connecting to the cosmos...")
                             .foregroundStyle(Color.black)
                     }
                 }
@@ -599,6 +626,7 @@ struct CompellingLandingView: View {
                 }
                 
                 UserDefaults.standard.set(userID, forKey: "apple_user_id")
+                HapticFeedbackService.shared.signInSuccess()
                 await auth.requestSignIn()
             }
         case .failure(let error):

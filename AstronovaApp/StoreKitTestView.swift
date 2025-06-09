@@ -7,7 +7,7 @@ struct StoreKitTestView: View {
     @State private var isLoading = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 Text("StoreKit 2 Integration Test")
                     .font(.title2)

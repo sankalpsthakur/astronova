@@ -9,7 +9,7 @@ struct TodayTab: View {
     @AppStorage("app_launch_count") private var appLaunchCount = 0
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
                     welcomeSection
@@ -35,6 +35,9 @@ struct TodayTab: View {
                     Spacer(minLength: 32)
                 }
                 .padding()
+            }
+            .refreshable {
+                await refreshContent()
             }
             .navigationTitle("Today")
         }
@@ -274,8 +277,7 @@ struct PrimaryCTASection: View {
     }
     
     private func switchToTab(_ index: Int) {
-        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-        impactFeedback.impactOccurred()
+        HapticFeedbackService.shared.tabNavigation()
         NotificationCenter.default.post(name: .switchToTab, object: index)
     }
 }
@@ -361,17 +363,29 @@ struct DiscoveryCTASection: View {
     }
     
     private func switchToProfileCharts() {
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-        impactFeedback.impactOccurred()
+        HapticFeedbackService.shared.lightImpact()
         NotificationCenter.default.post(name: .switchToTab, object: 3)
         NotificationCenter.default.post(name: .switchToProfileSection, object: 1)
     }
     
     private func switchToProfileBookmarks() {
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-        impactFeedback.impactOccurred()
+        HapticFeedbackService.shared.lightImpact()
         NotificationCenter.default.post(name: .switchToTab, object: 3)
         NotificationCenter.default.post(name: .switchToProfileSection, object: 2)
+    }
+    
+    @MainActor
+    private func refreshContent() async {
+        // Refresh auth state and API connectivity
+        await auth.checkAPIConnectivity()
+        
+        // Refresh user data if available
+        if auth.hasFullFunctionality {
+            await auth.refreshUserData()
+        }
+        
+        // Add haptic feedback
+        HapticFeedbackService.shared.loadingComplete()
     }
 }
 

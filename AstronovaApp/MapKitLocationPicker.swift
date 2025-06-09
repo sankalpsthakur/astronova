@@ -249,7 +249,7 @@ struct MapAnnotation: Identifiable {
 }
 
 #Preview {
-    NavigationView {
+    NavigationStack {
         MapKitLocationPicker(selectedLocation: .constant(nil)) { location in
             print("Selected: \(location)")
         }

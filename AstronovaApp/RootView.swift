@@ -1399,7 +1399,7 @@ struct LocationSearchView: View {
     @State private var searchResults: [String] = []
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List(searchResults, id: \.self) { result in
                 Button(result) {
                     query = result
@@ -1764,7 +1764,7 @@ struct TodayTab: View {
     @State private var planetaryPositions: [PlanetaryPosition] = []
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
                     welcomeSection
@@ -2234,7 +2234,7 @@ struct FriendsTab: View {
     @State private var animateHearts = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 32) {
                     // Beautiful header with animated hearts
@@ -2534,7 +2534,7 @@ struct NexusTab: View {
     private let freeMessageLimit = 5
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Cosmic animated background
                 CosmicChatBackground(animateStars: $animateStars, animateGradient: $animateGradient)
@@ -2807,7 +2807,7 @@ struct SubscriptionSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 12) {
@@ -3368,7 +3368,7 @@ struct ProfileTab: View {
     private let tabs = ["Overview", "Birth Chart", "Daily", "Saved"]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Tab Selector
                 Picker("View", selection: $selectedTab) {
@@ -3915,7 +3915,7 @@ struct EnhancedSettingsView: View {
     private let themes = ["Auto", "Light", "Dark"]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // Profile Section
                 Section {
@@ -4899,7 +4899,7 @@ struct ReportGenerationSheet: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 16) {
@@ -5080,7 +5080,7 @@ struct ReportsLibraryView: View {
     @State private var showingReportDetail = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 16) {
                     if reports.isEmpty {
@@ -5246,7 +5246,7 @@ struct ReportDetailView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     // Header
@@ -5425,7 +5425,7 @@ struct ReportDetailView: View {
             }
         }
         .sheet(isPresented: $showingPlanetaryTutorial) {
-            NavigationView {
+            NavigationStack {
                 VStack {
                     Text("Planetary Calculations Tutorial")
                         .font(.title)
@@ -5704,7 +5704,7 @@ struct MonthPickerView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             DatePicker(
                 "Select Month",
                 selection: $selectedDate,
@@ -5727,7 +5727,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section("Account") {
                     Button("Sign Out", role: .destructive) {
@@ -5832,7 +5832,7 @@ struct ContactsPickerView: View {
     @State private var authorizationStatus: CNAuthorizationStatus = .notDetermined
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 if hasContactsAccess {
                     // Contacts list
