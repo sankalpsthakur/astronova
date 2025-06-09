@@ -1,6 +1,91 @@
 import SwiftUI
 import Contacts
 import ContactsUI
+import StoreKit
+
+// MARK: - Pricing Models
+
+struct ReportPricing {
+    let id: String
+    let title: String
+    let price: String
+    let localizedPrice: String?
+    let description: String
+    
+    static let loveReport = ReportPricing(
+        id: "love_forecast",
+        title: "Love Forecast",
+        price: "$4.99",
+        localizedPrice: nil,
+        description: "Romantic timing & compatibility"
+    )
+    
+    static let birthChart = ReportPricing(
+        id: "birth_chart",
+        title: "Birth Chart Reading",
+        price: "$7.99",
+        localizedPrice: nil,
+        description: "Complete personality analysis"
+    )
+    
+    static let careerForecast = ReportPricing(
+        id: "career_forecast",
+        title: "Career Forecast", 
+        price: "$5.99",
+        localizedPrice: nil,
+        description: "Professional guidance & timing"
+    )
+    
+    static let yearAhead = ReportPricing(
+        id: "year_ahead",
+        title: "Year Ahead",
+        price: "$9.99",
+        localizedPrice: nil,
+        description: "12-month cosmic roadmap"
+    )
+    
+    static let allReports = [loveReport, birthChart, careerForecast, yearAhead]
+    
+    static func pricing(for reportType: String) -> ReportPricing? {
+        return allReports.first { $0.id == reportType }
+    }
+}
+
+// MARK: - Store Manager (Placeholder for future StoreKit integration)
+
+class StoreManager: ObservableObject {
+    static let shared = StoreManager()
+    
+    @Published var hasProSubscription = false
+    @Published var products: [String: String] = [:]  // Product ID to localized price
+    
+    private init() {
+        // Load subscription status from UserDefaults for now
+        hasProSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
+    }
+    
+    func loadProducts() {
+        // TODO: Implement StoreKit product loading
+        // This would load actual App Store product information including localized prices
+        products = [
+            "love_forecast": "$4.99",
+            "birth_chart": "$7.99", 
+            "career_forecast": "$5.99",
+            "year_ahead": "$9.99",
+            "astronova_pro_monthly": "$9.99"
+        ]
+    }
+    
+    func purchaseProduct(productId: String) async -> Bool {
+        // TODO: Implement StoreKit purchase flow
+        // For now, simulate successful purchase for individual reports
+        if productId == "astronova_pro_monthly" {
+            hasProSubscription = true
+            UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
+        }
+        return true
+    }
+}
 
 // MARK: - Notification.Name Helpers
 
@@ -2575,7 +2660,7 @@ struct NexusTab: View {
     }
     
     private func checkSubscriptionStatus() {
-        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
     }
 }
 
@@ -2660,7 +2745,7 @@ struct SubscriptionSheet: View {
                         .font(.system(size: 60))
                         .foregroundStyle(.orange)
                     
-                    Text("Astronova Plus")
+                    Text("Astronova Pro")
                         .font(.largeTitle.weight(.bold))
                     
                     Text("Unlock unlimited cosmic wisdom")
@@ -2689,7 +2774,14 @@ struct SubscriptionSheet: View {
                 // Pricing
                 VStack(spacing: 16) {
                     Button {
-                        // TODO: Handle subscription purchase
+                        Task {
+                            let success = await StoreManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
+                            if success {
+                                await MainActor.run {
+                                    dismiss()
+                                }
+                            }
+                        }
                     } label: {
                         VStack(spacing: 8) {
                             Text("Start Your Cosmic Journey")
@@ -4124,7 +4216,14 @@ struct CalendarHoroscopeView: View {
                 // Daily Synopsis (Free)
                 DailySynopsisCard(
                     date: selectedDate,
-                    onBookmark: onBookmark
+                    onBookmark: onBookmark,
+                    onDiscoverMore: {
+                        // Scroll to Premium Insights section or highlight it
+                        withAnimation(.easeInOut(duration: 0.8)) {
+                            // This could trigger a scroll or highlight animation
+                            // For now, we'll leave this empty as the Premium Insights section is already visible below
+                        }
+                    }
                 )
                 
                 // Premium Insights Section
@@ -4163,7 +4262,7 @@ struct CalendarHoroscopeView: View {
     }
     
     private func checkSubscriptionStatus() {
-        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
     }
     
     private func loadUserReports() {
@@ -4476,6 +4575,7 @@ struct CalendarDayView: View {
 struct DailySynopsisCard: View {
     let date: Date
     let onBookmark: (HoroscopeReading) -> Void
+    let onDiscoverMore: () -> Void
     
     @State private var reading: HoroscopeReading?
     
@@ -4507,13 +4607,38 @@ struct DailySynopsisCard: View {
                     .font(.callout)
                     .lineSpacing(4)
                 
-                HStack {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(.orange)
-                    Text("Free daily insight")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
+                VStack(spacing: 12) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(.orange)
+                        Text("Free daily insight")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    
+                    // Discovery Call-to-Action
+                    Button {
+                        onDiscoverMore()
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Want deeper insights?")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.primary)
+                                Text("Get personalized reports starting from $4.99")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.right.circle.fill")
+                                .foregroundStyle(.blue)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(.blue.opacity(0.1))
+                        .cornerRadius(12)
+                    }
                 }
             } else {
                 HStack {
@@ -4641,9 +4766,19 @@ struct InsightCard: View {
                             .font(.caption)
                             .foregroundStyle(.green)
                     } else if !hasSubscription {
-                        Image(systemName: "lock.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                        if let pricing = ReportPricing.pricing(for: insight.id) {
+                            Text(pricing.localizedPrice ?? pricing.price)
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(insight.color)
+                                .cornerRadius(8)
+                        } else {
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
                     }
                 }
                 
@@ -4757,22 +4892,52 @@ struct ReportGenerationSheet: View {
                         }
                         .disabled(isGenerating)
                     } else {
-                        Button {
-                            showingSubscription = true
-                        } label: {
-                            VStack(spacing: 8) {
-                                Text("Upgrade to Astronova Plus")
-                                    .font(.headline)
+                        // Individual Purchase Options
+                        VStack(spacing: 12) {
+                            if let pricing = ReportPricing.pricing(for: reportType) {
+                                Button {
+                                    purchaseIndividualReport()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "creditcard.and.123")
+                                        VStack(spacing: 4) {
+                                            Text("Purchase This Report")
+                                                .font(.headline)
+                                            Text(pricing.localizedPrice ?? pricing.price)
+                                                .font(.title2.weight(.bold))
+                                        }
+                                        Spacer()
+                                        Image(systemName: "apple.logo")
+                                            .font(.title2)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 16)
                                     .foregroundStyle(.white)
-                                
-                                Text("$9.99/month")
-                                    .font(.title2.weight(.bold))
-                                    .foregroundStyle(.white)
+                                    .background(reportInfo.color)
+                                    .cornerRadius(12)
+                                }
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(.orange)
-                            .cornerRadius(12)
+                            
+                            Button {
+                                showingSubscription = true
+                            } label: {
+                                VStack(spacing: 8) {
+                                    HStack {
+                                        Text("Or get Astronova Pro")
+                                            .font(.subheadline)
+                                        Text("$9.99/month")
+                                            .font(.subheadline.weight(.bold))
+                                    }
+                                    Text("All reports + unlimited chat")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .foregroundStyle(.primary)
+                                .background(.quaternary)
+                                .cornerRadius(8)
+                            }
                         }
                     }
                     
@@ -4795,7 +4960,7 @@ struct ReportGenerationSheet: View {
             }
         }
         .onAppear {
-            hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPlus")
+            hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
         }
         .sheet(isPresented: $showingSubscription) {
             SubscriptionSheet()
@@ -4805,6 +4970,21 @@ struct ReportGenerationSheet: View {
     private func generateReport() {
         isGenerating = true
         onGenerate(reportType)
+    }
+    
+    private func purchaseIndividualReport() {
+        isGenerating = true
+        Task {
+            let success = await StoreManager.shared.purchaseProduct(productId: reportType)
+            await MainActor.run {
+                if success {
+                    onGenerate(reportType)
+                } else {
+                    isGenerating = false
+                    // TODO: Show error alert
+                }
+            }
+        }
     }
 }
 

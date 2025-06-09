@@ -41,9 +41,10 @@ struct GooglePlacesService {
             throw GooglePlacesError.invalidURL
         }
         
+        let response: GooglePlacesResponse
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
-            let response = try JSONDecoder().decode(GooglePlacesResponse.self, from: data)
+            response = try JSONDecoder().decode(GooglePlacesResponse.self, from: data)
             
             if response.status != "OK" && response.status != "ZERO_RESULTS" {
                 logger.error("Google Places search failed with status: \(response.status)")
