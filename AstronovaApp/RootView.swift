@@ -2298,16 +2298,16 @@ struct FriendsTab: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(match.name)
                                             .font(.callout.weight(.medium))
-                                        Text("Compatibility check")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                        HStack(spacing: 4) {
+                                            Text("☉ \(match.sun)")
+                                            Text("☽ \(match.moon)")
+                                            Text("⬆️ \(match.rising)")
+                                        }
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                     }
                                     
                                     Spacer()
-                                    
-                                    Text("\(match.score)%")
-                                        .font(.callout.weight(.bold))
-                                        .foregroundStyle(match.score >= 80 ? .green : match.score >= 60 ? .orange : .red)
                                 }
                                 .padding(16)
                                 .background(
@@ -2334,9 +2334,9 @@ struct FriendsTab: View {
     }
     
     private let sampleMatches = [
-        (name: "Sarah", score: 92),
-        (name: "Alex", score: 78),
-        (name: "Jordan", score: 85)
+        (name: "Sarah", sun: "Leo", moon: "Pisces", rising: "Virgo"),
+        (name: "Alex", sun: "Gemini", moon: "Scorpio", rising: "Libra"),
+        (name: "Jordan", sun: "Aquarius", moon: "Taurus", rising: "Cancer")
     ]
 }
 
@@ -3378,21 +3378,27 @@ struct ProfileOverviewView: View {
                             title: "Complete Birth Chart",
                             subtitle: "Calculate your full astrological profile",
                             icon: "chart.pie.fill",
-                            action: { /* Navigate to birth chart */ }
+                            action: { 
+                                NotificationCenter.default.post(name: .switchToProfileSection, object: 1)
+                            }
                         )
                         
                         NavigationRowView(
                             title: "Today's Horoscope",
                             subtitle: "See what the stars have in store",
                             icon: "calendar.circle.fill",
-                            action: { /* Navigate to daily */ }
+                            action: { 
+                                NotificationCenter.default.post(name: .switchToTab, object: 0)
+                            }
                         )
                         
                         NavigationRowView(
                             title: "Compatibility Check",
                             subtitle: "Compare with friends and partners",
                             icon: "heart.circle.fill",
-                            action: { /* Navigate to compatibility */ }
+                            action: { 
+                                NotificationCenter.default.post(name: .switchToTab, object: 1)
+                            }
                         )
                     }
                     .padding(.horizontal, 20)
@@ -5632,12 +5638,12 @@ struct ContactsPickerView: View {
     }
     
     private func loadContacts() {
-        Task.detached {
-            let store = CNContactStore()
-            let keys = [CNContactGivenNameKey, CNContactFamilyNameKey] as [CNKeyDescriptor]
-            let request = CNContactFetchRequest(keysToFetch: keys)
-            
+        Task {
             do {
+                let store = CNContactStore()
+                let keys = [CNContactGivenNameKey, CNContactFamilyNameKey] as [CNKeyDescriptor]
+                let request = CNContactFetchRequest(keysToFetch: keys)
+                
                 var fetchedContacts: [CNContact] = []
                 try store.enumerateContacts(with: request) { contact, _ in
                     fetchedContacts.append(contact)
