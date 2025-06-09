@@ -1,24 +1,27 @@
 import Foundation
 import CoreLocation
+import os.log
 
 struct GooglePlacesService {
     static let shared = GooglePlacesService()
     private let baseURL = "https://maps.googleapis.com/maps/api/place"
     private let apiKey: String
+    private let logger = Logger(subsystem: "com.astronova.app", category: "GooglePlacesService")
     
     private init() {
-        // Get API key from Info.plist or environment
-        // NOTE: For production apps, consider proxying requests through your backend
-        // to avoid exposing the API key in the client binary
-        if let path = Bundle.main.path(forResource: "Info", ofType: "plist"),
-           let plist = NSDictionary(contentsOfFile: path),
-           let key = plist["GooglePlacesAPIKey"] as? String,
-           !key.isEmpty && key != "YOUR_GOOGLE_PLACES_API_KEY_HERE" {
+        // Prefer environment variable for better security
+        if let envKey = ProcessInfo.processInfo.environment["GOOGLE_PLACES_API_KEY"],
+           !envKey.isEmpty {
+            self.apiKey = envKey
+        } else if let path = Bundle.main.path(forResource: "Info", ofType: "plist"),
+                  let plist = NSDictionary(contentsOfFile: path),
+                  let key = plist["GooglePlacesAPIKey"] as? String,
+                  !key.isEmpty && key != "YOUR_GOOGLE_PLACES_API_KEY_HERE" {
             self.apiKey = key
         } else {
             // No API key configured - will fallback to MKLocalSearch
             self.apiKey = ""
-            print("Warning: Google Places API key not configured. Using MKLocalSearch fallback.")
+            logger.info("Google Places API key not configured. Location search will use Apple's MKLocalSearch as fallback.")
         }
     }
     
@@ -27,24 +30,42 @@ struct GooglePlacesService {
             throw GooglePlacesError.missingAPIKey
         }
         
-        guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-            throw GooglePlacesError.invalidQuery
-        }
         
-        let urlString = "\(baseURL)/textsearch/json?query=\(encodedQuery)&key=\(apiKey)"
-        guard let url = URL(string: urlString) else {
+        var components = URLComponents(string: "\(baseURL)/textsearch/json")
+        components?.queryItems = [
+            URLQueryItem(name: "query", value: query),
+            URLQueryItem(name: "key", value: apiKey)
+        ]
+        
+        guard let url = components?.url else {
             throw GooglePlacesError.invalidURL
         }
         
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let response = try JSONDecoder().decode(GooglePlacesResponse.self, from: data)
-        
-        if response.status != "OK" && response.status != "ZERO_RESULTS" {
-            throw GooglePlacesError.apiError(response.status)
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(GooglePlacesResponse.self, from: data)
+            
+            if response.status != "OK" && response.status != "ZERO_RESULTS" {
+                logger.error("Google Places search failed with status: \(response.status)")
+                throw GooglePlacesError.apiError(response.status)
+            }
+        } catch {
+            logger.error("Google Places search error: \(error.localizedDescription)")
+            throw error
         }
         
-        return response.results.map { place in
-            LocationResult(
+        // Return empty array for ZERO_RESULTS to allow fallback handling
+        guard response.status == "OK" && !response.results.isEmpty else {
+            return []
+        }
+        
+        return response.results.compactMap { place in
+            // Ensure we have valid coordinates
+            guard place.geometry.location.lat != 0 || place.geometry.location.lng != 0 else {
+                return nil
+            }
+            
+            return LocationResult(
                 fullName: place.formattedAddress,
                 coordinate: CLLocationCoordinate2D(
                     latitude: place.geometry.location.lat,
@@ -60,8 +81,14 @@ struct GooglePlacesService {
             throw GooglePlacesError.missingAPIKey
         }
         
-        let urlString = "\(baseURL)/details/json?place_id=\(placeId)&fields=formatted_address,geometry,utc_offset&key=\(apiKey)"
-        guard let url = URL(string: urlString) else {
+        var components = URLComponents(string: "\(baseURL)/details/json")
+        components?.queryItems = [
+            URLQueryItem(name: "place_id", value: placeId),
+            URLQueryItem(name: "fields", value: "formatted_address,geometry,utc_offset"),
+            URLQueryItem(name: "key", value: apiKey)
+        ]
+        
+        guard let url = components?.url else {
             throw GooglePlacesError.invalidURL
         }
         
@@ -80,12 +107,15 @@ struct GooglePlacesService {
             throw GooglePlacesError.missingAPIKey
         }
         
-        guard let encodedInput = input.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-            throw GooglePlacesError.invalidQuery
-        }
         
-        let urlString = "\(baseURL)/autocomplete/json?input=\(encodedInput)&types=(cities)&key=\(apiKey)"
-        guard let url = URL(string: urlString) else {
+        var components = URLComponents(string: "\(baseURL)/autocomplete/json")
+        components?.queryItems = [
+            URLQueryItem(name: "input", value: input),
+            URLQueryItem(name: "types", value: "(cities)"),
+            URLQueryItem(name: "key", value: apiKey)
+        ]
+        
+        guard let url = components?.url else {
             throw GooglePlacesError.invalidURL
         }
         
@@ -96,6 +126,7 @@ struct GooglePlacesService {
             throw GooglePlacesError.apiError(response.status)
         }
         
+        // Return empty array for ZERO_RESULTS to allow fallback handling
         return response.predictions
     }
 }

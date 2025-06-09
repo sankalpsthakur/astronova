@@ -1011,8 +1011,17 @@ struct EnhancedBirthPlaceStepView: View {
             
             if !Task.isCancelled {
                 // Try Google Places API first, fallback to existing API
-                // Temporarily using fallback until GooglePlacesService compilation is resolved
-                let results = await auth.profileManager.searchLocations(query: query)
+                let results: [LocationResult]
+                // TODO: Re-enable GooglePlacesService when compilation issues are resolved
+                /*
+                do {
+                    results = try await GooglePlacesService.shared.searchPlaces(query: query)
+                } catch {
+                    print("Google Places search failed, using fallback: \(error)")
+                    results = await auth.profileManager.searchLocations(query: query)
+                }
+                */
+                results = await auth.profileManager.searchLocations(query: query)
                 
                 await MainActor.run {
                     if !Task.isCancelled {
@@ -3578,7 +3587,43 @@ struct ProfileEditView: View {
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.secondary)
                                 
-                                // Temporarily using TextField until GooglePlacesAutocompleteView compilation is resolved
+                                // TODO: Re-enable GooglePlacesAutocompleteView when compilation issues are resolved
+                                /*
+                                GooglePlacesAutocompleteView(
+                                    selectedLocation: Binding(
+                                        get: { 
+                                            // Convert current birth place to LocationResult if available
+                                            if let birthPlace = editedProfile.birthPlace,
+                                               let coordinates = editedProfile.birthCoordinates,
+                                               let timezone = editedProfile.timezone {
+                                                return LocationResult(
+                                                    fullName: birthPlace,
+                                                    coordinate: coordinates,
+                                                    timezone: timezone
+                                                )
+                                            }
+                                            return nil
+                                        },
+                                        set: { newLocation in
+                                            if let location = newLocation {
+                                                editedProfile.birthPlace = location.fullName
+                                                editedProfile.birthCoordinates = location.coordinate
+                                                editedProfile.timezone = location.timezone
+                                            } else {
+                                                editedProfile.birthPlace = nil
+                                                editedProfile.birthCoordinates = nil
+                                                editedProfile.timezone = nil
+                                            }
+                                        }
+                                    ),
+                                    placeholder: "City, State/Country"
+                                ) { location in
+                                    // Update profile when location is selected
+                                    editedProfile.birthPlace = location.fullName
+                                    editedProfile.birthCoordinates = location.coordinate
+                                    editedProfile.timezone = location.timezone
+                                }
+                                */
                                 TextField("City, State/Country", text: Binding(
                                     get: { editedProfile.birthPlace ?? "" },
                                     set: { editedProfile.birthPlace = $0.isEmpty ? nil : $0 }

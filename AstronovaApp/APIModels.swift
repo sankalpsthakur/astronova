@@ -73,19 +73,28 @@ struct LocationResult: Codable {
     // Initializer for Google Places compatibility
     init(fullName: String, coordinate: CLLocationCoordinate2D, timezone: String) {
         // Parse the full name to extract city/state/country components
-        let components = fullName.components(separatedBy: ", ")
-        self.name = components.first ?? fullName
+        let components = fullName.components(separatedBy: ", ").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        
         self.displayName = fullName
         self.latitude = coordinate.latitude
         self.longitude = coordinate.longitude
         self.timezone = timezone
         
-        // Extract country (usually last component)
-        self.country = components.last ?? ""
+        // Extract city name (first component, or fallback to full name)
+        self.name = components.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? fullName
+        
+        // Extract country (usually last component, with validation)
+        if let lastComponent = components.last?.trimmingCharacters(in: .whitespacesAndNewlines), !lastComponent.isEmpty {
+            self.country = lastComponent
+        } else {
+            self.country = "Unknown"
+        }
         
         // Extract state (usually second to last if more than 2 components)
-        if components.count > 2 {
-            self.state = components[components.count - 2]
+        if components.count > 2,
+           let stateComponent = components.dropLast().last?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !stateComponent.isEmpty {
+            self.state = stateComponent
         } else {
             self.state = nil
         }

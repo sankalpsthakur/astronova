@@ -61,18 +61,38 @@ class APIServices: ObservableObject {
     
     /// Search for locations by name
     func searchLocations(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
-        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+        var components = URLComponents()
+        components.path = "/api/v1/locations/search"
+        components.queryItems = [
+            URLQueryItem(name: "query", value: query),
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
+        
+        guard let url = components.url else {
+            throw NetworkError.invalidURL
+        }
         
         return try await networkClient.request(
-            endpoint: "/api/v1/locations/search?query=\(encodedQuery)&limit=\(limit)",
+            endpoint: url.absoluteString,
             responseType: LocationSearchResponse.self
         )
     }
     
     /// Get timezone for coordinates
     func getTimezone(for coordinate: CLLocationCoordinate2D) async throws -> String {
+        var components = URLComponents()
+        components.path = "/api/v1/locations/timezone"
+        components.queryItems = [
+            URLQueryItem(name: "lat", value: String(coordinate.latitude)),
+            URLQueryItem(name: "lng", value: String(coordinate.longitude))
+        ]
+        
+        guard let url = components.url else {
+            throw NetworkError.invalidURL
+        }
+        
         let response = try await networkClient.request(
-            endpoint: "/api/v1/locations/timezone?lat=\(coordinate.latitude)&lng=\(coordinate.longitude)",
+            endpoint: url.absoluteString,
             responseType: [String: String].self
         )
         
@@ -87,32 +107,66 @@ class APIServices: ObservableObject {
     
     /// Get daily horoscope for a sign
     func getDailyHoroscope(for sign: String, date: Date? = nil) async throws -> HoroscopeResponse {
-        var endpoint = "/api/v1/horoscope?sign=\(sign.lowercased())&type=daily"
+        var components = URLComponents()
+        components.path = "/api/v1/horoscope"
+        
+        var queryItems = [
+            URLQueryItem(name: "sign", value: sign.lowercased()),
+            URLQueryItem(name: "type", value: "daily")
+        ]
         
         if let date = date {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
-            endpoint += "&date=\(formatter.string(from: date))"
+            queryItems.append(URLQueryItem(name: "date", value: formatter.string(from: date)))
+        }
+        
+        components.queryItems = queryItems
+        
+        guard let url = components.url else {
+            throw NetworkError.invalidURL
         }
         
         return try await networkClient.request(
-            endpoint: endpoint,
+            endpoint: url.absoluteString,
             responseType: HoroscopeResponse.self
         )
     }
     
     /// Get weekly horoscope for a sign
     func getWeeklyHoroscope(for sign: String) async throws -> HoroscopeResponse {
+        var components = URLComponents()
+        components.path = "/api/v1/horoscope"
+        components.queryItems = [
+            URLQueryItem(name: "sign", value: sign.lowercased()),
+            URLQueryItem(name: "type", value: "weekly")
+        ]
+        
+        guard let url = components.url else {
+            throw NetworkError.invalidURL
+        }
+        
         return try await networkClient.request(
-            endpoint: "/api/v1/horoscope?sign=\(sign.lowercased())&type=weekly",
+            endpoint: url.absoluteString,
             responseType: HoroscopeResponse.self
         )
     }
     
     /// Get monthly horoscope for a sign
     func getMonthlyHoroscope(for sign: String) async throws -> HoroscopeResponse {
+        var components = URLComponents()
+        components.path = "/api/v1/horoscope"
+        components.queryItems = [
+            URLQueryItem(name: "sign", value: sign.lowercased()),
+            URLQueryItem(name: "type", value: "monthly")
+        ]
+        
+        guard let url = components.url else {
+            throw NetworkError.invalidURL
+        }
+        
         return try await networkClient.request(
-            endpoint: "/api/v1/horoscope?sign=\(sign.lowercased())&type=monthly",
+            endpoint: url.absoluteString,
             responseType: HoroscopeResponse.self
         )
     }
@@ -214,8 +268,18 @@ class APIServices: ObservableObject {
         formatter.dateFormat = "yyyy-MM-dd"
         let dateString = formatter.string(from: date)
         
+        var components = URLComponents()
+        components.path = "/api/v1/ephemeris/positions"
+        components.queryItems = [
+            URLQueryItem(name: "date", value: dateString)
+        ]
+        
+        guard let url = components.url else {
+            throw NetworkError.invalidURL
+        }
+        
         return try await networkClient.request(
-            endpoint: "/api/v1/ephemeris/positions?date=\(dateString)",
+            endpoint: url.absoluteString,
             responseType: [String: PlanetaryPosition].self
         )
     }
