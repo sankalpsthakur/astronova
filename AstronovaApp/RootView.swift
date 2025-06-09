@@ -6018,10 +6018,6 @@ struct CompellingLandingView: View {
                 switch currentPhase {
                 case 0:
                     cosmicHookPhase
-                case 1:
-                    celestialMomentPhase
-                case 2:
-                    personalizedInsightPhase
                 default:
                     signInPhase
                 }
@@ -6034,6 +6030,7 @@ struct CompellingLandingView: View {
         .onAppear {
             startCosmicJourney()
             requestLocationPermission()
+            generatePersonalizedInsight()
         }
     }
     
@@ -6107,172 +6104,108 @@ struct CompellingLandingView: View {
             )
     }
     
-    // MARK: - Phase 1: Cosmic Hook
+    // MARK: - Instant Cosmic Experience
     
     private var cosmicHookPhase: some View {
-        VStack(spacing: 40) {
-            Spacer()
-            
-            VStack(spacing: 20) {
-                // Pulsing cosmic symbol
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [.purple.opacity(0.3), .clear],
-                                center: .center,
-                                startRadius: 20,
-                                endRadius: 80
+        ScrollView {
+            VStack(spacing: 32) {
+                // Immediate cosmic hook
+                VStack(spacing: 20) {
+                    // Pulsing cosmic symbol
+                    ZStack {
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [.purple.opacity(0.3), .clear],
+                                    center: .center,
+                                    startRadius: 20,
+                                    endRadius: 60
+                                )
                             )
-                        )
-                        .frame(width: 160, height: 160)
-                        .scaleEffect(animateStars ? 1.1 : 0.9)
-                        .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateStars)
+                            .frame(width: 120, height: 120)
+                            .scaleEffect(animateStars ? 1.1 : 0.9)
+                            .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateStars)
+                        
+                        Text("✨")
+                            .font(.system(size: 40))
+                            .rotationEffect(.degrees(animateStars ? 360 : 0))
+                            .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: animateStars)
+                    }
                     
-                    Text("✨")
-                        .font(.system(size: 60))
-                        .rotationEffect(.degrees(animateStars ? 360 : 0))
-                        .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: animateStars)
+                    VStack(spacing: 8) {
+                        Text("The universe speaks to you")
+                            .font(.title2.weight(.light))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Right now")
+                            .font(.largeTitle.weight(.bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.purple, .blue, .cyan],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    }
+                }
+                .padding(.top, 20)
+                
+                // Live celestial data - show value immediately
+                cosmicDataDisplay
+                
+                // Instant personalized insight
+                VStack(spacing: 16) {
+                    Text("Your Personal Reading")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    
+                    Text(personalizedInsight.isEmpty ? "The universe recognizes your unique frequency. This moment marks a significant turning point in your spiritual journey - trust the process." : personalizedInsight)
+                        .font(.body)
+                        .lineSpacing(4)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .padding(20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [.pink.opacity(0.5), .purple.opacity(0.5), .cyan.opacity(0.5)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                )
+                        )
+                        .shadow(color: .purple.opacity(0.2), radius: 8, y: 4)
                 }
                 
+                // Single call to action
                 VStack(spacing: 12) {
-                    Text("The cosmos has been waiting")
-                        .font(.title.weight(.light))
+                    Text("Get Your Complete Astrological Profile")
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                     
-                    Text("for this exact moment")
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.purple, .blue, .cyan],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                    Text("Unlock personalized insights, birth chart analysis, and celestial guidance")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                 }
-                .opacity(currentPhase >= 0 ? 1 : 0)
-                .animation(.easeInOut(duration: 1).delay(0.5), value: currentPhase)
-            }
-            
-            VStack(spacing: 16) {
-                Text(formatCurrentTime())
-                    .font(.title2.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.9))
                 
-                Text("Your cosmic signature is forming...")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .opacity(currentPhase >= 0 ? 1 : 0)
-                    .animation(.easeInOut(duration: 1).delay(1.5), value: currentPhase)
+                // Sign in buttons
+                signInButtons
+                
+                Spacer(minLength: 40)
             }
-            
-            Spacer()
-            
-            // Tap to continue
-            Button {
-                withAnimation(.easeInOut(duration: 0.8)) {
-                    currentPhase = 1
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    Text("Reveal Your Cosmic Moment")
-                    Image(systemName: "arrow.right.circle.fill")
-                }
-                .font(.headline.weight(.medium))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            Capsule()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [.purple, .blue],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    ),
-                                    lineWidth: 2
-                                )
-                        )
-                )
-                .shadow(color: .purple.opacity(0.3), radius: 10, y: 5)
-            }
-            .opacity(currentPhase >= 0 ? 1 : 0)
-            .animation(.easeInOut(duration: 1).delay(2), value: currentPhase)
-            
-            Spacer(minLength: 50)
+            .padding()
         }
-        .padding()
     }
     
-    // MARK: - Phase 2: Celestial Moment
-    
-    private var celestialMomentPhase: some View {
-        VStack(spacing: 30) {
-            Spacer()
-            
-            VStack(spacing: 20) {
-                Text("Right Now")
-                    .font(.title3.weight(.light))
-                    .foregroundStyle(.white.opacity(0.8))
-                
-                Text("The Universe Speaks")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.cyan, .purple, .pink],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Live cosmic data display
-            cosmicDataDisplay
-            
-            Button {
-                generatePersonalizedInsight()
-                withAnimation(.easeInOut(duration: 0.8)) {
-                    currentPhase = 2
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    Text("What Does This Mean For Me?")
-                    Image(systemName: "sparkles")
-                }
-                .font(.headline.weight(.medium))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            Capsule()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [.cyan, .purple],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    ),
-                                    lineWidth: 2
-                                )
-                        )
-                )
-                .shadow(color: .cyan.opacity(0.3), radius: 10, y: 5)
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .opacity(currentPhase >= 1 ? 1 : 0)
-        .animation(.easeInOut(duration: 1), value: currentPhase)
-    }
     
     private var cosmicDataDisplay: some View {
         VStack(spacing: 24) {
@@ -6314,10 +6247,10 @@ struct CompellingLandingView: View {
                     )
             )
             
-            // Cosmic coordinates
+            // Location coordinates
             if let location = userLocation {
                 VStack(spacing: 8) {
-                    Text("Your Cosmic Coordinates")
+                    Text("Your Celestial Coordinates")
                         .font(.headline.weight(.medium))
                         .foregroundStyle(.white)
                     
@@ -6325,7 +6258,7 @@ struct CompellingLandingView: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.cyan)
                     
-                    Text("Celestial alignment detected")
+                    Text("Planetary alignment detected")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -6343,104 +6276,30 @@ struct CompellingLandingView: View {
         }
     }
     
-    // MARK: - Phase 3: Personalized Insight
-    
-    private var personalizedInsightPhase: some View {
-        VStack(spacing: 30) {
-            Spacer()
-            
-            VStack(spacing: 16) {
-                Text("Your Cosmic Reading")
-                    .font(.title2.weight(.light))
-                    .foregroundStyle(.white.opacity(0.8))
-                
-                Text("✨ Personally Channeled ✨")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.pink, .purple, .cyan],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .multilineTextAlignment(.center)
-            }
-            
-            // Personalized insight card
-            VStack(spacing: 20) {
-                Text(personalizedInsight)
-                    .font(.title3.weight(.medium))
-                    .lineSpacing(6)
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(
-                                        LinearGradient(
-                                            colors: [.pink.opacity(0.5), .purple.opacity(0.5), .cyan.opacity(0.5)],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 2
-                                    )
-                            )
-                    )
-                    .shadow(color: .purple.opacity(0.3), radius: 15, y: 8)
-                
-                Text("This is just the beginning of your cosmic journey...")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-            }
-            
-            Spacer()
-            
-            // Sign in to unlock more
-            VStack(spacing: 16) {
-                Text("Unlock Your Complete Cosmic Profile")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                
-                signInButtons
-            }
-            
-            Spacer(minLength: 30)
-        }
-        .padding()
-        .opacity(currentPhase >= 2 ? 1 : 0)
-        .animation(.easeInOut(duration: 1), value: currentPhase)
-    }
     
     // MARK: - Sign In Phase
     
     private var signInPhase: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 32) {
             Spacer()
             
             VStack(spacing: 16) {
                 Text("🌌")
-                    .font(.system(size: 80))
+                    .font(.system(size: 60))
                 
-                Text("Welcome to Astronova")
-                    .font(.largeTitle.weight(.bold))
+                Text("Complete Your Profile")
+                    .font(.title.weight(.bold))
                     .foregroundStyle(.white)
                 
-                Text("Your personalized cosmic companion")
+                Text("Get personalized insights and your complete birth chart")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
             }
             
-            Spacer()
-            
             signInButtons
             
-            Spacer(minLength: 32)
+            Spacer()
         }
         .padding()
     }
