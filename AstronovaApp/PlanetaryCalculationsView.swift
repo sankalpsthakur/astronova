@@ -119,7 +119,7 @@ struct PlanetaryCalculationsView: View {
             .ignoresSafeArea()
             
             // Animated stars
-            ForEach(0..<30, id: \.self) { i in
+            ForEach(0..<30, id: \.self) { _ in
                 Circle()
                     .fill(.white.opacity(Double.random(in: 0.3...0.7)))
                     .frame(width: CGFloat.random(in: 1...2))
@@ -528,7 +528,7 @@ struct PlanetaryCalculationView: View {
     @State private var userCalculations: UserCalculationData?
     @State private var isLoading = false
     
-    @EnvironmentObject private var userProfileManager: UserProfileManager
+    @EnvironmentObject private var auth: AuthState
     
     // Note: PlanetaryDataService access moved to methods to avoid build issues
     // private var planetaryService: PlanetaryDataService {
@@ -553,7 +553,7 @@ struct PlanetaryCalculationView: View {
                     loadingView
                 } else if let calculations = userCalculations {
                     userDataHeader(calculations: calculations)
-                } else if userProfileManager.isProfileComplete {
+                } else if auth.profileManager.isProfileComplete {
                     Text("Tap 'Calculate' to see your personalized calculations")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
@@ -583,7 +583,7 @@ struct PlanetaryCalculationView: View {
             }
             
             // Auto-calculate if user profile is complete
-            if userProfileManager.isProfileComplete && userCalculations == nil {
+            if auth.profileManager.isProfileComplete && userCalculations == nil {
                 Task {
                     await calculateUserData()
                 }
@@ -643,11 +643,11 @@ struct PlanetaryCalculationView: View {
             
             Text("Complete your profile to see your own birth chart calculations")
                 .font(.caption)
-                .foregroundStyle(.orange.opacity(0.8))
+                .foregroundStyle(.orange.opacity(0.9))
                 .italic()
         }
         .padding()
-        .background(.orange.opacity(0.1))
+        .background(.orange.opacity(0.2))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(.orange.opacity(0.3), lineWidth: 1)
@@ -765,7 +765,7 @@ struct PlanetaryCalculationView: View {
             }
             
             // Calculate Button (if user profile complete but no calculations)
-            if userProfileManager.isProfileComplete && userCalculations == nil && !isLoading {
+            if auth.profileManager.isProfileComplete && userCalculations == nil && !isLoading {
                 Button {
                     Task {
                         await calculateUserData()
@@ -791,7 +791,7 @@ struct PlanetaryCalculationView: View {
         isLoading = true
         
         do {
-            let profile = userProfileManager.profile
+            let profile = auth.profileManager.profile
             guard let birthTime = profile.birthTime,
                   let _ = profile.birthCoordinates,
                   let _ = profile.timezone,
@@ -885,7 +885,7 @@ struct PlanetaryCalculationView: View {
                 .foregroundStyle(.white)
             
             VStack(spacing: 8) {
-                ForEach(calculations.planetaryPositions, id: \.id) { (position: DetailedPlanetaryPosition) in
+                ForEach(calculations.planetaryPositions, id: \.id) { position in
                     HStack {
                         Text(position.name)
                             .font(.subheadline.weight(.medium))
@@ -1213,7 +1213,7 @@ struct AspectVisualizationView: View {
     @State private var animateInterpretation = false
     @State private var currentInterpretation = 0
     @State private var showChart = false
-    @State private var selectedPlanet: String? = nil
+    @State private var selectedPlanet: String?
     @State private var userCalculations: UserCalculationData? = nil
     
     private let interpretations = [
@@ -1506,55 +1506,64 @@ struct AspectVisualizationView: View {
     }
     
     private func processStep(number: String, title: String, description: String) -> some View {
-        HStack(spacing: 12) {
-            Text(number)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.black)
-                .frame(width: 20, height: 20)
-                .background(.cyan)
-                .clipShape(Circle())
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
-                
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+        numberedRow(
+            number: number,
+            content: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white)
+                    
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
             }
-            
-            Spacer()
-        }
+        )
     }
     
     private func tutorialCard(number: String, visual: String, caption: String) -> some View {
-        HStack(spacing: 12) {
-            // Card number
-            Text(number)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.black)
-                .frame(width: 20, height: 20)
-                .background(.cyan)
-                .clipShape(Circle())
-            
-            // Visual element
-            Text(visual)
-                .font(.body)
-                .frame(width: 60, alignment: .leading)
-            
-            // Caption
-            Text(caption)
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.9))
-                .multilineTextAlignment(.leading)
-            
-            Spacer()
-        }
+        numberedRow(
+            number: number,
+            content: {
+                HStack(spacing: 12) {
+                    // Visual element
+                    Text(visual)
+                        .font(.body)
+                        .frame(width: 60, alignment: .leading)
+                    
+                    // Caption
+                    Text(caption)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.leading)
+                    
+                    Spacer(minLength: 0)
+                }
+            }
+        )
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.white.opacity(0.05))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+    
+    private func numberedRow<Content: View>(
+        number: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        HStack(spacing: 12) {
+            Text(number)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.black)
+                .frame(width: 20, height: 20)
+                .background(.cyan)
+                .clipShape(Circle())
+            
+            content()
+            
+            Spacer()
+        }
     }
     
     private func learnMoreLink(title: String, subtitle: String) -> some View {

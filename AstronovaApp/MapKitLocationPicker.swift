@@ -51,7 +51,7 @@ struct MapKitLocationPicker: View {
                 if !searchResults.isEmpty && isSearchFocused {
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            ForEach(searchResults, id: \.fullName) { location in
+                            ForEach(searchResults, id: \.self) { location in
                                 LocationResultRow(location: location) {
                                     selectLocation(location)
                                 }
@@ -82,23 +82,25 @@ struct MapKitLocationPicker: View {
             .padding(.top, 16)
             
             // Map view
-            Map(coordinateRegion: $region, 
-                interactionModes: [.all],
-                showsUserLocation: true,
-                annotationItems: selectedCoordinate.map { [MapAnnotation(coordinate: $0)] } ?? []) { annotation in
-                MapPin(coordinate: annotation.coordinate, tint: .red)
-            }
-            .onTapGesture(coordinateSpace: .local) { location in
-                // Convert tap location to coordinate
-                let mapFrame = UIScreen.main.bounds
-                let x = location.x / mapFrame.width
-                let y = location.y / mapFrame.height
-                
-                let longitude = region.center.longitude + (x - 0.5) * region.span.longitudeDelta
-                let latitude = region.center.latitude - (y - 0.5) * region.span.latitudeDelta
-                
-                let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                handleMapTap(at: coordinate)
+            GeometryReader { geometry in
+                Map(coordinateRegion: $region, 
+                    interactionModes: [.all],
+                    showsUserLocation: true,
+                    annotationItems: selectedCoordinate.map { [MapAnnotation(coordinate: $0)] } ?? []) { annotation in
+                    MapPin(coordinate: annotation.coordinate, tint: .red)
+                }
+                .onTapGesture(coordinateSpace: .local) { location in
+                    // Convert tap location to coordinate using actual map frame
+                    let mapFrame = geometry.size
+                    let x = location.x / mapFrame.width
+                    let y = location.y / mapFrame.height
+                    
+                    let longitude = region.center.longitude + (x - 0.5) * region.span.longitudeDelta
+                    let latitude = region.center.latitude - (y - 0.5) * region.span.latitudeDelta
+                    
+                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                    handleMapTap(at: coordinate)
+                }
             }
             .frame(minHeight: 300)
         }
@@ -138,11 +140,12 @@ struct MapKitLocationPicker: View {
             } catch {
                 print("Reverse geocoding failed: \(error)")
                 
-                // Fallback location
+                // Fallback location with approximate timezone from longitude
+                let approximateTimezone = approximateTimezoneFromLongitude(coordinate.longitude)
                 let fallbackLocation = LocationResult(
-                    fullName: "Selected Location",
+                    fullName: "Selected Location (\(String(format: "%.4f", coordinate.latitude))°, \(String(format: "%.4f", coordinate.longitude))°)",
                     coordinate: coordinate,
-                    timezone: TimeZone.current.identifier
+                    timezone: approximateTimezone
                 )
                 
                 await MainActor.run {
@@ -206,6 +209,18 @@ struct MapKitLocationPicker: View {
     private func requestLocationPermission() {
         let locationManager = CLLocationManager()
         locationManager.requestWhenInUseAuthorization()
+    }
+    
+    private func approximateTimezoneFromLongitude(_ longitude: Double) -> String {
+        // Approximate timezone offset from longitude (15 degrees per hour)
+        let offsetHours = Int(round(longitude / 15.0))
+        let clampedOffset = max(-12, min(14, offsetHours))
+        
+        if clampedOffset >= 0 {
+            return "GMT+\(clampedOffset)"
+        } else {
+            return "GMT\(clampedOffset)"
+        }
     }
 }
 

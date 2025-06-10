@@ -1431,8 +1431,10 @@ struct SimpleTabBarView: View {
                 case 1:
                     FriendsTab()
                 case 2:
-                    NexusTab()
+                    LearnTab()
                 case 3:
+                    NexusTab()
+                case 4:
                     ProfileTab()
                 default:
                     TodayTab()
@@ -1449,7 +1451,7 @@ struct SimpleTabBarView: View {
                     TabGuideOverlay(
                         step: guideStep,
                         onNext: {
-                            if guideStep < 3 {
+                            if guideStep < 4 {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     guideStep += 1
                                     selectedTab = guideStep
@@ -1658,12 +1660,25 @@ struct ProfileTabIcon: View {
     }
 }
 
+struct LearnTab: View {
+    @EnvironmentObject private var auth: AuthState
+    
+    var body: some View {
+        NavigationStack {
+            PlanetaryCalculationsView()
+                .navigationBarHidden(true)
+                .environmentObject(auth.profileManager)
+        }
+    }
+}
+
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
     
     private let tabs = [
         (title: "Today", icon: "sun.and.horizon.circle.fill", customIcon: nil),
         (title: "Friends", icon: "", customIcon: "friends"),
+        (title: "Learn", icon: "graduationcap.circle.fill", customIcon: nil),
         (title: "Nexus", icon: "", customIcon: "nexus"), 
         (title: "Profile", icon: "", customIcon: "profile")
     ]

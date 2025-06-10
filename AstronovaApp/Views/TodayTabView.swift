@@ -269,7 +269,7 @@ struct PrimaryCTASection: View {
                     icon: "message.circle.fill",
                     color: .blue,
                     action: {
-                        switchToTab(2)
+                        switchToTab(3)
                     }
                 )
             }
@@ -364,13 +364,13 @@ struct DiscoveryCTASection: View {
     
     private func switchToProfileCharts() {
         HapticFeedbackService.shared.lightImpact()
-        NotificationCenter.default.post(name: .switchToTab, object: 3)
+        NotificationCenter.default.post(name: .switchToTab, object: 4)
         NotificationCenter.default.post(name: .switchToProfileSection, object: 1)
     }
     
     private func switchToProfileBookmarks() {
         HapticFeedbackService.shared.lightImpact()
-        NotificationCenter.default.post(name: .switchToTab, object: 3)
+        NotificationCenter.default.post(name: .switchToTab, object: 4)
         NotificationCenter.default.post(name: .switchToProfileSection, object: 2)
     }
     

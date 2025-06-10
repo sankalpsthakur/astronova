@@ -105,7 +105,7 @@ struct LocationSearchRequest: Codable {
 }
 
 /// Location result from search
-struct LocationResult: Codable {
+struct LocationResult: Codable, Hashable {
     let name: String
     let displayName: String
     let latitude: Double
@@ -152,6 +152,22 @@ struct LocationResult: Codable {
         } else {
             self.state = nil
         }
+    }
+    
+    // Hashable conformance
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(displayName)
+        hasher.combine(latitude)
+        hasher.combine(longitude)
+        hasher.combine(timezone)
+    }
+    
+    // Equatable conformance
+    static func == (lhs: LocationResult, rhs: LocationResult) -> Bool {
+        return lhs.displayName == rhs.displayName &&
+               lhs.latitude == rhs.latitude &&
+               lhs.longitude == rhs.longitude &&
+               lhs.timezone == rhs.timezone
     }
 }
 

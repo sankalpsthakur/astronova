@@ -1,6 +1,5 @@
 import SwiftUI
 import MapKit
-import CoreLocation
 
 struct MapKitAutocompleteView: View {
     @Binding var selectedLocation: LocationResult?
@@ -118,8 +117,11 @@ struct MapKitAutocompleteView: View {
     private func debounceAutocomplete(_ query: String) {
         searchTask?.cancel()
         
-        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, query.count >= 2 else {
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             suggestions = []
+            return
+        }
+        guard query.count >= 2 else {
             return
         }
         

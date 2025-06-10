@@ -7,6 +7,9 @@ struct MapKitLocationService {
     static let shared = MapKitLocationService()
     private let logger = Logger(subsystem: "com.astronova.app", category: "MapKitLocationService")
     
+    // Timezone cache to avoid excessive network requests
+    private static let timezoneCache = NSCache<NSString, NSString>()
+    
     private init() {}
     
     func searchPlaces(query: String) async throws -> [LocationResult] {
@@ -30,7 +33,8 @@ struct MapKitLocationService {
                 let coordinate = item.placemark.coordinate
                 
                 // Skip invalid coordinates
-                guard coordinate.latitude != 0 || coordinate.longitude != 0 else {
+                guard CLLocationCoordinate2DIsValid(coordinate) && 
+                      (coordinate.latitude != 0 || coordinate.longitude != 0) else {
                     continue
                 }
                 
@@ -176,6 +180,16 @@ struct MapKitLocationService {
     }
     
     private func getTimezoneForCoordinate(_ coordinate: CLLocationCoordinate2D) async -> String {
+        // Create cache key by rounding coordinates to ~25km precision (0.25 degrees)
+        let roundedLat = (coordinate.latitude / 0.25).rounded() * 0.25
+        let roundedLon = (coordinate.longitude / 0.25).rounded() * 0.25
+        let cacheKey = "\(roundedLat),\(roundedLon)" as NSString
+        
+        // Check cache first
+        if let cachedTimezone = Self.timezoneCache.object(forKey: cacheKey) {
+            return cachedTimezone as String
+        }
+        
         // Use CoreLocation to get timezone information
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         let geocoder = CLGeocoder()
@@ -184,13 +198,30 @@ struct MapKitLocationService {
             let placemarks = try await geocoder.reverseGeocodeLocation(location)
             if let placemark = placemarks.first,
                let timeZone = placemark.timeZone {
+                // Cache the result
+                Self.timezoneCache.setObject(timeZone.identifier as NSString, forKey: cacheKey)
                 return timeZone.identifier
             }
         } catch {
             logger.warning("Failed to get timezone for coordinate: \(error.localizedDescription)")
         }
         
-        return TimeZone.current.identifier
+        // Fallback to approximate timezone calculation instead of current timezone
+        let approximateTimezone = approximateTimezoneFromLongitude(coordinate.longitude)
+        Self.timezoneCache.setObject(approximateTimezone as NSString, forKey: cacheKey)
+        return approximateTimezone
+    }
+    
+    private func approximateTimezoneFromLongitude(_ longitude: Double) -> String {
+        // Approximate timezone offset from longitude (15 degrees per hour)
+        let offsetHours = Int(round(longitude / 15.0))
+        let clampedOffset = max(-12, min(14, offsetHours))
+        
+        if clampedOffset >= 0 {
+            return "GMT+\(clampedOffset)"
+        } else {
+            return "GMT\(clampedOffset)"
+        }
     }
 }
 
