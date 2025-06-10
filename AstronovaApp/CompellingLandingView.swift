@@ -158,10 +158,13 @@ struct CompellingLandingView: View {
                         .matchedGeometryEffect(id: "cosmicAura", in: cosmicElements)
                     
                     Text("✨")
-                        .font(.system(size: 60))
+                        .font(.system(size: 60, design: .default))
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .rotationEffect(.degrees(animateStars ? 360 : 0))
                         .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: animateStars)
                         .matchedGeometryEffect(id: "mainCosmicSymbol", in: cosmicElements)
+                        .accessibilityLabel("Cosmic sparkle symbol, rotating")
+                        .accessibilityHint("Decorative element representing cosmic energy")
                 }
                 
                 VStack(spacing: 12) {
@@ -192,7 +195,7 @@ struct CompellingLandingView: View {
                 
                 Text("Your cosmic signature is forming...")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.8))
                     .opacity(currentPhase >= 0 ? 1 : 0)
                     .animation(.easeInOut(duration: 1).delay(1.5), value: currentPhase)
             }
@@ -231,6 +234,9 @@ struct CompellingLandingView: View {
                 )
                 .shadow(color: .purple.opacity(0.3), radius: 10, y: 5)
             }
+            .accessibilityLabel("Reveal Your Cosmic Moment")
+            .accessibilityHint("Continue to see your personalized cosmic reading")
+            .accessibilityAddTraits(.isButton)
             .opacity(currentPhase >= 0 ? 1 : 0)
             .animation(.easeInOut(duration: 1).delay(2), value: currentPhase)
             .overlay(
@@ -303,6 +309,9 @@ struct CompellingLandingView: View {
                 )
                 .shadow(color: .cyan.opacity(0.3), radius: 10, y: 5)
             }
+            .accessibilityLabel("What Does This Mean For Me?")
+            .accessibilityHint("Get your personalized cosmic insight")
+            .accessibilityAddTraits(.isButton)
             
             Spacer()
         }
@@ -317,28 +326,40 @@ struct CompellingLandingView: View {
             HStack(spacing: 30) {
                 VStack(spacing: 8) {
                     Text(currentMoonPhase)
-                        .font(.system(size: 40))
+                        .font(.system(size: 40, design: .default))
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                        .accessibilityLabel("Current moon phase: \(currentMoonPhase)")
                     Text("Moon Phase")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.7))
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Moon phase: \(currentMoonPhase)")
                 
                 VStack(spacing: 8) {
                     Text("⚡")
-                        .font(.system(size: 40))
+                        .font(.system(size: 40, design: .default))
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .foregroundStyle(.yellow)
+                        .accessibilityLabel("Energy symbol")
                     Text("Energy: \(currentEnergy)")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.7))
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Current energy level: \(currentEnergy)")
                 
                 VStack(spacing: 8) {
                     Text("🌟")
-                        .font(.system(size: 40))
+                        .font(.system(size: 40, design: .default))
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                        .accessibilityLabel("Star symbol")
                     Text("Manifestation")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.7))
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Manifestation energy available")
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -364,7 +385,7 @@ struct CompellingLandingView: View {
                     
                     Text("Celestial alignment detected")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.white.opacity(0.75))
                 }
                 .padding()
                 .background(
@@ -461,7 +482,8 @@ struct CompellingLandingView: View {
             
             VStack(spacing: 16) {
                 Text("🌌")
-                    .font(.system(size: 80))
+                    .font(.system(size: 80, design: .default))
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 
                 Text("Welcome to Astronova")
                     .font(.largeTitle.weight(.bold))
@@ -510,6 +532,8 @@ struct CompellingLandingView: View {
                 }
             )
             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+            .accessibilityLabel("Sign in with Apple")
+            .accessibilityHint(inProgress ? "Connecting to the cosmos, please wait" : "Sign in to unlock your complete cosmic profile")
             
             Button("Continue without signing in") {
                 Task {
@@ -517,8 +541,10 @@ struct CompellingLandingView: View {
                 }
             }
             .font(.subheadline.weight(.medium))
-            .foregroundStyle(.white.opacity(0.8))
+            .foregroundStyle(.white.opacity(0.9))
             .disabled(inProgress)
+            .accessibilityLabel("Continue without signing in")
+            .accessibilityHint("Access basic features without creating an account")
         }
     }
     

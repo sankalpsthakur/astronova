@@ -100,34 +100,46 @@ struct TodayTab: View {
                 VStack {
                     Text("💼")
                         .font(.title3)
+                        .accessibilityHidden(true)
                     Text("Career")
                         .font(.caption)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Career theme highlighted today")
                 
                 VStack {
                     Text("❤️")
                         .font(.title3)
+                        .accessibilityHidden(true)
                     Text("Love")
                         .font(.caption)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Love theme highlighted today")
                 
                 VStack {
                     Text("🌱")
                         .font(.title3)
+                        .accessibilityHidden(true)
                     Text("Growth")
                         .font(.caption)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Growth theme highlighted today")
                 
                 VStack {
                     Text("⚖️")
                         .font(.title3)
+                        .accessibilityHidden(true)
                     Text("Balance")
                         .font(.caption)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Balance theme highlighted today")
             }
             .padding(.vertical, 8)
         }
@@ -142,9 +154,11 @@ struct TodayTab: View {
             HStack {
                 Label("Purple", systemImage: "circle.fill")
                     .foregroundStyle(Color.purple)
+                    .accessibilityLabel("Lucky color: Purple")
                 Spacer()
                 Label("7", systemImage: "star.fill")
                     .foregroundStyle(Color.yellow)
+                    .accessibilityLabel("Lucky number: 7")
             }
             .font(.subheadline)
         }
@@ -208,6 +222,8 @@ struct WelcomeToTodayCard: View {
                         .font(.title3)
                         .foregroundStyle(.gray.opacity(0.6))
                 }
+                .accessibilityLabel("Dismiss welcome message")
+                .accessibilityHint("Remove this welcome card")
             }
             
             HStack(spacing: 12) {
@@ -296,6 +312,7 @@ struct CTACard: View {
                 Image(systemName: icon)
                     .font(.title2)
                     .foregroundStyle(color)
+                    .accessibilityHidden(true)
                 
                 VStack(spacing: 2) {
                     Text(title)
@@ -315,6 +332,10 @@ struct CTACard: View {
                     .stroke(color.opacity(0.3), lineWidth: 1)
             )
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
+        .accessibilityHint(subtitle)
+        .accessibilityAddTraits(.isButton)
         .buttonStyle(PlainButtonStyle())
         .scaleEffect(isPressed ? 0.95 : 1.0)
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
@@ -403,6 +424,7 @@ struct DiscoveryCard: View {
                     .font(.title2)
                     .foregroundStyle(color)
                     .frame(width: 24)
+                    .accessibilityHidden(true)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
@@ -422,6 +444,7 @@ struct DiscoveryCard: View {
                 Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
             .padding(16)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -430,6 +453,10 @@ struct DiscoveryCard: View {
                     .stroke(color.opacity(0.2), lineWidth: 1)
             )
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
+        .accessibilityHint(description)
+        .accessibilityAddTraits(.isButton)
         .buttonStyle(PlainButtonStyle())
     }
 }
