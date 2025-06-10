@@ -1,10 +1,10 @@
 import SwiftUI
-import CoreLocation
+import MapKit
 
-struct GooglePlacesAutocompleteView: View {
+struct MapKitAutocompleteView: View {
     @Binding var selectedLocation: LocationResult?
     @State private var searchText = ""
-    @State private var predictions: [GooglePlaceAutocomplete] = []
+    @State private var suggestions: [LocationSuggestion] = []
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
@@ -55,12 +55,12 @@ struct GooglePlacesAutocompleteView: View {
             .background(Color(.systemGray6))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            // Autocomplete results
-            if !predictions.isEmpty && isSearchFocused {
+            // Autocomplete suggestions
+            if !suggestions.isEmpty && isSearchFocused {
                 VStack(spacing: 0) {
-                    ForEach(predictions, id: \.placeId) { prediction in
-                        GooglePlacePredictionRow(prediction: prediction) {
-                            selectPrediction(prediction)
+                    ForEach(suggestions) { suggestion in
+                        LocationSuggestionRow(suggestion: suggestion) {
+                            selectSuggestion(suggestion)
                         }
                     }
                 }
@@ -74,57 +74,54 @@ struct GooglePlacesAutocompleteView: View {
     
     private func clearSearch() {
         searchText = ""
-        predictions = []
+        suggestions = []
         selectedLocation = nil
         isSearchFocused = false
     }
     
-    private func selectPrediction(_ prediction: GooglePlaceAutocomplete) {
-        searchText = prediction.description
+    private func selectSuggestion(_ suggestion: LocationSuggestion) {
+        searchText = suggestion.displayText
         isSearchFocused = false
-        predictions = []
+        suggestions = []
         
-        // Get place details to get coordinates
+        // Get full location details from the completion using MapKitLocationService
         Task {
             do {
-                let details = try await GooglePlacesService.shared.getPlaceDetails(placeId: prediction.placeId)
-                
-                let locationResult = LocationResult(
-                    fullName: details.formattedAddress,
-                    coordinate: CLLocationCoordinate2D(
-                        latitude: details.geometry.location.lat,
-                        longitude: details.geometry.location.lng
-                    ),
-                    timezone: timezoneFromUTCOffset(details.utcOffset)
-                )
+                let locationResult = try await MapKitLocationService.shared.getLocationFromCompletion(suggestion.completion)
                 
                 await MainActor.run {
                     selectedLocation = locationResult
                     onLocationSelected(locationResult)
                 }
             } catch {
-                print("Failed to get place details: \(error)")
-                
-                // Fallback - create location without detailed info
-                let fallbackLocation = LocationResult(
-                    fullName: prediction.description,
-                    coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0), // Will need to be resolved
-                    timezone: TimeZone.current.identifier
-                )
-                
-                await MainActor.run {
-                    selectedLocation = fallbackLocation
-                    onLocationSelected(fallbackLocation)
-                }
+                print("Failed to get location details: \(error)")
+                await handleFallbackSelection(suggestion)
             }
+        }
+    }
+    
+    private func handleFallbackSelection(_ suggestion: LocationSuggestion) async {
+        // Fallback - create location without detailed coordinates
+        let fallbackLocation = LocationResult(
+            fullName: suggestion.displayText,
+            coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+            timezone: TimeZone.current.identifier
+        )
+        
+        await MainActor.run {
+            selectedLocation = fallbackLocation
+            onLocationSelected(fallbackLocation)
         }
     }
     
     private func debounceAutocomplete(_ query: String) {
         searchTask?.cancel()
         
-        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, query.count >= 2 else {
-            predictions = []
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            suggestions = []
+            return
+        }
+        guard query.count >= 2 else {
             return
         }
         
@@ -145,44 +142,26 @@ struct GooglePlacesAutocompleteView: View {
         }
         
         do {
-            let results = try await GooglePlacesService.shared.autocomplete(input: query)
+            let results = try await MapKitLocationService.shared.autocomplete(input: query)
             
             await MainActor.run {
-                predictions = results
+                suggestions = results
                 isSearching = false
             }
         } catch {
             print("Autocomplete failed: \(error)")
             
             await MainActor.run {
-                predictions = []
+                suggestions = []
                 isSearching = false
             }
         }
     }
     
-    private func timezoneFromUTCOffset(_ utcOffset: Int?) -> String {
-        guard let offset = utcOffset else {
-            return TimeZone.current.identifier
-        }
-        
-        // Convert minutes to seconds
-        let offsetSeconds = offset * 60
-        
-        // Find timezone with matching offset
-        for identifier in TimeZone.knownTimeZoneIdentifiers {
-            if let timezone = TimeZone(identifier: identifier),
-               timezone.secondsFromGMT() == offsetSeconds {
-                return identifier
-            }
-        }
-        
-        return TimeZone.current.identifier
-    }
 }
 
-struct GooglePlacePredictionRow: View {
-    let prediction: GooglePlaceAutocomplete
+struct LocationSuggestionRow: View {
+    let suggestion: LocationSuggestion
     let onTap: () -> Void
     
     var body: some View {
@@ -194,23 +173,16 @@ struct GooglePlacePredictionRow: View {
                     .frame(width: 20)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    if let formatting = prediction.structuredFormatting {
-                        Text(formatting.mainText)
-                            .font(.body)
-                            .foregroundColor(.primary)
+                    Text(suggestion.title)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    if let subtitle = suggestion.subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                             .lineLimit(1)
-                        
-                        if let secondaryText = formatting.secondaryText {
-                            Text(secondaryText)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
-                    } else {
-                        Text(prediction.description)
-                            .font(.body)
-                            .foregroundColor(.primary)
-                            .lineLimit(2)
                     }
                 }
                 
@@ -229,7 +201,7 @@ struct GooglePlacePredictionRow: View {
 
 #Preview {
     VStack {
-        GooglePlacesAutocompleteView(
+        MapKitAutocompleteView(
             selectedLocation: .constant(nil),
             placeholder: "Where were you born?"
         ) { location in

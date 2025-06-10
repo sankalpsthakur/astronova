@@ -5,6 +5,7 @@ import Combine
 import StoreKit
 import AuthenticationServices
 import CoreLocation
+import MapKit
 
 // MARK: - Pricing Models
 
@@ -59,13 +60,8 @@ struct ReportPricing {
 class StoreManager: ObservableObject, StoreManagerProtocol {
     static let shared = StoreManager()
     
-    @Published var hasProSubscription = false
+    @AppStorage("hasAstronovaPro") var hasProSubscription = false
     @Published var products: [String: String] = [:]  // Product ID to localized price
-    
-    init() {
-        // Load subscription status from UserDefaults for now
-        hasProSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
-    }
     
     func loadProducts() {
         // TODO: Implement StoreKit product loading
@@ -84,22 +80,24 @@ class StoreManager: ObservableObject, StoreManagerProtocol {
         // For now, simulate successful purchase for individual reports
         if productId == "astronova_pro_monthly" {
             hasProSubscription = true
-            UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
         }
         return true
+    }
+    
+    func hasProduct(_ productId: String) -> Bool {
+        if productId == "astronova_pro_monthly" {
+            return hasProSubscription
+        }
+        return true // Stub: assume all products are available
+    }
+    
+    func restorePurchases() async {
+        // Stub implementation - do nothing
     }
 }
 
 // MARK: - Notification.Name Helpers
 
-extension Notification.Name {
-    static let switchToTab            = Notification.Name("switchToTab")
-    static let switchToProfileSection = Notification.Name("switchToProfileSection")
-}
-
-// Duplicate Notification.Name extension removed. The definitions for
-// `switchToTab` and `switchToProfileSection` already exist at the top of this
-// file.
 
 /// Decides which high-level screen to show based on authentication state.
 struct RootView: View {
@@ -1098,18 +1096,14 @@ struct EnhancedBirthPlaceStepView: View {
             try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
             
             if !Task.isCancelled {
-                // Try Google Places API first, fallback to existing API
+                // Use MapKit for location search, fallback to existing API
                 let results: [LocationResult]
-                // TODO: Re-enable GooglePlacesService when compilation issues are resolved
-                /*
                 do {
-                    results = try await GooglePlacesService.shared.searchPlaces(query: query)
+                    results = try await MapKitLocationService.shared.searchPlaces(query: query)
                 } catch {
-                    print("Google Places search failed, using fallback: \(error)")
+                    print("MapKit search failed, using fallback: \(error)")
                     results = await auth.profileManager.searchLocations(query: query)
                 }
-                */
-                results = await auth.profileManager.searchLocations(query: query)
                 
                 await MainActor.run {
                     if !Task.isCancelled {
@@ -1397,21 +1391,14 @@ struct LocationSearchView: View {
     @State private var searchResults: [String] = []
     
     var body: some View {
-        NavigationView {
-            VStack {
-                TextField("Search for a city", text: $query)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-                
-                List(searchResults, id: \.self) { result in
-                    Button(result) {
-                        query = result
-                        dismiss()
-                    }
+        NavigationStack {
+            List(searchResults, id: \.self) { result in
+                Button(result) {
+                    query = result
+                    dismiss()
                 }
-                
-                Spacer()
             }
+            .searchable(text: $query, prompt: "Search for a city")
             .navigationTitle("Select Location")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1431,6 +1418,8 @@ struct SimpleTabBarView: View {
     @State private var selectedTab = 0
     @State private var showTabGuide = false
     @State private var guideStep = 0
+    @AppStorage("app_launch_count") private var appLaunchCount = 0
+    @AppStorage("has_seen_tab_guide") private var hasSeenTabGuide = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1442,8 +1431,10 @@ struct SimpleTabBarView: View {
                 case 1:
                     FriendsTab()
                 case 2:
-                    NexusTab()
+                    LearnTab()
                 case 3:
+                    NexusTab()
+                case 4:
                     ProfileTab()
                 default:
                     TodayTab()
@@ -1460,7 +1451,7 @@ struct SimpleTabBarView: View {
                     TabGuideOverlay(
                         step: guideStep,
                         onNext: {
-                            if guideStep < 3 {
+                            if guideStep < 4 {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     guideStep += 1
                                     selectedTab = guideStep
@@ -1489,15 +1480,11 @@ struct SimpleTabBarView: View {
     }
     
     private func trackAppLaunch() {
-        let count = UserDefaults.standard.integer(forKey: "app_launch_count")
-        UserDefaults.standard.set(count + 1, forKey: "app_launch_count")
+        appLaunchCount += 1
     }
     
     private func showFirstRunGuideIfNeeded() {
-        let launchCount = UserDefaults.standard.integer(forKey: "app_launch_count")
-        let hasSeenGuide = UserDefaults.standard.bool(forKey: "has_seen_tab_guide")
-        
-        if launchCount <= 2 && !hasSeenGuide {
+        if appLaunchCount <= 2 && !hasSeenTabGuide {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     showTabGuide = true
@@ -1510,7 +1497,7 @@ struct SimpleTabBarView: View {
         withAnimation(.easeOut(duration: 0.3)) {
             showTabGuide = false
         }
-        UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+        hasSeenTabGuide = true
     }
 }
 
@@ -1673,12 +1660,25 @@ struct ProfileTabIcon: View {
     }
 }
 
+struct LearnTab: View {
+    @EnvironmentObject private var auth: AuthState
+    
+    var body: some View {
+        NavigationStack {
+            PlanetaryCalculationsView()
+                .navigationBarHidden(true)
+                .environmentObject(auth.profileManager)
+        }
+    }
+}
+
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
     
     private let tabs = [
         (title: "Today", icon: "sun.and.horizon.circle.fill", customIcon: nil),
         (title: "Friends", icon: "", customIcon: "friends"),
+        (title: "Learn", icon: "graduationcap.circle.fill", customIcon: nil),
         (title: "Nexus", icon: "", customIcon: "nexus"), 
         (title: "Profile", icon: "", customIcon: "profile")
     ]
@@ -1771,9 +1771,9 @@ struct TodayTab: View {
     @State private var planetaryPositions: [PlanetaryPosition] = []
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                LazyVStack(alignment: .leading, spacing: 24) {
                     welcomeSection
                     PrimaryCTASection()
                     
@@ -2241,7 +2241,7 @@ struct FriendsTab: View {
     @State private var animateHearts = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 32) {
                     // Beautiful header with animated hearts
@@ -2541,7 +2541,7 @@ struct NexusTab: View {
     private let freeMessageLimit = 5
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Cosmic animated background
                 CosmicChatBackground(animateStars: $animateStars, animateGradient: $animateGradient)
@@ -2814,7 +2814,7 @@ struct SubscriptionSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 12) {
@@ -3375,7 +3375,7 @@ struct ProfileTab: View {
     private let tabs = ["Overview", "Birth Chart", "Daily", "Saved"]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Tab Selector
                 Picker("View", selection: $selectedTab) {
@@ -3756,15 +3756,13 @@ struct ProfileEditView: View {
                                 .datePickerStyle(.compact)
                             }
                             
-                            // Birth Place with Google Places Autocomplete
+                            // Birth Place with MapKit Autocomplete
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Birth Place")
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.secondary)
                                 
-                                // TODO: Re-enable GooglePlacesAutocompleteView when compilation issues are resolved
-                                /*
-                                GooglePlacesAutocompleteView(
+                                MapKitAutocompleteView(
                                     selectedLocation: Binding(
                                         get: { 
                                             // Convert current birth place to LocationResult if available
@@ -3798,11 +3796,6 @@ struct ProfileEditView: View {
                                     editedProfile.birthCoordinates = location.coordinate
                                     editedProfile.timezone = location.timezone
                                 }
-                                */
-                                TextField("City, State/Country", text: Binding(
-                                    get: { editedProfile.birthPlace ?? "" },
-                                    set: { editedProfile.birthPlace = $0.isEmpty ? nil : $0 }
-                                ))
                             }
                         }
                         .padding(.horizontal, 20)
@@ -3929,7 +3922,7 @@ struct EnhancedSettingsView: View {
     private let themes = ["Auto", "Light", "Dark"]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // Profile Section
                 Section {
@@ -4913,7 +4906,7 @@ struct ReportGenerationSheet: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 16) {
@@ -5094,7 +5087,7 @@ struct ReportsLibraryView: View {
     @State private var showingReportDetail = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 16) {
                     if reports.isEmpty {
@@ -5238,6 +5231,7 @@ struct ReportLibraryCard: View {
 struct ReportDetailView: View {
     let report: DetailedReport
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var auth: AuthState
     @State private var showingShareSheet = false
     @State private var showingPlanetaryTutorial = false
     
@@ -5259,7 +5253,7 @@ struct ReportDetailView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     // Header
@@ -5438,8 +5432,27 @@ struct ReportDetailView: View {
             }
         }
         .sheet(isPresented: $showingPlanetaryTutorial) {
-            // PlanetaryCalculationsView() // Temporarily commented out
-            Text("Planetary calculations coming soon!")
+            NavigationStack {
+                VStack {
+                    Text("Planetary Calculations Tutorial")
+                        .font(.title)
+                        .padding()
+                    
+                    Text("Tutorial content will be available soon.")
+                        .padding()
+                    
+                    Spacer()
+                }
+                .navigationTitle("Tutorial")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            showingPlanetaryTutorial = false
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -5698,7 +5711,7 @@ struct MonthPickerView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             DatePicker(
                 "Select Month",
                 selection: $selectedDate,
@@ -5721,7 +5734,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section("Account") {
                     Button("Sign Out", role: .destructive) {
@@ -5826,14 +5839,9 @@ struct ContactsPickerView: View {
     @State private var authorizationStatus: CNAuthorizationStatus = .notDetermined
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 if hasContactsAccess {
-                    // Search bar
-                    TextField("Search contacts", text: $searchText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding()
-                    
                     // Contacts list
                     List(filteredContacts, id: \.identifier) { contact in
                         Button {
@@ -5863,6 +5871,7 @@ struct ContactsPickerView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
+                    .searchable(text: $searchText, prompt: "Search contacts")
                 } else {
                     // Access request view
                     VStack(spacing: 20) {
@@ -5944,12 +5953,13 @@ struct ContactsPickerView: View {
         case .authorized:
             hasContactsAccess = true
             loadContacts()
-        case .denied:
-            hasContactsAccess = false
-        case .restricted:
+        case .denied, .restricted:
             hasContactsAccess = false
         case .notDetermined:
             hasContactsAccess = false
+        case .limited:
+            hasContactsAccess = true
+            loadContacts()
         @unknown default:
             hasContactsAccess = false
         }

@@ -35,7 +35,7 @@ class DependencyContainer: ObservableObject {
         if let storeManager = storeManager {
             self._storeManager = storeManager
         } else {
-            self._storeManager = StoreManager.shared
+            self._storeManager = StoreKitManager.shared
         }
     }
     
@@ -451,6 +451,17 @@ class MockStoreManager: ObservableObject, StoreManagerProtocol {
         }
         
         return true
+    }
+    
+    func hasProduct(_ productId: String) -> Bool {
+        if productId == "astronova_pro_monthly" {
+            return hasProSubscription
+        }
+        return true // Mock: assume all products are available
+    }
+    
+    func restorePurchases() async {
+        // Mock implementation - do nothing
     }
 }
 

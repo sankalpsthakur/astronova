@@ -39,7 +39,7 @@ struct OnboardingView: View {
                 .overlay(
                     Group {
                         if inProgress { 
-                            ProgressView()
+                            LoadingView(style: .inline, message: "Signing in...")
                                 .foregroundStyle(Color.white)
                         }
                     }

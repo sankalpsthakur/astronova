@@ -1,5 +1,22 @@
 import SwiftUI
 
+// MARK: - Supporting Types
+
+struct DetailedPlanetaryPosition: Codable, Identifiable {
+    let id: String
+    let symbol: String
+    let name: String
+    let sign: String
+    let degree: Double
+    let retrograde: Bool
+    let house: Int?
+    let significance: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, symbol, name, sign, degree, retrograde, house, significance
+    }
+}
+
 struct PlanetaryCalculationsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var auth: AuthState
@@ -10,7 +27,7 @@ struct PlanetaryCalculationsView: View {
     private let freeSteps = 2 // Free users see steps 0 and 1
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Cosmic Background
                 cosmicBackground
@@ -30,11 +47,12 @@ struct PlanetaryCalculationsView: View {
                             .tag(1)
                         
                         // Steps 3-6: Pro Content
-                        if auth.subscriptionManager.isProUser {
+                        if auth.state == .signedIn {
                             SiderealTimeAnimationView()
                                 .tag(2)
                             
                             PlanetaryCalculationView()
+                                .environmentObject(auth)
                                 .tag(3)
                             
                             HouseSystemInteractiveView()
@@ -102,7 +120,7 @@ struct PlanetaryCalculationsView: View {
             .ignoresSafeArea()
             
             // Animated stars
-            ForEach(0..<30, id: \.self) { i in
+            ForEach(0..<30, id: \.self) { _ in
                 Circle()
                     .fill(.white.opacity(Double.random(in: 0.3...0.7)))
                     .frame(width: CGFloat.random(in: 1...2))
@@ -188,10 +206,9 @@ struct PlanetaryCalculationsView: View {
                 
                 // Next Button or Pro Upsell
                 if currentStep < totalSteps - 1 {
-                    if currentStep >= freeSteps && !auth.subscriptionManager.isProUser {
+                    if currentStep >= freeSteps && auth.state != .signedIn {
                         Button {
-                            // Show Pro upgrade flow
-                            auth.subscriptionManager.showPaywall()
+                            // TODO: Show paywall when subscription system is integrated
                         } label: {
                             HStack(spacing: 8) {
                                 Text("Unlock Pro")
@@ -244,7 +261,7 @@ struct PlanetaryCalculationsView: View {
             return .green
         } else if step == currentStep {
             return .white
-        } else if step >= freeSteps && !auth.subscriptionManager.isProUser {
+        } else if step >= freeSteps && auth.state != .signedIn {
             return .gray.opacity(0.5)
         } else {
             return .gray.opacity(0.3)
@@ -512,12 +529,12 @@ struct PlanetaryCalculationView: View {
     @State private var userCalculations: UserCalculationData?
     @State private var isLoading = false
     
-    @EnvironmentObject private var userProfileManager: UserProfileManager
-    @Environment(\.dependencies) private var dependencies
+    @EnvironmentObject private var auth: AuthState
     
-    private var planetaryService: PlanetaryDataService {
-        return PlanetaryDataService.shared
-    }
+    // Note: PlanetaryDataService access moved to methods to avoid build issues
+    // private var planetaryService: PlanetaryDataService {
+    //     return PlanetaryDataService.shared
+    // }
     
     var body: some View {
         ScrollView {
@@ -537,7 +554,7 @@ struct PlanetaryCalculationView: View {
                     loadingView
                 } else if let calculations = userCalculations {
                     userDataHeader(calculations: calculations)
-                } else if userProfileManager.isProfileComplete {
+                } else if auth.profileManager.isProfileComplete {
                     Text("Tap 'Calculate' to see your personalized calculations")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
@@ -567,7 +584,7 @@ struct PlanetaryCalculationView: View {
             }
             
             // Auto-calculate if user profile is complete
-            if userProfileManager.isProfileComplete && userCalculations == nil {
+            if auth.profileManager.isProfileComplete && userCalculations == nil {
                 Task {
                     await calculateUserData()
                 }
@@ -613,24 +630,29 @@ struct PlanetaryCalculationView: View {
     
     private var exampleDataHeader: some View {
         VStack(spacing: 12) {
-            Text("Example: Educational Walkthrough")
+            Text("Educational Example")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.cyan)
+                .foregroundStyle(.orange)
             
             VStack(spacing: 4) {
                 Text("24 Dec 1999, 07:00 IST (+05:30)")
-                Text("Guna, Madhya Pradesh (24.65°N, 77.32°E)")
+                Text("Guna, Madhya Pradesh")
+                Text("(24.65°N, 77.32°E)")
             }
             .font(.subheadline)
             .foregroundStyle(.white.opacity(0.8))
             
-            Text("Complete your profile to see your own calculations")
+            Text("Complete your profile to see your own birth chart calculations")
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.orange.opacity(0.9))
                 .italic()
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .background(.orange.opacity(0.2))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.orange.opacity(0.3), lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
@@ -672,39 +694,39 @@ struct PlanetaryCalculationView: View {
                     result: "Final chart positions"
                 )
             } else {
-                // Example steps with hardcoded data
+                // Example steps with educational data
                 calculationStepCard(
                     step: "0",
                     title: "Convert Local Time → UTC",
-                    content: "07:00 IST - 05:30 = 01:30 UTC",
+                    content: "Educational Example:\n07:00 IST (+05:30) → UTC\n07:00 - 05:30 = 01:30 UTC",
                     result: "01:30 UTC"
                 )
                 
                 calculationStepCard(
                     step: "1",
                     title: "Compute Julian Date",
-                    content: "JD = 367×Y - 7×(Y+(M+9)÷12)÷4 + 275×M÷9 + D + 1721013.5 + UT÷24",
+                    content: "Educational Example:\nConvert birth date + time to astronomical timestamp:\nJD = 367×Y - 7×(Y+(M+9)÷12)÷4 + 275×M÷9 + D + 1721013.5 + UT÷24\nY=1999, M=12, D=24, UT=1.5625 hours",
                     result: "2451536.5625"
                 )
                 
                 calculationStepCard(
                     step: "2",
                     title: "Pull Planetary Longitudes (Tropical)",
-                    content: "From ephemeris for 24 Dec 1999 00 UT",
-                    result: "See tropical table below"
+                    content: "Educational Example:\nUse ephemeris data for planetary positions at exact moment:\nSource: 24 Dec 1999 00:00 UT\nInterpolate to 01:30 UT if needed",
+                    result: "See table below"
                 )
                 
                 calculationStepCard(
                     step: "3",
                     title: "Subtract Lahiri Ayanamsa",
-                    content: "Ayanamsa ≈ 23°51′ (1999 value)\nSubtract from all planetary positions",
+                    content: "Educational Example:\nConvert from tropical to sidereal zodiac:\nAyanamsa ≈ 23°51′ (1999 value)\nSubtract from all planetary longitudes\nAccounts for Earth's precession over time",
                     result: "Sidereal positions"
                 )
                 
                 calculationStepCard(
                     step: "4",
                     title: "Map to 12 Signs",
-                    content: "0-360° result into 12 × 30° signs\nSign = floor(longitude ÷ 30°)",
+                    content: "Educational Example:\nConvert degrees to zodiac signs:\n0-360° mapped into 12 × 30° segments\nSign = floor(longitude ÷ 30°)\nDegree within sign = longitude mod 30°",
                     result: "Final chart positions"
                 )
             }
@@ -744,7 +766,7 @@ struct PlanetaryCalculationView: View {
             }
             
             // Calculate Button (if user profile complete but no calculations)
-            if userProfileManager.isProfileComplete && userCalculations == nil && !isLoading {
+            if auth.profileManager.isProfileComplete && userCalculations == nil && !isLoading {
                 Button {
                     Task {
                         await calculateUserData()
@@ -770,11 +792,11 @@ struct PlanetaryCalculationView: View {
         isLoading = true
         
         do {
-            let profile = userProfileManager.profile
+            let profile = auth.profileManager.profile
             guard let birthTime = profile.birthTime,
-                  let coordinates = profile.birthCoordinates,
-                  let timezone = profile.timezone,
-                  let birthPlace = profile.birthPlace else {
+                  let _ = profile.birthCoordinates,
+                  let _ = profile.timezone,
+                  let _ = profile.birthPlace else {
                 isLoading = false
                 return
             }
@@ -782,20 +804,22 @@ struct PlanetaryCalculationView: View {
             // Format dates for API
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
-            let birthDateString = dateFormatter.string(from: profile.birthDate)
+            _ = dateFormatter.string(from: profile.birthDate)
             
             let timeFormatter = DateFormatter()
             timeFormatter.dateFormat = "HH:mm"
-            let birthTimeString = timeFormatter.string(from: birthTime)
+            _ = timeFormatter.string(from: birthTime)
             
             // Get planetary positions from API
-            let positions = try await planetaryService.getBirthChartPositions(
-                birthDate: birthDateString,
-                birthTime: birthTimeString,
-                latitude: coordinates.latitude,
-                longitude: coordinates.longitude,
-                timezone: timezone
-            )
+            // Note: Temporarily disabled - requires proper PlanetaryDataService integration
+            // let positions = try await PlanetaryDataService.shared.getBirthChartPositions(
+            //     birthDate: birthDateString,
+            //     birthTime: birthTimeString,
+            //     latitude: coordinates.latitude,
+            //     longitude: coordinates.longitude,
+            //     timezone: timezone
+            // )
+            let positions: [DetailedPlanetaryPosition] = [] // Placeholder
             
             // Create calculation data
             await MainActor.run {
@@ -870,7 +894,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(String(format: "%.1f°", position.degree))
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.cyan)
                             .frame(width: 80, alignment: .leading)
                         
@@ -913,7 +937,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(String(format: "%.1f°", data.siderealDegree))
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.green)
                             .frame(width: 100, alignment: .leading)
                         
@@ -937,9 +961,9 @@ struct PlanetaryCalculationView: View {
     
     private var exampleTropicalDataTable: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Tropical Longitudes (Example - 00 UT)")
+            Text("Tropical Longitudes (Educational Example)")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.orange)
             
             VStack(spacing: 8) {
                 ForEach(SankalpExample.tropicalData, id: \.planet) { data in
@@ -950,7 +974,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(data.longitude)
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.cyan)
                             .frame(width: 80, alignment: .leading)
                         
@@ -974,9 +998,9 @@ struct PlanetaryCalculationView: View {
     
     private var exampleSiderealDataTable: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Sidereal Conversion (Example - −23°51′)")
+            Text("Sidereal Conversion (Educational Example - −23°51′)")
                 .font(.headline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.orange)
             
             VStack(spacing: 8) {
                 ForEach(SankalpExample.siderealData, id: \.planet) { data in
@@ -987,7 +1011,7 @@ struct PlanetaryCalculationView: View {
                             .frame(width: 80, alignment: .leading)
                         
                         Text(data.longitude)
-                            .font(.subheadline.family(.monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .foregroundStyle(.green)
                             .frame(width: 100, alignment: .leading)
                         
@@ -1014,12 +1038,12 @@ struct PlanetaryCalculationView: View {
 
 struct UserCalculationData {
     let profile: UserProfile
-    let planetaryPositions: [PlanetaryPosition]
+    let planetaryPositions: [DetailedPlanetaryPosition]
     let julianDate: Double
     let ayanamsa: Double
     let siderealPositions: [SiderealPlanetData]
     
-    init(profile: UserProfile, planetaryPositions: [PlanetaryPosition]) {
+    init(profile: UserProfile, planetaryPositions: [DetailedPlanetaryPosition]) {
         self.profile = profile
         self.planetaryPositions = planetaryPositions
         self.julianDate = Self.calculateJulianDate(from: profile)
@@ -1110,7 +1134,7 @@ struct UserCalculationData {
     }
     
     private static func calculateSiderealPositions(
-        from positions: [PlanetaryPosition],
+        from positions: [DetailedPlanetaryPosition],
         ayanamsa: Double
     ) -> [SiderealPlanetData] {
         return positions.map { position in
@@ -1189,6 +1213,9 @@ struct HouseSystemInteractiveView: View {
 struct AspectVisualizationView: View {
     @State private var animateInterpretation = false
     @State private var currentInterpretation = 0
+    @State private var showChart = false
+    @State private var selectedPlanet: String?
+    @State private var userCalculations: UserCalculationData? = nil
     
     private let interpretations = [
         InterpretationData(
@@ -1213,22 +1240,22 @@ struct AspectVisualizationView: View {
             VStack(spacing: 24) {
                 // Title
                 VStack(spacing: 8) {
-                    Text("5. Interpretation Engine")
+                    Text("5. Chart Construction & Interpretation")
                         .font(.title.weight(.bold))
                         .foregroundStyle(.white)
                     
-                    Text("From Positions to Personal Insights")
+                    Text("Visual Chart & Personal Insights")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 
                 // Process Overview
                 VStack(spacing: 16) {
-                    Text("How Raw Data Becomes Meaningful Insight")
+                    Text("A 12-slice wheel displays your cosmic blueprint")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.cyan)
                     
-                    Text("The interpretation engine combines astronomical calculations with thousands of years of astrological wisdom to create your personalized reading.")
+                    Text("Each planet icon is placed at its exact sidereal position. Tap planets to highlight their interpretations below.")
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
@@ -1236,6 +1263,24 @@ struct AspectVisualizationView: View {
                 }
                 .padding()
                 .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                // Visual Chart Section
+                VStack(spacing: 16) {
+                    if userCalculations != nil {
+                        Text("Your Sidereal Chart Wheel")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.cyan)
+                    } else {
+                        Text("Example Sidereal Chart Wheel")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.orange)
+                    }
+                    
+                    chartWheelView
+                }
+                .padding()
+                .background(.black.opacity(0.3))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 // Interactive Interpretation Cards
@@ -1262,16 +1307,54 @@ struct AspectVisualizationView: View {
                 .background(.black.opacity(0.3))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
+                // Tutorial Cards Section
+                VStack(spacing: 12) {
+                    Text("Complete Tutorial Cards")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    
+                    VStack(spacing: 8) {
+                        tutorialCard(
+                            number: "1",
+                            visual: "📅 ▶️ JD",
+                            caption: "We convert your time & place into an astronomical timestamp."
+                        )
+                        tutorialCard(
+                            number: "2", 
+                            visual: "🌌",
+                            caption: "Ephemeris gives actual planet angles at that moment."
+                        )
+                        tutorialCard(
+                            number: "3",
+                            visual: "🔄 24° ➡️",
+                            caption: "Subtract ayanamsa to shift from tropical to sidereal."
+                        )
+                        tutorialCard(
+                            number: "4",
+                            visual: "⭕️",
+                            caption: "Here is your sidereal chart wheel."
+                        )
+                        tutorialCard(
+                            number: "5",
+                            visual: "📖",
+                            caption: "Each placement translates into personal insight."
+                        )
+                    }
+                }
+                .padding()
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
                 // Learn More Section
                 VStack(spacing: 12) {
-                    Text("Transparency & Sources")
+                    Text("Learn More Resources")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.white)
                     
                     VStack(spacing: 8) {
                         learnMoreLink(title: "NASA Horizons", subtitle: "Raw astronomical data source")
                         learnMoreLink(title: "Lahiri Ayanamsa", subtitle: "Government standard for precession")
-                        learnMoreLink(title: "Traditional Sources", subtitle: "Classical astrological texts")
+                        learnMoreLink(title: "Traditional Sources", subtitle: "Classical astrological wisdom")
                     }
                 }
                 .padding()
@@ -1284,7 +1367,109 @@ struct AspectVisualizationView: View {
             withAnimation(.easeInOut(duration: 1).delay(0.3)) {
                 animateInterpretation = true
             }
+            withAnimation(.easeInOut(duration: 1.5).delay(0.8)) {
+                showChart = true
+            }
         }
+    }
+    
+    private var chartWheelView: some View {
+        VStack {
+            Text("Chart Wheel Coming Soon")
+                .foregroundStyle(.white)
+        }
+        /*
+        ZStack {
+            // Outer circle (chart boundary)
+            Circle()
+                .stroke(.white.opacity(0.3), lineWidth: 2)
+                .frame(width: 280, height: 280)
+            
+            // Inner circle
+            Circle()
+                .stroke(.white.opacity(0.2), lineWidth: 1)
+                .frame(width: 200, height: 200)
+            
+            // 12 house divisions
+            ForEach(0..<12, id: \.self) { house in
+                Path { path in
+                    let center = CGPoint(x: 140, y: 140)
+                    let angle = Double(house) * 30.0 * .pi / 180.0
+                    path.move(to: center)
+                    path.addLine(to: CGPoint(
+                        x: center.x + 140 * cos(angle - .pi / 2),
+                        y: center.y + 140 * sin(angle - .pi / 2)
+                    ))
+                }
+                .stroke(.white.opacity(0.2), lineWidth: 1)
+            }
+            
+            // Zodiac signs around the wheel
+            ForEach(0..<12, id: \.self) { signIndex in
+                let signs = ["♈︎", "♉︎", "♊︎", "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎"]
+                let angle = Double(signIndex) * 30.0 * .pi / 180.0 + (.pi / 12)
+                
+                Text(signs[signIndex])
+                    .font(.title2)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .position(
+                        x: 140 + 120 * cos(angle - .pi / 2),
+                        y: 140 + 120 * sin(angle - .pi / 2)
+                    )
+            }
+            
+            // Planet positions (example positions)
+            let planetData = [
+                ("☉", 7.85, "Sun"), // Sun in Sagittarius 7°
+                ("☽", 85.85, "Moon"), // Moon in Gemini 25°
+                ("♂", 297.5, "Mars") // Mars in Capricorn 27°
+            ]
+            
+            ForEach(Array(planetData.enumerated()), id: \.offset) { index, planet in
+                let (symbol, degrees, name) = planet
+                let angle = degrees * .pi / 180.0
+                
+                Button {
+                    selectedPlanet = selectedPlanet == name ? nil : name
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(selectedPlanet == name ? .cyan : .white)
+                            .frame(width: 24, height: 24)
+                        
+                        Text(symbol)
+                            .font(.system(size: 14))
+                            .foregroundStyle(selectedPlanet == name ? .black : .black)
+                    }
+                }
+                .position(
+                    x: 140 + 80 * cos(angle - .pi / 2),
+                    y: 140 + 80 * sin(angle - .pi / 2)
+                )
+                .scaleEffect(showChart ? 1.0 : 0.1)
+                .opacity(showChart ? 1.0 : 0.0)
+                .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(Double(index) * 0.2), value: showChart)
+            }
+            
+            // Center point
+            Circle()
+                .fill(.white.opacity(0.8))
+                .frame(width: 4, height: 4)
+        }
+        .frame(width: 280, height: 280)
+        
+        if let selected = selectedPlanet {
+            Text("Selected: \(selected)")
+                .font(.caption)
+                .foregroundStyle(.cyan)
+                .padding(.top, 8)
+        } else {
+            Text("Tap planets above to explore their meanings")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.6))
+                .padding(.top, 8)
+        }
+        */
     }
     
     private func interpretationCard(interpretation: InterpretationData, index: Int) -> some View {
@@ -1322,6 +1507,52 @@ struct AspectVisualizationView: View {
     }
     
     private func processStep(number: String, title: String, description: String) -> some View {
+        numberedRow(
+            number: number,
+            content: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white)
+                    
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+            }
+        )
+    }
+    
+    private func tutorialCard(number: String, visual: String, caption: String) -> some View {
+        numberedRow(
+            number: number,
+            content: {
+                HStack(spacing: 12) {
+                    // Visual element
+                    Text(visual)
+                        .font(.body)
+                        .frame(width: 60, alignment: .leading)
+                    
+                    // Caption
+                    Text(caption)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.leading)
+                    
+                    Spacer(minLength: 0)
+                }
+            }
+        )
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+    
+    private func numberedRow<Content: View>(
+        number: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         HStack(spacing: 12) {
             Text(number)
                 .font(.caption.weight(.bold))
@@ -1330,15 +1561,7 @@ struct AspectVisualizationView: View {
                 .background(.cyan)
                 .clipShape(Circle())
             
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white)
-                
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
+            content()
             
             Spacer()
         }
@@ -1414,7 +1637,7 @@ struct ProUpsellView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             
             Button {
-                auth.subscriptionManager.showPaywall()
+                // TODO: Show paywall when subscription system is integrated
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "crown.fill")

@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-struct GoogleMapsLocationPicker: View {
+struct MapKitLocationPicker: View {
     @Binding var selectedLocation: LocationResult?
     @State private var searchText = ""
     @State private var searchResults: [LocationResult] = []
@@ -51,7 +51,7 @@ struct GoogleMapsLocationPicker: View {
                 if !searchResults.isEmpty && isSearchFocused {
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            ForEach(searchResults, id: \.fullName) { location in
+                            ForEach(searchResults, id: \.self) { location in
                                 LocationResultRow(location: location) {
                                     selectLocation(location)
                                 }
@@ -82,23 +82,25 @@ struct GoogleMapsLocationPicker: View {
             .padding(.top, 16)
             
             // Map view
-            Map(coordinateRegion: $region, 
-                interactionModes: [.all],
-                showsUserLocation: true,
-                annotationItems: selectedCoordinate.map { [MapAnnotation(coordinate: $0)] } ?? []) { annotation in
-                MapPin(coordinate: annotation.coordinate, tint: .red)
-            }
-            .onTapGesture(coordinateSpace: .local) { location in
-                // Convert tap location to coordinate
-                let mapFrame = UIScreen.main.bounds
-                let x = location.x / mapFrame.width
-                let y = location.y / mapFrame.height
-                
-                let longitude = region.center.longitude + (x - 0.5) * region.span.longitudeDelta
-                let latitude = region.center.latitude - (y - 0.5) * region.span.latitudeDelta
-                
-                let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                handleMapTap(at: coordinate)
+            GeometryReader { geometry in
+                Map(coordinateRegion: $region, 
+                    interactionModes: [.all],
+                    showsUserLocation: true,
+                    annotationItems: selectedCoordinate.map { [MapAnnotation(coordinate: $0)] } ?? []) { annotation in
+                    MapPin(coordinate: annotation.coordinate, tint: .red)
+                }
+                .onTapGesture(coordinateSpace: .local) { location in
+                    // Convert tap location to coordinate using actual map frame
+                    let mapFrame = geometry.size
+                    let x = location.x / mapFrame.width
+                    let y = location.y / mapFrame.height
+                    
+                    let longitude = region.center.longitude + (x - 0.5) * region.span.longitudeDelta
+                    let latitude = region.center.latitude - (y - 0.5) * region.span.latitudeDelta
+                    
+                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                    handleMapTap(at: coordinate)
+                }
             }
             .frame(minHeight: 300)
         }
@@ -127,40 +129,32 @@ struct GoogleMapsLocationPicker: View {
     private func handleMapTap(at coordinate: CLLocationCoordinate2D) {
         selectedCoordinate = coordinate
         
-        // Reverse geocode the coordinate
-        let geocoder = CLGeocoder()
-        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        
-        geocoder.reverseGeocodeLocation(location) { placemarks, error in
-            guard let placemark = placemarks?.first, error == nil else { return }
-            
-            let locationResult = LocationResult(
-                fullName: formatPlacemarkName(placemark),
-                coordinate: coordinate,
-                timezone: TimeZone.current.identifier // This should be improved with proper timezone lookup
-            )
-            
-            DispatchQueue.main.async {
-                selectLocation(locationResult)
+        // Reverse geocode the coordinate using MapKitLocationService
+        Task {
+            do {
+                let locationResult = try await MapKitLocationService.shared.reverseGeocode(coordinate: coordinate)
+                
+                await MainActor.run {
+                    selectLocation(locationResult)
+                }
+            } catch {
+                print("Reverse geocoding failed: \(error)")
+                
+                // Fallback location with approximate timezone from longitude
+                let approximateTimezone = approximateTimezoneFromLongitude(coordinate.longitude)
+                let fallbackLocation = LocationResult(
+                    fullName: "Selected Location (\(String(format: "%.4f", coordinate.latitude))°, \(String(format: "%.4f", coordinate.longitude))°)",
+                    coordinate: coordinate,
+                    timezone: approximateTimezone
+                )
+                
+                await MainActor.run {
+                    selectLocation(fallbackLocation)
+                }
             }
         }
     }
     
-    private func formatPlacemarkName(_ placemark: CLPlacemark) -> String {
-        var components: [String] = []
-        
-        if let locality = placemark.locality {
-            components.append(locality)
-        }
-        if let administrativeArea = placemark.administrativeArea {
-            components.append(administrativeArea)
-        }
-        if let country = placemark.country {
-            components.append(country)
-        }
-        
-        return components.joined(separator: ", ")
-    }
     
     private func debounceSearch(_ query: String) {
         searchTask?.cancel()
@@ -194,8 +188,8 @@ struct GoogleMapsLocationPicker: View {
         }
         
         do {
-            // Try Google Places API first
-            let results = try await GooglePlacesService.shared.searchPlaces(query: query)
+            // Use MapKit for location search
+            let results = try await MapKitLocationService.shared.searchPlaces(query: query)
             
             await MainActor.run {
                 searchResults = results
@@ -203,44 +197,30 @@ struct GoogleMapsLocationPicker: View {
                 errorMessage = results.isEmpty ? "No locations found" : nil
             }
         } catch {
-            // Fallback to MKLocalSearch if Google Places fails
-            print("Google Places search failed, falling back to MKLocalSearch: \(error)")
-            
-            let request = MKLocalSearch.Request()
-            request.naturalLanguageQuery = query
-            request.region = region
-            
-            do {
-                let search = MKLocalSearch(request: request)
-                let response = try await search.start()
-                
-                let results = response.mapItems.map { item in
-                    LocationResult(
-                        fullName: item.name ?? "Unknown Location",
-                        coordinate: item.placemark.coordinate,
-                        timezone: TimeZone.current.identifier
-                    )
-                }
-                
-                await MainActor.run {
-                    searchResults = results
-                    isSearching = false
-                    errorMessage = results.isEmpty ? "No locations found" : nil
-                }
-            } catch {
-                await MainActor.run {
-                    searchResults = []
-                    isSearching = false
-                    errorMessage = "Search failed. Please try again."
-                }
-                print("Both Google Places and MKLocalSearch failed: \(error)")
+            await MainActor.run {
+                searchResults = []
+                isSearching = false
+                errorMessage = "Search failed. Please try again."
             }
+            print("MapKit location search failed: \(error)")
         }
     }
     
     private func requestLocationPermission() {
         let locationManager = CLLocationManager()
         locationManager.requestWhenInUseAuthorization()
+    }
+    
+    private func approximateTimezoneFromLongitude(_ longitude: Double) -> String {
+        // Approximate timezone offset from longitude (15 degrees per hour)
+        let offsetHours = Int(round(longitude / 15.0))
+        let clampedOffset = max(-12, min(14, offsetHours))
+        
+        if clampedOffset >= 0 {
+            return "GMT+\(clampedOffset)"
+        } else {
+            return "GMT\(clampedOffset)"
+        }
     }
 }
 
@@ -284,8 +264,8 @@ struct MapAnnotation: Identifiable {
 }
 
 #Preview {
-    NavigationView {
-        GoogleMapsLocationPicker(selectedLocation: .constant(nil)) { location in
+    NavigationStack {
+        MapKitLocationPicker(selectedLocation: .constant(nil)) { location in
             print("Selected: \(location)")
         }
     }

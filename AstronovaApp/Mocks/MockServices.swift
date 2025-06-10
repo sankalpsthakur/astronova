@@ -212,6 +212,17 @@ class MockStoreManager: ObservableObject, StoreManagerProtocol {
         
         return true
     }
+    
+    func hasProduct(_ productId: String) -> Bool {
+        if productId == "astronova_pro_monthly" {
+            return hasProSubscription
+        }
+        return true // Mock: assume all products are available
+    }
+    
+    func restorePurchases() async {
+        // Mock implementation - do nothing
+    }
 }
 
 // MARK: - Mock Dependency Container
