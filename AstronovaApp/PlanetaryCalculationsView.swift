@@ -52,6 +52,7 @@ struct PlanetaryCalculationsView: View {
                                 .tag(2)
                             
                             PlanetaryCalculationView()
+                                .environmentObject(auth)
                                 .tag(3)
                             
                             HouseSystemInteractiveView()
