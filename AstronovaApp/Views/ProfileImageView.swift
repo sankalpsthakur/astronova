@@ -40,6 +40,9 @@ struct ProfileImageView: View {
                     .frame(width: size, height: size)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(imageURL != nil ? "User profile picture" : "Default profile picture")
+        .accessibilityAddTraits(.isImage)
     }
 }
 

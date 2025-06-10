@@ -14,6 +14,8 @@ struct OnboardingView: View {
                 .scaledToFit()
                 .frame(width: 120, height: 120)
                 .foregroundStyle(Color.accentColor)
+                .accessibilityLabel("Astronova app icon with sparkles")
+                .accessibilityHidden(true)
 
             Text("Welcome to Astronova")
                 .font(.largeTitle.weight(.semibold))
@@ -33,7 +35,7 @@ struct OnboardingView: View {
                     }
                 )
                 .signInWithAppleButtonStyle(.black)
-                .frame(height: 45)
+                .frame(height: 50)
                 .frame(maxWidth: .infinity)
                 .disabled(inProgress)
                 .overlay(
@@ -44,6 +46,8 @@ struct OnboardingView: View {
                         }
                     }
                 )
+                .accessibilityLabel("Sign in with Apple")
+                .accessibilityHint(inProgress ? "Signing in, please wait" : "Create account or sign in using your Apple ID")
                 
                 Button("Continue without signing in") {
                     Task {
@@ -52,6 +56,8 @@ struct OnboardingView: View {
                 }
                 .foregroundColor(.secondary)
                 .disabled(inProgress)
+                .accessibilityLabel("Continue without signing in")
+                .accessibilityHint("Skip account creation and use basic app features")
             }
 
             Spacer(minLength: 32)
