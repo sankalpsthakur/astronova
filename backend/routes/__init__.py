@@ -1,19 +1,22 @@
-from .chat import chat_bp
-from .horoscope import horoscope_bp
-from .match import match_bp
-from .chart import chart_bp
-from .reports import reports_bp
-from .ephemeris import ephemeris_bp
-from .locations import locations_bp
-from .misc import misc_bp
+"""Expose API routers for FastAPI app initialization."""
+
+from .chat import router as chat_router
+from .horoscope import router as horoscope_router
+from .match import router as match_router
+from .chart import router as chart_router
+from .reports import router as reports_router
+from .ephemeris import router as ephemeris_router
+from .locations import router as locations_router
+from .misc import router as misc_router
 
 __all__ = [
-    'chat_bp',
-    'horoscope_bp',
-    'match_bp',
-    'chart_bp',
-    'reports_bp',
-    'ephemeris_bp',
-    'locations_bp',
-    'misc_bp'
+    "chat_router",
+    "horoscope_router",
+    "match_router",
+    "chart_router",
+    "reports_router",
+    "ephemeris_router",
+    "locations_router",
+    "misc_router",
 ]
+

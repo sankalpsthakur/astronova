@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from typing import List, Dict, Any
@@ -136,7 +136,7 @@ INSIGHTS = [
 
 @router.get('/management')
 @limiter.limit("100/hour")
-async def get_content_management():
+async def get_content_management(request: Request):
     """
     Get all content management data including quick questions and insights
     """

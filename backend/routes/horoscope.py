@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -24,6 +24,7 @@ VALID_SIGNS = [
 @router.get("")
 @limiter.limit("50/hour")
 async def horoscope(
+    request: Request,
     sign: str = Query(default='aries', description="Zodiac sign"),
     date: str = Query(default=None, description="Date in YYYY-MM-DD format"),
     type: str = Query(default='daily', description="Horoscope type")
