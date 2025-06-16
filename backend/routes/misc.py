@@ -4,6 +4,9 @@ Provides health checks, utility information, and general purpose endpoints.
 """
 
 from flask import Blueprint, jsonify, current_app
+from models.responses import HealthResponse
+from spec import spec
+from flask_pydantic_spec import Response
 import sys
 import os
 from datetime import datetime
@@ -11,6 +14,7 @@ from datetime import datetime
 misc_bp = Blueprint('misc', __name__)
 
 @misc_bp.route('/health', methods=['GET'])
+@spec.validate(resp=Response(HTTP_200=HealthResponse), tags=["Misc"])
 def health_check():
     """
     Health check endpoint for monitoring and load balancers.

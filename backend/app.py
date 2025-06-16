@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from flask import Flask, jsonify
+from flask_pydantic_spec import Request, Response
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
@@ -20,6 +21,7 @@ from routes.locations import locations_bp
 from routes.content import content_bp
 from routes.misc import misc_bp
 from services.reports_service import ReportsService
+from spec import spec
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,6 +38,8 @@ def create_app(anthropic_api_key: str | None = None):
 
     limiter = Limiter(app=app, key_func=get_remote_address,
                       default_limits=["200 per day", "50 per hour"])
+
+    spec.register(app)
 
     app.register_blueprint(chat_bp, url_prefix="/api/v1/chat")
     app.register_blueprint(horoscope_bp, url_prefix="/api/v1/horoscope")

@@ -1,6 +1,9 @@
 from flask import Blueprint, jsonify
 from utils.validators import validate_request
 from models.schemas import MatchRequest
+from models.responses import MatchResult
+from spec import spec
+from flask_pydantic_spec import Request, Response
 from services.astro_calculator import AstroCalculator, BirthData
 from services.cloudkit_service import CloudKitService
 from services.cache_service import cache
@@ -9,6 +12,11 @@ match_bp = Blueprint('match', __name__)
 cloudkit = CloudKitService()
 
 @match_bp.route('', methods=['POST'])
+@spec.validate(
+    body=Request(MatchRequest),
+    resp=Response(HTTP_200=MatchResult),
+    tags=["Match"]
+)
 @validate_request(MatchRequest)
 def match(data: MatchRequest):
     cache_key = (
