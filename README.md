@@ -20,6 +20,7 @@ Astronova is a delightful astrology app that provides personalized cosmic insigh
 - **Guided First-Run Experience**: Beautiful animated tour across all app features
 - **Cosmic Design System**: Modern UI with cosmic gradients, spring animations, and haptic feedback
 - **Accessibility Support**: Full VoiceOver compatibility and Dynamic Type support
+- **Offline-First Bundle**: Today's & tomorrow's horoscopes plus last 10 chat threads cached nightly for instant flight-mode access (≤10 MB)
 
 ## 🏗️ Architecture
 
