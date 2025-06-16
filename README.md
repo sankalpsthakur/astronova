@@ -12,6 +12,10 @@ Astronova is a delightful astrology app that provides personalized cosmic insigh
 - **AI Astrologer Chat**: Intelligent conversation with Claude-powered astrological guidance
 - **Compatibility Matching**: Check cosmic compatibility with friends, family, and partners using real birth data
 - **Birth Chart Visualization**: Interactive natal charts with Swiss Ephemeris calculations
+- **Siri Shortcuts**: Voice-activated intents for horoscope and compatibility
+- **Home Screen Widget**: Quick access to daily horoscopes
+- **MapKit Location Search**: Built-in MapKit search with timezone caching
+- **Dynamic Haptic Engine**: Centralized tactile feedback patterns
 
 ### 🎨 **Enhanced User Experience**
 - **Premium Navigation**: Polished bottom tab bar with gradient highlights and smooth animations
@@ -37,7 +41,10 @@ astronova/
 │   ├── APIServices.swift        # Backend service integration
 │   ├── APIModels.swift          # Data models matching backend schema
 │   ├── Info.plist              # App configuration with privacy permissions
-│   └── Assets.xcassets/         # App icons and assets
+│   ├── Assets.xcassets/         # App icons and assets
+│   ├── Intents/                # Siri Shortcut definitions
+│   ├── Services/               # Haptic, MapKit, StoreKit utilities
+│   └── TodaysHoroscopeWidget/  # Home screen widget extension
 ├── backend/                # Python Flask API Server
 │   ├── app.py                   # Flask application entry point
 │   ├── config.py                # Application configuration
@@ -66,6 +73,25 @@ astronova/
 │   └── requirements.txt       # Python dependencies
 ├── AstronovaAppTests/      # iOS unit tests
 └── AstronovaAppUITests/    # iOS UI tests
+```
+
+### 🌌 **High-Level System Overview**
+```mermaid
+graph TD
+    subgraph iOS App
+        A[AstronovaApp] --> B[CloudKit]
+        A --> C[Backend API]
+        A --> D[Siri Shortcuts]
+        A --> E[Widget Extension]
+    end
+    subgraph Backend
+        C --> F[Flask Application]
+        F --> G[Redis Cache]
+        F --> H[Anthropic API]
+        F --> I[Swiss Ephemeris]
+    end
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style F fill:#10b981,stroke:#059669,color:#fff
 ```
 
 ### Technology Stack
@@ -101,6 +127,17 @@ astronova/
 #### 2. Onboarding System
 - **SimpleProfileSetupView**: 5-step cosmic onboarding (Welcome → Name → Birth Date → Birth Time → Birth Place)
 - **Real Location Search**: Live API integration with autocomplete and coordinate resolution
+- **MapKit Search Flow**:
+```mermaid
+flowchart LR
+    A[User Query] --> B[MapKitLocationService.searchPlaces]
+    B --> C[MKLocalSearch API]
+    C --> D[Results Returned]
+    D --> E[Timezone Resolution]
+    E --> F[LocationResult]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style F fill:#10b981,stroke:#059669,color:#fff
+```
 - **Personalized Insights**: AI-generated cosmic reading based on complete birth data
 - **Animated Backgrounds**: Cosmic gradients with floating stars and dynamic effects
 - **Elegant Completion**: Beautiful starburst animations with expanding rings and floating sparkles
@@ -119,6 +156,23 @@ astronova/
 - **Welcome Cards**: Contextual guidance for new users
 - **CTA Integration**: Cross-tab navigation with haptic feedback
 - **Usage Analytics**: Launch counting and onboarding state tracking
+
+#### 5. Voice Shortcuts & Widgets
+- **Siri Shortcuts**: Hands-free access to daily horoscope and compatibility
+- **Widget Extension**: Today's horoscope on the home screen
+- **Haptic Patterns**: Unified tactile feedback via `HapticFeedbackService`
+```mermaid
+sequenceDiagram
+    participant User
+    participant Siri
+    participant App as AstronovaApp
+    User->>Siri: "Hey Siri, get my horoscope"
+    Siri->>App: Launch GetHoroscopeIntent
+    App->>Backend: /api/v1/horoscope/daily
+    Backend-->>App: Horoscope text
+    App-->>Siri: Response
+    Siri-->>User: Read horoscope
+```
 
 ### 🆕 **Recent Major Updates**
 
@@ -193,22 +247,22 @@ flowchart TD
 ```mermaid
 journey
     title User's First App Experience
-    section Phase 1: Cosmic Hook
+    section Phase_1_Cosmic_Hook
       App Opens: 5: User
       Sees Animated Stars: 4: User, App
-      Reads "Cosmos Waiting": 5: User
-      Taps "Reveal Moment": 5: User
-    section Phase 2: Celestial Moment  
+      Reads Cosmos Waiting: 5: User
+      Taps Reveal Moment: 5: User
+    section Phase_2_Celestial_Moment
       Live Data Loads: 4: User, API
       Sees Moon Phase: 5: User
       Views Energy State: 4: User
       Location Coordinates: 3: User, Location
-    section Phase 3: Personalized Insight
-      Taps "What Does This Mean": 5: User
+    section Phase_3_Personalized_Insight
+      Taps What Does This Mean: 5: User
       AI Generates Insight: 4: User, Claude
       Reads Cosmic Message: 5: User
       Wants More Information: 5: User
-    section Phase 4: Sign-In Experience
+    section Phase_4_Sign_In_Experience
       Sees Sign-In Prompt: 4: User
       Signs In with Apple: 5: User, Apple
       Enters Main App: 5: User
@@ -311,34 +365,6 @@ graph TB
     style D fill:#f59e0b,stroke:#d97706,color:#fff
 ```
 
-**API Optimization Impact**:
-```mermaid
-graph LR
-    subgraph "BEFORE: Cluttered API"
-        A1[misc.py - 42 lines]
-        A2[Redundant Endpoints]
-        A3[Hardcoded Responses]
-        A4[No Content Management]
-        A5[Mixed Responsibilities]
-    end
-    
-    subgraph "AFTER: Clean Architecture"
-        B1[content.py - Focused]
-        B2[Dedicated Content API]
-        B3[Dynamic Response System]
-        B4[Category-Based Organization]
-        B5[Proper Error Handling]
-    end
-    
-    A1 --> B1
-    A2 --> B2
-    A3 --> B3
-    A4 --> B4
-    A5 --> B5
-    
-    style A1 fill:#ef4444,stroke:#dc2626,color:#fff
-    style B1 fill:#10b981,stroke:#059669,color:#fff
-```
 
 **Content Delivery Flow**:
 ```mermaid
@@ -367,85 +393,6 @@ sequenceDiagram
     end
 ```
 
-##### **⚡ System Performance & Architecture**
-
-**Build Error Resolution Timeline**:
-```mermaid
-gantt
-    title Critical Build Fixes - June 2025
-    dateFormat  HH:mm
-    axisFormat %H:%M
-    
-    section Swift Compilation
-    RootView Syntax Errors    :crit, 01:35, 01:44
-    Extra Closing Braces      :crit, 01:43, 01:45
-    Service Integration       :crit, 01:42, 01:54
-    Final Compilation         :done, 01:54, 02:10
-    
-    section Service Architecture
-    CRUD Implementation       :active, 01:54, 02:10
-    API Optimization          :02:10, 02:30
-```
-
-**Code Quality Transformation**:
-```mermaid
-graph TB
-    subgraph "PROBLEM STATE"
-        A1[15+ Compilation Errors]
-        A2[Hardcoded Fallback Responses]
-        A3[Mixed Service Responsibilities]
-        A4[Incomplete API Integration]
-        A5[Build System Instability]
-    end
-    
-    subgraph "SOLUTION IMPLEMENTATION"
-        B1[Systematic Error Resolution]
-        B2[Clean API Error Handling]
-        B3[Modular Service Architecture]
-        B4[Complete CRUD System]
-        B5[Stable Build Pipeline]
-    end
-    
-    subgraph "MEASURABLE RESULTS"
-        C1[✅ 100% Clean Compilation]
-        C2[✅ Proper Error Propagation]
-        C3[✅ Separated Concerns]
-        C4[✅ Full Data Management]
-        C5[✅ Continuous Integration Ready]
-    end
-    
-    A1 --> B1 --> C1
-    A2 --> B2 --> C2
-    A3 --> B3 --> C3
-    A4 --> B4 --> C4
-    A5 --> B5 --> C5
-    
-    style A1 fill:#ef4444,stroke:#dc2626,color:#fff
-    style A5 fill:#ef4444,stroke:#dc2626,color:#fff
-    style C1 fill:#10b981,stroke:#059669,color:#fff
-    style C5 fill:#10b981,stroke:#059669,color:#fff
-```
-
-**Service Integration Strategy**:
-```mermaid
-flowchart LR
-    A[Problematic Services] --> B{Build Stability?}
-    
-    B -->|No| C[Temporary Disable<br/>Clean Comments]
-    B -->|Yes| D[Full Integration]
-    
-    C --> E[Maintain Functionality<br/>Stub Interfaces]
-    E --> F[Gradual Re-enablement]
-    F --> G[Testing & Validation]
-    G --> D
-    
-    D --> H[Production Ready]
-    
-    style A fill:#f59e0b,stroke:#d97706,color:#fff
-    style C fill:#ef4444,stroke:#dc2626,color:#fff
-    style D fill:#10b981,stroke:#059669,color:#fff
-    style H fill:#8b5cf6,stroke:#6d28d9,color:#fff
-```
 
 ##### **📱 Enhanced User Experience**
 
@@ -504,8 +451,10 @@ graph TB
     C --> J[Stroke Width<br/>1.5px precision]
     C --> K[Dynamic Color Response<br/>Theme adaptation]
     
-    D --> L[4-Level Shadow System<br/>Level 1: Subtle (1px)<br/>Level 2: Card (4px)<br/>Level 3: Modal (10px)<br/>Level 4: Navigation (20px)]
-    
+    D --> L1[Level 1 Subtle 1px]
+    D --> L2[Level 2 Card 4px]
+    D --> L3[Level 3 Modal 10px]
+    D --> L4[Level 4 Navigation 20px]
     E --> M[Spring Animations<br/>0.6s response, 0.8 damping]
     E --> N[Easing Functions<br/>easeInOut for smooth motion]
     E --> O[Staggered Timing<br/>0.1s delays for sequences]
@@ -934,6 +883,19 @@ cd astronova
 cd backend && python validate_setup.py
 ```
 
+#### **Setup Flow Overview**
+```mermaid
+flowchart TD
+    A[Start] --> B[Check Prerequisites]
+    B --> C[Install Dependencies]
+    C --> D[Configure .env]
+    D --> E[Start Services]
+    E --> F[Validate Environment]
+    F --> G[Ready for Development]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style G fill:#10b981,stroke:#059669,color:#fff
+```
+
 #### **📱 iOS App Setup**
 1. Open `astronova.xcodeproj` in Xcode
 2. Configure your Apple Developer team in project settings
@@ -979,6 +941,19 @@ docker run -p 8080:8080 \
   -e SECRET_KEY="your-secret-key" \
   -e ANTHROPIC_API_KEY="your-api-key" \
   astronova-backend
+```
+
+### 🚀 **Deployment Pipeline**
+```mermaid
+graph TD
+    A[Code Push] --> B[GitHub Actions CI]
+    B --> C[Backend Docker Build]
+    C --> D[Deploy to Cloud Run]
+    B --> E[iOS Build]
+    E --> F[TestFlight Upload]
+    F --> G[App Store Release]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style G fill:#10b981,stroke:#059669,color:#fff
 ```
 
 ### Configuration
@@ -1218,6 +1193,18 @@ The app is designed for App Store distribution with:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+```mermaid
+flowchart LR
+    A[Fork Repository] --> B[Clone Locally]
+    B --> C[Create Feature Branch]
+    C --> D[Commit Changes]
+    D --> E[Push Branch]
+    E --> F[Open Pull Request]
+    F --> G[Code Review & Merge]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style G fill:#10b981,stroke:#059669,color:#fff
+```
 
 ## 📄 License
 
