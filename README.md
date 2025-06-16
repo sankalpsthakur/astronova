@@ -12,6 +12,10 @@ Astronova is a delightful astrology app that provides personalized cosmic insigh
 - **AI Astrologer Chat**: Intelligent conversation with Claude-powered astrological guidance
 - **Compatibility Matching**: Check cosmic compatibility with friends, family, and partners using real birth data
 - **Birth Chart Visualization**: Interactive natal charts with Swiss Ephemeris calculations
+- **Siri Shortcuts**: Voice-activated intents for horoscope and compatibility
+- **Home Screen Widget**: Quick access to daily horoscopes
+- **MapKit Location Search**: Built-in MapKit search with timezone caching
+- **Dynamic Haptic Engine**: Centralized tactile feedback patterns
 
 ### 🎨 **Enhanced User Experience**
 - **Premium Navigation**: Polished bottom tab bar with gradient highlights and smooth animations
@@ -37,7 +41,10 @@ astronova/
 │   ├── APIServices.swift        # Backend service integration
 │   ├── APIModels.swift          # Data models matching backend schema
 │   ├── Info.plist              # App configuration with privacy permissions
-│   └── Assets.xcassets/         # App icons and assets
+│   ├── Assets.xcassets/         # App icons and assets
+│   ├── Intents/                # Siri Shortcut definitions
+│   ├── Services/               # Haptic, MapKit, StoreKit utilities
+│   └── TodaysHoroscopeWidget/  # Home screen widget extension
 ├── backend/                # Python Flask API Server
 │   ├── app.py                   # Flask application entry point
 │   ├── config.py                # Application configuration
@@ -66,6 +73,25 @@ astronova/
 │   └── requirements.txt       # Python dependencies
 ├── AstronovaAppTests/      # iOS unit tests
 └── AstronovaAppUITests/    # iOS UI tests
+```
+
+### 🌌 **High-Level System Overview**
+```mermaid
+graph TD
+    subgraph iOS App
+        A[AstronovaApp] --> B[CloudKit]
+        A --> C[Backend API]
+        A --> D[Siri Shortcuts]
+        A --> E[Widget Extension]
+    end
+    subgraph Backend
+        C --> F[Flask Application]
+        F --> G[Redis Cache]
+        F --> H[Anthropic API]
+        F --> I[Swiss Ephemeris]
+    end
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style F fill:#10b981,stroke:#059669,color:#fff
 ```
 
 ### Technology Stack
@@ -101,6 +127,17 @@ astronova/
 #### 2. Onboarding System
 - **SimpleProfileSetupView**: 5-step cosmic onboarding (Welcome → Name → Birth Date → Birth Time → Birth Place)
 - **Real Location Search**: Live API integration with autocomplete and coordinate resolution
+- **MapKit Search Flow**:
+```mermaid
+flowchart LR
+    A[User Query] --> B[MapKitLocationService.searchPlaces]
+    B --> C[MKLocalSearch API]
+    C --> D[Results Returned]
+    D --> E[Timezone Resolution]
+    E --> F[LocationResult]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style F fill:#10b981,stroke:#059669,color:#fff
+```
 - **Personalized Insights**: AI-generated cosmic reading based on complete birth data
 - **Animated Backgrounds**: Cosmic gradients with floating stars and dynamic effects
 - **Elegant Completion**: Beautiful starburst animations with expanding rings and floating sparkles
@@ -119,6 +156,23 @@ astronova/
 - **Welcome Cards**: Contextual guidance for new users
 - **CTA Integration**: Cross-tab navigation with haptic feedback
 - **Usage Analytics**: Launch counting and onboarding state tracking
+
+#### 5. Voice Shortcuts & Widgets
+- **Siri Shortcuts**: Hands-free access to daily horoscope and compatibility
+- **Widget Extension**: Today's horoscope on the home screen
+- **Haptic Patterns**: Unified tactile feedback via `HapticFeedbackService`
+```mermaid
+sequenceDiagram
+    participant User
+    participant Siri
+    participant App as AstronovaApp
+    User->>Siri: "Hey Siri, get my horoscope"
+    Siri->>App: Launch GetHoroscopeIntent
+    App->>Backend: /api/v1/horoscope/daily
+    Backend-->>App: Horoscope text
+    App-->>Siri: Response
+    Siri-->>User: Read horoscope
+```
 
 ### 🆕 **Recent Major Updates**
 
@@ -934,6 +988,19 @@ cd astronova
 cd backend && python validate_setup.py
 ```
 
+#### **Setup Flow Overview**
+```mermaid
+flowchart TD
+    A[Start] --> B[Check Prerequisites]
+    B --> C[Install Dependencies]
+    C --> D[Configure .env]
+    D --> E[Start Services]
+    E --> F[Validate Environment]
+    F --> G[Ready for Development]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style G fill:#10b981,stroke:#059669,color:#fff
+```
+
 #### **📱 iOS App Setup**
 1. Open `astronova.xcodeproj` in Xcode
 2. Configure your Apple Developer team in project settings
@@ -979,6 +1046,19 @@ docker run -p 8080:8080 \
   -e SECRET_KEY="your-secret-key" \
   -e ANTHROPIC_API_KEY="your-api-key" \
   astronova-backend
+```
+
+### 🚀 **Deployment Pipeline**
+```mermaid
+graph TD
+    A[Code Push] --> B[GitHub Actions CI]
+    B --> C[Backend Docker Build]
+    C --> D[Deploy to Cloud Run]
+    B --> E[iOS Build]
+    E --> F[TestFlight Upload]
+    F --> G[App Store Release]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style G fill:#10b981,stroke:#059669,color:#fff
 ```
 
 ### Configuration
@@ -1218,6 +1298,18 @@ The app is designed for App Store distribution with:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+```mermaid
+flowchart LR
+    A[Fork Repository] --> B[Clone Locally]
+    B --> C[Create Feature Branch]
+    C --> D[Commit Changes]
+    D --> E[Push Branch]
+    E --> F[Open Pull Request]
+    F --> G[Code Review & Merge]
+    style A fill:#3b82f6,stroke:#2563eb,color:#fff
+    style G fill:#10b981,stroke:#059669,color:#fff
+```
 
 ## 📄 License
 
