@@ -1,0 +1,14 @@
+# App identifier for your app
+app_identifier("com.astronova.app")
+
+# Apple ID for the Apple Developer account
+apple_id("your-apple-id@example.com") # Replace with actual Apple ID
+
+# Developer Team ID
+team_id("ZBSZPCY34Y")
+
+# App Store Connect Team ID (if different from Developer Team ID)
+itc_team_id("ZBSZPCY34Y")
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile

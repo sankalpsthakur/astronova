@@ -1,0 +1,257 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out:
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out:
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  before_all do
+    setup_circle_ci if ENV['CI']
+  end
+
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    # Ensure git status is clean
+    ensure_git_status_clean
+
+    # Increment build number
+    increment_build_number(xcodeproj: "astronova.xcodeproj")
+
+    # Update version badge in README if needed
+    version = get_version_number(xcodeproj: "astronova.xcodeproj")
+    build = get_build_number(xcodeproj: "astronova.xcodeproj")
+
+    # Build the app
+    build_app(
+      scheme: "AstronovaApp",
+      workspace: nil,
+      project: "astronova.xcodeproj",
+      configuration: "Release",
+      clean: true,
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.astronova.app" => "match AppStore com.astronova.app",
+          "com.astronova.app.TodaysHoroscopeWidget" => "match AppStore com.astronova.app.TodaysHoroscopeWidget"
+        }
+      }
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: false,
+      distribute_external: false,
+      notify_external_testers: false,
+      changelog: "• Enhanced security and CI tooling\n• Improved accessibility features\n• FastAPI backend migration\n• Redis rate limiting implementation\n• Comprehensive OpenAPI documentation",
+      demo_account_required: false,
+      beta_app_review_info: {
+        contact_email: "support@astronova.app",
+        contact_first_name: "AstroNova",
+        contact_last_name: "Support",
+        contact_phone: "+1-555-ASTRO-01",
+        demo_account_name: "",
+        demo_account_password: "",
+        notes: "This is a beta build of AstroNova, an AI-powered astrology app. The app requires Apple Sign-In for authentication and provides personalized astrological insights, birth chart generation, and compatibility analysis."
+      }
+    )
+
+    # Commit version bump
+    commit_version_bump(
+      message: "chore: bump version to #{version} (#{build}) for TestFlight beta",
+      xcodeproj: "astronova.xcodeproj"
+    )
+
+    # Create git tag
+    add_git_tag(
+      tag: "v#{version}-beta.#{build}",
+      message: "TestFlight Beta v#{version} (#{build})"
+    )
+
+    # Push changes
+    push_to_git_remote(
+      remote: "origin",
+      local_branch: "accessibility-improvements",
+      remote_branch: "accessibility-improvements",
+      force: false,
+      tags: true
+    )
+
+    # Send notifications
+    slack(
+      message: "🚀 AstroNova v#{version} (#{build}) has been uploaded to TestFlight!",
+      slack_url: ENV["SLACK_WEBHOOK_URL"],
+      default_payloads: [:git_branch, :git_author]
+    ) if ENV["SLACK_WEBHOOK_URL"]
+  end
+
+  desc "Create a new release build"
+  lane :release do
+    # Ensure git status is clean
+    ensure_git_status_clean
+
+    # Run tests
+    run_tests(
+      scheme: "AstronovaApp",
+      project: "astronova.xcodeproj",
+      device: "iPhone 15",
+      code_coverage: true
+    )
+
+    # Lint code
+    swiftlint(
+      mode: :lint,
+      config_file: ".swiftlint.yml",
+      strict: true,
+      ignore_exit_status: false
+    )
+
+    # Increment version number
+    increment_version_number(xcodeproj: "astronova.xcodeproj")
+    
+    # Reset build number to 1 for new version
+    increment_build_number(
+      xcodeproj: "astronova.xcodeproj",
+      build_number: 1
+    )
+
+    version = get_version_number(xcodeproj: "astronova.xcodeproj")
+    build = get_build_number(xcodeproj: "astronova.xcodeproj")
+
+    # Build the app
+    build_app(
+      scheme: "AstronovaApp",
+      workspace: nil,
+      project: "astronova.xcodeproj",
+      configuration: "Release",
+      clean: true,
+      export_method: "app-store"
+    )
+
+    # Upload to App Store
+    upload_to_app_store(
+      force: false,
+      reject_if_possible: false,
+      skip_metadata: false,
+      skip_screenshots: false,
+      submit_for_review: false,
+      automatic_release: false
+    )
+
+    # Commit version bump
+    commit_version_bump(
+      message: "chore: bump version to #{version} (#{build}) for App Store release",
+      xcodeproj: "astronova.xcodeproj"
+    )
+
+    # Create git tag
+    add_git_tag(
+      tag: "v#{version}",
+      message: "App Store Release v#{version}"
+    )
+
+    # Push changes
+    push_to_git_remote(
+      remote: "origin",
+      local_branch: "main",
+      remote_branch: "main",
+      force: false,
+      tags: true
+    )
+  end
+
+  desc "Run tests"
+  lane :test do
+    run_tests(
+      scheme: "AstronovaApp",
+      project: "astronova.xcodeproj",
+      device: "iPhone 15",
+      code_coverage: true,
+      result_bundle: true,
+      output_directory: "./test_output"
+    )
+
+    # Upload test results if running in CI
+    if ENV['CI']
+      trainer(path: "./test_output")
+    end
+  end
+
+  desc "Run SwiftLint"
+  lane :lint do
+    swiftlint(
+      mode: :lint,
+      config_file: ".swiftlint.yml",
+      strict: true,
+      ignore_exit_status: false
+    )
+  end
+
+  desc "Generate code coverage report"
+  lane :coverage do
+    run_tests(
+      scheme: "AstronovaApp",
+      project: "astronova.xcodeproj",
+      device: "iPhone 15",
+      code_coverage: true,
+      result_bundle: true
+    )
+
+    slather(
+      proj: "astronova.xcodeproj",
+      scheme: "AstronovaApp",
+      output_directory: "coverage",
+      html: true,
+      show: true
+    )
+  end
+
+  desc "Take screenshots for App Store"
+  lane :screenshots do
+    capture_screenshots(
+      scheme: "AstronovaAppUITests",
+      project: "astronova.xcodeproj"
+    )
+  end
+
+  desc "Update provisioning profiles"
+  lane :certificates do
+    match(
+      type: "development",
+      app_identifier: ["com.astronova.app", "com.astronova.app.TodaysHoroscopeWidget"]
+    )
+    
+    match(
+      type: "appstore",
+      app_identifier: ["com.astronova.app", "com.astronova.app.TodaysHoroscopeWidget"]
+    )
+  end
+
+  desc "Setup for CI"
+  lane :setup_ci do
+    setup_circle_ci
+    
+    match(
+      type: "appstore",
+      app_identifier: ["com.astronova.app", "com.astronova.app.TodaysHoroscopeWidget"],
+      readonly: true
+    )
+  end
+
+  # Error handling
+  error do |lane, exception|
+    slack(
+      message: "❌ Fastlane lane '#{lane}' failed with error: #{exception.message}",
+      slack_url: ENV["SLACK_WEBHOOK_URL"],
+      success: false
+    ) if ENV["SLACK_WEBHOOK_URL"]
+  end
+end

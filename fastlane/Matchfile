@@ -1,0 +1,17 @@
+# Git URL for the certificates and profiles repo
+git_url("https://github.com/sankalpsthakur/astronova-certificates")
+
+# Storage mode
+storage_mode("git")
+
+# App identifier
+app_identifier(["com.astronova.app", "com.astronova.app.TodaysHoroscopeWidget"])
+
+# Username for Apple Developer Portal
+username("your-apple-id@example.com") # Replace with actual Apple ID
+
+# Team ID
+team_id("ZBSZPCY34Y")
+
+# For more information about match, see:
+#     https://docs.fastlane.tools/actions/match/

@@ -1,0 +1,645 @@
+openapi: 3.0.3
+info:
+  title: AstroNova API
+  description: Astrological services and calculations API for the AstroNova iOS application
+  version: 1.0.0
+  contact:
+    name: AstroNova Support
+    email: support@astronova.app
+  license:
+    name: Proprietary
+    url: https://astronova.app/license
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+  - url: https://api.astronova.app/v1
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    BirthData:
+      type: object
+      required:
+        - date
+        - time
+        - latitude
+        - longitude
+        - timezone
+      properties:
+        date:
+          type: string
+          format: date
+          description: Birth date in YYYY-MM-DD format
+          example: "1990-05-15"
+        time:
+          type: string
+          format: time
+          description: Birth time in HH:MM format
+          example: "14:30"
+        latitude:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+          description: Birth location latitude
+          example: 40.7128
+        longitude:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+          description: Birth location longitude
+          example: -74.0060
+        timezone:
+          type: string
+          description: Timezone identifier
+          example: "America/New_York"
+
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: User message to send to AI astrologer
+          example: "What does my birth chart say about my career?"
+        conversationId:
+          type: string
+          format: uuid
+          description: Conversation identifier for message history
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        context:
+          type: object
+          properties:
+            birthChart:
+              type: object
+              description: User's birth chart data for personalized responses
+            transits:
+              type: object
+              description: Current planetary transit data
+
+    ChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+          description: AI astrologer response
+          example: "Based on your birth chart, you have strong leadership qualities..."
+        messageId:
+          type: string
+          format: uuid
+          description: Unique message identifier
+        suggestedFollowUps:
+          type: array
+          items:
+            type: string
+          description: Suggested follow-up questions
+          example: ["What's my love forecast? 💖", "Career guidance? ⭐"]
+
+    HoroscopeResponse:
+      type: object
+      properties:
+        sign:
+          type: string
+          enum: [aries, taurus, gemini, cancer, leo, virgo, libra, scorpio, sagittarius, capricorn, aquarius, pisces]
+          description: Zodiac sign
+        date:
+          type: string
+          format: date
+          description: Horoscope date
+        content:
+          type: string
+          description: Horoscope content
+        lucky_elements:
+          type: object
+          properties:
+            color:
+              type: string
+              example: "Royal Blue"
+            number:
+              type: integer
+              example: 7
+            gemstone:
+              type: string
+              example: "Sapphire"
+
+    ChartRequest:
+      type: object
+      required:
+        - birthData
+        - systems
+        - chartType
+      properties:
+        birthData:
+          $ref: '#/components/schemas/BirthData'
+        systems:
+          type: array
+          items:
+            type: string
+            enum: [western, vedic, chinese]
+          description: Astrological systems to calculate
+          example: ["western", "vedic"]
+        chartType:
+          type: string
+          enum: [natal, transit, composite]
+          description: Type of chart to generate
+          example: "natal"
+
+    ChartResponse:
+      type: object
+      properties:
+        chartId:
+          type: string
+          format: uuid
+          description: Unique chart identifier
+        charts:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              planets:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    position:
+                      type: number
+                    sign:
+                      type: string
+              houses:
+                type: array
+                items:
+                  type: object
+        type:
+          type: string
+          description: Chart type
+
+    CompatibilityRequest:
+      type: object
+      required:
+        - user
+        - partner
+      properties:
+        user:
+          $ref: '#/components/schemas/BirthData'
+        partner:
+          $ref: '#/components/schemas/BirthData'
+
+    CompatibilityResponse:
+      type: object
+      properties:
+        overallScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Overall compatibility score
+          example: 89
+        emotionalScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 92
+        mentalScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 88
+        physicalScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 85
+        spiritualScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 91
+        analysis:
+          type: string
+          description: Detailed compatibility analysis
+        strengths:
+          type: array
+          items:
+            type: string
+          example: ["Communication", "Shared Values"]
+        challenges:
+          type: array
+          items:
+            type: string
+          example: ["Different Life Paces"]
+
+    PlanetaryPosition:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Planet name
+          example: "Sun"
+        position:
+          type: number
+          format: float
+          description: Position in degrees
+          example: 23.45
+        sign:
+          type: string
+          description: Zodiac sign
+          example: "Sagittarius"
+        symbol:
+          type: string
+          description: Astronomical symbol
+          example: "☉"
+        significance:
+          type: string
+          description: Astrological significance
+          example: "Core identity and life purpose"
+
+    EphemerisResponse:
+      type: object
+      properties:
+        planets:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanetaryPosition'
+        timestamp:
+          type: string
+          format: date-time
+          description: Calculation timestamp
+
+    ContentManagementResponse:
+      type: object
+      properties:
+        quick_questions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              text:
+                type: string
+              category:
+                type: string
+              is_active:
+                type: boolean
+              priority:
+                type: integer
+        insights:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              content:
+                type: string
+              category:
+                type: string
+              is_active:
+                type: boolean
+              priority:
+                type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        detail:
+          type: string
+          description: Detailed error information
+        code:
+          type: integer
+          description: Error code
+
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+          description: Service health status
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Check API service health and status
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+
+  /chat/send:
+    post:
+      summary: Send message to AI astrologer
+      description: Send a message to the AI astrologer and receive personalized astrological guidance
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: AI response generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /horoscope:
+    get:
+      summary: Get horoscope
+      description: Retrieve daily horoscope for a specific zodiac sign
+      tags:
+        - Horoscope
+      parameters:
+        - name: sign
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [aries, taurus, gemini, cancer, leo, virgo, libra, scorpio, sagittarius, capricorn, aquarius, pisces]
+            default: aries
+          description: Zodiac sign
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Date for horoscope (defaults to today)
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: daily
+          description: Horoscope type
+      responses:
+        '200':
+          description: Horoscope retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoroscopeResponse'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /chart/generate:
+    post:
+      summary: Generate birth chart
+      description: Generate natal, transit, or composite birth charts using multiple astrological systems
+      tags:
+        - Chart
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChartRequest'
+      responses:
+        '200':
+          description: Chart generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '400':
+          description: Invalid birth data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Chart generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /match/compatibility:
+    post:
+      summary: Calculate compatibility
+      description: Calculate astrological compatibility between two individuals
+      tags:
+        - Compatibility
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompatibilityRequest'
+      responses:
+        '200':
+          description: Compatibility calculated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatibilityResponse'
+        '400':
+          description: Invalid birth data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ephemeris/current:
+    get:
+      summary: Get current planetary positions
+      description: Retrieve current positions of all planets for real-time astrological calculations
+      tags:
+        - Ephemeris
+      responses:
+        '200':
+          description: Planetary positions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EphemerisResponse'
+        '500':
+          description: Failed to calculate positions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /content/management:
+    get:
+      summary: Get content management data
+      description: Retrieve quick questions and insights for app content
+      tags:
+        - Content
+      responses:
+        '200':
+          description: Content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentManagementResponse'
+        '500':
+          description: Failed to retrieve content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /locations/search:
+    get:
+      summary: Search locations
+      description: Search for geographic locations for birth chart calculations
+      tags:
+        - Locations
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query for location
+          example: "New York"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+          description: Maximum number of results
+      responses:
+        '200':
+          description: Locations found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  locations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+                        timezone:
+                          type: string
+        '400':
+          description: Invalid search query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /misc/zodiac-signs:
+    get:
+      summary: Get zodiac sign information
+      description: Retrieve information about all zodiac signs
+      tags:
+        - Miscellaneous
+      security: []
+      responses:
+        '200':
+          description: Zodiac signs information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        symbol:
+                          type: string
+                        element:
+                          type: string
+                        quality:
+                          type: string
+                        dates:
+                          type: string
+
+tags:
+  - name: Health
+    description: Service health and monitoring
+  - name: Chat
+    description: AI astrologer chat functionality
+  - name: Horoscope
+    description: Daily, weekly, and monthly horoscopes
+  - name: Chart
+    description: Birth chart generation and analysis
+  - name: Compatibility
+    description: Relationship compatibility calculations
+  - name: Ephemeris
+    description: Planetary positions and astronomical data
+  - name: Content
+    description: Dynamic content management
+  - name: Locations
+    description: Geographic location services
+  - name: Miscellaneous
+    description: Utility endpoints and reference data

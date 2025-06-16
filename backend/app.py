@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from services.redis_rate_limiter import get_rate_limiter, RateLimitExceeded as RedisRateLimitExceeded
 from services.cache_service import cache
 
 from config import Config
@@ -31,6 +34,9 @@ async def lifespan(app: FastAPI):
     api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if api_key:
         app.state.reports_service = ReportsService(api_key)
+    
+    # Initialize Redis rate limiter
+    app.state.rate_limiter = get_rate_limiter()
     yield
     # Shutdown - cleanup if needed
 
@@ -72,7 +78,30 @@ def create_app():
 
     @app.get("/health")
     async def health():
-        return {"status": "ok"}
+        # Include rate limiter health check
+        rate_limiter_health = app.state.rate_limiter.health_check()
+        return {
+            "status": "ok",
+            "rate_limiter": rate_limiter_health
+        }
+    
+    @app.exception_handler(RedisRateLimitExceeded)
+    async def redis_rate_limit_handler(request, exc: RedisRateLimitExceeded):
+        response = {
+            "error": "Rate limit exceeded",
+            "message": exc.message,
+            "reset_time": exc.reset_time,
+            "remaining": exc.remaining
+        }
+        return JSONResponse(
+            status_code=429,
+            content=response,
+            headers={
+                "X-RateLimit-Reset": str(exc.reset_time),
+                "X-RateLimit-Remaining": str(exc.remaining),
+                "Retry-After": str(max(0, exc.reset_time - int(time.time())))
+            }
+        )
 
     return app
 
