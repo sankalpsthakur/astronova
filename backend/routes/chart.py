@@ -4,10 +4,11 @@ import base64
 import uuid
 from datetime import datetime
 
-from flask import Blueprint, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPBearer
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
-from utils.validators import validate_request
 from models.schemas import ChartRequest
 from services.astro_calculator import AstroCalculator
 from services.ephemeris_service import EphemerisService
@@ -15,7 +16,9 @@ from services.chinese_astrology_service import ChineseAstrologyService
 from services.cloudkit_service import CloudKitService
 from services.redis_cache import get as redis_get, set as redis_set
 
-chart_bp = Blueprint('chart', __name__)
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
+security = HTTPBearer(auto_error=False)
 
 astro = AstroCalculator()
 ephemeris = EphemerisService()
@@ -42,16 +45,22 @@ def _svg_from_dict(title: str, data: dict) -> str:
     return ''.join(lines)
 
 
-@chart_bp.route('/generate', methods=['POST'])
-@jwt_required(optional=True)
-@validate_request(ChartRequest)
-def generate(data: ChartRequest):
+def get_current_user(token = Depends(security)):
+    """Extract user ID from JWT token if present"""
+    if token:
+        # TODO: Implement JWT validation
+        # For now, return None for optional authentication
+        pass
+    return None
+
+@router.post('/generate')
+@limiter.limit("10/minute")
+async def generate(data: ChartRequest, user_id = Depends(get_current_user)):
     try:
         birth = data.birthData
         dt = datetime.fromisoformat(f"{birth.date}T{birth.time}")
         systems = [s.lower() for s in data.systems]
         results: dict[str, dict] = {}
-        user_id = get_jwt_identity()
 
         for system in systems:
             key = _chart_cache_key(system, data)
@@ -96,8 +105,8 @@ def generate(data: ChartRequest):
                 })
 
         chart_id = str(uuid.uuid4())
-        return jsonify({'chartId': chart_id, 'charts': results, 'type': data.chartType})
-    except Exception:
-        return jsonify({'error': 'Chart generation failed'}), 500
+        return {'chartId': chart_id, 'charts': results, 'type': data.chartType}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail='Chart generation failed')
 
 

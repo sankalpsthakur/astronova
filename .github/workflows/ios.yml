@@ -23,6 +23,12 @@ jobs:
       - name: List available simulators
         run: xcrun simctl list devices available
       
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      
+      - name: Run SwiftLint
+        run: swiftlint lint --strict
+      
       - name: Build iOS app
         run: |
           xcodebuild clean build \

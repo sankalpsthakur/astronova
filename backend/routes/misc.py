@@ -3,38 +3,43 @@ Miscellaneous utility endpoints for the Astronova API.
 Provides health checks, utility information, and general purpose endpoints.
 """
 
-from flask import Blueprint, jsonify, current_app
+from fastapi import APIRouter, HTTPException
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 import sys
 import os
 from datetime import datetime
 
-misc_bp = Blueprint('misc', __name__)
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
-@misc_bp.route('/health', methods=['GET'])
-def health_check():
+@router.get('/health')
+@limiter.limit("200/hour")
+async def health_check():
     """
     Health check endpoint for monitoring and load balancers.
     
     Returns:
         JSON response with service status and basic system information
     """
-    return jsonify({
+    return {
         'status': 'healthy',
         'service': 'astronova-api',
         'version': '2.1.0',
         'timestamp': datetime.utcnow().isoformat(),
-        'environment': current_app.config.get('FLASK_ENV', 'unknown')
-    })
+        'environment': os.getenv('ENVIRONMENT', 'unknown')
+    }
 
-@misc_bp.route('/info', methods=['GET'])
-def service_info():
+@router.get('/info')
+@limiter.limit("100/hour")
+async def service_info():
     """
     Service information endpoint providing API details.
     
     Returns:
         JSON response with API information and capabilities
     """
-    return jsonify({
+    return {
         'service': 'Astronova API',
         'version': '2.1.0',
         'description': 'AI-powered astrological insights and cosmic guidance',
@@ -60,10 +65,11 @@ def service_info():
             'daily': 200,
             'hourly': 50
         }
-    })
+    }
 
-@misc_bp.route('/zodiac-signs', methods=['GET'])
-def zodiac_signs():
+@router.get('/zodiac-signs')
+@limiter.limit("100/hour")
+async def zodiac_signs():
     """
     Get information about all zodiac signs.
     
@@ -157,13 +163,14 @@ def zodiac_signs():
         }
     ]
     
-    return jsonify({
+    return {
         'zodiac_signs': signs,
         'total_count': len(signs)
-    })
+    }
 
-@misc_bp.route('/system-status', methods=['GET'])
-def system_status():
+@router.get('/system-status')
+@limiter.limit("50/hour")
+async def system_status():
     """
     Detailed system status for administrative monitoring.
     
@@ -174,9 +181,7 @@ def system_status():
         # Basic system info
         status_info = {
             'python_version': f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-            'flask_env': current_app.config.get('FLASK_ENV', 'unknown'),
-            'debug_mode': current_app.debug,
-            'testing_mode': current_app.testing,
+            'environment': os.getenv('ENVIRONMENT', 'unknown'),
             'uptime': datetime.utcnow().isoformat(),
         }
         
@@ -188,16 +193,12 @@ def system_status():
             'ephemeris_path_configured': bool(os.getenv('EPHEMERIS_PATH'))
         }
         
-        return jsonify({
+        return {
             'status': 'operational',
             'system': status_info,
             'environment': env_status,
             'timestamp': datetime.utcnow().isoformat()
-        })
+        }
         
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'error': str(e),
-            'timestamp': datetime.utcnow().isoformat()
-        }), 500
+        raise HTTPException(status_code=500, detail=str(e))

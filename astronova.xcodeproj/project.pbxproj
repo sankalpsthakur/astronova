@@ -62,13 +62,13 @@
 		3D01F8152C0A000000000009 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3D01F8162C0A00000000000A /* AstronovaApp.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaApp.entitlements; sourceTree = "<group>"; };
 		3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaAppDebug.entitlements; sourceTree = "<group>"; };
-		5A0C72142DF803FE0091A1F5 /* AstronovaApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = AstronovaApp.app; path = "/Users/sankalpthakur/Projects/iOS Apps/astronova/build/Debug-iphoneos/AstronovaApp.app"; sourceTree = "<absolute>"; };
-		5A0C72152DF803FE0091A1F5 /* AstronovaAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = AstronovaAppTests.xctest; path = "/Users/sankalpthakur/Projects/iOS Apps/astronova/build/Debug-iphoneos/AstronovaApp.app/PlugIns/AstronovaAppTests.xctest"; sourceTree = "<absolute>"; };
-		5A0C72162DF803FE0091A1F5 /* AstronovaAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = AstronovaAppUITests.xctest; path = "/Users/sankalpthakur/Projects/iOS Apps/astronova/build/Debug-iphoneos/AstronovaAppUITests-Runner.app/PlugIns/AstronovaAppUITests.xctest"; sourceTree = "<absolute>"; };
 		5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitAutocompleteView.swift; sourceTree = "<group>"; };
 		5A811C032DF79DA000BD6D7F /* MapKitLocationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitLocationPicker.swift; sourceTree = "<group>"; };
 		5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitLocationService.swift; sourceTree = "<group>"; };
 		5A811C052DF79DA000BD6D7F /* PlanetaryCalculationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanetaryCalculationsView.swift; sourceTree = "<group>"; };
+		5AD2294B2E007C1900DB6861 /* AstronovaApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = AstronovaApp.app; path = "/Users/sankalpthakur/Projects/iOS Apps/astronova/build/Debug-iphoneos/AstronovaApp.app"; sourceTree = "<absolute>"; };
+		5AD2294C2E007C1900DB6861 /* AstronovaAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = AstronovaAppTests.xctest; path = "/Users/sankalpthakur/Projects/iOS Apps/astronova/build/Debug-iphoneos/AstronovaApp.app/PlugIns/AstronovaAppTests.xctest"; sourceTree = "<absolute>"; };
+		5AD2294D2E007C1900DB6861 /* AstronovaAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = AstronovaAppUITests.xctest; path = "/Users/sankalpthakur/Projects/iOS Apps/astronova/build/Debug-iphoneos/AstronovaAppUITests-Runner.app/PlugIns/AstronovaAppUITests.xctest"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -172,7 +172,7 @@
 			);
 			name = AstronovaApp;
 			productName = AstronovaApp;
-			productReference = 5A0C72142DF803FE0091A1F5 /* AstronovaApp.app */;
+			productReference = 5AD2294B2E007C1900DB6861 /* AstronovaApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 		3D01F7EF2C0A000000000001 /* AstronovaAppTests */ = {
@@ -190,7 +190,7 @@
 			);
 			name = AstronovaAppTests;
 			productName = AstronovaAppTests;
-			productReference = 5A0C72152DF803FE0091A1F5 /* AstronovaAppTests.xctest */;
+			productReference = 5AD2294C2E007C1900DB6861 /* AstronovaAppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		3D01F7F92C0A000000000001 /* AstronovaAppUITests */ = {
@@ -208,7 +208,7 @@
 			);
 			name = AstronovaAppUITests;
 			productName = AstronovaAppUITests;
-			productReference = 5A0C72162DF803FE0091A1F5 /* AstronovaAppUITests.xctest */;
+			productReference = 5AD2294D2E007C1900DB6861 /* AstronovaAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */

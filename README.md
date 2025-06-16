@@ -1,5 +1,7 @@
 # 🌟 Astronova - AI-Powered Astrology iOS App
 
+[![codecov](https://codecov.io/gh/sankalpsthakur/astronova/branch/main/graph/badge.svg)](https://codecov.io/gh/sankalpsthakur/astronova)
+
 Astronova is a delightful astrology app that provides personalized cosmic insights, compatibility matching, and AI-powered guidance. Built with SwiftUI and CloudKit, it offers a beautiful, intuitive experience for exploring your cosmic journey.
 
 ## ✨ Features

@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworkingPackageTests.build/master.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworkingPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworkingPackageTests.build/runner.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworkingPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworkingPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworkingPackageTests.build/runner.swiftdeps"
+  }
+}

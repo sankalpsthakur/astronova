@@ -1,20 +1,21 @@
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, HTTPException, Query
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
 
-locations_bp = Blueprint('locations', __name__)
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
-@locations_bp.route('/search', methods=['GET'])
-def search_locations():
+@router.get('/search')
+@limiter.limit("100/hour")
+async def search_locations(
+    query: str = Query(..., description="Location query to search"),
+    limit: int = Query(default=10, le=20, description="Maximum number of results")
+):
     """Search for locations by name and return multiple results"""
-    query = request.args.get('query')
-    limit = request.args.get('limit', 10, type=int)
-    
     if not query:
-        return jsonify({'error': 'query parameter required'}), 400
-    
-    if limit > 20:
-        limit = 20  # Cap at 20 results
+        raise HTTPException(status_code=400, detail='query parameter required')
     
     try:
         geolocator = Nominatim(user_agent='astronova')
@@ -24,7 +25,7 @@ def search_locations():
         locations = geolocator.geocode(query, exactly_one=False, limit=limit)
         
         if not locations:
-            return jsonify({'locations': []})
+            return {'locations': []}
         
         results = []
         for loc in locations:
@@ -62,29 +63,27 @@ def search_locations():
                 # Skip this location if there's an error processing it
                 continue
         
-        return jsonify({'locations': results})
+        return {'locations': results}
         
     except Exception as e:
-        return jsonify({'error': f'Location search failed: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f'Location search failed: {str(e)}')
 
 
-@locations_bp.route('/timezone', methods=['GET'])
-def get_timezone():
+@router.get('/timezone')
+@limiter.limit("100/hour")
+async def get_timezone(
+    lat: float = Query(..., description="Latitude"),
+    lng: float = Query(..., description="Longitude")
+):
     """Get timezone for coordinates"""
     try:
-        lat = request.args.get('lat', type=float)
-        lng = request.args.get('lng', type=float)
-        
-        if lat is None or lng is None:
-            return jsonify({'error': 'lat and lng parameters required'}), 400
-        
         tf = TimezoneFinder()
         tz = tf.timezone_at(lng=lng, lat=lat)
         
         if tz is None:
             tz = 'UTC'  # Default fallback
         
-        return jsonify({'timezone': tz})
+        return {'timezone': tz}
         
     except Exception as e:
-        return jsonify({'error': f'Timezone lookup failed: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f'Timezone lookup failed: {str(e)}')

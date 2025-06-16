@@ -2,59 +2,83 @@ from __future__ import annotations
 
 import logging
 import os
-from flask import Flask, jsonify
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from services.cache_service import cache
 
 from config import Config
-from routes.chat import chat_bp
-from routes.horoscope import horoscope_bp
-from routes.match import match_bp
-from routes.chart import chart_bp
-from routes.reports import reports_bp
-from routes.ephemeris import ephemeris_bp
-from routes.locations import locations_bp
-from routes.content import content_bp
-from routes.misc import misc_bp
+from routes.chat import router as chat_router
+from routes.horoscope import router as horoscope_router
+from routes.match import router as match_router
+from routes.chart import router as chart_router
+from routes.reports import router as reports_router
+from routes.ephemeris import router as ephemeris_router
+from routes.locations import router as locations_router
+from routes.content import router as content_router
+from routes.misc import router as misc_router
 from services.reports_service import ReportsService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_app(anthropic_api_key: str | None = None):
-    app = Flask(__name__)
-    app.config.from_object(Config)
-    CORS(app)
-    JWTManager(app)
-    cache.init_app(app)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if api_key:
+        app.state.reports_service = ReportsService(api_key)
+    yield
+    # Shutdown - cleanup if needed
 
-    if anthropic_api_key:
-        app.config["reports_service"] = ReportsService(anthropic_api_key)
+def create_app():
+    app = FastAPI(
+        title="AstroNova API",
+        description="Astrological services and calculations API",
+        version="1.0.0",
+        lifespan=lifespan
+    )
+    
+    # CORS configuration with environment-driven whitelist
+    cors_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
+    cors_origins = [origin.strip() for origin in cors_origins if origin.strip()]
+    
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
 
-    limiter = Limiter(app=app, key_func=get_remote_address,
-                      default_limits=["200 per day", "50 per hour"])
+    # Rate limiting
+    limiter = Limiter(key_func=get_remote_address)
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    app.register_blueprint(chat_bp, url_prefix="/api/v1/chat")
-    app.register_blueprint(horoscope_bp, url_prefix="/api/v1/horoscope")
-    app.register_blueprint(match_bp, url_prefix="/api/v1/match")
-    app.register_blueprint(chart_bp, url_prefix="/api/v1/chart")
-    app.register_blueprint(reports_bp, url_prefix="/api/v1/reports")
-    app.register_blueprint(ephemeris_bp, url_prefix="/api/v1/ephemeris")
-    app.register_blueprint(locations_bp, url_prefix="/api/v1/locations")
-    app.register_blueprint(content_bp, url_prefix="/api/v1/content")
-    app.register_blueprint(misc_bp, url_prefix="/api/v1/misc")
+    # Include routers
+    app.include_router(chat_router, prefix="/api/v1/chat", tags=["chat"])
+    app.include_router(horoscope_router, prefix="/api/v1/horoscope", tags=["horoscope"])
+    app.include_router(match_router, prefix="/api/v1/match", tags=["match"])
+    app.include_router(chart_router, prefix="/api/v1/chart", tags=["chart"])
+    app.include_router(reports_router, prefix="/api/v1/reports", tags=["reports"])
+    app.include_router(ephemeris_router, prefix="/api/v1/ephemeris", tags=["ephemeris"])
+    app.include_router(locations_router, prefix="/api/v1/locations", tags=["locations"])
+    app.include_router(content_router, prefix="/api/v1/content", tags=["content"])
+    app.include_router(misc_router, prefix="/api/v1/misc", tags=["misc"])
 
-    @app.route('/health')
-    def health():
-        return jsonify({'status': 'ok'})
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
 
     return app
 
+app = create_app()
+
 if __name__ == '__main__':
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
-    app = create_app(api_key)
-    app.run(host='0.0.0.0', port=8080, debug=debug_mode)
+    import uvicorn
+    debug_mode = os.environ.get("DEBUG", "False").lower() == "true"
+    uvicorn.run(app, host='0.0.0.0', port=8080, reload=debug_mode)

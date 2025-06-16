@@ -1,13 +1,17 @@
-from flask import Blueprint, jsonify, request
+from fastapi import APIRouter, HTTPException
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from services.ephemeris_service import EphemerisService
 from datetime import datetime
 
-ephemeris_bp = Blueprint('ephemeris', __name__)
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 service = EphemerisService()
 
 
-@ephemeris_bp.route('/current', methods=['GET'])
-def current_positions():
+@router.get('/current')
+@limiter.limit("100/hour")
+async def current_positions():
     """
     Get current planetary positions for iOS app
     """
@@ -30,13 +34,13 @@ def current_positions():
                 }
                 planets.append(planet_entry)
         
-        return jsonify({
+        return {
             "planets": planets,
             "timestamp": datetime.now().isoformat()
-        })
+        }
         
     except Exception as e:
-        return jsonify({'error': f'Failed to get current positions: {str(e)}'}), 500
+        raise HTTPException(status_code=500, detail=f'Failed to get current positions: {str(e)}')
 
 def get_planet_symbol(planet_name: str) -> str:
     """Get the symbol for a planet"""

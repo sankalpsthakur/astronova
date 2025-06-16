@@ -14,13 +14,13 @@ let package = Package(
         ),
     ],
     dependencies: [
-        // No external dependencies required
+        .package(path: "./AstronovaNetworking")
     ],
     targets: [
         .target(
             name: "astronova",
             dependencies: [
-                // No external dependencies required
+                .product(name: "AstronovaNetworking", package: "AstronovaNetworking")
             ]
         ),
         .testTarget(

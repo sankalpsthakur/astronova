@@ -1,0 +1,4 @@
+module AstronovaNetworkingPackageTests {
+    header "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworkingPackageTests.build/AstronovaNetworkingPackageTests-Swift.h"
+    requires objc
+}

@@ -1,5 +1,7 @@
-from flask import Blueprint, jsonify, request
-from utils.validators import validate_request
+from fastapi import APIRouter, HTTPException, Path
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
 from models.schemas import ReportRequest, DetailedReportRequest
 from services.report_service import ReportService
 from services.detailed_reports_service import DetailedReportsService
@@ -7,14 +9,15 @@ import base64
 import uuid
 from datetime import datetime
 
-reports_bp = Blueprint('reports', __name__)
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 report_service = ReportService()
 detailed_reports_service = DetailedReportsService()
 
 
-@reports_bp.route('/full', methods=['POST'])
-@validate_request(DetailedReportRequest)
-def generate_detailed_report(data: DetailedReportRequest):
+@router.post('/full')
+@limiter.limit("10/hour")
+async def generate_detailed_report(data: DetailedReportRequest):
     """Generate comprehensive astrological report"""
     try:
         # Generate unique report ID
@@ -54,7 +57,7 @@ def generate_detailed_report(data: DetailedReportRequest):
         # TODO: Store in database/cache
         detailed_reports_service.store_report(report_id, report_record)
         
-        return jsonify({
+        return {
             'reportId': report_id,
             'type': data.reportType,
             'title': report_data['title'],
@@ -63,50 +66,57 @@ def generate_detailed_report(data: DetailedReportRequest):
             'downloadUrl': f"/api/v1/reports/{report_id}/download",
             'generatedAt': report_record['generatedAt'],
             'status': 'completed'
-        })
+        }
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-@reports_bp.route('/<report_id>', methods=['GET'])
-def get_report(report_id: str):
+@router.get('/{report_id}')
+@limiter.limit("100/hour")
+async def get_report(report_id: str = Path(..., description="Report ID")):
     """Retrieve generated report"""
     try:
         report = detailed_reports_service.get_report(report_id)
         if not report:
-            return jsonify({'error': 'Report not found'}), 404
+            raise HTTPException(status_code=404, detail='Report not found')
             
-        return jsonify(report)
+        return report
         
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-@reports_bp.route('/<report_id>/download', methods=['GET'])
-def download_report(report_id: str):
+@router.get('/{report_id}/download')
+@limiter.limit("50/hour")
+async def download_report(report_id: str = Path(..., description="Report ID")):
     """Download report as PDF"""
     try:
         report = detailed_reports_service.get_report(report_id)
         if not report:
-            return jsonify({'error': 'Report not found'}), 404
+            raise HTTPException(status_code=404, detail='Report not found')
             
         # Generate PDF
         pdf_bytes = detailed_reports_service.generate_pdf_report(report)
         encoded = base64.b64encode(pdf_bytes).decode()
         
-        return jsonify({
+        return {
             'pdf': encoded,
             'filename': f"{report['type']}_{report_id}.pdf"
-        })
+        }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-@reports_bp.route('/user/<user_id>', methods=['GET'])
-def get_user_reports(user_id: str):
+@router.get('/user/{user_id}')
+@limiter.limit("100/hour")
+async def get_user_reports(user_id: str = Path(..., description="User ID")):
     """Get all reports for a user"""
     try:
         reports = detailed_reports_service.get_user_reports(user_id)
-        return jsonify({'reports': reports})
+        return {'reports': reports}
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))

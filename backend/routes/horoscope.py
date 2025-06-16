@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, Query, HTTPException
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from services.astro_calculator import AstroCalculator
 from services.claude_ai import ClaudeService
 from services.cloudkit_service import CloudKitService
 from services.cache_service import cache
 
-horoscope_bp = Blueprint('horoscope', __name__)
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 calculator = AstroCalculator()
 claude = ClaudeService()
 cloudkit = CloudKitService()
@@ -18,20 +21,26 @@ VALID_SIGNS = [
     'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'
 ]
 
-@horoscope_bp.route('', methods=['GET'])
-def horoscope():
-    sign = request.args.get('sign', 'aries').lower()
+@router.get("")
+@limiter.limit("50/hour")
+async def horoscope(
+    sign: str = Query(default='aries', description="Zodiac sign"),
+    date: str = Query(default=None, description="Date in YYYY-MM-DD format"),
+    type: str = Query(default='daily', description="Horoscope type")
+):
+    sign = sign.lower()
     
     if sign not in VALID_SIGNS:
-        return jsonify({'error': 'Invalid zodiac sign'}), 400
-    date_str = request.args.get('date')
-    type_ = request.args.get('type', 'daily').lower()
+        raise HTTPException(status_code=400, detail='Invalid zodiac sign')
+    
+    date_str = date
+    type_ = type.lower()
 
     if date_str:
         try:
             dt = datetime.strptime(date_str, '%Y-%m-%d')
         except ValueError:
-            return jsonify({'error': 'Invalid date format, use YYYY-MM-DD'}), 400
+            raise HTTPException(status_code=400, detail='Invalid date format, use YYYY-MM-DD')
     else:
         dt = datetime.utcnow()
         date_str = dt.strftime('%Y-%m-%d')
@@ -39,12 +48,12 @@ def horoscope():
     cache_key = f"horoscope:{sign}:{date_str}:{type_}"
     cached = cache.get(cache_key)
     if cached:
-        return jsonify(cached)
+        return cached
 
     stored = cloudkit.get_horoscope(sign, date_str, type_)
     if stored:
         cache.set(cache_key, stored, timeout=3600)
-        return jsonify(stored)
+        return stored
 
     positions = calculator.get_positions(dt)
     position_lines = [
@@ -57,9 +66,9 @@ def horoscope():
     try:
         content = claude.generate_content(prompt, max_tokens=300)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
     result = {'sign': sign, 'date': date_str, 'type': type_, 'horoscope': content}
     cache.set(cache_key, result, timeout=3600)
     cloudkit.save_horoscope(result)
-    return jsonify(result)
+    return result

@@ -1,7 +1,10 @@
-from flask import Blueprint, jsonify, request
+from fastapi import APIRouter, HTTPException
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from typing import List, Dict, Any
 
-content_bp = Blueprint('content', __name__)
+router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 # Mock data for content management - in production, this would come from a database
 QUICK_QUESTIONS = [
@@ -131,8 +134,9 @@ INSIGHTS = [
     }
 ]
 
-@content_bp.route('/management', methods=['GET'])
-def get_content_management():
+@router.get('/management')
+@limiter.limit("100/hour")
+async def get_content_management():
     """
     Get all content management data including quick questions and insights
     """
@@ -144,11 +148,10 @@ def get_content_management():
         active_insights = [i for i in INSIGHTS if i['is_active']]
         active_insights.sort(key=lambda x: x['priority'])
         
-        return jsonify({
+        return {
             "quick_questions": active_questions,
             "insights": active_insights
-        }), 200
+        }
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
+        raise HTTPException(status_code=500, detail=str(e))

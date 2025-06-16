@@ -1,0 +1,19 @@
+// Debug Configuration for Astronova App
+
+// API Configuration
+API_BASE_URL = http:/$()/127.0.0.1:8080
+
+// App Configuration
+PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.dev
+PRODUCT_NAME = AstronovaApp (Debug)
+
+// Code Signing
+CODE_SIGN_IDENTITY = iPhone Developer
+DEVELOPMENT_TEAM = $(DEVELOPMENT_TEAM)
+
+// Swift Compiler Settings
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+
+// Other Swift Flags
+OTHER_SWIFT_FLAGS = -D DEBUG

@@ -13,22 +13,23 @@ enum StoreError: Error {
 class StoreKitManager: ObservableObject, StoreManagerProtocol {
     static let shared = StoreKitManager()
     
-    @AppStorage("hasAstronovaPro") var hasProSubscription = false
+    @Published var hasProSubscription = false
     @Published var products: [String: String] = [:]  // Product ID to localized price
     
     private var storeKitProducts: [Product] = []
     private var updateListenerTask: Task<Void, Error>?
+    private let keychainService = KeychainService.shared
+    private let configuration = ConfigurationService.shared
     
-    // Product IDs defined in App Store Connect
-    private let productIDs: Set<String> = [
-        "love_forecast",
-        "birth_chart", 
-        "career_forecast",
-        "year_ahead",
-        "astronova_pro_monthly"
-    ]
+    // Product IDs from configuration service
+    private var productIDs: Set<String> {
+        Set(configuration.storeKitProductIDs)
+    }
     
     init() {
+        // Load subscription state from keychain
+        loadSubscriptionStateFromKeychain()
+        
         // Start listening for transaction updates
         updateListenerTask = listenForTransactions()
         
@@ -36,6 +37,27 @@ class StoreKitManager: ObservableObject, StoreManagerProtocol {
         Task {
             await loadProducts()
             await checkCurrentEntitlements()
+        }
+    }
+    
+    private func loadSubscriptionStateFromKeychain() {
+        // Try to load from keychain, fallback to false
+        do {
+            let subscriptionData = try keychainService.load(Bool.self, for: "hasAstronovaPro")
+            hasProSubscription = subscriptionData
+            LoggingService.shared.logStoreKitEvent("Loaded subscription state from keychain: \(hasProSubscription)")
+        } catch {
+            hasProSubscription = false
+            LoggingService.shared.log("No subscription state found in keychain, defaulting to false", category: .storeKit, level: .debug)
+        }
+    }
+    
+    private func saveSubscriptionStateToKeychain() {
+        do {
+            try keychainService.save(hasProSubscription, for: "hasAstronovaPro")
+            LoggingService.shared.logStoreKitEvent("Saved subscription state to keychain: \(hasProSubscription)")
+        } catch {
+            LoggingService.shared.logError(error, category: .storeKit)
         }
     }
     

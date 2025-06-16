@@ -1,0 +1,20 @@
+// Release Configuration for Astronova App
+
+// API Configuration
+API_BASE_URL = https:/$()/api.astronova.app
+
+// App Configuration
+PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app
+PRODUCT_NAME = AstronovaApp
+
+// Code Signing
+CODE_SIGN_IDENTITY = iPhone Distribution
+DEVELOPMENT_TEAM = $(DEVELOPMENT_TEAM)
+
+// Swift Compiler Settings
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = RELEASE
+SWIFT_OPTIMIZATION_LEVEL = -O
+
+// Bitcode and optimization
+ENABLE_BITCODE = NO
+GCC_OPTIMIZATION_LEVEL = s

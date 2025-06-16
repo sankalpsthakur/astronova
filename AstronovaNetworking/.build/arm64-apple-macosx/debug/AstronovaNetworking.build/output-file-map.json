@@ -1,0 +1,29 @@
+{
+  "": {
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/master.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/Sources/AstronovaNetworking/APIModels.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/APIModels.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/APIModels.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/APIModels~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/APIModels.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/Sources/AstronovaNetworking/AstronovaNetworking.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/AstronovaNetworking.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/AstronovaNetworking.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/AstronovaNetworking~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/AstronovaNetworking.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/Sources/AstronovaNetworking/Configuration.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/Configuration.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/Configuration.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/Configuration~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/Configuration.swiftdeps"
+  },
+  "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/Sources/AstronovaNetworking/NetworkClient.swift": {
+    "dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/NetworkClient.d",
+    "object": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/NetworkClient.swift.o",
+    "swiftmodule": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/NetworkClient~partial.swiftmodule",
+    "swift-dependencies": "/Users/sankalpthakur/Projects/iOS Apps/astronova/AstronovaNetworking/.build/arm64-apple-macosx/debug/AstronovaNetworking.build/NetworkClient.swiftdeps"
+  }
+}
