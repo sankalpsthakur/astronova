@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -13,7 +13,7 @@ cloudkit = CloudKitService()
 
 @router.post('')
 @limiter.limit("20/hour")
-async def match(data: MatchRequest):
+async def match(request: Request, data: MatchRequest):
     try:
         cache_key = (
             f"match:{data.user.birth_date}:{data.user.birth_time}:"

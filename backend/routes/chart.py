@@ -4,7 +4,7 @@ import base64
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -55,7 +55,7 @@ def get_current_user(token = Depends(security)):
 
 @router.post('/generate')
 @limiter.limit("10/minute")
-async def generate(data: ChartRequest, user_id = Depends(get_current_user)):
+async def generate(request: Request, data: ChartRequest, user_id = Depends(get_current_user)):
     try:
         birth = data.birthData
         dt = datetime.fromisoformat(f"{birth.date}T{birth.time}")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -24,7 +24,7 @@ def get_current_user(token = Depends(security)):
 
 @router.post('/send')
 @limiter.limit("30/minute")
-async def send_message(data: ChatRequest, user_id = Depends(get_current_user)):
+async def send_message(request: Request, data: ChatRequest, user_id = Depends(get_current_user)):
     try:
         conv_id = data.conversationId
 

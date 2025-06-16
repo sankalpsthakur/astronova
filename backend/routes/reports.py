@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -17,7 +17,7 @@ detailed_reports_service = DetailedReportsService()
 
 @router.post('/full')
 @limiter.limit("10/hour")
-async def generate_detailed_report(data: DetailedReportRequest):
+async def generate_detailed_report(request: Request, data: DetailedReportRequest):
     """Generate comprehensive astrological report"""
     try:
         # Generate unique report ID
@@ -73,7 +73,7 @@ async def generate_detailed_report(data: DetailedReportRequest):
 
 @router.get('/{report_id}')
 @limiter.limit("100/hour")
-async def get_report(report_id: str = Path(..., description="Report ID")):
+async def get_report(request: Request, report_id: str = Path(..., description="Report ID")):
     """Retrieve generated report"""
     try:
         report = detailed_reports_service.get_report(report_id)
@@ -89,7 +89,7 @@ async def get_report(report_id: str = Path(..., description="Report ID")):
 
 @router.get('/{report_id}/download')
 @limiter.limit("50/hour")
-async def download_report(report_id: str = Path(..., description="Report ID")):
+async def download_report(request: Request, report_id: str = Path(..., description="Report ID")):
     """Download report as PDF"""
     try:
         report = detailed_reports_service.get_report(report_id)
@@ -112,7 +112,7 @@ async def download_report(report_id: str = Path(..., description="Report ID")):
 
 @router.get('/user/{user_id}')
 @limiter.limit("100/hour")
-async def get_user_reports(user_id: str = Path(..., description="User ID")):
+async def get_user_reports(request: Request, user_id: str = Path(..., description="User ID")):
     """Get all reports for a user"""
     try:
         reports = detailed_reports_service.get_user_reports(user_id)

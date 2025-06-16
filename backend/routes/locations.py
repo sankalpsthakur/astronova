@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from geopy.geocoders import Nominatim
@@ -10,6 +10,7 @@ limiter = Limiter(key_func=get_remote_address)
 @router.get('/search')
 @limiter.limit("100/hour")
 async def search_locations(
+    request: Request,
     query: str = Query(..., description="Location query to search"),
     limit: int = Query(default=10, le=20, description="Maximum number of results")
 ):
@@ -72,6 +73,7 @@ async def search_locations(
 @router.get('/timezone')
 @limiter.limit("100/hour")
 async def get_timezone(
+    request: Request,
     lat: float = Query(..., description="Latitude"),
     lng: float = Query(..., description="Longitude")
 ):

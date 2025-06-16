@@ -3,7 +3,7 @@ Miscellaneous utility endpoints for the Astronova API.
 Provides health checks, utility information, and general purpose endpoints.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 import sys
@@ -15,7 +15,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 @router.get('/health')
 @limiter.limit("200/hour")
-async def health_check():
+async def health_check(request: Request):
     """
     Health check endpoint for monitoring and load balancers.
     
@@ -32,7 +32,7 @@ async def health_check():
 
 @router.get('/info')
 @limiter.limit("100/hour")
-async def service_info():
+async def service_info(request: Request):
     """
     Service information endpoint providing API details.
     
@@ -69,7 +69,7 @@ async def service_info():
 
 @router.get('/zodiac-signs')
 @limiter.limit("100/hour")
-async def zodiac_signs():
+async def zodiac_signs(request: Request):
     """
     Get information about all zodiac signs.
     
@@ -170,7 +170,7 @@ async def zodiac_signs():
 
 @router.get('/system-status')
 @limiter.limit("50/hour")
-async def system_status():
+async def system_status(request: Request):
     """
     Detailed system status for administrative monitoring.
     

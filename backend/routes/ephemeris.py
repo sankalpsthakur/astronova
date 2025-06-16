@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from services.ephemeris_service import EphemerisService
@@ -11,7 +11,7 @@ service = EphemerisService()
 
 @router.get('/current')
 @limiter.limit("100/hour")
-async def current_positions():
+async def current_positions(request: Request):
     """
     Get current planetary positions for iOS app
     """
