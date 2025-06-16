@@ -2,6 +2,286 @@ import Foundation
 import SwiftUI
 import Combine
 import CoreLocation
+import OSLog
+import Security
+
+//MARK: - Services
+
+//MARK: - Logging Service
+final class LoggingService {
+    static let shared = LoggingService()
+    
+    private let networkLogger = Logger(subsystem: "com.astronova.app", category: "networking")
+    private let authLogger = Logger(subsystem: "com.astronova.app", category: "authentication")
+    private let uiLogger = Logger(subsystem: "com.astronova.app", category: "ui")
+    private let storeKitLogger = Logger(subsystem: "com.astronova.app", category: "storekit")
+    private let generalLogger = Logger(subsystem: "com.astronova.app", category: "general")
+    
+    private init() {}
+    
+    enum Category {
+        case network
+        case auth
+        case ui
+        case storeKit
+        case general
+    }
+    
+    enum Level {
+        case debug
+        case info
+        case notice
+        case error
+        case fault
+    }
+    
+    func log(_ message: String, category: Category = .general, level: Level = .info) {
+        let logger = self.logger(for: category)
+        
+        switch level {
+        case .debug:
+            logger.debug("\(message)")
+        case .info:
+            logger.info("\(message)")
+        case .notice:
+            logger.notice("\(message)")
+        case .error:
+            logger.error("\(message)")
+        case .fault:
+            logger.fault("\(message)")
+        }
+    }
+    
+    private func logger(for category: Category) -> Logger {
+        switch category {
+        case .network:
+            return networkLogger
+        case .auth:
+            return authLogger
+        case .ui:
+            return uiLogger
+        case .storeKit:
+            return storeKitLogger
+        case .general:
+            return generalLogger
+        }
+    }
+    
+    func logNetworkRequest(_ request: URLRequest) {
+        log("Network Request: \(request.httpMethod ?? "Unknown") \(request.url?.absoluteString ?? "Unknown URL")", category: .network, level: .debug)
+    }
+    
+    func logNetworkResponse(_ response: URLResponse?, data: Data?) {
+        if let httpResponse = response as? HTTPURLResponse {
+            log("Network Response: \(httpResponse.statusCode) - \(data?.count ?? 0) bytes", category: .network, level: .debug)
+        }
+    }
+    
+    func logError(_ error: Error, category: Category = .general) {
+        log("Error: \(error.localizedDescription)", category: category, level: .error)
+    }
+    
+    func logAuthEvent(_ event: String) {
+        log("Auth Event: \(event)", category: .auth, level: .info)
+    }
+    
+    func logStoreKitEvent(_ event: String) {
+        log("StoreKit Event: \(event)", category: .storeKit, level: .info)
+    }
+}
+
+//MARK: - Configuration Service
+protocol ConfigurationProtocol {
+    var baseURL: String { get }
+    var timeout: TimeInterval { get }
+    var environment: AppEnvironment { get }
+    var isDebugMode: Bool { get }
+}
+
+enum AppEnvironment: String, CaseIterable {
+    case development = "development"
+    case staging = "staging"
+    case production = "production"
+    
+    var displayName: String {
+        switch self {
+        case .development:
+            return "Development"
+        case .staging:
+            return "Staging"
+        case .production:
+            return "Production"
+        }
+    }
+}
+
+final class ConfigurationService: ConfigurationProtocol {
+    static let shared = ConfigurationService()
+    
+    let environment: AppEnvironment
+    let isDebugMode: Bool
+    
+    private init() {
+        #if DEBUG
+        self.environment = .development
+        self.isDebugMode = true
+        #else
+        self.environment = .production
+        self.isDebugMode = false
+        #endif
+        
+        LoggingService.shared.log("Initialized configuration for \(environment.displayName) environment", category: .general, level: .info)
+    }
+    
+    var baseURL: String {
+        switch environment {
+        case .development:
+            return "http://127.0.0.1:8080"
+        case .staging:
+            return "https://staging-api.astronova.app"
+        case .production:
+            return "https://api.astronova.app"
+        }
+    }
+    
+    var timeout: TimeInterval {
+        switch environment {
+        case .development:
+            return 30.0
+        case .staging:
+            return 30.0
+        case .production:
+            return 15.0
+        }
+    }
+}
+
+//MARK: - Keychain Service
+final class KeychainService {
+    static let shared = KeychainService()
+    
+    private init() {}
+    
+    private let serviceName = "com.astronova.app"
+    
+    enum KeychainError: Error, LocalizedError {
+        case noData
+        case unhandledError(status: OSStatus)
+        case encodingError
+        case decodingError
+        
+        var errorDescription: String? {
+            switch self {
+            case .noData:
+                return "No data found in keychain"
+            case .unhandledError(let status):
+                return "Keychain error: \(status)"
+            case .encodingError:
+                return "Failed to encode data for keychain"
+            case .decodingError:
+                return "Failed to decode data from keychain"
+            }
+        }
+    }
+    
+    // MARK: - Auth State Methods
+    
+    struct AuthState: Codable {
+        let isSignedIn: Bool
+        let isAnonymousUser: Bool
+    }
+    
+    func saveAuthState(isSignedIn: Bool, isAnonymousUser: Bool) throws {
+        let authState = AuthState(isSignedIn: isSignedIn, isAnonymousUser: isAnonymousUser)
+        try save(authState, for: "auth_state")
+    }
+    
+    func loadAuthState() -> AuthState? {
+        return try? load(AuthState.self, for: "auth_state")
+    }
+    
+    func clearAuthState() throws {
+        try delete(for: "auth_state")
+    }
+    
+    func clearUserSession() throws {
+        try delete(for: "user_session")
+    }
+    
+    // MARK: - Generic Methods
+    
+    private func save<T: Codable>(_ item: T, for key: String) throws {
+        let data: Data
+        do {
+            data = try JSONEncoder().encode(item)
+        } catch {
+            LoggingService.shared.logError(error, category: .auth)
+            throw KeychainError.encodingError
+        }
+        
+        let query = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrAccount: key,
+            kSecAttrService: serviceName,
+            kSecValueData: data
+        ] as CFDictionary
+        
+        // Delete any existing item
+        SecItemDelete(query)
+        
+        // Add new item
+        let status = SecItemAdd(query, nil)
+        guard status == errSecSuccess else {
+            LoggingService.shared.logError(KeychainError.unhandledError(status: status), category: .auth)
+            throw KeychainError.unhandledError(status: status)
+        }
+    }
+    
+    private func load<T: Codable>(_ type: T.Type, for key: String) throws -> T {
+        let query = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrAccount: key,
+            kSecAttrService: serviceName,
+            kSecReturnData: true
+        ] as CFDictionary
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query, &result)
+        
+        guard status == errSecSuccess else {
+            if status == errSecItemNotFound {
+                throw KeychainError.noData
+            } else {
+                throw KeychainError.unhandledError(status: status)
+            }
+        }
+        
+        guard let data = result as? Data else {
+            throw KeychainError.noData
+        }
+        
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch {
+            LoggingService.shared.logError(error, category: .auth)
+            throw KeychainError.decodingError
+        }
+    }
+    
+    private func delete(for key: String) throws {
+        let query = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrAccount: key,
+            kSecAttrService: serviceName
+        ] as CFDictionary
+        
+        let status = SecItemDelete(query)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            LoggingService.shared.logError(KeychainError.unhandledError(status: status), category: .auth)
+            throw KeychainError.unhandledError(status: status)
+        }
+    }
+}
 
 // MARK: - Architecture Components
 
@@ -281,7 +561,14 @@ class MockNetworkClient: NetworkClientProtocol {
                 vedicChart: nil,
                 chineseChart: nil
             )
-            return mockChart as! T
+            guard let typedResponse = mockChart as? T else {
+                LoggingService.shared.logError(
+                    NetworkError.decodingError, 
+                    category: .network
+                )
+                throw NetworkError.decodingError
+            }
+            return typedResponse
         }
         
         throw NetworkError.noData

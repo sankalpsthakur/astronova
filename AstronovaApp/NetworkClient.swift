@@ -1,4 +1,43 @@
 import Foundation
+import OSLog
+
+// MARK: - Simple Logging for NetworkClient
+private let networkLogger = Logger(subsystem: "com.astronova.app", category: "networking")
+
+// MARK: - Simple Configuration for NetworkClient
+private struct SimpleConfiguration {
+    static let baseURL: String = {
+        #if DEBUG
+        return "http://127.0.0.1:8080"
+        #else
+        return "https://api.astronova.app"
+        #endif
+    }()
+    
+    static let timeout: TimeInterval = {
+        #if DEBUG
+        return 30.0
+        #else
+        return 15.0
+        #endif
+    }()
+}
+
+// Temporary protocol until services are added to project
+protocol ConfigurationProtocol {
+    var baseURL: String { get }
+    var timeout: TimeInterval { get }
+}
+
+// Temporary service until services are added to project
+class ConfigurationService: ConfigurationProtocol {
+    static let shared = ConfigurationService()
+    
+    var baseURL: String { SimpleConfiguration.baseURL }
+    var timeout: TimeInterval { SimpleConfiguration.timeout }
+    
+    private init() {}
+}
 
 /// NetworkError enum for handling API errors
 enum NetworkError: Error, LocalizedError {
@@ -62,27 +101,32 @@ class NetworkClient: NetworkClientProtocol {
     
     private let baseURL: String
     private let session: URLSession
+    private let configuration: ConfigurationProtocol
     
-    public init(baseURL: String? = nil, session: URLSession? = nil) {
-        // Configuration for development - update for production
+    convenience init() {
+        self.init(baseURL: nil, session: nil, configuration: nil)
+    }
+    
+    public init(baseURL: String? = nil, session: URLSession? = nil, configuration: ConfigurationProtocol? = nil) {
+        self.configuration = configuration ?? ConfigurationService.shared
+        
+        // Use provided baseURL or configuration service
         if let baseURL = baseURL {
             self.baseURL = baseURL
         } else {
-            #if DEBUG
-            self.baseURL = "http://127.0.0.1:8080"
-            #else
-            self.baseURL = "https://api.astronova.app" // Update with production URL
-            #endif
+            self.baseURL = self.configuration.baseURL
         }
         
         if let session = session {
             self.session = session
         } else {
             let config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 30
-            config.timeoutIntervalForResource = 60
+            config.timeoutIntervalForRequest = self.configuration.timeout
+            config.timeoutIntervalForResource = self.configuration.timeout * 2
             self.session = URLSession(configuration: config)
         }
+        
+        networkLogger.debug("Initialized NetworkClient with baseURL: \(self.baseURL)")
     }
     
     /// Generic method to make API requests
@@ -129,8 +173,8 @@ class NetworkClient: NetworkClientProtocol {
                 decoder.dateDecodingStrategy = .iso8601
                 return try decoder.decode(responseType, from: data)
             } catch {
-                print("Decoding error: \(error)")
-                print("Response data: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+                networkLogger.error("Network error: \(error.localizedDescription)")
+                networkLogger.debug("Response data: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
                 throw NetworkError.decodingError
             }
         } catch {
