@@ -932,6 +932,9 @@ python app.py
 ```
 
 #### **Docker Deployment**
+Run these commands from the repository root. The included `Dockerfile` builds
+the Flask backend into a lightweight container.
+
 ```bash
 # Build Docker image
 docker build -t astronova-backend .
@@ -942,6 +945,8 @@ docker run -p 8080:8080 \
   -e ANTHROPIC_API_KEY="your-api-key" \
   astronova-backend
 ```
+
+Once running, interactive API documentation is available at `http://localhost:8080/apidoc/swagger`.
 
 ### 🚀 **Deployment Pipeline**
 ```mermaid

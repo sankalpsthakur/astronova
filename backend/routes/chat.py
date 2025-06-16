@@ -1,7 +1,10 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.schemas import ChatRequest
+from models.responses import ChatResponse
 from utils.validators import validate_request
+from spec import spec
+from flask_pydantic_spec import Request, Response
 from services.claude_ai import ClaudeService
 from services.cloudkit_service import CloudKitService
 from services.cache_service import cache
@@ -12,6 +15,11 @@ cloudkit = CloudKitService()
 
 @chat_bp.route('/send', methods=['POST'])
 @jwt_required(optional=True)
+@spec.validate(
+    body=Request(ChatRequest),
+    resp=Response(HTTP_200=ChatResponse),
+    tags=["Chat"]
+)
 @validate_request(ChatRequest)
 def send_message(data: ChatRequest):
     user_id = get_jwt_identity()
