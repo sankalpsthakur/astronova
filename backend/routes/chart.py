@@ -90,9 +90,18 @@ def generate(data: ChartRequest):
 
             if user_id:
                 cloudkit.save_birth_chart({
-                    'user_id': user_id,
-                    'system': system,
-                    'chart': chart
+                    'userProfileId': user_id,
+                    'chartType': data.chartType,
+                    'systems': data.systems,
+                    'planetaryPositions': chart.get('positions', []),
+                    'chartSVG': chart.get('svg', ''),
+                    'birthData': {
+                        'birthDate': data.birthData.birthDate,
+                        'birthTime': data.birthData.birthTime,
+                        'latitude': data.birthData.latitude,
+                        'longitude': data.birthData.longitude,
+                        'timezone': data.birthData.timezone
+                    }
                 })
 
         chart_id = str(uuid.uuid4())
