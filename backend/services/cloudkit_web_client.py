@@ -268,8 +268,19 @@ class CloudKitWebClient:
         result = self._make_request('POST', 'records/query', query_data)
         return result.get('records', [])
     
-    def delete_record(self, record_name: str) -> bool:
+    def delete_record(self, record_type: str, record_name: str) -> bool:
         """Delete a record from CloudKit"""
+        try:
+            # CloudKit delete endpoint uses record name only, record_type is for validation
+            self._make_request('DELETE', f'records/{record_name}')
+            logger.info(f"Successfully deleted {record_type} record: {record_name}")
+            return True
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Failed to delete {record_type} record {record_name}: {e}")
+            return False
+    
+    def delete_record_by_name(self, record_name: str) -> bool:
+        """Delete a record from CloudKit by name only (legacy method)"""
         try:
             self._make_request('DELETE', f'records/{record_name}')
             return True

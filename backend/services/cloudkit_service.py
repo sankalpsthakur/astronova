@@ -42,6 +42,37 @@ class CloudKitService:
         except Exception as e:
             logger.error(f"Error saving user profile {user_id}: {e}")
             return False
+    
+    def update_user_profile(self, user_id: str, updated_data: Dict) -> bool:
+        """Update specific fields in a user profile"""
+        try:
+            # Get existing profile first
+            existing_profile = self.get_user_profile(user_id)
+            if not existing_profile:
+                logger.error(f"User profile not found for {user_id}")
+                return False
+            
+            # Merge existing data with updates
+            profile_data = existing_profile.copy()
+            profile_data.update(updated_data)
+            profile_data['updatedAt'] = datetime.now()
+            
+            # Save updated profile
+            return self.save_user_profile(user_id, profile_data)
+        except Exception as e:
+            logger.error(f"Error updating user profile {user_id}: {e}")
+            return False
+    
+    def delete_user_profile(self, user_id: str) -> bool:
+        """Delete a user profile"""
+        try:
+            success = self.web_client.delete_record('UserProfile', user_id)
+            if success:
+                logger.info(f"Deleted user profile: {user_id}")
+            return success
+        except Exception as e:
+            logger.error(f"Error deleting user profile {user_id}: {e}")
+            return False
             
     # MARK: - ChatMessage Operations
     
@@ -82,6 +113,56 @@ class CloudKitService:
         except Exception as e:
             logger.error(f"Error saving chat message: {e}")
             return False
+    
+    def update_chat_message(self, user_id: str, message_id: str, updated_data: Dict) -> bool:
+        """Update a chat message"""
+        try:
+            # For CloudKit, we need to get the record name first by querying
+            messages = self.web_client.query_user_records('ChatMessage', user_id, limit=100)
+            message_record = None
+            
+            for msg in messages:
+                if msg.get('id') == message_id:
+                    message_record = msg
+                    break
+            
+            if not message_record:
+                logger.error(f"Chat message {message_id} not found for user {user_id}")
+                return False
+            
+            # Merge existing data with updates
+            message_data = message_record.copy()
+            message_data.update(updated_data)
+            message_data['updatedAt'] = datetime.now()
+            
+            # Save updated message using record name
+            record_name = message_record.get('recordName', message_id)
+            result = self.web_client.save_record('ChatMessage', message_data, record_name)
+            logger.info(f"Updated chat message {message_id} for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating chat message {message_id}: {e}")
+            return False
+    
+    def delete_chat_message(self, user_id: str, message_id: str) -> bool:
+        """Delete a chat message"""
+        try:
+            # For CloudKit, we need to get the record name first by querying
+            messages = self.web_client.query_user_records('ChatMessage', user_id, limit=100)
+            
+            for msg in messages:
+                if msg.get('id') == message_id:
+                    record_name = msg.get('recordName', message_id)
+                    success = self.web_client.delete_record('ChatMessage', record_name)
+                    if success:
+                        logger.info(f"Deleted chat message {message_id} for user {user_id}")
+                    return success
+            
+            logger.error(f"Chat message {message_id} not found for user {user_id}")
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting chat message {message_id}: {e}")
+            return False
             
     # MARK: - Horoscope Operations
     
@@ -109,9 +190,20 @@ class CloudKitService:
                 # For public horoscopes, use sign as identifier
                 user_id = f"public_{data.get('sign', 'unknown')}"
             
+            # Handle date conversion properly
+            date_value = data.get('date')
+            if isinstance(date_value, str):
+                parsed_date = datetime.strptime(date_value, '%Y-%m-%d')
+            elif isinstance(date_value, date):
+                parsed_date = datetime.combine(date_value, datetime.min.time())
+            elif isinstance(date_value, datetime):
+                parsed_date = date_value
+            else:
+                parsed_date = datetime.combine(date.today(), datetime.min.time())
+            
             horoscope_data = {
-                'id': data.get('id', f"horoscope_{datetime.now().timestamp()}"),
-                'date': datetime.strptime(data.get('date', date.today().isoformat()), '%Y-%m-%d'),
+                'id': data.get('id', f"horoscope_{int(datetime.now().timestamp())}"),
+                'date': parsed_date,
                 'type': data.get('type', 'daily'),
                 'content': data.get('content', ''),
                 'sign': data.get('sign', ''),
@@ -124,6 +216,56 @@ class CloudKitService:
         except Exception as e:
             logger.error(f"Error saving horoscope: {e}")
             return False
+    
+    def update_horoscope(self, user_id: str, horoscope_id: str, updated_data: Dict) -> bool:
+        """Update a horoscope"""
+        try:
+            # Find the horoscope record
+            horoscopes = self.web_client.query_user_records('Horoscope', user_id, limit=50)
+            horoscope_record = None
+            
+            for horoscope in horoscopes:
+                if horoscope.get('id') == horoscope_id:
+                    horoscope_record = horoscope
+                    break
+            
+            if not horoscope_record:
+                logger.error(f"Horoscope {horoscope_id} not found for user {user_id}")
+                return False
+            
+            # Merge existing data with updates
+            horoscope_data = horoscope_record.copy()
+            horoscope_data.update(updated_data)
+            horoscope_data['updatedAt'] = datetime.now()
+            
+            # Save updated horoscope using record name
+            record_name = horoscope_record.get('recordName', horoscope_id)
+            result = self.web_client.save_record('Horoscope', horoscope_data, record_name)
+            logger.info(f"Updated horoscope {horoscope_id} for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating horoscope {horoscope_id}: {e}")
+            return False
+    
+    def delete_horoscope(self, user_id: str, horoscope_id: str) -> bool:
+        """Delete a horoscope"""
+        try:
+            # Find the horoscope record
+            horoscopes = self.web_client.query_user_records('Horoscope', user_id, limit=50)
+            
+            for horoscope in horoscopes:
+                if horoscope.get('id') == horoscope_id:
+                    record_name = horoscope.get('recordName', horoscope_id)
+                    success = self.web_client.delete_record('Horoscope', record_name)
+                    if success:
+                        logger.info(f"Deleted horoscope {horoscope_id} for user {user_id}")
+                    return success
+            
+            logger.error(f"Horoscope {horoscope_id} not found for user {user_id}")
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting horoscope {horoscope_id}: {e}")
+            return False
             
     # MARK: - KundaliMatch Operations
     
@@ -135,10 +277,21 @@ class CloudKitService:
                 logger.error("No userProfileId provided for match")
                 return False
             
+            # Handle partner birth date conversion properly
+            partner_birth_date = data.get('partnerBirthDate')
+            if isinstance(partner_birth_date, str):
+                parsed_birth_date = datetime.strptime(partner_birth_date, '%Y-%m-%d')
+            elif isinstance(partner_birth_date, date):
+                parsed_birth_date = datetime.combine(partner_birth_date, datetime.min.time())
+            elif isinstance(partner_birth_date, datetime):
+                parsed_birth_date = partner_birth_date
+            else:
+                parsed_birth_date = datetime.now()
+            
             match_data = {
-                'id': data.get('id', f"match_{datetime.now().timestamp()}"),
+                'id': data.get('id', f"match_{int(datetime.now().timestamp())}"),
                 'partnerName': data.get('partnerName', ''),
-                'partnerBirthDate': datetime.strptime(data.get('partnerBirthDate', ''), '%Y-%m-%d') if data.get('partnerBirthDate') else datetime.now(),
+                'partnerBirthDate': parsed_birth_date,
                 'partnerLocation': data.get('partnerLocation', ''),
                 'compatibilityScore': data.get('compatibilityScore', 0),
                 'detailedAnalysis': data.get('detailedAnalysis', {})
@@ -159,6 +312,56 @@ class CloudKitService:
         except Exception as e:
             logger.error(f"Error fetching matches for {user_id}: {e}")
             return []
+    
+    def update_match(self, user_id: str, match_id: str, updated_data: Dict) -> bool:
+        """Update a compatibility match"""
+        try:
+            # Find the match record
+            matches = self.web_client.query_user_records('KundaliMatch', user_id, limit=50)
+            match_record = None
+            
+            for match in matches:
+                if match.get('id') == match_id:
+                    match_record = match
+                    break
+            
+            if not match_record:
+                logger.error(f"Match {match_id} not found for user {user_id}")
+                return False
+            
+            # Merge existing data with updates
+            match_data = match_record.copy()
+            match_data.update(updated_data)
+            match_data['updatedAt'] = datetime.now()
+            
+            # Save updated match using record name
+            record_name = match_record.get('recordName', match_id)
+            result = self.web_client.save_record('KundaliMatch', match_data, record_name)
+            logger.info(f"Updated match {match_id} for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating match {match_id}: {e}")
+            return False
+    
+    def delete_match(self, user_id: str, match_id: str) -> bool:
+        """Delete a compatibility match"""
+        try:
+            # Find the match record
+            matches = self.web_client.query_user_records('KundaliMatch', user_id, limit=50)
+            
+            for match in matches:
+                if match.get('id') == match_id:
+                    record_name = match.get('recordName', match_id)
+                    success = self.web_client.delete_record('KundaliMatch', record_name)
+                    if success:
+                        logger.info(f"Deleted match {match_id} for user {user_id}")
+                    return success
+            
+            logger.error(f"Match {match_id} not found for user {user_id}")
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting match {match_id}: {e}")
+            return False
             
     # MARK: - Birth Chart Operations
     
@@ -199,6 +402,56 @@ class CloudKitService:
         except Exception as e:
             logger.error(f"Error fetching birth chart for {user_id}: {e}")
             return None
+    
+    def update_birth_chart(self, user_id: str, chart_id: str, updated_data: Dict) -> bool:
+        """Update a birth chart"""
+        try:
+            # Find the chart record
+            charts = self.web_client.query_user_records('BirthChart', user_id, limit=20)
+            chart_record = None
+            
+            for chart in charts:
+                if chart.get('id') == chart_id:
+                    chart_record = chart
+                    break
+            
+            if not chart_record:
+                logger.error(f"Birth chart {chart_id} not found for user {user_id}")
+                return False
+            
+            # Merge existing data with updates
+            chart_data = chart_record.copy()
+            chart_data.update(updated_data)
+            chart_data['updatedAt'] = datetime.now()
+            
+            # Save updated chart using record name
+            record_name = chart_record.get('recordName', chart_id)
+            result = self.web_client.save_record('BirthChart', chart_data, record_name)
+            logger.info(f"Updated birth chart {chart_id} for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating birth chart {chart_id}: {e}")
+            return False
+    
+    def delete_birth_chart(self, user_id: str, chart_id: str) -> bool:
+        """Delete a birth chart"""
+        try:
+            # Find the chart record
+            charts = self.web_client.query_user_records('BirthChart', user_id, limit=20)
+            
+            for chart in charts:
+                if chart.get('id') == chart_id:
+                    record_name = chart.get('recordName', chart_id)
+                    success = self.web_client.delete_record('BirthChart', record_name)
+                    if success:
+                        logger.info(f"Deleted birth chart {chart_id} for user {user_id}")
+                    return success
+            
+            logger.error(f"Birth chart {chart_id} not found for user {user_id}")
+            return False
+        except Exception as e:
+            logger.error(f"Error deleting birth chart {chart_id}: {e}")
+            return False
             
     # MARK: - BookmarkedReading Operations
     
@@ -210,13 +463,31 @@ class CloudKitService:
                 logger.error("No userProfileId provided for bookmarked reading")
                 return False
             
+            # Handle original date conversion properly
+            original_date = data.get('originalDate')
+            if isinstance(original_date, str):
+                parsed_original_date = datetime.strptime(original_date, '%Y-%m-%d')
+            elif isinstance(original_date, date):
+                parsed_original_date = datetime.combine(original_date, datetime.min.time())
+            elif isinstance(original_date, datetime):
+                parsed_original_date = original_date
+            else:
+                parsed_original_date = datetime.combine(date.today(), datetime.min.time())
+            
+            # Handle bookmarked at date
+            bookmarked_at = data.get('bookmarkedAt')
+            if isinstance(bookmarked_at, datetime):
+                parsed_bookmarked_at = bookmarked_at
+            else:
+                parsed_bookmarked_at = datetime.now()
+            
             bookmark_data = {
-                'id': data.get('id', f"bookmark_{datetime.now().timestamp()}"),
+                'id': data.get('id', f"bookmark_{int(datetime.now().timestamp())}"),
                 'readingType': data.get('readingType', 'horoscope'),
                 'title': data.get('title', ''),
                 'content': data.get('content', ''),
-                'originalDate': datetime.strptime(data.get('originalDate', date.today().isoformat()), '%Y-%m-%d'),
-                'bookmarkedAt': datetime.now()
+                'originalDate': parsed_original_date,
+                'bookmarkedAt': parsed_bookmarked_at
             }
             
             self.web_client.save_user_record('BookmarkedReading', user_id, bookmark_data)
@@ -234,12 +505,42 @@ class CloudKitService:
         except Exception as e:
             logger.error(f"Error fetching bookmarked readings for {user_id}: {e}")
             return []
+    
+    def update_bookmarked_reading(self, user_id: str, bookmark_id: str, updated_data: Dict) -> bool:
+        """Update a bookmarked reading"""
+        try:
+            # Find the bookmark record
+            bookmarks = self.web_client.query_user_records('BookmarkedReading', user_id, limit=100)
+            bookmark_record = None
+            
+            for bookmark in bookmarks:
+                if bookmark.get('id') == bookmark_id:
+                    bookmark_record = bookmark
+                    break
+            
+            if not bookmark_record:
+                logger.error(f"Bookmarked reading {bookmark_id} not found for user {user_id}")
+                return False
+            
+            # Merge existing data with updates
+            bookmark_data = bookmark_record.copy()
+            bookmark_data.update(updated_data)
+            bookmark_data['updatedAt'] = datetime.now()
+            
+            # Save updated bookmark using record name
+            record_name = bookmark_record.get('recordName', bookmark_id)
+            result = self.web_client.save_record('BookmarkedReading', bookmark_data, record_name)
+            logger.info(f"Updated bookmarked reading {bookmark_id} for user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating bookmarked reading {bookmark_id}: {e}")
+            return False
             
     def remove_bookmarked_reading(self, user_id: str, bookmark_id: str) -> bool:
         """Remove a bookmarked reading"""
         try:
             # In CloudKit Web Services, we'd use the delete_record method
-            success = self.web_client.delete_record(bookmark_id)
+            success = self.web_client.delete_record('BookmarkedReading', bookmark_id)
             if success:
                 logger.info(f"Removed bookmarked reading {bookmark_id} for {user_id}")
                 return True
