@@ -24,8 +24,11 @@ class CloudKitWebClient:
         self.base_url = f"https://api.apple-cloudkit.com/database/1/{self.container_id}/{self.environment}/private"
         
         # Server-to-Server Authentication configuration
-        self.key_id = os.getenv('CLOUDKIT_KEY_ID')  # CloudKit Server-to-Server Key ID
-        self.private_key_path = os.getenv('CLOUDKIT_PRIVATE_KEY_PATH')  # Path to private key file
+        # TODO: SECURITY - Move these to environment variables for production
+        # For deployment testing, hardcoded values are used temporarily
+        self.key_id = self._get_cloudkit_key_id()
+        self.private_key_path = self._get_private_key_path()
+        self.private_key_content = self._get_private_key_content()
         
         # Headers for all requests
         self.session = requests.Session()
@@ -35,22 +38,73 @@ class CloudKitWebClient:
         })
         
         # Validate configuration
-        if not all([self.key_id, self.private_key_path]):
+        if not all([self.key_id, (self.private_key_path or self.private_key_content)]):
             logger.warning("CloudKit Web Services not configured. Set CLOUDKIT_KEY_ID and CLOUDKIT_PRIVATE_KEY_PATH environment variables.")
             self.enabled = False
         else:
             self.enabled = True
             self._load_private_key()
     
+    def _get_cloudkit_key_id(self) -> str:
+        """Get CloudKit Key ID from environment or config"""
+        # Try environment variable first
+        env_key_id = os.getenv('CLOUDKIT_KEY_ID')
+        if env_key_id:
+            return env_key_id
+        
+        # Try importing from cloudkit_config
+        try:
+            from cloudkit_config import CLOUDKIT_KEY_ID
+            return CLOUDKIT_KEY_ID
+        except ImportError:
+            return None
+    
+    def _get_private_key_path(self) -> str:
+        """Get private key path from environment variable or config"""
+        env_path = os.getenv('CLOUDKIT_PRIVATE_KEY_PATH')
+        if env_path:
+            return env_path
+        
+        # Try importing from cloudkit_config
+        try:
+            from cloudkit_config import CLOUDKIT_PRIVATE_KEY_PATH
+            return CLOUDKIT_PRIVATE_KEY_PATH
+        except ImportError:
+            return None
+    
+    def _get_private_key_content(self) -> str:
+        """Get private key content from config"""
+        # Try environment variable first
+        if self._get_private_key_path():
+            return None
+        
+        # Try importing from cloudkit_config
+        try:
+            from cloudkit_config import CLOUDKIT_PRIVATE_KEY
+            return CLOUDKIT_PRIVATE_KEY
+        except ImportError:
+            return None
+    
     def _load_private_key(self):
         """Load the private key for CloudKit authentication"""
         try:
-            with open(self.private_key_path, 'rb') as key_file:
-                self.private_key = serialization.load_pem_private_key(
-                    key_file.read(),
-                    password=None,
-                    backend=default_backend()
-                )
+            # Try loading from file path first (environment variable)
+            if self.private_key_path:
+                with open(self.private_key_path, 'rb') as key_file:
+                    key_data = key_file.read()
+                logger.info("CloudKit private key loaded from file")
+            # Fall back to hardcoded content
+            elif self.private_key_content:
+                key_data = self.private_key_content.encode('utf-8')
+                logger.info("CloudKit private key loaded from hardcoded content")
+            else:
+                raise Exception("No private key source available")
+            
+            self.private_key = serialization.load_pem_private_key(
+                key_data,
+                password=None,
+                backend=default_backend()
+            )
             logger.info("CloudKit private key loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load CloudKit private key: {e}")
@@ -128,6 +182,11 @@ class CloudKitWebClient:
         }
         
         try:
+            logger.debug(f"CloudKit API request: {method} {url}")
+            logger.debug(f"Headers: {headers}")
+            if data:
+                logger.debug(f"Request body: {json.dumps(data, indent=2)}")
+            
             if method == 'GET':
                 response = self.session.get(url, headers=headers)
             elif method == 'POST':
@@ -139,13 +198,27 @@ class CloudKitWebClient:
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
             
+            logger.debug(f"Response status: {response.status_code}")
+            logger.debug(f"Response body: {response.text}")
+            
             response.raise_for_status()
             return response.json()
             
         except requests.exceptions.RequestException as e:
             logger.error(f"CloudKit API request failed: {e}")
-            if hasattr(e.response, 'text'):
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response headers: {e.response.headers}")
                 logger.error(f"Response body: {e.response.text}")
+                
+                # Try to parse CloudKit error details
+                try:
+                    error_data = e.response.json()
+                    if 'errors' in error_data:
+                        for error in error_data['errors']:
+                            logger.error(f"CloudKit error: {error}")
+                except:
+                    pass
             raise
     
     # MARK: - Record Operations
@@ -223,35 +296,25 @@ class CloudKitWebClient:
                 timestamp = int(value.timestamp() * 1000)
                 formatted_fields[key] = {'value': timestamp}
             elif isinstance(value, list):
-                # Handle string arrays
+                # Handle string arrays - CloudKit supports string lists natively
                 if all(isinstance(item, str) for item in value):
                     formatted_fields[key] = {'value': value}
                 else:
-                    # Convert complex lists to JSON and store as asset
+                    # For now, convert complex lists to JSON string to avoid asset issues
+                    # TODO: Implement proper CloudKit asset upload for complex data
                     json_data = json.dumps(value)
-                    formatted_fields[key] = self._create_asset_field(json_data)
+                    formatted_fields[key] = {'value': json_data}
             elif isinstance(value, dict):
-                # Store complex objects as assets (JSON)
+                # For now, convert complex objects to JSON string to avoid asset issues
+                # TODO: Implement proper CloudKit asset upload for complex data
                 json_data = json.dumps(value)
-                formatted_fields[key] = self._create_asset_field(json_data)
+                formatted_fields[key] = {'value': json_data}
             else:
                 # Default: convert to string
                 formatted_fields[key] = {'value': str(value)}
         
         return formatted_fields
     
-    def _create_asset_field(self, data: str) -> Dict:
-        """Create an asset field for storing large data"""
-        # For now, we'll store as base64 encoded string
-        # In production, you'd upload to CloudKit assets endpoint first
-        encoded_data = base64.b64encode(data.encode()).decode()
-        return {
-            'value': {
-                'fileChecksum': hashlib.sha256(data.encode()).hexdigest(),
-                'size': len(data),
-                'downloadURL': f'data:application/json;base64,{encoded_data}'
-            }
-        }
     
     def _parse_cloudkit_fields(self, cloudkit_record: Dict) -> Dict:
         """Parse CloudKit record fields back to Python types"""
@@ -263,15 +326,13 @@ class CloudKitWebClient:
             value = field_data.get('value')
             
             # Handle different CloudKit field types
-            if isinstance(value, dict) and 'downloadURL' in value:
-                # Asset field - decode if it's our base64 encoded JSON
-                if value['downloadURL'].startswith('data:application/json;base64,'):
-                    encoded_data = value['downloadURL'].split(',')[1]
-                    json_data = base64.b64decode(encoded_data).decode()
+            if isinstance(value, str):
+                # Try to parse as JSON if it looks like JSON
+                if value.startswith(('{', '[')):
                     try:
-                        parsed_fields[key] = json.loads(json_data)
+                        parsed_fields[key] = json.loads(value)
                     except json.JSONDecodeError:
-                        parsed_fields[key] = json_data
+                        parsed_fields[key] = value
                 else:
                     parsed_fields[key] = value
             else:
