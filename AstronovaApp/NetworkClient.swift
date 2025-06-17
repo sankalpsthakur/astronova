@@ -69,9 +69,9 @@ class NetworkClient: NetworkClientProtocol {
             self.baseURL = baseURL
         } else {
             #if DEBUG
-            self.baseURL = "http://127.0.0.1:8080"
+            self.baseURL = "https://astronova.onrender.com"
             #else
-            self.baseURL = "https://api.astronova.app" // Update with production URL
+            self.baseURL = "https://astronova.onrender.com"
             #endif
         }
         

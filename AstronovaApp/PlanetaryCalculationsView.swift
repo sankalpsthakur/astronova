@@ -791,50 +791,42 @@ struct PlanetaryCalculationView: View {
     private func calculateUserData() async {
         isLoading = true
         
-        do {
-            let profile = auth.profileManager.profile
-            guard let birthTime = profile.birthTime,
-                  let _ = profile.birthCoordinates,
-                  let _ = profile.timezone,
-                  let _ = profile.birthPlace else {
-                isLoading = false
-                return
-            }
-            
-            // Format dates for API
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            _ = dateFormatter.string(from: profile.birthDate)
-            
-            let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = "HH:mm"
-            _ = timeFormatter.string(from: birthTime)
-            
-            // Get planetary positions from API
-            // Note: Temporarily disabled - requires proper PlanetaryDataService integration
-            // let positions = try await PlanetaryDataService.shared.getBirthChartPositions(
-            //     birthDate: birthDateString,
-            //     birthTime: birthTimeString,
-            //     latitude: coordinates.latitude,
-            //     longitude: coordinates.longitude,
-            //     timezone: timezone
-            // )
-            let positions: [DetailedPlanetaryPosition] = [] // Placeholder
-            
-            // Create calculation data
-            await MainActor.run {
-                userCalculations = UserCalculationData(
-                    profile: profile,
-                    planetaryPositions: positions
-                )
-                isLoading = false
-            }
-            
-        } catch {
-            print("Failed to calculate user data: \(error)")
-            await MainActor.run {
-                isLoading = false
-            }
+        let profile = auth.profileManager.profile
+        guard let birthTime = profile.birthTime,
+              let _ = profile.birthCoordinates,
+              let _ = profile.timezone,
+              let _ = profile.birthPlace else {
+            isLoading = false
+            return
+        }
+        
+        // Format dates for API
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        _ = dateFormatter.string(from: profile.birthDate)
+        
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        _ = timeFormatter.string(from: birthTime)
+        
+        // Get planetary positions from API
+        // Note: Temporarily disabled - requires proper PlanetaryDataService integration
+        // let positions = try await PlanetaryDataService.shared.getBirthChartPositions(
+        //     birthDate: birthDateString,
+        //     birthTime: birthTimeString,
+        //     latitude: coordinates.latitude,
+        //     longitude: coordinates.longitude,
+        //     timezone: timezone
+        // )
+        let positions: [DetailedPlanetaryPosition] = [] // Placeholder
+        
+        // Create calculation data
+        await MainActor.run {
+            userCalculations = UserCalculationData(
+                profile: profile,
+                planetaryPositions: positions
+            )
+            isLoading = false
         }
     }
     
