@@ -1,1 +1,4 @@
 cloudkit_data/
+.env
+*.p8
+AuthKey_*.p8
