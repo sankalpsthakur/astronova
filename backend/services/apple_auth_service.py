@@ -1,4 +1,4 @@
-import jwt
+import jwt  # PyJWT package
 import requests
 import time
 import base64

@@ -186,7 +186,7 @@ class AuthState: ObservableObject {
     func signOut() {
         // Clear stored authentication
         jwtToken = nil
-        authenticatedUser = nil
+        authenticatedUser = nil as AuthenticatedUser?
         keychainHelper.deleteJWTToken()
         
         hasSignedIn = false

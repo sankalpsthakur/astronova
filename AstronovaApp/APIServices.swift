@@ -122,14 +122,12 @@ class APIServices: ObservableObject, APIServicesProtocol {
             systems: systems
         )
         
-        return try await makeRequestWithTokenRefresh {
-            try await networkClient.request(
-                endpoint: "/api/v1/chart/generate",
-                method: HTTPMethod.POST,
-                body: request,
-                responseType: ChartResponse.self
-            )
-        }
+        return try await networkClient.request(
+            endpoint: "/api/v1/chart/generate",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: ChartResponse.self
+        )
     }
     
     /// Generate chart from UserProfile

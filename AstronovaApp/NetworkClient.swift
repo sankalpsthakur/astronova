@@ -261,8 +261,26 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.networkError(URLError(.badServerResponse))
             }
             
-            guard 200...299 ~= httpResponse.statusCode else {
-                throw NetworkError.serverError(httpResponse.statusCode)
+            // Handle different HTTP status codes
+            switch httpResponse.statusCode {
+            case 200...299:
+                break // Success
+            case 401:
+                // Try to extract error message from response
+                let errorMessage = extractErrorMessage(from: data)
+                if errorMessage?.contains("expired") == true {
+                    throw NetworkError.tokenExpired
+                } else {
+                    throw NetworkError.authenticationFailed(errorMessage)
+                }
+            case 400...499:
+                let errorMessage = extractErrorMessage(from: data)
+                throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
+            case 500...599:
+                let errorMessage = extractErrorMessage(from: data)
+                throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
+            default:
+                throw NetworkError.serverError(httpResponse.statusCode, nil)
             }
             
             guard !data.isEmpty else {
@@ -271,7 +289,17 @@ class NetworkClient: NetworkClientProtocol {
             
             return data
         } catch {
-            if error is NetworkError {
+            // Handle network-specific errors
+            if let urlError = error as? URLError {
+                switch urlError.code {
+                case .notConnectedToInternet, .networkConnectionLost:
+                    throw NetworkError.offline
+                case .timedOut:
+                    throw NetworkError.timeout
+                default:
+                    throw NetworkError.networkError(urlError)
+                }
+            } else if error is NetworkError {
                 throw error
             } else {
                 throw NetworkError.networkError(error)
