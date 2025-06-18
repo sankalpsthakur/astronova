@@ -34,6 +34,11 @@ class AuthState: ObservableObject {
     }
     
     init() {
+        // Set up token expiry callback
+        apiServices.onTokenExpired = { [weak self] in
+            await self?.handleTokenExpiry()
+        }
+        
         checkAuthState()
     }
     
