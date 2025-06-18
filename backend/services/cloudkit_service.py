@@ -14,17 +14,27 @@ class CloudKitService:
     def __init__(self):
         self.container_id = "iCloud.com.sankalp.AstronovaApp"
         self.web_client = CloudKitWebClient()
+        self.enabled = self.web_client.enabled
         
-        if not self.web_client.enabled:
-            raise Exception("CloudKit Web Services must be configured. Set CLOUDKIT_KEY_ID, CLOUDKIT_TEAM_ID, and CLOUDKIT_PRIVATE_KEY_PATH environment variables.")
-        
-        logger.info("CloudKit Web Services configured and ready.")
-        
+        if not self.enabled:
+            logger.warning("CloudKit Web Services not configured - running in offline mode. Some features may be limited.")
+        else:
+            logger.info("CloudKit Web Services configured and ready.")
+    
+    def _check_enabled(self, operation_name: str = "operation") -> bool:
+        """Check if CloudKit is enabled and log if not"""
+        if not self.enabled:
+            logger.debug(f"CloudKit not enabled - skipping {operation_name}")
+            return False
+        return True
             
     # MARK: - UserProfile Operations
     
     def get_user_profile(self, user_id: str) -> Optional[Dict]:
         """Get user profile by ID"""
+        if not self._check_enabled("get_user_profile"):
+            return None
+            
         try:
             records = self.web_client.query_user_records('UserProfile', user_id, limit=1)
             return records[0] if records else None
@@ -34,6 +44,9 @@ class CloudKitService:
             
     def save_user_profile(self, user_id: str, profile_data: Dict) -> bool:
         """Save or update user profile"""
+        if not self._check_enabled("save_user_profile"):
+            return False
+            
         try:
             profile_data['id'] = user_id
             result = self.web_client.save_user_record('UserProfile', user_id, profile_data)
@@ -92,6 +105,9 @@ class CloudKitService:
 
     def save_chat_message(self, data: Dict) -> bool:
         """Save chat message to CloudKit"""
+        if not self._check_enabled("save_chat_message"):
+            return False
+            
         try:
             user_id = data.get('userProfileId')
             if not user_id:
@@ -367,6 +383,9 @@ class CloudKitService:
     
     def save_birth_chart(self, data: Dict) -> bool:
         """Save birth chart data"""
+        if not self._check_enabled("save_birth_chart"):
+            return False
+            
         try:
             user_id = data.get('userProfileId')
             if not user_id:

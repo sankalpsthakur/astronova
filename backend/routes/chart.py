@@ -96,8 +96,8 @@ def generate(data: ChartRequest):
                     'planetaryPositions': chart.get('positions', []),
                     'chartSVG': chart.get('svg', ''),
                     'birthData': {
-                        'birthDate': data.birthData.birthDate,
-                        'birthTime': data.birthData.birthTime,
+                        'birthDate': data.birthData.date,
+                        'birthTime': data.birthData.time,
                         'latitude': data.birthData.latitude,
                         'longitude': data.birthData.longitude,
                         'timezone': data.birthData.timezone
