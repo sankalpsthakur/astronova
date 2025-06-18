@@ -26,12 +26,13 @@ class AuthState: ObservableObject {
     private let keychainHelper = KeychainHelper()
     
     // Generate nonce for Apple Sign-In security
-    var nonce: String {
-        let data = Data(UUID().uuidString.utf8)
-        return SHA256.hash(data: data).compactMap {
-            String(format: "%02x", $0)
-        }.joined()
-    }
+    private(set) var nonce: String = {
+        let uuid = UUID().uuidString
+        let data = Data(uuid.utf8)
+        return SHA256.hash(data: data)
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }()
     
     init() {
         // Set up token expiry callback
