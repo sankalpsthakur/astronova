@@ -61,9 +61,27 @@ def authenticate_with_apple(data: AppleAuthRequest):
             'expiresAt': user_service.get_token_expiry().isoformat()
         })
         
+    except ValueError as e:
+        logger.error(f"Apple authentication validation failed: {str(e)}")
+        return jsonify({
+            'error': 'Invalid request data',
+            'message': str(e),
+            'code': 'VALIDATION_ERROR'
+        }), 400
+    except ConnectionError as e:
+        logger.error(f"Apple authentication connection failed: {str(e)}")
+        return jsonify({
+            'error': 'Unable to verify with Apple servers',
+            'message': 'Please check your internet connection and try again',
+            'code': 'CONNECTION_ERROR'
+        }), 503
     except Exception as e:
         logger.error(f"Apple authentication failed: {str(e)}")
-        return jsonify({'error': 'Authentication failed'}), 500
+        return jsonify({
+            'error': 'Authentication failed',
+            'message': 'An unexpected error occurred. Please try again.',
+            'code': 'INTERNAL_ERROR'
+        }), 500
 
 @auth_bp.route('/validate', methods=['GET'])
 @jwt_required()

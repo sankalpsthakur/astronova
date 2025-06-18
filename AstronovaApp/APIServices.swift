@@ -92,6 +92,9 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
     }
     
+    // Callback for when token expires and needs refresh
+    var onTokenExpired: (() async -> Void)?
+    
     // Dependency-injectable initializer
     init(networkClient: NetworkClientProtocol = NetworkClient()) {
         self.networkClient = networkClient
@@ -119,12 +122,14 @@ class APIServices: ObservableObject, APIServicesProtocol {
             systems: systems
         )
         
-        return try await networkClient.request(
-            endpoint: "/api/v1/chart/generate",
-            method: HTTPMethod.POST,
-            body: request,
-            responseType: ChartResponse.self
-        )
+        return try await makeRequestWithTokenRefresh {
+            try await networkClient.request(
+                endpoint: "/api/v1/chart/generate",
+                method: HTTPMethod.POST,
+                body: request,
+                responseType: ChartResponse.self
+            )
+        }
     }
     
     /// Generate chart from UserProfile
@@ -590,5 +595,25 @@ extension APIServices {
         
         // Clear stored token
         jwtToken = nil
+    }
+    
+    // MARK: - Token Management Helper
+    
+    /// Make a request with automatic token refresh on expiry
+    private func makeRequestWithTokenRefresh<T>(_ request: () async throws -> T) async throws -> T {
+        do {
+            return try await request()
+        } catch {
+            // Check if error is token expiry
+            if let networkError = error as? NetworkError,
+               networkError.requiresReauthentication {
+                // Trigger token refresh callback
+                await onTokenExpired?()
+                // Retry the request once after token refresh
+                return try await request()
+            } else {
+                throw error
+            }
+        }
     }
 }

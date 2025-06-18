@@ -106,8 +106,17 @@ class AppleAuthService:
             logger.info("Successfully fetched Apple public keys")
             return self._apple_keys
             
+        except requests.ConnectionError as e:
+            logger.error(f"Connection failed while fetching Apple public keys: {str(e)}")
+            raise ConnectionError("Unable to connect to Apple servers")
+        except requests.Timeout as e:
+            logger.error(f"Timeout while fetching Apple public keys: {str(e)}")
+            raise ConnectionError("Request to Apple servers timed out")
+        except requests.RequestException as e:
+            logger.error(f"Request failed while fetching Apple public keys: {str(e)}")
+            raise ConnectionError("Failed to communicate with Apple servers")
         except Exception as e:
-            logger.error(f"Failed to fetch Apple public keys: {str(e)}")
+            logger.error(f"Unexpected error fetching Apple public keys: {str(e)}")
             return None
     
     def _construct_public_key(self, key_data: Dict):

@@ -47,11 +47,46 @@ struct SignInWithAppleView: View {
                     .signInWithAppleButtonStyle(.black)
                 }
                 
+                // Show auth errors
+                if let authError = authState.authError {
+                    VStack(spacing: 8) {
+                        Text(authError)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        // Retry button for recoverable errors
+                        if authError.contains("network") || authError.contains("timeout") || authError.contains("temporarily") {
+                            Button("Retry") {
+                                Task {
+                                    await authState.retryConnection()
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundColor(.cosmicAccent)
+                        }
+                    }
+                }
+                
+                // Show local error message
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .font(.caption)
                         .padding(.horizontal)
+                }
+                
+                // Show connection status
+                if let connectionError = authState.connectionError {
+                    HStack {
+                        Image(systemName: "wifi.slash")
+                            .foregroundColor(.orange)
+                        Text(connectionError)
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                    .padding(.horizontal)
                 }
                 
                 Button("Continue as Guest") {

@@ -83,6 +83,41 @@ def create_app(anthropic_api_key: str | None = None):
     @app.route('/health')
     def health():
         return jsonify({'status': 'ok'})
+    
+    # Global error handlers
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({
+            'error': 'Endpoint not found',
+            'message': 'The requested resource was not found',
+            'code': 'NOT_FOUND'
+        }), 404
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        logger.error(f"Internal server error: {str(error)}")
+        return jsonify({
+            'error': 'Internal server error',
+            'message': 'An unexpected error occurred. Please try again later.',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+    
+    @app.errorhandler(503)
+    def service_unavailable(error):
+        return jsonify({
+            'error': 'Service temporarily unavailable',
+            'message': 'The service is temporarily unavailable. Please try again later.',
+            'code': 'SERVICE_UNAVAILABLE'
+        }), 503
+    
+    # Handle validation errors from Pydantic
+    @app.errorhandler(ValueError)
+    def validation_error(error):
+        return jsonify({
+            'error': 'Validation failed',
+            'message': str(error),
+            'code': 'VALIDATION_ERROR'
+        }), 400
 
     return app
 
