@@ -1,4 +1,6 @@
 import SwiftUI
+import AuthenticationServices
+import CryptoKit
 
 enum AuthenticationState {
     case loading
@@ -12,21 +14,42 @@ class AuthState: ObservableObject {
     @Published var profileManager = UserProfileManager()
     @Published var isAPIConnected = false
     @Published var connectionError: String?
+    @Published var jwtToken: String?
+    @Published var authenticatedUser: AuthenticatedUser?
+    
     @AppStorage("is_anonymous_user") var isAnonymousUser = false
     @AppStorage("has_signed_in") private var hasSignedIn = false
     
     private let apiServices = APIServices.shared
+    private let keychainHelper = KeychainHelper()
+    
+    // Generate nonce for Apple Sign-In security
+    var nonce: String {
+        let data = Data(UUID().uuidString.utf8)
+        return SHA256.hash(data: data).compactMap {
+            String(format: "%02x", $0)
+        }.joined()
+    }
     
     init() {
         checkAuthState()
     }
     
     private func checkAuthState() {
-        // Check if user is signed in and has complete profile
-        
         // Check API connectivity in background
         Task {
             await checkAPIConnectivity()
+        }
+        
+        // Check for stored JWT token
+        if let storedToken = keychainHelper.getJWTToken() {
+            jwtToken = storedToken
+            hasSignedIn = true
+            
+            // Verify token is still valid
+            Task {
+                await validateStoredToken()
+            }
         }
         
         if hasSignedIn {
@@ -125,12 +148,88 @@ class AuthState: ObservableObject {
     }
     
     func signOut() {
+        // Clear stored authentication
+        jwtToken = nil
+        authenticatedUser = nil
+        keychainHelper.deleteJWTToken()
+        
         hasSignedIn = false
         isAnonymousUser = false
         profileManager = UserProfileManager() // Reset profile
         isAPIConnected = false
         connectionError = nil
         state = .signedOut
+        
+        // Notify backend of logout
+        Task {
+            try? await apiServices.logout()
+        }
+    }
+    
+    func continueAsGuest() {
+        isAnonymousUser = true
+        hasSignedIn = true
+        state = profileManager.isProfileComplete ? .signedIn : .needsProfileSetup
+    }
+    
+    // MARK: - Apple Sign-In Integration
+    
+    func handleAppleSignIn(_ authorization: ASAuthorization) async {
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let identityToken = appleIDCredential.identityToken,
+              let tokenString = String(data: identityToken, encoding: .utf8) else {
+            print("Failed to get Apple ID token")
+            return
+        }
+        
+        do {
+            let authResponse = try await apiServices.authenticateWithApple(
+                idToken: tokenString,
+                userIdentifier: appleIDCredential.user,
+                email: appleIDCredential.email,
+                firstName: appleIDCredential.fullName?.givenName,
+                lastName: appleIDCredential.fullName?.familyName
+            )
+            
+            await MainActor.run {
+                // Store authentication data
+                self.jwtToken = authResponse.jwtToken
+                self.authenticatedUser = authResponse.user
+                self.hasSignedIn = true
+                self.isAnonymousUser = false
+                
+                // Store JWT token securely
+                self.keychainHelper.storeJWTToken(authResponse.jwtToken)
+                
+                // Update state
+                if self.profileManager.isProfileComplete {
+                    self.state = .signedIn
+                } else {
+                    self.state = .needsProfileSetup
+                }
+            }
+            
+        } catch {
+            print("Apple authentication failed: \(error)")
+            await MainActor.run {
+                self.connectionError = "Authentication failed. Please try again."
+            }
+        }
+    }
+    
+    private func validateStoredToken() async {
+        guard let token = jwtToken else { return }
+        
+        // Try to use the token with a simple API call
+        do {
+            let _ = try await apiServices.validateToken()
+            // Token is valid, user remains signed in
+        } catch {
+            // Token is invalid/expired, sign out user
+            await MainActor.run {
+                self.signOut()
+            }
+        }
     }
     
     /// Refresh user data and chart from API

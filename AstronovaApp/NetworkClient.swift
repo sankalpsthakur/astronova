@@ -62,6 +62,7 @@ class NetworkClient: NetworkClientProtocol {
     
     private let baseURL: String
     private let session: URLSession
+    private var jwtToken: String?
     
     public init(baseURL: String? = nil, session: URLSession? = nil) {
         // Configuration for development - update for production
@@ -99,6 +100,11 @@ class NetworkClient: NetworkClientProtocol {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Add JWT token if available
+        if let jwtToken = jwtToken {
+            request.setValue("Bearer \(jwtToken)", forHTTPHeaderField: "Authorization")
+        }
         
         // Add body if provided
         if let body = body {
@@ -169,6 +175,11 @@ class NetworkClient: NetworkClientProtocol {
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        // Add JWT token if available
+        if let jwtToken = jwtToken {
+            request.setValue("Bearer \(jwtToken)", forHTTPHeaderField: "Authorization")
+        }
+        
         // Add body if provided
         if let body = body {
             do {
@@ -209,6 +220,11 @@ class NetworkClient: NetworkClientProtocol {
             endpoint: "/health",
             responseType: HealthResponse.self
         )
+    }
+    
+    /// Set JWT token for authenticated requests
+    func setJWTToken(_ token: String?) {
+        self.jwtToken = token
     }
 }
 
