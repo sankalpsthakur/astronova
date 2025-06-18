@@ -6,8 +6,12 @@ enum NetworkError: Error, LocalizedError {
     case invalidRequest
     case noData
     case decodingError
-    case serverError(Int)
+    case serverError(Int, String?)
     case networkError(Error)
+    case authenticationFailed(String?)
+    case tokenExpired
+    case offline
+    case timeout
     
     var errorDescription: String? {
         switch self {
@@ -19,10 +23,43 @@ enum NetworkError: Error, LocalizedError {
             return "No data received"
         case .decodingError:
             return "Failed to decode response"
-        case .serverError(let code):
+        case .serverError(let code, let message):
+            if let message = message {
+                return "Server error (\(code)): \(message)"
+            }
             return "Server error: \(code)"
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
+        case .authenticationFailed(let message):
+            return message ?? "Authentication failed"
+        case .tokenExpired:
+            return "Your session has expired. Please sign in again."
+        case .offline:
+            return "No internet connection. Some features may be limited."
+        case .timeout:
+            return "Request timed out. Please try again."
+        }
+    }
+    
+    var isRecoverable: Bool {
+        switch self {
+        case .networkError, .timeout, .offline:
+            return true
+        case .serverError(let code, _):
+            return code >= 500 // Server errors are potentially recoverable
+        default:
+            return false
+        }
+    }
+    
+    var requiresReauthentication: Bool {
+        switch self {
+        case .authenticationFailed, .tokenExpired:
+            return true
+        case .serverError(let code, _):
+            return code == 401
+        default:
+            return false
         }
     }
 }
@@ -62,6 +99,7 @@ class NetworkClient: NetworkClientProtocol {
     
     private let baseURL: String
     private let session: URLSession
+    private var jwtToken: String?
     
     public init(baseURL: String? = nil, session: URLSession? = nil) {
         // Configuration for development - update for production
@@ -100,6 +138,11 @@ class NetworkClient: NetworkClientProtocol {
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        // Add JWT token if available
+        if let jwtToken = jwtToken {
+            request.setValue("Bearer \(jwtToken)", forHTTPHeaderField: "Authorization")
+        }
+        
         // Add body if provided
         if let body = body {
             do {
@@ -116,8 +159,26 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.networkError(URLError(.badServerResponse))
             }
             
-            guard 200...299 ~= httpResponse.statusCode else {
-                throw NetworkError.serverError(httpResponse.statusCode)
+            // Handle different HTTP status codes
+            switch httpResponse.statusCode {
+            case 200...299:
+                break // Success
+            case 401:
+                // Try to extract error message from response
+                let errorMessage = extractErrorMessage(from: data)
+                if errorMessage?.contains("expired") == true {
+                    throw NetworkError.tokenExpired
+                } else {
+                    throw NetworkError.authenticationFailed(errorMessage)
+                }
+            case 400...499:
+                let errorMessage = extractErrorMessage(from: data)
+                throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
+            case 500...599:
+                let errorMessage = extractErrorMessage(from: data)
+                throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
+            default:
+                throw NetworkError.serverError(httpResponse.statusCode, nil)
             }
             
             guard !data.isEmpty else {
@@ -134,7 +195,17 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.decodingError
             }
         } catch {
-            if error is NetworkError {
+            // Handle network-specific errors
+            if let urlError = error as? URLError {
+                switch urlError.code {
+                case .notConnectedToInternet, .networkConnectionLost:
+                    throw NetworkError.offline
+                case .timedOut:
+                    throw NetworkError.timeout
+                default:
+                    throw NetworkError.networkError(urlError)
+                }
+            } else if error is NetworkError {
                 throw error
             } else {
                 throw NetworkError.networkError(error)
@@ -169,6 +240,11 @@ class NetworkClient: NetworkClientProtocol {
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
+        // Add JWT token if available
+        if let jwtToken = jwtToken {
+            request.setValue("Bearer \(jwtToken)", forHTTPHeaderField: "Authorization")
+        }
+        
         // Add body if provided
         if let body = body {
             do {
@@ -185,8 +261,26 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.networkError(URLError(.badServerResponse))
             }
             
-            guard 200...299 ~= httpResponse.statusCode else {
-                throw NetworkError.serverError(httpResponse.statusCode)
+            // Handle different HTTP status codes
+            switch httpResponse.statusCode {
+            case 200...299:
+                break // Success
+            case 401:
+                // Try to extract error message from response
+                let errorMessage = extractErrorMessage(from: data)
+                if errorMessage?.contains("expired") == true {
+                    throw NetworkError.tokenExpired
+                } else {
+                    throw NetworkError.authenticationFailed(errorMessage)
+                }
+            case 400...499:
+                let errorMessage = extractErrorMessage(from: data)
+                throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
+            case 500...599:
+                let errorMessage = extractErrorMessage(from: data)
+                throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
+            default:
+                throw NetworkError.serverError(httpResponse.statusCode, nil)
             }
             
             guard !data.isEmpty else {
@@ -195,7 +289,17 @@ class NetworkClient: NetworkClientProtocol {
             
             return data
         } catch {
-            if error is NetworkError {
+            // Handle network-specific errors
+            if let urlError = error as? URLError {
+                switch urlError.code {
+                case .notConnectedToInternet, .networkConnectionLost:
+                    throw NetworkError.offline
+                case .timedOut:
+                    throw NetworkError.timeout
+                default:
+                    throw NetworkError.networkError(urlError)
+                }
+            } else if error is NetworkError {
                 throw error
             } else {
                 throw NetworkError.networkError(error)
@@ -209,6 +313,31 @@ class NetworkClient: NetworkClientProtocol {
             endpoint: "/health",
             responseType: HealthResponse.self
         )
+    }
+    
+    /// Set JWT token for authenticated requests
+    func setJWTToken(_ token: String?) {
+        self.jwtToken = token
+    }
+    
+    /// Extract error message from response data
+    private func extractErrorMessage(from data: Data) -> String? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        
+        // Try different common error message keys
+        if let message = json["message"] as? String {
+            return message
+        }
+        if let error = json["error"] as? String {
+            return error
+        }
+        if let detail = json["detail"] as? String {
+            return detail
+        }
+        
+        return nil
     }
 }
 

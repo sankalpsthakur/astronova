@@ -5,6 +5,7 @@ on:
     branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   python-backend:
@@ -43,6 +44,13 @@ jobs:
     
     - name: Python syntax check
       run: python -m py_compile $(find backend -name "*.py")
+    
+    - name: CloudKit ERD Test
+      run: |
+        cd backend && SECRET_KEY=test_secret_key python test_cloudkit_ci.py
+      env:
+        SECRET_KEY: test_secret_key
+        # CloudKit CI test validates code structure without requiring live CloudKit connection
 
   swift-ios:
     runs-on: macos-latest
@@ -60,6 +68,34 @@ jobs:
     - name: Run Swift tests
       run: |
         xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0'
+
+  cloudkit-integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'  # Manual trigger only
+    strategy:
+      matrix:
+        python-version: [3.11]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+    
+    - name: CloudKit Full Integration Test
+      run: |
+        cd backend && SECRET_KEY=test_secret_key python test_cloudkit_erd_complete.py
+      env:
+        SECRET_KEY: test_secret_key
+        # Note: This test will show INTERNAL_ERROR until CloudKit schema is created
+        # The test validates that authentication and CRUD operations are properly implemented
 
   dependency-review:
     runs-on: ubuntu-latest

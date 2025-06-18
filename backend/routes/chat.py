@@ -36,10 +36,10 @@ def send_message(data: ChatRequest):
 
     if user_id:
         cloudkit.save_chat_message({
-            "user_id": user_id,
-            "conversation_id": conv_id,
+            "userProfileId": user_id,
+            "conversationId": conv_id,
             "content": data.message,
-            "is_user": True,
+            "isUser": True,
         })
 
     resp = claude.send_message(

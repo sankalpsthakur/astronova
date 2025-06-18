@@ -83,6 +83,18 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     private let networkClient: NetworkClientProtocol
     
+    // JWT token for authenticated requests
+    var jwtToken: String? {
+        didSet {
+            if let networkClient = networkClient as? NetworkClient {
+                networkClient.setJWTToken(jwtToken)
+            }
+        }
+    }
+    
+    // Callback for when token expires and needs refresh
+    var onTokenExpired: (() async -> Void)?
+    
     // Dependency-injectable initializer
     init(networkClient: NetworkClientProtocol = NetworkClient()) {
         self.networkClient = networkClient
@@ -515,5 +527,91 @@ extension APIServices {
     func findLocationWithTimezone(query: String) async throws -> LocationResult? {
         let searchResponse = try await searchLocationsDetailed(query: query, limit: 1)
         return searchResponse.locations.first
+    }
+    
+    // MARK: - Authentication Services
+    
+    /// Authenticate with Apple Sign-In
+    func authenticateWithApple(
+        idToken: String,
+        userIdentifier: String,
+        email: String?,
+        firstName: String?,
+        lastName: String?
+    ) async throws -> AuthResponse {
+        let request = AppleAuthRequest(
+            idToken: idToken,
+            userIdentifier: userIdentifier,
+            email: email,
+            firstName: firstName,
+            lastName: lastName
+        )
+        
+        let response = try await networkClient.request(
+            endpoint: "/api/v1/auth/apple",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: AuthResponse.self
+        )
+        
+        // Store the JWT token for future requests
+        jwtToken = response.jwtToken
+        
+        return response
+    }
+    
+    /// Validate stored JWT token
+    func validateToken() async throws -> Bool {
+        let response = try await networkClient.request(
+            endpoint: "/api/v1/auth/validate",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: [String: Bool].self
+        )
+        
+        return response["valid"] ?? false
+    }
+    
+    /// Refresh JWT token
+    func refreshToken() async throws -> AuthResponse {
+        return try await networkClient.request(
+            endpoint: "/api/v1/auth/refresh",
+            method: HTTPMethod.POST,
+            body: nil,
+            responseType: AuthResponse.self
+        )
+    }
+    
+    /// Logout user
+    func logout() async throws {
+        try await networkClient.request(
+            endpoint: "/api/v1/auth/logout",
+            method: HTTPMethod.POST,
+            body: nil,
+            responseType: [String: String].self
+        )
+        
+        // Clear stored token
+        jwtToken = nil
+    }
+    
+    // MARK: - Token Management Helper
+    
+    /// Make a request with automatic token refresh on expiry
+    private func makeRequestWithTokenRefresh<T>(_ request: () async throws -> T) async throws -> T {
+        do {
+            return try await request()
+        } catch {
+            // Check if error is token expiry
+            if let networkError = error as? NetworkError,
+               networkError.requiresReauthentication {
+                // Trigger token refresh callback
+                await onTokenExpired?()
+                // Retry the request once after token refresh
+                return try await request()
+            } else {
+                throw error
+            }
+        }
     }
 }
