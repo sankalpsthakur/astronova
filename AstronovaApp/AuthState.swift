@@ -1,6 +1,8 @@
 import SwiftUI
 import AuthenticationServices
 import CryptoKit
+import Foundation
+import Security
 
 enum AuthenticationState {
     case loading
@@ -23,7 +25,61 @@ class AuthState: ObservableObject {
     @AppStorage("has_signed_in") private var hasSignedIn = false
     
     private let apiServices = APIServices.shared
-    private let keychainHelper = KeychainHelper()
+    private let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
+    
+    // MARK: - Keychain Helper Methods
+    
+    private func storeJWTToken(_ token: String) {
+        let data = Data(token.utf8)
+        
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: jwtTokenKey,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        ]
+        
+        // Delete existing item first
+        SecItemDelete(query as CFDictionary)
+        
+        // Add new item
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status != errSecSuccess {
+            print("Failed to store JWT token in Keychain: \(status)")
+        }
+    }
+    
+    private func getJWTToken() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: jwtTokenKey,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let token = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        
+        return token
+    }
+    
+    private func deleteJWTToken() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: jwtTokenKey
+        ]
+        
+        let status = SecItemDelete(query as CFDictionary)
+        if status != errSecSuccess && status != errSecItemNotFound {
+            print("Failed to delete JWT token from Keychain: \(status)")
+        }
+    }
     
     // Generate nonce for Apple Sign-In security
     private(set) var nonce: String = {
@@ -50,7 +106,7 @@ class AuthState: ObservableObject {
         }
         
         // Check for stored JWT token
-        if let storedToken = keychainHelper.getJWTToken() {
+        if let storedToken = getJWTToken() {
             jwtToken = storedToken
             hasSignedIn = true
             
@@ -188,7 +244,7 @@ class AuthState: ObservableObject {
         // Clear stored authentication
         jwtToken = nil
         authenticatedUser = nil as AuthenticatedUser?
-        keychainHelper.deleteJWTToken()
+        deleteJWTToken()
         
         hasSignedIn = false
         isAnonymousUser = false
@@ -307,7 +363,7 @@ extension AuthState {
                 self.isAnonymousUser = false
                 
                 // Store JWT token securely
-                self.keychainHelper.storeJWTToken(authResponse.jwtToken)
+                self.storeJWTToken(authResponse.jwtToken)
                 
                 // Update API services with token
                 self.apiServices.jwtToken = authResponse.jwtToken
@@ -396,7 +452,7 @@ extension AuthState {
             await MainActor.run {
                 self.jwtToken = authResponse.jwtToken
                 self.authenticatedUser = authResponse.user
-                self.keychainHelper.storeJWTToken(authResponse.jwtToken)
+                self.storeJWTToken(authResponse.jwtToken)
                 self.apiServices.jwtToken = authResponse.jwtToken
                 self.authError = nil
             }
