@@ -65,11 +65,17 @@ def horoscope():
     cache.set(cache_key, result, timeout=3600)
     
     # Save to CloudKit with proper structure
-    cloudkit.save_horoscope({
-        'userProfileId': user_id,
-        'sign': sign,
-        'date': date_str,
-        'type': type_,
-        'content': content
-    })
+    try:
+        cloudkit.save_horoscope({
+            'userProfileId': user_id,
+            'sign': sign,
+            'date': date_str,
+            'type': type_,
+            'content': content
+        })
+    except Exception as e:
+        # Don't block the response path – log and continue
+        from flask import current_app
+        current_app.logger.exception("CloudKit save_horoscope failed")
+    
     return jsonify(result)

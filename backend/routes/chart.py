@@ -89,20 +89,25 @@ def generate(data: ChartRequest):
             redis_set(key, chart)
 
             if user_id:
-                cloudkit.save_birth_chart({
-                    'userProfileId': user_id,
-                    'chartType': data.chartType,
-                    'systems': data.systems,
-                    'planetaryPositions': chart.get('positions', []),
-                    'chartSVG': chart.get('svg', ''),
-                    'birthData': {
-                        'birthDate': data.birthData.date,
-                        'birthTime': data.birthData.time,
-                        'latitude': data.birthData.latitude,
-                        'longitude': data.birthData.longitude,
-                        'timezone': data.birthData.timezone
-                    }
-                })
+                try:
+                    cloudkit.save_birth_chart({
+                        'userProfileId': user_id,
+                        'chartType': data.chartType,
+                        'systems': data.systems,
+                        'planetaryPositions': chart.get('positions', []),
+                        'chartSVG': chart.get('svg', ''),
+                        'birthData': {
+                            'birthDate': data.birthData.date,
+                            'birthTime': data.birthData.time,
+                            'latitude': data.birthData.latitude,
+                            'longitude': data.birthData.longitude,
+                            'timezone': data.birthData.timezone
+                        }
+                    })
+                except Exception as e:
+                    # Don't block the response path – log and continue
+                    from flask import current_app
+                    current_app.logger.exception("CloudKit save_birth_chart failed")
 
         chart_id = str(uuid.uuid4())
         return jsonify({'chartId': chart_id, 'charts': results, 'type': data.chartType})

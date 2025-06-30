@@ -1,16 +1,13 @@
 import os
 import json
 import hashlib
-import hmac
 import base64
-import time
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 import requests
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
-import jwt
 import logging
 
 logger = logging.getLogger(__name__)
@@ -311,21 +308,46 @@ class CloudKitWebClient:
                 if all(isinstance(item, str) for item in value):
                     formatted_fields[key] = {'value': value}
                 else:
-                    # For now, convert complex lists to JSON string to avoid asset issues
-                    # TODO: Implement proper CloudKit asset upload for complex data
-                    json_data = json.dumps(value)
-                    formatted_fields[key] = {'value': json_data}
+                    # Complex lists should be stored as CloudKit Asset type
+                    formatted_fields[key] = self._create_asset_field(value)
             elif isinstance(value, dict):
-                # For now, convert complex objects to JSON string to avoid asset issues
-                # TODO: Implement proper CloudKit asset upload for complex data
-                json_data = json.dumps(value)
-                formatted_fields[key] = {'value': json_data}
+                # Check if this is a Location type
+                if 'latitude' in value and 'longitude' in value:
+                    # CloudKit Location type format
+                    formatted_fields[key] = {
+                        'value': {
+                            'latitude': value['latitude'],
+                            'longitude': value['longitude']
+                        },
+                        'type': 'LOCATION'
+                    }
+                else:
+                    # Complex objects should be stored as CloudKit Asset type
+                    formatted_fields[key] = self._create_asset_field(value)
             else:
                 # Default: convert to string
                 formatted_fields[key] = {'value': str(value)}
         
         return formatted_fields
     
+    def _create_asset_field(self, data: any) -> Dict:
+        """Create a CloudKit Asset field for complex data"""
+        # Convert data to JSON string
+        json_data = json.dumps(data, separators=(',', ':'))
+        
+        # CloudKit Asset fields store data as base64 encoded strings
+        # with additional metadata
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return {
+            'value': {
+                'fileChecksum': hashlib.md5(json_data.encode('utf-8')).hexdigest(),
+                'size': len(json_data),
+                'wrappingKey': encoded_data,  # Using wrappingKey to store the data
+                'referenceChecksum': hashlib.sha256(json_data.encode('utf-8')).hexdigest()
+            },
+            'type': 'ASSET'
+        }
     
     def _parse_cloudkit_fields(self, cloudkit_record: Dict) -> Dict:
         """Parse CloudKit record fields back to Python types"""
@@ -335,9 +357,28 @@ class CloudKitWebClient:
         parsed_fields = {}
         for key, field_data in cloudkit_record['fields'].items():
             value = field_data.get('value')
+            field_type = field_data.get('type')
             
+            # Handle Location type
+            if field_type == 'LOCATION' and isinstance(value, dict):
+                parsed_fields[key] = {
+                    'latitude': value.get('latitude'),
+                    'longitude': value.get('longitude')
+                }
+            # Handle Asset type
+            elif field_type == 'ASSET' and isinstance(value, dict):
+                # Decode the asset data
+                encoded_data = value.get('wrappingKey', '')
+                if encoded_data:
+                    try:
+                        json_data = base64.b64decode(encoded_data).decode('utf-8')
+                        parsed_fields[key] = json.loads(json_data)
+                    except (json.JSONDecodeError, base64.binascii.Error):
+                        parsed_fields[key] = value
+                else:
+                    parsed_fields[key] = value
             # Handle different CloudKit field types
-            if isinstance(value, str):
+            elif isinstance(value, str):
                 # Try to parse as JSON if it looks like JSON
                 if value.startswith(('{', '[')):
                     try:
@@ -362,8 +403,7 @@ class CloudKitWebClient:
                     record = self.fetch_record(user_id)
                     if record:
                         return [self._parse_cloudkit_fields(record)]
-                    else:
-                        return []
+                    return []
                 except:
                     return []
             

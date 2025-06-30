@@ -198,7 +198,7 @@ class UserService:
         """
         Get token expiry time
         """
-        return datetime.utcnow() + timedelta(hours=24)
+        return datetime.utcnow() + timedelta(hours=2)
     
     def get_user_statistics(self, user_id: str) -> Dict[str, Any]:
         """

@@ -7,14 +7,14 @@ You're getting this error because CloudKit security is properly configured, but 
 ## ✅ **Solution Steps**
 
 ### **Step 1: Create Record Types**
-Go to **CloudKit Console**: https://icloud.developer.apple.com/dashboard/
+Go to **CloudKit Console**: [https://icloud.developer.apple.com/dashboard/](https://icloud.developer.apple.com/dashboard/)
 
 1. Select container: `iCloud.com.sankalp.AstronovaApp`
 2. Click **Schema** → **Record Types**
 3. **Create these 6 record types** with exact names:
 
 #### **UserProfile**
-```
+```text
 Fields:
 - id (String, Queryable, Sortable)
 - fullName (String)
@@ -36,7 +36,7 @@ Indexes:
 ```
 
 #### **ChatMessage**
-```
+```text
 Fields:
 - id (String, Queryable, Sortable)
 - userProfileId (String, Queryable, Sortable)
@@ -55,7 +55,7 @@ Indexes:
 ```
 
 #### **Horoscope**
-```
+```text
 Fields:
 - id (String, Queryable, Sortable)
 - userProfileId (String, Queryable, Sortable)
@@ -74,7 +74,7 @@ Indexes:
 ```
 
 #### **KundaliMatch**
-```
+```text
 Fields:
 - id (String, Queryable, Sortable)
 - userProfileId (String, Queryable, Sortable)
@@ -92,7 +92,7 @@ Indexes:
 ```
 
 #### **BirthChart**
-```
+```text
 Fields:
 - id (String, Queryable, Sortable)
 - userProfileId (String, Queryable, Sortable)
@@ -110,7 +110,7 @@ Indexes:
 ```
 
 #### **BookmarkedReading**
-```
+```text
 Fields:
 - id (String, Queryable, Sortable)
 - userProfileId (String, Queryable, Sortable)
@@ -133,7 +133,7 @@ Indexes:
 1. **Go to Schema → Security Roles**
 2. **Create a new role**: `Backend`
 3. **Set permissions**:
-   ```
+   ```text
    Backend Role:
    ✅ Read: All Records
    ✅ Write: All Records  

@@ -66,9 +66,9 @@ def match(data: MatchRequest):
         if user_id:
             cloudkit.save_match({
                 'userProfileId': user_id,
-                'partnerName': data.partner.get('fullName', 'Unknown'),
-                'partnerBirthDate': data.partner.get('birthDate', ''),
-                'partnerLocation': data.partner.get('birthLocation', ''),
+                'partnerName': data.partner.name,
+                'partnerBirthDate': data.partner.birth_date,
+                'partnerLocation': f"{data.partner.latitude}, {data.partner.longitude}",
                 'compatibilityScore': int(overall_score),
                 'detailedAnalysis': result
             })

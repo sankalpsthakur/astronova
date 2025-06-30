@@ -1,12 +1,20 @@
-import os
-import json
 import logging
 from datetime import datetime, date
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional
 from .cloudkit_web_client import CloudKitWebClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Required fields for each record type
+REQUIRED_FIELDS = {
+    'UserProfile': ['fullName', 'birthDate', 'birthLocation', 'birthTime'],
+    'ChatMessage': ['userProfileId', 'conversationId', 'content', 'isUser'],
+    'Horoscope': ['userProfileId', 'date', 'type', 'content', 'sign'],
+    'KundaliMatch': ['userProfileId', 'partnerName', 'partnerBirthDate', 'compatibilityScore'],
+    'BirthChart': ['userProfileId', 'chartType', 'systems'],
+    'BookmarkedReading': ['userProfileId', 'readingType', 'title', 'content', 'originalDate']
+}
 
 class CloudKitService:
     """CloudKit service for managing user data across iOS app and backend"""
@@ -27,6 +35,26 @@ class CloudKitService:
             logger.debug(f"CloudKit not enabled - skipping {operation_name}")
             return False
         return True
+    
+    def _validate_required_fields(self, record_type: str, data: Dict) -> None:
+        """Validate that all required fields are present"""
+        if record_type not in REQUIRED_FIELDS:
+            return
+            
+        missing_fields = []
+        for field in REQUIRED_FIELDS[record_type]:
+            if field not in data or data[field] is None or data[field] == '':
+                missing_fields.append(field)
+                
+        if missing_fields:
+            raise ValueError(f"Missing required fields for {record_type}: {', '.join(missing_fields)}")
+    
+    def _format_location(self, latitude: float, longitude: float) -> Dict:
+        """Format latitude/longitude as CloudKit Location type"""
+        return {
+            'latitude': latitude,
+            'longitude': longitude
+        }
             
     # MARK: - UserProfile Operations
     
@@ -68,7 +96,6 @@ class CloudKitService:
             # Merge existing data with updates
             profile_data = existing_profile.copy()
             profile_data.update(updated_data)
-            profile_data['updatedAt'] = datetime.now()
             
             # Save updated profile
             return self.save_user_profile(user_id, profile_data)
@@ -116,12 +143,16 @@ class CloudKitService:
             
             message_data = {
                 'id': data.get('id', f"msg_{datetime.now().timestamp()}"),
+                'userProfileId': user_id,
                 'conversationId': data.get('conversationId', 'default'),
                 'content': data.get('content', ''),
-                'isUser': data.get('isUser', True),
+                'isUser': 1 if data.get('isUser', True) else 0,
                 'timestamp': data.get('timestamp', datetime.now()),
                 'messageType': data.get('messageType', 'text')
             }
+            
+            # Validate required fields
+            self._validate_required_fields('ChatMessage', message_data)
             
             self.web_client.save_user_record('ChatMessage', user_id, message_data)
             logger.info(f"Saved chat message for user {user_id}")
@@ -149,7 +180,6 @@ class CloudKitService:
             # Merge existing data with updates
             message_data = message_record.copy()
             message_data.update(updated_data)
-            message_data['updatedAt'] = datetime.now()
             
             # Save updated message using record name
             record_name = message_record.get('recordName', message_id)
@@ -252,7 +282,6 @@ class CloudKitService:
             # Merge existing data with updates
             horoscope_data = horoscope_record.copy()
             horoscope_data.update(updated_data)
-            horoscope_data['updatedAt'] = datetime.now()
             
             # Save updated horoscope using record name
             record_name = horoscope_record.get('recordName', horoscope_id)
@@ -348,7 +377,6 @@ class CloudKitService:
             # Merge existing data with updates
             match_data = match_record.copy()
             match_data.update(updated_data)
-            match_data['updatedAt'] = datetime.now()
             
             # Save updated match using record name
             record_name = match_record.get('recordName', match_id)
@@ -441,7 +469,6 @@ class CloudKitService:
             # Merge existing data with updates
             chart_data = chart_record.copy()
             chart_data.update(updated_data)
-            chart_data['updatedAt'] = datetime.now()
             
             # Save updated chart using record name
             record_name = chart_record.get('recordName', chart_id)
@@ -544,7 +571,6 @@ class CloudKitService:
             # Merge existing data with updates
             bookmark_data = bookmark_record.copy()
             bookmark_data.update(updated_data)
-            bookmark_data['updatedAt'] = datetime.now()
             
             # Save updated bookmark using record name
             record_name = bookmark_record.get('recordName', bookmark_id)
@@ -563,9 +589,9 @@ class CloudKitService:
             if success:
                 logger.info(f"Removed bookmarked reading {bookmark_id} for {user_id}")
                 return True
-            else:
-                logger.warning(f"Bookmark {bookmark_id} not found for user {user_id}")
-                return False
+            
+            logger.warning(f"Bookmark {bookmark_id} not found for user {user_id}")
+            return False
         except Exception as e:
             logger.error(f"Error removing bookmarked reading: {e}")
             return False

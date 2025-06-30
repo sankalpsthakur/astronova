@@ -6,7 +6,7 @@ To use CloudKit Web Services, you need to set up server-to-server authentication
 
 ### **Step 1: Create CloudKit Key in Apple Developer Console**
 
-1. **Go to Apple Developer Console**: https://developer.apple.com/account/
+1. **Go to Apple Developer Console**: [https://developer.apple.com/account/](https://developer.apple.com/account/)
 2. **Navigate to**: Certificates, Identifiers & Profiles → Keys
 3. **Click**: "+" to create a new key
 4. **Configure**:
@@ -39,10 +39,10 @@ CLOUDKIT_ENVIRONMENT=development  # or 'production'
 
 ### **Required Record Types in CloudKit Dashboard**
 
-Go to **CloudKit Console**: https://icloud.developer.apple.com/dashboard/
+Go to **CloudKit Console**: [https://icloud.developer.apple.com/dashboard/](https://icloud.developer.apple.com/dashboard/)
 
 #### **1. UserProfile**
-```
+```text
 Fields:
 - id (String, Queryable, Sortable)
 - fullName (String)
@@ -156,7 +156,7 @@ Indexes:
 
 ### **Database**: Private Database
 
-### **Security Roles**:
+### **Security Roles**
 ```
 World Readable: None
 World Writable: None
@@ -236,7 +236,7 @@ privateDatabase.perform(query) { records, error in
 
 ## 🚨 **Troubleshooting**
 
-### **Common Issues**:
+### **Common Issues**
 
 1. **"Invalid JWT token"**
    - Check your Team ID and Key ID
@@ -255,7 +255,7 @@ privateDatabase.perform(query) { records, error in
    - Large JSON data is stored as CloudKit assets
    - Check asset upload permissions
 
-### **Debug Mode**:
+### **Debug Mode**
 ```python
 import logging
 logging.basicConfig(level=logging.DEBUG)

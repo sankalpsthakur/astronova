@@ -7,7 +7,7 @@ class Config:
     
     if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable must be set")
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=2)
 
     CACHE_TYPE = 'SimpleCache'
     CACHE_DEFAULT_TIMEOUT = 300

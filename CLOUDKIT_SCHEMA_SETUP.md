@@ -4,7 +4,7 @@
 
 To see records in CloudKit Dashboard, you need to:
 
-1. **Go to CloudKit Console**: https://icloud.developer.apple.com/dashboard/
+1. **Go to CloudKit Console**: [https://icloud.developer.apple.com/dashboard/](https://icloud.developer.apple.com/dashboard/)
 2. **Select Container**: `iCloud.com.sankalp.AstronovaApp`
 3. **Create Record Types** (see below)
 4. **Set Security Roles**
@@ -17,7 +17,7 @@ To see records in CloudKit Dashboard, you need to:
 ### 1. **UserProfile** Record Type
 
 **Fields:**
-```
+```text
 id                  : String (Queryable, Sortable)
 fullName           : String
 birthDate          : Date/Time
@@ -45,7 +45,7 @@ updatedAt          : Date/Time (Queryable, Sortable)
 ### 2. **ChatMessage** Record Type
 
 **Fields:**
-```
+```text
 id                 : String (Queryable, Sortable)
 userProfileId      : String (Queryable, Sortable)
 conversationId     : String (Queryable, Sortable)
@@ -66,7 +66,7 @@ messageType        : String (Queryable)
 ### 3. **Horoscope** Record Type
 
 **Fields:**
-```
+```text
 id                 : String (Queryable, Sortable)
 userProfileId      : String (Queryable, Sortable)
 date               : Date/Time (Queryable, Sortable)
@@ -89,7 +89,7 @@ createdAt          : Date/Time (Queryable, Sortable)
 ### 4. **KundaliMatch** Record Type
 
 **Fields:**
-```
+```text
 id                 : String (Queryable, Sortable)
 userProfileId      : String (Queryable, Sortable)
 partnerName        : String
@@ -110,7 +110,7 @@ createdAt          : Date/Time (Queryable, Sortable)
 ### 5. **BirthChart** Record Type
 
 **Fields:**
-```
+```text
 id                 : String (Queryable, Sortable)
 userProfileId      : String (Queryable, Sortable)
 chartType          : String (Queryable) // natal, transit, progressed
@@ -131,7 +131,7 @@ createdAt          : Date/Time (Queryable, Sortable)
 ### 6. **BookmarkedReading** Record Type
 
 **Fields:**
-```
+```text
 id                 : String (Queryable, Sortable)
 userProfileId      : String (Queryable, Sortable)
 readingType        : String (Queryable) // horoscope, chart, compatibility
