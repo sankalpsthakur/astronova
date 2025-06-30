@@ -55,46 +55,6 @@ struct ReportPricing {
     }
 }
 
-// MARK: - Store Manager (Placeholder for future StoreKit integration)
-
-class StoreManager: ObservableObject, StoreManagerProtocol {
-    static let shared = StoreManager()
-    
-    @AppStorage("hasAstronovaPro") var hasProSubscription = false
-    @Published var products: [String: String] = [:]  // Product ID to localized price
-    
-    func loadProducts() {
-        // TODO: Implement StoreKit product loading
-        // This would load actual App Store product information including localized prices
-        products = [
-            "love_forecast": "$4.99",
-            "birth_chart": "$7.99", 
-            "career_forecast": "$5.99",
-            "year_ahead": "$9.99",
-            "astronova_pro_monthly": "$9.99"
-        ]
-    }
-    
-    func purchaseProduct(productId: String) async -> Bool {
-        // TODO: Implement StoreKit purchase flow
-        // For now, simulate successful purchase for individual reports
-        if productId == "astronova_pro_monthly" {
-            hasProSubscription = true
-        }
-        return true
-    }
-    
-    func hasProduct(_ productId: String) -> Bool {
-        if productId == "astronova_pro_monthly" {
-            return hasProSubscription
-        }
-        return true // Stub: assume all products are available
-    }
-    
-    func restorePurchases() async {
-        // Stub implementation - do nothing
-    }
-}
 
 // MARK: - Notification.Name Helpers
 

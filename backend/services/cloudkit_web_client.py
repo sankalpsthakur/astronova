@@ -142,8 +142,7 @@ class CloudKitWebClient:
         subpath = f"/database/1/{self.container_id}/{self.environment}/private/{endpoint}"
         
         # Create canonical request string: "{method}:{iso_date}:{body_hash}:{subpath}"
--        canonical_request = f"{iso_date}:{body_hash}:{subpath}"
-+        canonical_request = f"{method}:{iso_date}:{body_hash}:{subpath}"
+        canonical_request = f"{method}:{iso_date}:{body_hash}:{subpath}"
         
         logger.debug(f"Canonical request: {canonical_request}")
         
