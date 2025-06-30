@@ -141,3 +141,22 @@ class DetailedReportRequest(BaseModel):
         if v not in allowed_types:
             raise ValueError(f'Report type must be one of: {", ".join(allowed_types)}')
         return v
+
+class AppleAuthRequest(BaseModel):
+    idToken: str
+    userIdentifier: str
+    email: Optional[str] = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    
+    @validator('idToken')
+    def validate_id_token(cls, v):
+        if not v or len(v) < 100:  # Basic validation
+            raise ValueError('Invalid Apple ID token format')
+        return v
+    
+    @validator('userIdentifier')
+    def validate_user_identifier(cls, v):
+        if not v:
+            raise ValueError('User identifier is required')
+        return v

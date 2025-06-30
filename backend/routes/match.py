@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify
+from flask_jwt_extended import get_jwt_identity
 from utils.validators import validate_request
 from models.schemas import MatchRequest
 from services.astro_calculator import AstroCalculator, BirthData
@@ -61,7 +62,16 @@ def match(data: MatchRequest):
     }
 
     try:
-        cloudkit.save_match(result)
+        user_id = get_jwt_identity()
+        if user_id:
+            cloudkit.save_match({
+                'userProfileId': user_id,
+                'partnerName': data.partner.name,
+                'partnerBirthDate': data.partner.birth_date,
+                'partnerLocation': f"{data.partner.latitude}, {data.partner.longitude}",
+                'compatibilityScore': int(overall_score),
+                'detailedAnalysis': result
+            })
     except Exception:
         pass
 

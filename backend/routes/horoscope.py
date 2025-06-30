@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import get_jwt_identity
 
 from services.astro_calculator import AstroCalculator
 from services.claude_ai import ClaudeService
@@ -41,7 +42,8 @@ def horoscope():
     if cached:
         return jsonify(cached)
 
-    stored = cloudkit.get_horoscope(sign, date_str, type_)
+    user_id = get_jwt_identity() or f"public_{sign}"
+    stored = cloudkit.get_horoscope(user_id, sign, date_str, type_)
     if stored:
         cache.set(cache_key, stored, timeout=3600)
         return jsonify(stored)
@@ -61,5 +63,19 @@ def horoscope():
 
     result = {'sign': sign, 'date': date_str, 'type': type_, 'horoscope': content}
     cache.set(cache_key, result, timeout=3600)
-    cloudkit.save_horoscope(result)
+    
+    # Save to CloudKit with proper structure
+    try:
+        cloudkit.save_horoscope({
+            'userProfileId': user_id,
+            'sign': sign,
+            'date': date_str,
+            'type': type_,
+            'content': content
+        })
+    except Exception as e:
+        # Don't block the response path – log and continue
+        from flask import current_app
+        current_app.logger.exception("CloudKit save_horoscope failed")
+    
     return jsonify(result)

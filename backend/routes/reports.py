@@ -1,14 +1,12 @@
 from flask import Blueprint, jsonify, request
 from utils.validators import validate_request
 from models.schemas import ReportRequest, DetailedReportRequest
-from services.report_service import ReportService
 from services.detailed_reports_service import DetailedReportsService
 import base64
 import uuid
 from datetime import datetime
 
 reports_bp = Blueprint('reports', __name__)
-report_service = ReportService()
 detailed_reports_service = DetailedReportsService()
 
 

@@ -35,12 +35,17 @@ def send_message(data: ChatRequest):
             birth_chart = birth_chart or cached_chart
 
     if user_id:
-        cloudkit.save_chat_message({
-            "user_id": user_id,
-            "conversation_id": conv_id,
-            "content": data.message,
-            "is_user": True,
-        })
+        try:
+            cloudkit.save_chat_message({
+                "userProfileId": user_id,
+                "conversationId": conv_id,
+                "content": data.message,
+                "isUser": True,
+            })
+        except Exception:
+            # Don't block the response path – log and continue
+            from flask import current_app
+            current_app.logger.exception("CloudKit save_chat_message (user) failed")
 
     resp = claude.send_message(
         data.message,
@@ -49,12 +54,17 @@ def send_message(data: ChatRequest):
     )
 
     if user_id:
-        cloudkit.save_chat_message({
-            "user_id": user_id,
-            "conversation_id": conv_id,
-            "content": resp.get("reply"),
-            "is_user": False,
-        })
+        try:
+            cloudkit.save_chat_message({
+                "userProfileId": user_id,
+                "conversationId": conv_id,
+                "content": resp.get("reply"),
+                "isUser": False,
+            })
+        except Exception:
+            # Don't block the response path – log and continue
+            from flask import current_app
+            current_app.logger.exception("CloudKit save_chat_message (AI) failed")
 
     return jsonify({
         "reply": resp.get("reply"),

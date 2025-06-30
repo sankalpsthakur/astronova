@@ -22,6 +22,7 @@ struct PlanetaryCalculationsView: View {
     @EnvironmentObject private var auth: AuthState
     @State private var currentStep = 0
     @State private var animateElements = false
+    @State private var showProUpgradeAlert = false
     
     private let totalSteps = 6
     private let freeSteps = 2 // Free users see steps 0 and 1
@@ -101,6 +102,11 @@ struct PlanetaryCalculationsView: View {
             withAnimation(.easeInOut(duration: 1)) {
                 animateElements = true
             }
+        }
+        .alert("Upgrade to Pro", isPresented: $showProUpgradeAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Unlock all planetary calculations and interpretations with Astronova Pro.")
         }
     }
     
@@ -208,7 +214,7 @@ struct PlanetaryCalculationsView: View {
                 if currentStep < totalSteps - 1 {
                     if currentStep >= freeSteps && auth.state != .signedIn {
                         Button {
-                            // TODO: Show paywall when subscription system is integrated
+                            showProUpgradeAlert = true
                         } label: {
                             HStack(spacing: 8) {
                                 Text("Unlock Pro")
@@ -1593,6 +1599,7 @@ struct InterpretationData {
 struct ProUpsellView: View {
     let stepTitle: String
     @EnvironmentObject private var auth: AuthState
+    @State private var showProUpgradeAlert = false
     
     var body: some View {
         VStack(spacing: 32) {
@@ -1629,7 +1636,7 @@ struct ProUpsellView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             
             Button {
-                // TODO: Show paywall when subscription system is integrated
+                showProUpgradeAlert = true
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: "crown.fill")
@@ -1655,6 +1662,11 @@ struct ProUpsellView: View {
             Spacer()
         }
         .padding()
+        .alert("Upgrade to Pro", isPresented: $showProUpgradeAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Unlock all planetary calculations and interpretations with Astronova Pro.")
+        }
     }
     
     private func proFeatureRow(_ text: String) -> some View {
