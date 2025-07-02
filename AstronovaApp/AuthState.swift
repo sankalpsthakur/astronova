@@ -301,7 +301,7 @@ class AuthState: ObservableObject {
         if isAnonymousUser {
             return FeatureAvailability(
                 canGenerateCharts: isAPIConnected,
-                canSaveData: false,
+                canSaveData: true,
                 canAccessPremiumFeatures: false,
                 canSyncAcrossDevices: false,
                 hasUnlimitedAccess: false,
@@ -310,7 +310,7 @@ class AuthState: ObservableObject {
         } else if isQuickStartUser {
             return FeatureAvailability(
                 canGenerateCharts: isAPIConnected,
-                canSaveData: false,
+                canSaveData: true,
                 canAccessPremiumFeatures: false,
                 canSyncAcrossDevices: false,
                 hasUnlimitedAccess: false,
