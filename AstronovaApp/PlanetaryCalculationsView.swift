@@ -140,7 +140,7 @@ struct PlanetaryCalculationsView: View {
                 Spacer()
             }
             
-            Text("From birth data to cosmic insights in 6 interactive steps")
+            Text("From birth data to cosmic insights in 5 interactive steps")
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.8))
                 .multilineTextAlignment(.leading)
@@ -2361,7 +2361,7 @@ struct ProUpsellView: View {
                     .foregroundStyle(.white)
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    proFeatureRow("Complete 6-step tutorial")
+                    proFeatureRow("Complete 5-step tutorial")
                     proFeatureRow("Interactive planetary calculations")
                     proFeatureRow("House system comparisons")
                     proFeatureRow("Aspect visualization tools")
