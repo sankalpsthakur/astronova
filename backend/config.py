@@ -13,4 +13,5 @@ class Config:
     CACHE_DEFAULT_TIMEOUT = 300
 
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
     JPL_HORIZONS_URL = 'https://ssd-api.jpl.nasa.gov/'
