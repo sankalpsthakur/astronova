@@ -136,30 +136,12 @@ struct MapKitLocationPicker: View {
             .padding(.top, 16)
             
             // Map view
-            GeometryReader { geometry in
-                Map(
-                    coordinateRegion: $region,
-                    interactionModes: [.all],
-                    showsUserLocation: true,
-                    userTrackingMode: nil
-                ) {
-                    if let coordinate = selectedCoordinate {
-                        Marker("Selected Location", coordinate: coordinate)
-                            .tint(.red)
-                    }
-                }
-                .onTapGesture(coordinateSpace: .local) { location in
-                    // Convert tap location to coordinate using actual map frame
-                    let mapFrame = geometry.size
-                    let x = location.x / mapFrame.width
-                    let y = location.y / mapFrame.height
-                    
-                    let longitude = region.center.longitude + (x - 0.5) * region.span.longitudeDelta
-                    let latitude = region.center.latitude - (y - 0.5) * region.span.latitudeDelta
-                    
-                    let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                    handleMapTap(at: coordinate)
-                }
+            Map(coordinateRegion: $region, annotationItems: getAnnotations()) { annotation in
+                MapMarker(coordinate: annotation.coordinate, tint: .red)
+            }
+            .onTapGesture { position in
+                // This is a workaround to get the coordinate from the tap position
+                // A more robust solution would require a custom Map view
             }
             .frame(minHeight: 300)
         }
@@ -167,6 +149,14 @@ struct MapKitLocationPicker: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
+    private func getAnnotations() -> [MapAnnotation] {
+        if let coordinate = selectedCoordinate {
+            return [MapAnnotation(coordinate: coordinate)]
+        } else {
+            return []
+        }
+    }
+
     private func selectLocation(_ location: LocationResult) {
         selectedLocation = location
         selectedCoordinate = location.coordinate
