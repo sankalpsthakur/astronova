@@ -24,7 +24,7 @@ struct OnboardingView: View {
                 SignInWithAppleButton(
                     onRequest: { request in
                         request.requestedScopes = [.fullName, .email]
-                        request.nonce = UUID().uuidString
+                        request.nonce = auth.nonce
                     },
                     onCompletion: { result in
                         Task {
@@ -33,22 +33,20 @@ struct OnboardingView: View {
                     }
                 )
                 .signInWithAppleButtonStyle(.black)
-                .frame(height: 45)
-                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .frame(maxWidth: 375) // Respect Apple's HIG for max width
                 .disabled(inProgress)
                 .overlay(
                     Group {
-                        if inProgress { 
-                            LoadingView(style: .inline, message: "Signing in...")
-                                .foregroundStyle(Color.white)
+                        if inProgress {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         }
                     }
                 )
                 
                 Button("Continue without signing in") {
-                    Task {
-                        await handleSkipSignIn()
-                    }
+                    handleSkipSignIn()
                 }
                 .foregroundColor(.secondary)
                 .disabled(inProgress)
@@ -98,14 +96,14 @@ struct OnboardingView: View {
         inProgress = false
     }
     
-    private func handleSkipSignIn() async {
+    private func handleSkipSignIn() {
         inProgress = true
         
         // Set anonymous user flag
         UserDefaults.standard.set(true, forKey: "is_anonymous_user")
         
         // Complete sign in without Apple ID
-        await auth.requestSignIn()
+        auth.continueAsGuest()
         
         inProgress = false
     }
