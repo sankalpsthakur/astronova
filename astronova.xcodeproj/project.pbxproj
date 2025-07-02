@@ -23,6 +23,23 @@
 		5A811C062DF79DA000BD6D7F /* MapKitLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */; };
 		5A811C072DF79DA000BD6D7F /* PlanetaryCalculationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C052DF79DA000BD6D7F /* PlanetaryCalculationsView.swift */; };
 		5A811C092DF79DA000BD6D7F /* MapKitAutocompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */; };
+		5AD3E15C2E15546100333B75 /* Intents.intentdefinition in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E14B2E15546100333B75 /* Intents.intentdefinition */; };
+		5AD3E15D2E15546100333B75 /* PlanetaryDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1502E15546100333B75 /* PlanetaryDataService.swift */; };
+		5AD3E15E2E15546100333B75 /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1482E15546100333B75 /* DependencyContainer.swift */; };
+		5AD3E15F2E15546100333B75 /* HapticFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1552E15546100333B75 /* HapticFeedbackService.swift */; };
+		5AD3E1602E15546100333B75 /* CompellingLandingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1432E15546100333B75 /* CompellingLandingView.swift */; };
+		5AD3E1612E15546100333B75 /* MockServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E14E2E15546100333B75 /* MockServices.swift */; };
+		5AD3E1622E15546100333B75 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1582E15546100333B75 /* StoreKitManager.swift */; };
+		5AD3E1632E15546100333B75 /* ServiceProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1532E15546100333B75 /* ServiceProtocols.swift */; };
+		5AD3E1642E15546100333B75 /* CosmicColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1472E15546100333B75 /* CosmicColors.swift */; };
+		5AD3E1652E15546100333B75 /* ProfileSetupContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1592E15546100333B75 /* ProfileSetupContentView.swift */; };
+		5AD3E1662E15546100333B75 /* AstronovaAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E14A2E15546100333B75 /* AstronovaAppIntents.swift */; };
+		5AD3E1672E15546100333B75 /* SiriIntentHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E14C2E15546100333B75 /* SiriIntentHandler.swift */; };
+		5AD3E1682E15546100333B75 /* StarburstAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E15A2E15546100333B75 /* StarburstAnimationView.swift */; };
+		5AD3E1692E15546100333B75 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1452E15546100333B75 /* AppCoordinator.swift */; };
+		5AD3E16A2E15546100333B75 /* ContentManagementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1442E15546100333B75 /* ContentManagementService.swift */; };
+		5AD3E16B2E15546100333B75 /* SkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3E1572E15546100333B75 /* SkeletonView.swift */; };
+		5AD3E16C2E15546100333B75 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5AD3E1512E15546100333B75 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +82,23 @@
 		5AD3E1402E147FA500333B75 /* AstronovaApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AstronovaApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5AD3E1412E147FA500333B75 /* AstronovaAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5AD3E1422E147FA500333B75 /* AstronovaAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5AD3E1432E15546100333B75 /* CompellingLandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompellingLandingView.swift; sourceTree = "<group>"; };
+		5AD3E1442E15546100333B75 /* ContentManagementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentManagementService.swift; sourceTree = "<group>"; };
+		5AD3E1452E15546100333B75 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
+		5AD3E1472E15546100333B75 /* CosmicColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicColors.swift; sourceTree = "<group>"; };
+		5AD3E1482E15546100333B75 /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
+		5AD3E14A2E15546100333B75 /* AstronovaAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaAppIntents.swift; sourceTree = "<group>"; };
+		5AD3E14B2E15546100333B75 /* Intents.intentdefinition */ = {isa = PBXFileReference; lastKnownFileType = file.intentdefinition; path = Intents.intentdefinition; sourceTree = "<group>"; };
+		5AD3E14C2E15546100333B75 /* SiriIntentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriIntentHandler.swift; sourceTree = "<group>"; };
+		5AD3E14E2E15546100333B75 /* MockServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockServices.swift; sourceTree = "<group>"; };
+		5AD3E1502E15546100333B75 /* PlanetaryDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanetaryDataService.swift; sourceTree = "<group>"; };
+		5AD3E1512E15546100333B75 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		5AD3E1532E15546100333B75 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
+		5AD3E1552E15546100333B75 /* HapticFeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackService.swift; sourceTree = "<group>"; };
+		5AD3E1572E15546100333B75 /* SkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
+		5AD3E1582E15546100333B75 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		5AD3E1592E15546100333B75 /* ProfileSetupContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupContentView.swift; sourceTree = "<group>"; };
+		5AD3E15A2E15546100333B75 /* StarburstAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarburstAnimationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +129,20 @@
 		3D01F7D72C0A000000000001 = {
 			isa = PBXGroup;
 			children = (
+				5AD3E1432E15546100333B75 /* CompellingLandingView.swift */,
+				5AD3E1442E15546100333B75 /* ContentManagementService.swift */,
+				5AD3E1462E15546100333B75 /* Coordinators */,
+				5AD3E1472E15546100333B75 /* CosmicColors.swift */,
+				5AD3E1492E15546100333B75 /* DI */,
+				5AD3E14D2E15546100333B75 /* Intents */,
+				5AD3E14F2E15546100333B75 /* Mocks */,
+				5AD3E1502E15546100333B75 /* PlanetaryDataService.swift */,
+				5AD3E1522E15546100333B75 /* Preview Content */,
+				5AD3E1542E15546100333B75 /* Protocols */,
+				5AD3E1562E15546100333B75 /* Services */,
+				5AD3E1572E15546100333B75 /* SkeletonView.swift */,
+				5AD3E1582E15546100333B75 /* StoreKitManager.swift */,
+				5AD3E15B2E15546100333B75 /* Views */,
 				3D01F7E22C0A000000000001 /* AstronovaApp */,
 				3D01F7F32C0A000000000001 /* AstronovaAppTests */,
 				3D01F7FD2C0A000000000001 /* AstronovaAppUITests */,
@@ -150,6 +198,73 @@
 				3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */,
 			);
 			path = AstronovaAppUITests;
+			sourceTree = "<group>";
+		};
+		5AD3E1462E15546100333B75 /* Coordinators */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E1452E15546100333B75 /* AppCoordinator.swift */,
+			);
+			path = Coordinators;
+			sourceTree = "<group>";
+		};
+		5AD3E1492E15546100333B75 /* DI */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E1482E15546100333B75 /* DependencyContainer.swift */,
+			);
+			path = DI;
+			sourceTree = "<group>";
+		};
+		5AD3E14D2E15546100333B75 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E14A2E15546100333B75 /* AstronovaAppIntents.swift */,
+				5AD3E14B2E15546100333B75 /* Intents.intentdefinition */,
+				5AD3E14C2E15546100333B75 /* SiriIntentHandler.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		5AD3E14F2E15546100333B75 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E14E2E15546100333B75 /* MockServices.swift */,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
+		5AD3E1522E15546100333B75 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E1512E15546100333B75 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		5AD3E1542E15546100333B75 /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E1532E15546100333B75 /* ServiceProtocols.swift */,
+			);
+			path = Protocols;
+			sourceTree = "<group>";
+		};
+		5AD3E1562E15546100333B75 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E1552E15546100333B75 /* HapticFeedbackService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		5AD3E15B2E15546100333B75 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				5AD3E1592E15546100333B75 /* ProfileSetupContentView.swift */,
+				5AD3E15A2E15546100333B75 /* StarburstAnimationView.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -257,6 +372,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D01F7EB2C0A000000000001 /* Preview Assets.xcassets in Resources */,
+				5AD3E16C2E15546100333B75 /* Preview Assets.xcassets in Resources */,
 				3D01F7E82C0A000000000001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -289,6 +405,22 @@
 				5A811C072DF79DA000BD6D7F /* PlanetaryCalculationsView.swift in Sources */,
 				5A811C092DF79DA000BD6D7F /* MapKitAutocompleteView.swift in Sources */,
 				3D01F8122C0A000000000006 /* NetworkClient.swift in Sources */,
+				5AD3E15C2E15546100333B75 /* Intents.intentdefinition in Sources */,
+				5AD3E15D2E15546100333B75 /* PlanetaryDataService.swift in Sources */,
+				5AD3E15E2E15546100333B75 /* DependencyContainer.swift in Sources */,
+				5AD3E15F2E15546100333B75 /* HapticFeedbackService.swift in Sources */,
+				5AD3E1602E15546100333B75 /* CompellingLandingView.swift in Sources */,
+				5AD3E1612E15546100333B75 /* MockServices.swift in Sources */,
+				5AD3E1622E15546100333B75 /* StoreKitManager.swift in Sources */,
+				5AD3E1632E15546100333B75 /* ServiceProtocols.swift in Sources */,
+				5AD3E1642E15546100333B75 /* CosmicColors.swift in Sources */,
+				5AD3E1652E15546100333B75 /* ProfileSetupContentView.swift in Sources */,
+				5AD3E1662E15546100333B75 /* AstronovaAppIntents.swift in Sources */,
+				5AD3E1672E15546100333B75 /* SiriIntentHandler.swift in Sources */,
+				5AD3E1682E15546100333B75 /* StarburstAnimationView.swift in Sources */,
+				5AD3E1692E15546100333B75 /* AppCoordinator.swift in Sources */,
+				5AD3E16A2E15546100333B75 /* ContentManagementService.swift in Sources */,
+				5AD3E16B2E15546100333B75 /* SkeletonView.swift in Sources */,
 				3D01F8112C0A000000000005 /* LoadingView.swift in Sources */,
 				3D01F80F2C0A000000000003 /* UserProfile.swift in Sources */,
 				3D01F80E2C0A000000000002 /* AuthState.swift in Sources */,
