@@ -15,16 +15,6 @@ struct AstronovaAppApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(authState)
-                .onAppear {
-                    setupAppOnLaunch()
-                }
-        }
-    }
-    
-    private func setupAppOnLaunch() {
-        Task {
-            // Initialize API connectivity check on app launch
-            await authState.checkAPIConnectivity()
         }
     }
 }

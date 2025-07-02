@@ -97,31 +97,27 @@ class AuthState: ObservableObject {
             await self?.handleTokenExpiry()
         }
         
-        checkAuthState()
+        // Initialize state immediately for fast boot
+        initializeStateImmediately()
+        
+        // Perform background checks without blocking UI
+        Task {
+            await performBackgroundInitialization()
+        }
     }
     
-    private func checkAuthState() {
-        // Check API connectivity in background
-        Task {
-            await checkAPIConnectivity()
-        }
-        
-        // Check for stored JWT token
+    private func initializeStateImmediately() {
+        // Quick local state determination - no network calls
         if let storedToken = getJWTToken() {
             jwtToken = storedToken
             hasSignedIn = true
-            
-            // Verify token is still valid
-            Task {
-                await validateStoredToken()
-            }
         }
         
+        // Set initial state based on stored data only
         if hasSignedIn {
             if profileManager.isProfileComplete {
                 state = .signedIn
             } else {
-                // For anonymous users or quick start users, allow them to use the app even without complete profile
                 if isAnonymousUser || isQuickStartUser || profileManager.hasMinimalProfileData {
                     state = .signedIn
                 } else {
@@ -130,6 +126,16 @@ class AuthState: ObservableObject {
             }
         } else {
             state = .signedOut
+        }
+    }
+    
+    private func performBackgroundInitialization() async {
+        // Perform network operations in background
+        await checkAPIConnectivity()
+        
+        // Validate stored token if we have one
+        if jwtToken != nil {
+            await validateStoredToken()
         }
     }
     

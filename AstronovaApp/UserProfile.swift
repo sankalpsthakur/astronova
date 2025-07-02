@@ -190,7 +190,7 @@ class UserProfileManager: ObservableObject {
     
     /// Whether profile has minimal data needed for Quick Start functionality (just name and birth date)
     var hasMinimalProfileData: Bool {
-        return !profile.fullName.isEmpty && profile.birthDate != nil
+        return !profile.fullName.isEmpty
     }
     
     /// Whether profile has all location data needed for advanced astrological calculations

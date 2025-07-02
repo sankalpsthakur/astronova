@@ -1713,7 +1713,6 @@ struct LearnTab: View {
     var body: some View {
         NavigationStack {
             PlanetaryCalculationsView()
-                .navigationBarHidden(true)
                 .environmentObject(auth.profileManager)
         }
     }
@@ -3533,6 +3532,9 @@ struct ProfileOverviewView: View {
                         Button("Edit Profile") {
                             showingEditSheet = true
                         }
+                        .sheet(isPresented: $showingEditSheet) {
+                            ProfileEditView(profileManager: auth.profileManager)
+                        }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.blue)
                     }
@@ -3629,7 +3631,7 @@ struct ProfileOverviewView: View {
             .padding(.horizontal, 20)
         }
         .sheet(isPresented: $showingEditSheet) {
-            ProfileEditView()
+            ProfileEditView(profileManager: auth.profileManager)
                 .environmentObject(auth)
         }
     }
@@ -3708,9 +3710,14 @@ struct NavigationRowView: View {
 // MARK: - Profile Edit View
 
 struct ProfileEditView: View {
-    @EnvironmentObject private var auth: AuthState
+    @ObservedObject var profileManager: UserProfileManager
     @State private var isEditing = false
-    @State private var editedProfile: UserProfile = UserProfile()
+    @State private var editedProfile: UserProfile
+    
+    init(profileManager: UserProfileManager) {
+        self.profileManager = profileManager
+        _editedProfile = State(initialValue: profileManager.profile)
+    }
     
     var body: some View {
         ScrollView {
@@ -3727,16 +3734,16 @@ struct ProfileEditView: View {
                             ))
                             .frame(width: 120, height: 120)
                         
-                        Text(auth.profileManager.profile.fullName.prefix(2).uppercased())
+                        Text(profileManager.profile.fullName.prefix(2).uppercased())
                             .font(.system(size: 40, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     
                     VStack(spacing: 4) {
-                        Text(auth.profileManager.profile.fullName.isEmpty ? "Your Name" : auth.profileManager.profile.fullName)
+                        Text(profileManager.profile.fullName.isEmpty ? "Your Name" : profileManager.profile.fullName)
                             .font(.title2.weight(.semibold))
                         
-                        if let sunSign = auth.profileManager.profile.sunSign {
+                        if let sunSign = profileManager.profile.sunSign {
                             Text(sunSign)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
@@ -3753,9 +3760,9 @@ struct ProfileEditView: View {
                         Spacer()
                         Button(isEditing ? "Save" : "Edit") {
                             if isEditing {
-                                auth.profileManager.updateProfile(editedProfile)
+                                profileManager.updateProfile(editedProfile)
                             } else {
-                                editedProfile = auth.profileManager.profile
+                                editedProfile = profileManager.profile
                             }
                             isEditing.toggle()
                         }
@@ -3846,17 +3853,17 @@ struct ProfileEditView: View {
                         VStack(spacing: 12) {
                             ProfileInfoRow(
                                 title: "Birth Date",
-                                value: formatDate(auth.profileManager.profile.birthDate)
+                                value: formatDate(profileManager.profile.birthDate)
                             )
                             
                             ProfileInfoRow(
                                 title: "Birth Time",
-                                value: auth.profileManager.profile.birthTime.map(formatTime) ?? "Not set"
+                                value: profileManager.profile.birthTime.map(formatTime) ?? "Not set"
                             )
                             
                             ProfileInfoRow(
                                 title: "Birth Place",
-                                value: auth.profileManager.profile.birthPlace ?? "Not set"
+                                value: profileManager.profile.birthPlace ?? "Not set"
                             )
                         }
                         .padding(.horizontal, 20)
@@ -3886,17 +3893,17 @@ struct ProfileEditView: View {
                     VStack(spacing: 12) {
                         ProfileInfoRow(
                             title: "Sun Sign",
-                            value: auth.profileManager.profile.sunSign ?? "Calculate from birth info"
+                            value: profileManager.profile.sunSign ?? "Calculate from birth info"
                         )
                         
                         ProfileInfoRow(
                             title: "Moon Sign",
-                            value: auth.profileManager.profile.moonSign ?? "Requires birth time & place"
+                            value: profileManager.profile.moonSign ?? "Requires birth time & place"
                         )
                         
                         ProfileInfoRow(
                             title: "Rising Sign",
-                            value: auth.profileManager.profile.risingSign ?? "Requires birth time & place"
+                            value: profileManager.profile.risingSign ?? "Requires birth time & place"
                         )
                     }
                     .padding(.horizontal, 20)
@@ -3914,9 +3921,6 @@ struct ProfileEditView: View {
                 Spacer(minLength: 100)
             }
             .padding(.horizontal, 20)
-        }
-        .onAppear {
-            editedProfile = auth.profileManager.profile
         }
     }
     
@@ -4131,7 +4135,7 @@ struct ProfileSettingsRow: View {
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showingEditProfile) {
-            ProfileEditView()
+            ProfileEditView(profileManager: auth.profileManager)
                 .environmentObject(auth)
         }
     }

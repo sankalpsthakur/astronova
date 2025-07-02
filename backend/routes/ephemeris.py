@@ -9,10 +9,17 @@ service = EphemerisService()
 @ephemeris_bp.route('/current', methods=['GET'])
 def current_positions():
     """
-    Get current planetary positions for iOS app
+    Get current planetary positions for iOS app.
+    Optional query parameters:
+    - lat: latitude for rising sign calculation
+    - lon: longitude for rising sign calculation
     """
     try:
-        positions_data = service.get_current_positions()
+        # Get optional location parameters for rising sign
+        lat = request.args.get('lat', type=float)
+        lon = request.args.get('lon', type=float)
+        
+        positions_data = service.get_current_positions(lat=lat, lon=lon)
         
         # Transform data for iOS app format
         planets = []
@@ -32,7 +39,8 @@ def current_positions():
         
         return jsonify({
             "planets": planets,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "has_rising_sign": lat is not None and lon is not None
         })
         
     except Exception as e:
@@ -50,7 +58,8 @@ def get_planet_symbol(planet_name: str) -> str:
         'saturn': '♄',
         'uranus': '♅',
         'neptune': '♆',
-        'pluto': '♇'
+        'pluto': '♇',
+        'ascendant': '⟰'
     }
     return symbols.get(planet_name.lower(), '⭐')
 
@@ -66,6 +75,7 @@ def get_planet_significance(planet_name: str) -> str:
         'saturn': 'Structure and discipline',
         'uranus': 'Innovation and change',
         'neptune': 'Dreams and spirituality',
-        'pluto': 'Transformation and power'
+        'pluto': 'Transformation and power',
+        'ascendant': 'Rising sign and outer personality'
     }
     return significance.get(planet_name.lower(), 'Cosmic influence')

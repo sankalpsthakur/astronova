@@ -2117,12 +2117,16 @@ struct AspectVisualizationView: View {
     }
     
     private var chartWheelView: some View {
-        VStack {
-            Text("Chart Wheel Coming Soon")
-                .foregroundStyle(.white)
-        }
-        /*
         ZStack {
+            chartBackgroundView
+            houseDivisionsView
+            zodiacSignsView
+            planetsView
+        }
+    }
+    
+    private var chartBackgroundView: some View {
+        Group {
             // Outer circle (chart boundary)
             Circle()
                 .stroke(.white.opacity(0.3), lineWidth: 2)
@@ -2132,42 +2136,47 @@ struct AspectVisualizationView: View {
             Circle()
                 .stroke(.white.opacity(0.2), lineWidth: 1)
                 .frame(width: 200, height: 200)
-            
-            // 12 house divisions
-            ForEach(0..<12, id: \.self) { house in
-                Path { path in
-                    let center = CGPoint(x: 140, y: 140)
-                    let angle = Double(house) * 30.0 * .pi / 180.0
-                    path.move(to: center)
-                    path.addLine(to: CGPoint(
-                        x: center.x + 140 * cos(angle - .pi / 2),
-                        y: center.y + 140 * sin(angle - .pi / 2)
-                    ))
-                }
-                .stroke(.white.opacity(0.2), lineWidth: 1)
+        }
+    }
+    
+    private var houseDivisionsView: some View {
+        ForEach(0..<12, id: \.self) { house in
+            Path { path in
+                let center = CGPoint(x: 140, y: 140)
+                let angle = Double(house) * 30.0 * .pi / 180.0
+                path.move(to: center)
+                path.addLine(to: CGPoint(
+                    x: center.x + 140 * cos(angle - .pi / 2),
+                    y: center.y + 140 * sin(angle - .pi / 2)
+                ))
             }
+            .stroke(.white.opacity(0.2), lineWidth: 1)
+        }
+    }
+    
+    private var zodiacSignsView: some View {
+        ForEach(0..<12, id: \.self) { signIndex in
+            let signs = ["♈︎", "♉︎", "♊︎", "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎"]
+            let angle = Double(signIndex) * 30.0 * .pi / 180.0 + (.pi / 12)
             
-            // Zodiac signs around the wheel
-            ForEach(0..<12, id: \.self) { signIndex in
-                let signs = ["♈︎", "♉︎", "♊︎", "♋︎", "♌︎", "♍︎", "♎︎", "♏︎", "♐︎", "♑︎", "♒︎", "♓︎"]
-                let angle = Double(signIndex) * 30.0 * .pi / 180.0 + (.pi / 12)
-                
-                Text(signs[signIndex])
-                    .font(.title2)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .position(
-                        x: 140 + 120 * cos(angle - .pi / 2),
-                        y: 140 + 120 * sin(angle - .pi / 2)
-                    )
-            }
-            
-            // Planet positions (example positions)
-            let planetData = [
-                ("☉", 7.85, "Sun"), // Sun in Sagittarius 7°
-                ("☽", 85.85, "Moon"), // Moon in Gemini 25°
-                ("♂", 297.5, "Mars") // Mars in Capricorn 27°
-            ]
-            
+            Text(signs[signIndex])
+                .font(.title2)
+                .foregroundStyle(.white.opacity(0.7))
+                .position(
+                    x: 140 + 120 * cos(angle - .pi / 2),
+                    y: 140 + 120 * sin(angle - .pi / 2)
+                )
+        }
+    }
+    
+    private var planetsView: some View {
+        let planetData = [
+            ("☉", 7.85, "Sun"), // Sun in Sagittarius 7°
+            ("☽", 85.85, "Moon"), // Moon in Gemini 25°
+            ("♂", 297.5, "Mars") // Mars in Capricorn 27°
+        ]
+        
+        return Group {
             ForEach(Array(planetData.enumerated()), id: \.offset) { index, planet in
                 let (symbol, degrees, name) = planet
                 let angle = degrees * .pi / 180.0
@@ -2200,19 +2209,6 @@ struct AspectVisualizationView: View {
                 .frame(width: 4, height: 4)
         }
         .frame(width: 280, height: 280)
-        
-        if let selected = selectedPlanet {
-            Text("Selected: \(selected)")
-                .font(.caption)
-                .foregroundStyle(.cyan)
-                .padding(.top, 8)
-        } else {
-            Text("Tap planets above to explore their meanings")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.6))
-                .padding(.top, 8)
-        }
-        */
     }
     
     private func interpretationCard(interpretation: InterpretationData, index: Int) -> some View {
