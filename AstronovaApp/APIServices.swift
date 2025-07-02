@@ -1,82 +1,6 @@
 import Foundation
 import CoreLocation
 
-// MARK: - Simple Response Types for Protocol Conformance
-
-/// Simple horoscope response for protocol conformance
-struct ProtocolHoroscopeResponse: Codable {
-    let sign: String
-    let period: String
-    let content: String
-    let date: Date
-    
-    init(sign: String, period: String, content: String, date: Date) {
-        self.sign = sign
-        self.period = period
-        self.content = content
-        self.date = date
-    }
-}
-
-/// Simple chat message for protocol conformance
-struct ProtocolChatMessage: Codable {
-    let role: String // "user" or "assistant"
-    let content: String
-    let timestamp: Date?
-    
-    init(role: String, content: String, timestamp: Date? = nil) {
-        self.role = role
-        self.content = content
-        self.timestamp = timestamp
-    }
-}
-
-/// Simple chat response for protocol conformance
-struct ProtocolChatResponse: Codable {
-    let response: String
-    let conversation_id: String
-    
-    init(response: String, conversation_id: String) {
-        self.response = response
-        self.conversation_id = conversation_id
-    }
-}
-
-// MARK: - API Services Protocol
-
-protocol APIServicesProtocol: ObservableObject {
-    func healthCheck() async throws -> HealthResponse
-    func generateChart(birthData: BirthData, systems: [String]) async throws -> ChartResponse
-    func generateChart(from profile: UserProfile) async throws -> ChartResponse
-    func getChartAspects(birthData: BirthData) async throws -> Data
-    func getHoroscope(sign: String, period: String) async throws -> ProtocolHoroscopeResponse
-    func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse
-    func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse
-    func searchLocations(query: String) async throws -> [LocationResult]
-    func getCurrentTransits() async throws -> TransitsResponse
-    func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse
-}
-
-// MARK: - Store Manager Protocol
-
-protocol StoreManagerProtocol: ObservableObject {
-    var hasProSubscription: Bool { get }
-    var products: [String: String] { get }
-    
-    func loadProducts()
-    func purchaseProduct(productId: String) async -> Bool
-}
-
-// MARK: - Location Service Protocol
-
-protocol LocationServiceProtocol: ObservableObject {
-    var currentLocation: CLLocation? { get }
-    var authorizationStatus: CLAuthorizationStatus { get }
-    
-    func requestLocationPermission()
-    func getCurrentLocation() async throws -> CLLocation
-}
-
 /// Main API service class that handles all backend communication
 class APIServices: ObservableObject, APIServicesProtocol {
     static let shared = APIServices()
@@ -204,7 +128,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     // MARK: - Protocol Required Methods
     
     /// Get horoscope for protocol conformance
-    func getHoroscope(sign: String, period: String) async throws -> ProtocolHoroscopeResponse {
+    func getHoroscope(sign: String, period: String) async throws -> ServiceProtocols.HoroscopeResponse {
         let horoscope: AstronovaApp.HoroscopeResponse
         switch period.lowercased() {
         case "daily":
@@ -218,7 +142,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
         
         // Convert to protocol format
-        return ProtocolHoroscopeResponse(
+        return ServiceProtocols.HoroscopeResponse(
             sign: sign,
             period: period,
             content: horoscope.horoscope,

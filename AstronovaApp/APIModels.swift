@@ -360,7 +360,8 @@ extension BirthData {
     init(from profile: UserProfile) throws {
         guard let birthTime = profile.birthTime,
               let birthPlace = profile.birthPlace,
-              let coordinates = profile.birthCoordinates,
+              let latitude = profile.birthLatitude,
+              let longitude = profile.birthLongitude,
               let timezone = profile.timezone else {
             throw APIError(error: "Incomplete birth data", details: nil, code: "INCOMPLETE_DATA")
         }
@@ -374,8 +375,8 @@ extension BirthData {
         self.name = profile.fullName
         self.date = dateFormatter.string(from: profile.birthDate)
         self.time = timeFormatter.string(from: birthTime)
-        self.latitude = coordinates.latitude
-        self.longitude = coordinates.longitude
+        self.latitude = latitude
+        self.longitude = longitude
         
         // Parse city, state, country from birthPlace
         let components = birthPlace.components(separatedBy: ", ")

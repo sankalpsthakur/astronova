@@ -2,23 +2,6 @@ import SwiftUI
 import UIKit
 import Foundation
 
-// MARK: - Supporting Types
-
-struct DetailedPlanetaryPosition: Codable, Identifiable {
-    let id: String
-    let symbol: String
-    let name: String
-    let sign: String
-    let degree: Double
-    let retrograde: Bool
-    let house: Int?
-    let significance: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case id, symbol, name, sign, degree, retrograde, house, significance
-    }
-}
-
 struct PlanetaryCalculationsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var auth: AuthState
@@ -1265,7 +1248,8 @@ struct PlanetaryCalculationView: View {
         
         let profile = auth.profileManager.profile
         guard let birthTime = profile.birthTime,
-              let _ = profile.birthCoordinates,
+              let _ = profile.birthLatitude,
+              let _ = profile.birthLongitude,
               let _ = profile.timezone,
               let _ = profile.birthPlace else {
             isLoading = false
@@ -1536,11 +1520,11 @@ struct UserCalculationData {
     }
     
     var latitude: Double {
-        profile.birthCoordinates?.latitude ?? 0.0
+        profile.birthLatitude ?? 0.0
     }
     
     var longitude: Double {
-        profile.birthCoordinates?.longitude ?? 0.0
+        profile.birthLongitude ?? 0.0
     }
     
     var timezone: String {

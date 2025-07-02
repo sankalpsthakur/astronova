@@ -160,58 +160,13 @@ struct LoadingView: View {
     private func skeletonView(for type: SkeletonType) -> some View {
         switch type {
         case .horoscope:
-            VStack(spacing: 16) {
-                ForEach(0..<3, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(height: 60)
-                }
-            }
-            .padding()
+            HoroscopeSkeleton()
         case .chart:
-            VStack(spacing: 16) {
-                Circle()
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 2)
-                    .frame(width: 200, height: 200)
-                ForEach(0..<5, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(height: 40)
-                }
-            }
-            .padding()
+            PlanetaryChartSkeleton()
         case .profile:
-            VStack(spacing: 16) {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 80, height: 80)
-                ForEach(0..<4, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(height: 44)
-                }
-            }
-            .padding()
+            ProfileSetupSkeleton()
         case .locationSearch:
-            VStack(spacing: 8) {
-                ForEach(0..<5, id: \.self) { _ in
-                    HStack {
-                        Circle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: 24, height: 24)
-                        VStack(alignment: .leading, spacing: 4) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 150, height: 14)
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 100, height: 10)
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                }
-            }
+            LocationSearchSkeleton()
         }
     }
 }
