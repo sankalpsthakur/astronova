@@ -137,11 +137,16 @@ struct MapKitLocationPicker: View {
             
             // Map view
             GeometryReader { geometry in
-                Map(coordinateRegion: $region, 
+                Map(
+                    coordinateRegion: $region,
                     interactionModes: [.all],
                     showsUserLocation: true,
-                    annotationItems: selectedCoordinate.map { [MapAnnotation(coordinate: $0)] } ?? []) { annotation in
-                    MapMarker(coordinate: annotation.coordinate, tint: .red)
+                    userTrackingMode: nil
+                ) {
+                    if let coordinate = selectedCoordinate {
+                        Marker("Selected Location", coordinate: coordinate)
+                            .tint(.red)
+                    }
                 }
                 .onTapGesture(coordinateSpace: .local) { location in
                     // Convert tap location to coordinate using actual map frame
