@@ -38,8 +38,13 @@ struct MapKitLocationPicker: View {
                         }
                     
                     if isSearching {
-                        ProgressView()
-                            .scaleEffect(0.8)
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("Searching...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 .padding(.horizontal, 16)
@@ -47,8 +52,57 @@ struct MapKitLocationPicker: View {
                 .background(Color(.systemGray6))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
+                // Use Current Location button
+                Button {
+                    requestLocationPermission()
+                } label: {
+                    HStack {
+                        Image(systemName: "location.circle.fill")
+                            .foregroundColor(.blue)
+                        Text("Use Current Location")
+                            .foregroundColor(.blue)
+                        Spacer()
+                        Image(systemName: "arrow.right")
+                            .foregroundColor(.blue)
+                            .font(.caption)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color.blue.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                
                 // Search results
-                if !searchResults.isEmpty && isSearchFocused {
+                if isSearching && isSearchFocused {
+                    // Show skeleton while searching
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            ForEach(0..<5, id: \.self) { _ in
+                                HStack {
+                                    Circle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(width: 24, height: 24)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 150, height: 14)
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 100, height: 10)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 200)
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(radius: 4)
+                } else if !searchResults.isEmpty && isSearchFocused {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(searchResults, id: \.self) { location in
@@ -87,7 +141,7 @@ struct MapKitLocationPicker: View {
                     interactionModes: [.all],
                     showsUserLocation: true,
                     annotationItems: selectedCoordinate.map { [MapAnnotation(coordinate: $0)] } ?? []) { annotation in
-                    MapPin(coordinate: annotation.coordinate, tint: .red)
+                    MapMarker(coordinate: annotation.coordinate, tint: .red)
                 }
                 .onTapGesture(coordinateSpace: .local) { location in
                     // Convert tap location to coordinate using actual map frame
@@ -106,9 +160,6 @@ struct MapKitLocationPicker: View {
         }
         .navigationTitle("Select Location")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            requestLocationPermission()
-        }
     }
     
     private func selectLocation(_ location: LocationResult) {
@@ -209,6 +260,53 @@ struct MapKitLocationPicker: View {
     private func requestLocationPermission() {
         let locationManager = CLLocationManager()
         locationManager.requestWhenInUseAuthorization()
+        
+        // Try to get current location after permission is granted
+        if let currentLocation = locationManager.location {
+            useCurrentLocation(currentLocation)
+        }
+    }
+    
+    private func useCurrentLocation(_ location: CLLocation) {
+        let coordinate = location.coordinate
+        selectedCoordinate = coordinate
+        
+        // Update map region to show current location
+        region.center = coordinate
+        region.span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        
+        // Reverse geocode to get the place name
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location, completionHandler: { placemarks, error in
+            Task { @MainActor in
+                if let placemark = placemarks?.first {
+                    let fullName = [
+                        placemark.name,
+                        placemark.locality,
+                        placemark.administrativeArea,
+                        placemark.country
+                    ].compactMap { $0 }.joined(separator: ", ")
+                    
+                    let locationResult = LocationResult(
+                        fullName: fullName,
+                        coordinate: coordinate,
+                        timezone: TimeZone.current.identifier
+                    )
+                    self.selectedLocation = locationResult
+                    self.searchText = locationResult.fullName
+                } else {
+                    // Fallback if reverse geocoding fails
+                    let fallbackName = "Current Location (\(coordinate.latitude), \(coordinate.longitude))"
+                    let locationResult = LocationResult(
+                        fullName: fallbackName,
+                        coordinate: coordinate,
+                        timezone: TimeZone.current.identifier
+                    )
+                    self.selectedLocation = locationResult
+                    self.searchText = locationResult.fullName
+                }
+            }
+        })
     }
     
     private func approximateTimezoneFromLongitude(_ longitude: Double) -> String {

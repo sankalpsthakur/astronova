@@ -6,6 +6,8 @@ struct TodayTab: View {
     @State private var showingWelcome = false
     @State private var animateWelcome = false
     @State private var planetaryPositions: [PlanetaryPosition] = []
+    @State private var isLoadingHoroscope = false
+    @State private var isLoadingPlanets = false
     @AppStorage("app_launch_count") private var appLaunchCount = 0
     
     var body: some View {
@@ -70,17 +72,21 @@ struct TodayTab: View {
                 Spacer()
             }
             
-            Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
-                .font(.body)
-                .lineSpacing(4)
-            
-            Divider()
-            
-            keyThemesSection
-            
-            Divider()
-            
-            luckyElementsSection
+            if isLoadingHoroscope {
+                HoroscopeSkeleton()
+            } else {
+                Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
+                    .font(.body)
+                    .lineSpacing(4)
+                
+                Divider()
+                
+                keyThemesSection
+                
+                Divider()
+                
+                luckyElementsSection
+            }
         }
         .padding(16)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
@@ -376,13 +382,25 @@ struct DiscoveryCTASection: View {
     
     @MainActor
     private func refreshContent() async {
+        // Show loading states
+        isLoadingHoroscope = true
+        isLoadingPlanets = true
+        
         // Refresh auth state and API connectivity
         await auth.checkAPIConnectivity()
+        
+        // Simulate horoscope loading
+        try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+        isLoadingHoroscope = false
         
         // Refresh user data if available
         if auth.hasFullFunctionality {
             await auth.refreshUserData()
         }
+        
+        // Simulate planetary data loading
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        isLoadingPlanets = false
         
         // Add haptic feedback
         HapticFeedbackService.shared.loadingComplete()

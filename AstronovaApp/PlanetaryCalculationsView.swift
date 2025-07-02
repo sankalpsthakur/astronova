@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import Foundation
 
 // MARK: - Supporting Types
 
@@ -24,7 +26,7 @@ struct PlanetaryCalculationsView: View {
     @State private var animateElements = false
     @State private var showProUpgradeAlert = false
     
-    private let totalSteps = 6
+    private let totalSteps = 5
     private let freeSteps = 2 // Free users see steps 0 and 1
     
     var body: some View {
@@ -47,22 +49,19 @@ struct PlanetaryCalculationsView: View {
                         CoordinateVisualizationView()
                             .tag(1)
                         
-                        // Steps 3-6: Pro Content
+                        // Steps 3-5: Pro Content
                         if auth.state == .signedIn {
                             SiderealTimeAnimationView()
                                 .tag(2)
                             
-                            PlanetaryCalculationView()
+                            CombinedCalculationView()
                                 .environmentObject(auth)
                                 .tag(3)
                             
-                            HouseSystemInteractiveView()
-                                .tag(4)
-                            
                             AspectVisualizationView()
-                                .tag(5)
+                                .tag(4)
                         } else {
-                            // Pro Upsell for steps 3-6
+                            // Pro Upsell for steps 3-5
                             ForEach(2..<totalSteps, id: \.self) { step in
                                 ProUpsellView(stepTitle: stepTitle(for: step))
                                     .tag(step)
@@ -87,7 +86,7 @@ struct PlanetaryCalculationsView: View {
                 
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 4) {
-                        Text("How Your Chart is Calculated")
+                        Text("How It Works")
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(.white)
                         
@@ -150,15 +149,15 @@ struct PlanetaryCalculationsView: View {
     private var headerSection: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("🔮")
+                Text("⭐")
                     .font(.title)
-                Text("Learn the Ancient Art")
+                Text("Behind Your Chart")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.white)
                 Spacer()
             }
             
-            Text("Discover how astrologers have calculated birth charts for thousands of years")
+            Text("From birth data to cosmic insights in 6 interactive steps")
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.8))
                 .multilineTextAlignment(.leading)
@@ -276,12 +275,11 @@ struct PlanetaryCalculationsView: View {
     
     private func stepTitle(for step: Int) -> String {
         switch step {
-        case 0: return "Birth Data Input"
-        case 1: return "Coordinate Transformation"
+        case 0: return "Birth Data"
+        case 1: return "Location"
         case 2: return "Sidereal Time"
-        case 3: return "Planetary Positions"
-        case 4: return "House System"
-        case 5: return "Aspect Calculation"
+        case 3: return "Chart Calculation"
+        case 4: return "Your Chart"
         default: return "Unknown Step"
         }
     }
@@ -297,46 +295,39 @@ struct BirthDataExplanationView: View {
             VStack(spacing: 24) {
                 // Title
                 VStack(spacing: 8) {
-                    Text("1. Your Birth Data")
+                    Text("1. Birth Data")
                         .font(.title.weight(.bold))
                         .foregroundStyle(.white)
                     
-                    Text("The Foundation of Your Chart")
+                    Text("Your Cosmic Coordinates")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 
                 // Interactive Birth Data Example
-                VStack(spacing: 16) {
-                    Text("Every birth chart begins with three essential pieces of information:")
-                        .font(.body)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                    
+                VStack(spacing: 12) {
                     VStack(spacing: 12) {
-                        birthDataRow(icon: "calendar", title: "Date of Birth", value: "March 21, 1990", description: "Determines planetary positions")
-                        birthDataRow(icon: "clock", title: "Time of Birth", value: "2:30 PM", description: "Calculates house cusps & ascendant")
-                        birthDataRow(icon: "location", title: "Place of Birth", value: "New York, NY", description: "Sets geographical coordinates")
+                        birthDataRow(icon: "calendar", title: "Date", value: "Mar 21, 1990", description: "Planetary positions")
+                        birthDataRow(icon: "clock", title: "Time", value: "2:30 PM", description: "House cusps")
+                        birthDataRow(icon: "location", title: "Place", value: "New York, NY", description: "Sky view angle")
                     }
                     .padding()
                     .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 
-                // Why It Matters
-                VStack(spacing: 12) {
-                    Text("Why Precision Matters")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
-                    
-                    Text("A difference of just 4 minutes in birth time can change your rising sign. Your exact coordinates affect house positions, making your reading uniquely yours.")
-                        .font(.body)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(4)
+                // Key Insight - Condensed
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("4 minutes = different rising sign")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.white)
+                    }
                 }
                 .padding()
-                .background(.black.opacity(0.3))
+                .background(.orange.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .padding()
@@ -389,16 +380,16 @@ struct CoordinateVisualizationView: View {
             VStack(spacing: 24) {
                 // Title
                 VStack(spacing: 8) {
-                    Text("2. Earth Coordinates")
+                    Text("2. Location")
                         .font(.title.weight(.bold))
                         .foregroundStyle(.white)
                     
-                    Text("Mapping Your Place in Space")
+                    Text("Your View of the Sky")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 
-                // Globe Visualization
+                // Simplified Globe Visualization
                 ZStack {
                     Circle()
                         .fill(
@@ -406,34 +397,16 @@ struct CoordinateVisualizationView: View {
                                 colors: [.blue.opacity(0.8), .blue.opacity(0.3)],
                                 center: .center,
                                 startRadius: 50,
-                                endRadius: 100
+                                endRadius: 80
                             )
                         )
-                        .frame(width: 200, height: 200)
+                        .frame(width: 160, height: 160)
                         .overlay(
                             Circle()
                                 .stroke(.white.opacity(0.3), lineWidth: 2)
                         )
                         .rotationEffect(.degrees(animateGlobe ? 360 : 0))
-                        .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: animateGlobe)
-                    
-                    // Coordinate Grid
-                    VStack(spacing: 20) {
-                        ForEach(0..<4, id: \.self) { _ in
-                            Rectangle()
-                                .fill(.white.opacity(0.2))
-                                .frame(height: 1)
-                        }
-                    }
-                    .frame(width: 180)
-                    
-                    HStack(spacing: 45) {
-                        ForEach(0..<4, id: \.self) { _ in
-                            Rectangle()
-                                .fill(.white.opacity(0.2))
-                                .frame(width: 1, height: 180)
-                        }
-                    }
+                        .animation(.linear(duration: 15).repeatForever(autoreverses: false), value: animateGlobe)
                     
                     // Your Location Marker
                     Circle()
@@ -446,36 +419,45 @@ struct CoordinateVisualizationView: View {
                                 .opacity(showCoordinates ? 0 : 1)
                                 .animation(.easeOut(duration: 1).repeatForever(), value: showCoordinates)
                         )
-                        .offset(x: 30, y: -20)
+                        .offset(x: 25, y: -15)
                 }
                 
-                // Coordinate Explanation
-                VStack(spacing: 16) {
-                    Text("Your birth location becomes your unique cosmic address:")
-                        .font(.body)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
+                // Coordinate Display - Simplified
+                HStack(spacing: 24) {
+                    VStack(spacing: 4) {
+                        Text("40.7°N")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.cyan)
+                        Text("Latitude")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
                     
-                    VStack(spacing: 8) {
-                        coordinateRow(label: "Latitude", value: "40.7128° N", description: "North-South position")
-                        coordinateRow(label: "Longitude", value: "74.0060° W", description: "East-West position")
+                    VStack(spacing: 4) {
+                        Text("74.0°W")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.cyan)
+                        Text("Longitude")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.7))
                     }
                 }
+                .padding()
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 
-                // Impact Explanation
-                VStack(spacing: 12) {
-                    Text("Why Location Matters")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.white)
-                    
-                    Text("Your exact coordinates determine which planets were visible above the horizon at your birth, setting the foundation for your astrological houses and aspects.")
-                        .font(.body)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(4)
+                // Key Insight - Condensed
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "eye.fill")
+                            .foregroundStyle(.blue)
+                        Text("Sets which planets are visible above horizon")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.white)
+                    }
                 }
                 .padding()
-                .background(.black.opacity(0.3))
+                .background(.blue.opacity(0.2))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .padding()
@@ -512,19 +494,496 @@ struct CoordinateVisualizationView: View {
 }
 
 struct SiderealTimeAnimationView: View {
+    @State private var animateClock = false
+    @State private var showCalculation = false
+    @State private var currentStep = 0
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Text("3. Sidereal Time")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(.white)
+                // Title
+                VStack(spacing: 8) {
+                    Text("3. Sidereal Time")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+                    
+                    Text("Star Time vs. Solar Time")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
                 
-                Text("Coming Soon - Pro Feature")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.7))
+                // Visual Clock Comparison
+                HStack(spacing: 32) {
+                    // Solar Clock
+                    VStack(spacing: 12) {
+                        Text("Solar Day")
+                            .font(.callout.weight(.medium))
+                            .foregroundStyle(.orange)
+                        
+                        clockView(color: .orange, rotation: animateClock ? 360 : 0)
+                        
+                        Text("24h 00m 00s")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.orange)
+                    }
+                    
+                    // Sidereal Clock
+                    VStack(spacing: 12) {
+                        Text("Sidereal Day")
+                            .font(.callout.weight(.medium))
+                            .foregroundStyle(.cyan)
+                        
+                        clockView(color: .cyan, rotation: animateClock ? 366 : 0)
+                        
+                        Text("23h 56m 04s")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.cyan)
+                    }
+                }
+                .padding()
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                
+                // Key Concept
+                VStack(spacing: 12) {
+                    Text("Why Sidereal Time Matters")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    
+                    Text("A sidereal day (23h 56m 04s) is Earth's rotation relative to distant stars. It's 4 minutes shorter than a solar day because Earth orbits the Sun.")
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                }
+                .padding()
+                .background(.black.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                // Calculation Steps
+                if showCalculation {
+                    VStack(spacing: 16) {
+                        Text("Sidereal Time Calculation")
+                            .font(.headline.weight(.semibold))
+                            .foregroundStyle(.cyan)
+                        
+                        calculationStep(
+                            step: "1",
+                            title: "Greenwich Mean Sidereal Time (GMST)",
+                            formula: "GMST = 6.697374558 + 0.06570982441908 × D + 1.00273790935 × T",
+                            explanation: "Where D = days since J2000.0, T = time in hours"
+                        )
+                        
+                        calculationStep(
+                            step: "2",
+                            title: "Local Sidereal Time (LST)",
+                            formula: "LST = GMST + (Longitude ÷ 15)",
+                            explanation: "Add longitude correction for your location"
+                        )
+                        
+                        calculationStep(
+                            step: "3",
+                            title: "House Cusp Calculation",
+                            formula: "Ascendant = arctan(sin(LST) ÷ (cos(ε) × cos(LST)))",
+                            explanation: "LST determines rising sign and house positions"
+                        )
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                
+                // Interactive Examples
+                VStack(spacing: 16) {
+                    Text("Real-World Impact")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    
+                    impactExample(
+                        icon: "sunrise",
+                        title: "Rising Sign",
+                        description: "Determines which sign appears on eastern horizon"
+                    )
+                    
+                    impactExample(
+                        icon: "house",
+                        title: "House Cusps",
+                        description: "Sets the 12 life areas in your birth chart"
+                    )
+                    
+                    impactExample(
+                        icon: "clock.arrow.2.circlepath",
+                        title: "Timing Precision",
+                        description: "4 minutes = different rising sign entirely"
+                    )
+                }
+                
+                // Show Calculation Button
+                Button {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        showCalculation.toggle()
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: showCalculation ? "chevron.up" : "chevron.down")
+                        Text(showCalculation ? "Hide Math" : "Show the Math")
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                }
             }
             .padding()
         }
+        .onAppear {
+            withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
+                animateClock = true
+            }
+        }
+    }
+    
+    private func clockView(color: Color, rotation: Double) -> some View {
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.3), lineWidth: 2)
+                .frame(width: 80, height: 80)
+            
+            // Clock hands
+            Rectangle()
+                .fill(color)
+                .frame(width: 2, height: 25)
+                .offset(y: -12.5)
+                .rotationEffect(.degrees(rotation))
+            
+            Circle()
+                .fill(color)
+                .frame(width: 4, height: 4)
+        }
+    }
+    
+    private func calculationStep(step: String, title: String, formula: String, explanation: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Step \(step)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.cyan)
+                    .clipShape(Capsule())
+                
+                Spacer()
+            }
+            
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+            
+            Text(formula)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.cyan)
+                .padding(8)
+                .background(.black.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+            
+            Text(explanation)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    private func impactExample(icon: String, title: String, description: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(.cyan)
+                .frame(width: 30)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(.white)
+                
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            
+            Spacer()
+        }
+        .padding(12)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct CombinedCalculationView: View {
+    @State private var selectedTab = 0
+    @State private var animateCalculation = false
+    @State private var showDetails = false
+    @State private var userCalculations: UserCalculationData?
+    @State private var isLoading = false
+    @State private var selectedSystem: HouseSystem = .placidus
+    
+    @EnvironmentObject private var auth: AuthState
+    
+    enum HouseSystem: String, CaseIterable {
+        case placidus = "Placidus"
+        case wholeSigns = "Whole Signs"
+        case equal = "Equal House"
+        
+        var description: String {
+            switch self {
+            case .placidus: return "Most popular system"
+            case .wholeSigns: return "Each house = one sign"
+            case .equal: return "All houses exactly 30°"
+            }
+        }
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Title
+                VStack(spacing: 8) {
+                    Text("4. Chart Calculation")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(.white)
+                    
+                    Text("Planets + Houses = Your Chart")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                
+                // Tab Selector
+                HStack(spacing: 0) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 0
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            Text("Planets")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(selectedTab == 0 ? .black : .white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(selectedTab == 0 ? .cyan : .clear)
+                    }
+                    
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedTab = 1
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            Text("Houses")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(selectedTab == 1 ? .black : .white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(selectedTab == 1 ? .cyan : .clear)
+                    }
+                }
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                // Content based on selected tab
+                if selectedTab == 0 {
+                    planetaryContent
+                } else {
+                    houseSystemContent
+                }
+            }
+            .padding()
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1).delay(0.3)) {
+                animateCalculation = true
+            }
+        }
+    }
+    
+    private var planetaryContent: some View {
+        VStack(spacing: 16) {
+            // Quick Steps
+            VStack(spacing: 12) {
+                Text("Planetary Position Calculation")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.cyan)
+                
+                quickStep(number: "1", title: "Get UTC Time", icon: "clock")
+                quickStep(number: "2", title: "Calculate Julian Date", icon: "calendar")
+                quickStep(number: "3", title: "Get Tropical Positions", icon: "globe")
+                quickStep(number: "4", title: "Apply Ayanamsa (-24°)", icon: "arrow.clockwise")
+                quickStep(number: "5", title: "Map to Signs", icon: "star.circle")
+            }
+            
+            // Sample Result
+            VStack(spacing: 12) {
+                Text("Sample Results")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                
+                VStack(spacing: 8) {
+                    planetRow(symbol: "☉", name: "Sun", position: "7° Sagittarius")
+                    planetRow(symbol: "☽", name: "Moon", position: "25° Gemini")
+                    planetRow(symbol: "♂", name: "Mars", position: "27° Capricorn")
+                }
+            }
+            .padding()
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+    
+    private var houseSystemContent: some View {
+        VStack(spacing: 16) {
+            systemSelector
+            housesGrid
+            keyDifferenceNote
+        }
+    }
+    
+    private var systemSelector: some View {
+        HStack(spacing: 12) {
+            ForEach(HouseSystem.allCases, id: \.self) { system in
+                systemSelectorButton(for: system)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func systemSelectorButton(for system: HouseSystem) -> some View {
+        Button {
+            selectedSystem = system
+        } label: {
+            VStack(spacing: 4) {
+                let textColor = selectedSystem == system ? Color.black : Color.white
+                let secondaryTextColor = selectedSystem == system ? Color.black.opacity(0.7) : Color.white.opacity(0.6)
+                
+                Text(system.rawValue)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(textColor)
+                Text(system.description)
+                    .font(.caption2)
+                    .foregroundStyle(secondaryTextColor)
+            }
+            .padding(8)
+            .background {
+                if selectedSystem == system {
+                    Color.cyan
+                } else {
+                    Color.clear.background(.ultraThinMaterial)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+    
+    private var housesGrid: some View {
+        VStack(spacing: 12) {
+            Text("12 Life Areas")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
+                ForEach(1...12, id: \.self) { house in
+                    houseCard(house: house)
+                }
+            }
+        }
+    }
+    
+    private var keyDifferenceNote: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Image(systemName: "info.circle.fill")
+                    .foregroundStyle(.blue)
+                Text("Different systems = different house positions")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding()
+        .background(.blue.opacity(0.2))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    private func quickStep(number: String, title: String, icon: String) -> some View {
+        HStack(spacing: 12) {
+            Text(number)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.black)
+                .frame(width: 20, height: 20)
+                .background(.cyan)
+                .clipShape(Circle())
+            
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundStyle(.cyan)
+                .frame(width: 20)
+            
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(.white)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+    
+    private func planetRow(symbol: String, name: String, position: String) -> some View {
+        HStack(spacing: 12) {
+            Text(symbol)
+                .font(.title2)
+                .frame(width: 30)
+            
+            Text(name)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.white)
+                .frame(width: 60, alignment: .leading)
+            
+            Spacer()
+            
+            Text(position)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.cyan)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+    
+    private func houseCard(house: Int) -> some View {
+        let meanings = [
+            "Self", "Money", "Communication", "Home",
+            "Fun", "Health", "Partners", "Transform",
+            "Travel", "Career", "Friends", "Dreams"
+        ]
+        
+        return VStack(spacing: 4) {
+            Text("\(house)")
+                .font(.callout.weight(.bold))
+                .foregroundStyle(.cyan)
+            
+            Text(meanings[house - 1])
+                .font(.caption2)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+        }
+        .padding(8)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
 
@@ -602,13 +1061,20 @@ struct PlanetaryCalculationView: View {
     
     private var loadingView: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.2)
-                .tint(.cyan)
-            
             Text("Calculating your planetary positions...")
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.7))
+            
+            VStack(spacing: 16) {
+                Circle()
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 2)
+                    .frame(width: 200, height: 200)
+                ForEach(0..<5, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 40)
+                }
+            }
         }
         .padding()
         .background(.ultraThinMaterial)
@@ -1192,18 +1658,316 @@ struct SankalpExample {
 }
 
 struct HouseSystemInteractiveView: View {
+    @State private var selectedSystem: HouseSystem = .placidus
+    @State private var animateHouse = false
+    @State private var showComparison = false
+    
+    enum HouseSystem: String, CaseIterable {
+        case placidus = "Placidus"
+        case wholeSigns = "Whole Signs"
+        case equal = "Equal House"
+        case koch = "Koch"
+        
+        var description: String {
+            switch self {
+            case .placidus:
+                return "Most popular system in Western astrology. Houses vary in size based on latitude."
+            case .wholeSigns:
+                return "Each house = one complete zodiac sign (30°). Oldest system used."
+            case .equal:
+                return "All houses are exactly 30° from the Ascendant. Simple and symmetric."
+            case .koch:
+                return "Similar to Placidus but uses different mathematical approach."
+            }
+        }
+        
+        var formula: String {
+            switch self {
+            case .placidus:
+                return "tan(H) = tan(t) × sin(ε) / sin(φ + δ)"
+            case .wholeSigns:
+                return "House N = Ascendant Sign + (N-1) signs"
+            case .equal:
+                return "House N = Ascendant + (N-1) × 30°"
+            case .koch:
+                return "Based on time divisions of birth latitude"
+            }
+        }
+    }
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Text("5. House System")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(.white)
-                
-                Text("Coming Soon - Pro Feature")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.7))
+                titleSection
+                systemSelectorSection
+                selectedSystemDetails
+                houseMeaningsSection
+                comparisonSection
+                toggleComparisonButton
+                keyInsightSection
             }
             .padding()
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1).delay(0.3)) {
+                animateHouse = true
+            }
+        }
+    }
+    
+    private var titleSection: some View {
+        VStack(spacing: 8) {
+            Text("5. House Systems")
+                .font(.title.weight(.bold))
+                .foregroundStyle(.white)
+            
+            Text("12 Life Areas, Different Methods")
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+        }
+    }
+    
+    private var systemSelectorSection: some View {
+        VStack(spacing: 16) {
+            Text("Choose a House System:")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                ForEach(HouseSystem.allCases, id: \.self) { system in
+                    systemSelectorCard(for: system)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func systemSelectorCard(for system: HouseSystem) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedSystem = system
+            }
+        } label: {
+            VStack(spacing: 8) {
+                let textColor = selectedSystem == system ? Color.black : Color.white
+                let descriptionColor = selectedSystem == system ? Color.black.opacity(0.8) : Color.white.opacity(0.7)
+                
+                Text(system.rawValue)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(textColor)
+                
+                Text(system.description)
+                    .font(.caption)
+                    .foregroundStyle(descriptionColor)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+            }
+            .padding(12)
+            .background {
+                if selectedSystem == system {
+                    Color.cyan
+                } else {
+                    Color.clear.background(.ultraThinMaterial)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+    
+    private var selectedSystemDetails: some View {
+        VStack(spacing: 16) {
+            Text("\(selectedSystem.rawValue) System")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.cyan)
+            
+            Text(selectedSystem.description)
+                .font(.body)
+                .foregroundStyle(.white.opacity(0.9))
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+            
+            VStack(spacing: 8) {
+                Text("Mathematical Formula:")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.8))
+                
+                Text(selectedSystem.formula)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.cyan)
+                    .padding(8)
+                    .background(.black.opacity(0.3))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+    
+    private var houseMeaningsSection: some View {
+        VStack(spacing: 16) {
+            Text("The 12 Houses")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
+                ForEach(1...12, id: \.self) { house in
+                    houseCard(house: house)
+                }
+            }
+        }
+    }
+    
+    private var comparisonSection: some View {
+        Group {
+            if showComparison {
+                VStack(spacing: 16) {
+                    Text("System Comparison")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    
+                    comparisonTable
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+    
+    private var toggleComparisonButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                showComparison.toggle()
+            }
+        } label: {
+            HStack {
+                Image(systemName: showComparison ? "chevron.up" : "chevron.down")
+                Text(showComparison ? "Hide Comparison" : "Compare Systems")
+            }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(.white)
+            .padding()
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+        }
+    }
+    
+    private var keyInsightSection: some View {
+        VStack(spacing: 12) {
+            Text("Why House Systems Differ")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+            
+            Text("Different house systems reflect different approaches to dividing the sky. Your choice affects which planets fall in which life areas, sometimes dramatically.")
+                .font(.body)
+                .foregroundStyle(.white.opacity(0.9))
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+        }
+        .padding()
+        .background(.black.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    private func houseCard(house: Int) -> some View {
+        let meanings = [
+            "Self & Identity", "Money & Values", "Communication", "Home & Family",
+            "Creativity & Fun", "Health & Service", "Partnerships", "Transformation",
+            "Philosophy & Travel", "Career & Status", "Friends & Hopes", "Subconscious"
+        ]
+        
+        return VStack(spacing: 8) {
+            Text("\(house)")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.cyan)
+            
+            Text(meanings[house - 1])
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .padding(12)
+        .background(.white.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .scaleEffect(animateHouse ? 1.0 : 0.9)
+        .opacity(animateHouse ? 1.0 : 0.7)
+        .animation(.easeInOut(duration: 0.5).delay(Double(house) * 0.05), value: animateHouse)
+    }
+    
+    private var comparisonTable: some View {
+        VStack(spacing: 12) {
+            // Header
+            HStack {
+                Text("House")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 50)
+                
+                Text("Placidus")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                
+                Text("Whole Signs")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                
+                Text("Equal")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(8)
+            .background(.cyan.opacity(0.3))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            
+            // Sample comparison data
+            ForEach(1...6, id: \.self) { house in
+                HStack {
+                    Text("\(house)")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .frame(width: 50)
+                    
+                    Text(sampleDegree(for: house, system: .placidus))
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.orange)
+                        .frame(maxWidth: .infinity)
+                    
+                    Text(sampleDegree(for: house, system: .wholeSigns))
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.green)
+                        .frame(maxWidth: .infinity)
+                    
+                    Text(sampleDegree(for: house, system: .equal))
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.blue)
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.vertical, 4)
+                .padding(.horizontal, 8)
+                .background(.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    private func sampleDegree(for house: Int, system: HouseSystem) -> String {
+        // Sample house cusp degrees for demonstration
+        let base = 15.0 * Double(house - 1)
+        switch system {
+        case .placidus:
+            return String(format: "%.1f°", base + Double.random(in: -5...5))
+        case .wholeSigns:
+            return String(format: "%.0f°", base)
+        case .equal:
+            return String(format: "%.1f°", base)
+        case .koch:
+            return String(format: "%.1f°", base + Double.random(in: -3...3))
         }
     }
 }
@@ -1238,26 +2002,25 @@ struct AspectVisualizationView: View {
             VStack(spacing: 24) {
                 // Title
                 VStack(spacing: 8) {
-                    Text("5. Chart Construction & Interpretation")
+                    Text("5. Your Chart")
                         .font(.title.weight(.bold))
                         .foregroundStyle(.white)
                     
-                    Text("Visual Chart & Personal Insights")
+                    Text("From Data to Insights")
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 
                 // Process Overview
-                VStack(spacing: 16) {
-                    Text("A 12-slice wheel displays your cosmic blueprint")
+                VStack(spacing: 12) {
+                    Text("Your Chart Wheel")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.cyan)
                     
-                    Text("Each planet icon is placed at its exact sidereal position. Tap planets to highlight their interpretations below.")
+                    Text("12 houses + planetary positions = your cosmic blueprint")
                         .font(.body)
                         .foregroundStyle(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
-                        .lineSpacing(4)
                 }
                 .padding()
                 .background(.ultraThinMaterial)
@@ -1305,38 +2068,20 @@ struct AspectVisualizationView: View {
                 .background(.black.opacity(0.3))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
-                // Tutorial Cards Section
+                // Summary Cards Section
                 VStack(spacing: 12) {
-                    Text("Complete Tutorial Cards")
+                    Text("Summary: Data → Chart")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.white)
                     
-                    VStack(spacing: 8) {
-                        tutorialCard(
-                            number: "1",
-                            visual: "📅 ▶️ JD",
-                            caption: "We convert your time & place into an astronomical timestamp."
-                        )
-                        tutorialCard(
-                            number: "2", 
-                            visual: "🌌",
-                            caption: "Ephemeris gives actual planet angles at that moment."
-                        )
-                        tutorialCard(
-                            number: "3",
-                            visual: "🔄 24° ➡️",
-                            caption: "Subtract ayanamsa to shift from tropical to sidereal."
-                        )
-                        tutorialCard(
-                            number: "4",
-                            visual: "⭕️",
-                            caption: "Here is your sidereal chart wheel."
-                        )
-                        tutorialCard(
-                            number: "5",
-                            visual: "📖",
-                            caption: "Each placement translates into personal insight."
-                        )
+                    HStack(spacing: 8) {
+                        summaryStep("📅", "Birth Data")
+                        Text("→").foregroundStyle(.white.opacity(0.5))
+                        summaryStep("🌍", "Location")
+                        Text("→").foregroundStyle(.white.opacity(0.5))
+                        summaryStep("⏰", "Sidereal")
+                        Text("→").foregroundStyle(.white.opacity(0.5))
+                        summaryStep("⭐", "Chart")
                     }
                 }
                 .padding()
@@ -1563,6 +2308,17 @@ struct AspectVisualizationView: View {
             
             Spacer()
         }
+    }
+    
+    private func summaryStep(_ emoji: String, _ title: String) -> some View {
+        VStack(spacing: 4) {
+            Text(emoji)
+                .font(.title2)
+            Text(title)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity)
     }
     
     private func learnMoreLink(title: String, subtitle: String) -> some View {

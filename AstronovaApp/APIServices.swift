@@ -584,7 +584,7 @@ extension APIServices {
     
     /// Logout user
     func logout() async throws {
-        try await networkClient.request(
+        _ = try await networkClient.request(
             endpoint: "/api/v1/auth/logout",
             method: HTTPMethod.POST,
             body: nil,

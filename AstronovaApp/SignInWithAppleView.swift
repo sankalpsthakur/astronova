@@ -32,8 +32,7 @@ struct SignInWithAppleView: View {
             // Sign in section
             VStack(spacing: 16) {
                 if isLoading {
-                    ProgressView()
-                        .scaleEffect(1.2)
+                    ProfileSetupSkeleton()
                         .frame(height: 50)
                 } else {
                     SignInWithAppleButton(.signIn) { request in

@@ -188,6 +188,11 @@ class UserProfileManager: ObservableObject {
         // Birth place, coordinates, and timezone are optional and can be added later
     }
     
+    /// Whether profile has minimal data needed for Quick Start functionality (just name and birth date)
+    var hasMinimalProfileData: Bool {
+        return !profile.fullName.isEmpty && profile.birthDate != nil
+    }
+    
     /// Whether profile has all location data needed for advanced astrological calculations
     var hasCompleteLocationData: Bool {
         return profile.birthPlace != nil &&
