@@ -1623,11 +1623,11 @@ struct CustomTabBar: View {
     @Binding var selectedTab: Int
     
     private let tabs = [
-        (title: "Today", icon: "sun.and.horizon.circle.fill", customIcon: nil),
-        (title: "Friends", icon: "", customIcon: "friends"),
-        (title: "Learn", icon: "graduationcap.circle.fill", customIcon: nil),
-        (title: "Nexus", icon: "", customIcon: "nexus"), 
-        (title: "Profile", icon: "", customIcon: "profile")
+        (title: "Discover", icon: "sun.and.horizon.circle.fill", customIcon: nil),
+        (title: "Connect", icon: "", customIcon: "friends"),
+        (title: "Explore", icon: "graduationcap.circle.fill", customIcon: nil),
+        (title: "Ask", icon: "", customIcon: "nexus"), 
+        (title: "Manage", icon: "", customIcon: "profile")
     ]
     
     var body: some View {
@@ -1644,7 +1644,7 @@ struct CustomTabBar: View {
                             if selectedTab == index {
                                 Circle()
                                     .fill(.blue.gradient)
-                                    .frame(width: 28, height: 28)
+                                    .frame(width: 32, height: 32)
                                     .shadow(color: .blue.opacity(0.3), radius: 2, x: 0, y: 1)
                                     .transition(.scale.combined(with: .opacity))
                             }
@@ -1669,7 +1669,12 @@ struct CustomTabBar: View {
                                 }
                             }
                         }
-                        .frame(width: 28, height: 28)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color.clear)
+                        )
+                        .contentShape(Circle())
                         .foregroundStyle(selectedTab == index ? .white : .secondary)
                         .scaleEffect(selectedTab == index ? 1.05 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
@@ -1682,8 +1687,9 @@ struct CustomTabBar: View {
                             .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 4)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 8)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tabs[index].title)
