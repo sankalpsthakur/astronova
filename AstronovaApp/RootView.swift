@@ -7,6 +7,81 @@ import AuthenticationServices
 import CoreLocation
 import MapKit
 
+// MARK: - Profile Setup Components
+
+struct AnimatedCosmicBackground: View {
+    @Binding var animateGradient: Bool
+    
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color(.systemIndigo).opacity(0.8),
+                Color(.systemPurple).opacity(0.6),
+                Color(.systemBlue).opacity(0.4)
+            ],
+            startPoint: animateGradient ? .topLeading : .bottomTrailing,
+            endPoint: animateGradient ? .bottomTrailing : .topLeading
+        )
+        .ignoresSafeArea()
+        .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateGradient)
+    }
+}
+
+struct FloatingStarsView: View {
+    @Binding var animateStars: Bool
+    
+    var body: some View {
+        ForEach(0..<8, id: \.self) { i in
+            Image(systemName: ["star.fill", "sparkles", "star.circle.fill"].randomElement()!)
+                .font(.system(size: CGFloat.random(in: 12...24)))
+                .foregroundStyle(.white.opacity(0.3))
+                .position(
+                    x: CGFloat.random(in: 50...350),
+                    y: CGFloat.random(in: 100...600)
+                )
+                .animation(
+                    .easeInOut(duration: Double.random(in: 2...4))
+                    .repeatForever(autoreverses: true)
+                    .delay(Double(i) * 0.3),
+                    value: animateStars
+                )
+                .offset(y: animateStars ? -20 : 20)
+        }
+    }
+}
+
+struct PersonalizedInsightOverlay: View {
+    @Binding var showingPersonalizedInsight: Bool
+    @Binding var showingConfetti: Bool
+    let fullName: String
+    let personalizedInsight: String
+    let clearProfileSetupProgress: () -> Void
+    let completeProfileSetup: () -> Void
+    
+    var body: some View {
+        Group {
+            if showingPersonalizedInsight {
+                PersonalizedInsightView(
+                    name: fullName,
+                    insight: personalizedInsight,
+                    onContinue: {
+                        clearProfileSetupProgress()
+                        
+                        withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                            showingPersonalizedInsight = false
+                            showingConfetti = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            completeProfileSetup()
+                        }
+                    }
+                )
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+    }
+}
+
 // MARK: - Pricing Models
 
 struct ReportPricing {
@@ -117,36 +192,9 @@ struct SimpleProfileSetupView: View {
     
     var body: some View {
         ZStack {
-            // Animated cosmic background
-            LinearGradient(
-                colors: [
-                    Color(.systemIndigo).opacity(0.8),
-                    Color(.systemPurple).opacity(0.6),
-                    Color(.systemBlue).opacity(0.4)
-                ],
-                startPoint: animateGradient ? .topLeading : .bottomTrailing,
-                endPoint: animateGradient ? .bottomTrailing : .topLeading
-            )
-            .ignoresSafeArea()
-            .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateGradient)
+            AnimatedCosmicBackground(animateGradient: $animateGradient)
             
-            // Floating stars background
-            ForEach(0..<8, id: \.self) { i in
-                Image(systemName: ["star.fill", "sparkles", "star.circle.fill"].randomElement()!)
-                    .font(.system(size: CGFloat.random(in: 12...24)))
-                    .foregroundStyle(.white.opacity(0.3))
-                    .position(
-                        x: CGFloat.random(in: 50...350),
-                        y: CGFloat.random(in: 100...600)
-                    )
-                    .animation(
-                        .easeInOut(duration: 2...4)
-                        .repeatForever(autoreverses: true)
-                        .delay(Double(i) * 0.3),
-                        value: animateStars
-                    )
-                    .offset(y: animateStars ? -20 : 20)
-            }
+            FloatingStarsView(animateStars: $animateStars)
             
             ProfileSetupContentView(
                 currentStep: $currentStep,
@@ -163,43 +211,35 @@ struct SimpleProfileSetupView: View {
                 showPersonalizedInsight: showPersonalizedInsight
             )
         }
-        .overlay(
-            // Personalized insight overlay
-            Group {
-                if showingPersonalizedInsight {
-                    PersonalizedInsightView(
-                        name: fullName,
-                        insight: personalizedInsight,
-                        onContinue: {
-                            // Clear persisted setup data since profile is complete
-                            clearProfileSetupProgress()
-                            
-                            withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
-                                showingPersonalizedInsight = false
-                                showingConfetti = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                auth.completeProfileSetup()
-                            }
-                        }
-                    )
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
+        .overlay(personalizedInsightOverlay)
+        .overlay(confettiOverlay)
+        .onAppear(perform: setupAnimations)
+    }
+    
+    @ViewBuilder
+    private var personalizedInsightOverlay: some View {
+        PersonalizedInsightOverlay(
+            showingPersonalizedInsight: $showingPersonalizedInsight,
+            showingConfetti: $showingConfetti,
+            fullName: fullName,
+            personalizedInsight: personalizedInsight,
+            clearProfileSetupProgress: clearProfileSetupProgress,
+            completeProfileSetup: { auth.completeProfileSetup() }
         )
-        .overlay(
-            ConfettiView(isActive: $showingConfetti)
-                .allowsHitTesting(false)
-        )
-        .onAppear {
-            withAnimation(.easeInOut(duration: 2).delay(0.5)) {
-                animateGradient = true
-                animateStars = true
-            }
-            
-            // Restore any previously saved profile data
-            restoreProfileProgress()
+    }
+    
+    @ViewBuilder
+    private var confettiOverlay: some View {
+        ConfettiView(isActive: $showingConfetti)
+            .allowsHitTesting(false)
+    }
+    
+    private func setupAnimations() {
+        withAnimation(.easeInOut(duration: 2).delay(0.5)) {
+            animateGradient = true
+            animateStars = true
         }
+        restoreProfileProgress()
     }
     
     private var canContinue: Bool {
