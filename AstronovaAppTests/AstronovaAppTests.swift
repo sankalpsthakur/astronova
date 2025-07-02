@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import CoreLocation
 @testable import AstronovaApp
 
 final class AstronovaAppTests: XCTestCase {
@@ -18,115 +19,142 @@ final class AstronovaAppTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    // MARK: - Dependency Injection Tests
-    
-    func testDependencyContainerCreation() throws {
-        let container = DependencyContainer()
-        XCTAssertNotNil(container.networkClient)
-        XCTAssertNotNil(container.apiServices)
-        XCTAssertNotNil(container.storeManager)
-    }
-    
-    func testMockDependencyContainer() throws {
-        let mockContainer = DependencyContainer.mock
-        XCTAssertNotNil(mockContainer.networkClient)
-        XCTAssertNotNil(mockContainer.apiServices)
-        XCTAssertNotNil(mockContainer.storeManager)
-        
-        // Verify it's using mock services
-        XCTAssertTrue(mockContainer.networkClient is MockNetworkClient)
-        XCTAssertTrue(mockContainer.apiServices is MockAPIServices)
-        XCTAssertTrue(mockContainer.storeManager is MockStoreManager)
-    }
-    
-    func testNetworkClientProtocolConformance() throws {
-        let networkClient: NetworkClientProtocol = NetworkClient()
-        XCTAssertNotNil(networkClient)
-    }
-    
-    func testAPIServicesProtocolConformance() throws {
-        let mockNetworkClient = MockNetworkClient()
-        let apiServices: APIServicesProtocol = APIServices(networkClient: mockNetworkClient)
-        XCTAssertNotNil(apiServices)
-    }
-    
-    func testStoreManagerProtocolConformance() throws {
-        let storeManager: StoreManagerProtocol = StoreManager()
-        XCTAssertNotNil(storeManager)
-        XCTAssertFalse(storeManager.hasProSubscription)
-    }
-    
-    // MARK: - ViewModel Tests
-    
-    func testMainViewModelCreation() throws {
-        let mockContainer = DependencyContainer.mock
-        let viewModel = MainViewModel(dependencies: mockContainer)
-        XCTAssertNotNil(viewModel)
-        XCTAssertEqual(viewModel.selectedTab, 0)
-        XCTAssertEqual(viewModel.selectedSection, "overview")
-    }
-    
-    func testChartViewModelCreation() throws {
-        let mockContainer = DependencyContainer.mock
-        let viewModel = ChartViewModel(apiServices: mockContainer.apiServices)
-        XCTAssertNotNil(viewModel)
-        XCTAssertNil(viewModel.currentChart)
-        XCTAssertFalse(viewModel.isGeneratingChart)
-    }
-    
-    func testHoroscopeViewModelCreation() throws {
-        let mockContainer = DependencyContainer.mock
-        let viewModel = HoroscopeViewModel(apiServices: mockContainer.apiServices)
-        XCTAssertNotNil(viewModel)
-        XCTAssertEqual(viewModel.selectedPeriod, "daily")
-        XCTAssertFalse(viewModel.isLoadingHoroscope)
-    }
-    
     // MARK: - Model Tests
     
     func testUserProfileCreation() throws {
         let profile = UserProfile()
         XCTAssertNotNil(profile)
         XCTAssertEqual(profile.fullName, "")
+        XCTAssertNil(profile.birthTime)
+        XCTAssertNil(profile.birthPlace)
+    }
+    
+    func testUserProfileCompletion() throws {
+        let profileManager = UserProfileManager()
+        XCTAssertFalse(profileManager.isProfileComplete)
+        
+        // Add minimal data
+        profileManager.profile.fullName = "Test User"
+        profileManager.profile.birthDate = Date()
+        profileManager.profile.birthTime = Date()
+        
+        XCTAssertTrue(profileManager.isProfileComplete)
+    }
+    
+    func testMinimalProfileData() throws {
+        let profileManager = UserProfileManager()
+        XCTAssertFalse(profileManager.hasMinimalProfileData)
+        
+        // Add just name and birth date
+        profileManager.profile.fullName = "Test User"
+        profileManager.profile.birthDate = Date()
+        
+        XCTAssertTrue(profileManager.hasMinimalProfileData)
     }
     
     func testReportPricing() throws {
         let loveReport = ReportPricing.loveReport
         XCTAssertEqual(loveReport.id, "love_forecast")
         XCTAssertEqual(loveReport.price, "$4.99")
+        XCTAssertEqual(loveReport.title, "Love Forecast")
         
         let pricing = ReportPricing.pricing(for: "love_forecast")
         XCTAssertNotNil(pricing)
         XCTAssertEqual(pricing?.title, "Love Forecast")
     }
     
-    // MARK: - Mock Service Tests
-    
-    func testMockNetworkClientHealthCheck() async throws {
-        let mockClient = MockNetworkClient()
-        let response = try await mockClient.healthCheck()
-        XCTAssertEqual(response.status, "healthy")
-        XCTAssertEqual(response.message, "Mock service is running")
+    func testAllReportPricing() throws {
+        let allReports = ReportPricing.allReports
+        XCTAssertEqual(allReports.count, 4)
+        
+        let reportIds = allReports.map { $0.id }
+        XCTAssertTrue(reportIds.contains("love_forecast"))
+        XCTAssertTrue(reportIds.contains("birth_chart"))
+        XCTAssertTrue(reportIds.contains("career_forecast"))
+        XCTAssertTrue(reportIds.contains("year_ahead"))
     }
     
-    func testMockAPIServicesHoroscope() async throws {
-        let mockServices = MockAPIServices()
-        let horoscope = try await mockServices.getHoroscope(sign: "aries", period: "daily")
-        XCTAssertEqual(horoscope.sign, "aries")
-        XCTAssertEqual(horoscope.period, "daily")
-        XCTAssertTrue(horoscope.content.contains("Mock horoscope content"))
+    // MARK: - Auth State Tests
+    
+    func testAuthStateInitialization() throws {
+        let authState = AuthState()
+        XCTAssertNotNil(authState)
+        XCTAssertNotNil(authState.profileManager)
+        XCTAssertFalse(authState.isAPIConnected)
+        XCTAssertFalse(authState.isAnonymousUser)
+        XCTAssertFalse(authState.isQuickStartUser)
     }
     
-    func testMockStoreManagerPurchase() async throws {
-        let mockStore = MockStoreManager()
-        let success = await mockStore.purchaseProduct(productId: "astronova_pro_monthly")
-        XCTAssertTrue(success)
-        XCTAssertTrue(mockStore.hasProSubscription)
+    func testFeatureAvailabilityAnonymous() throws {
+        let authState = AuthState()
+        authState.isAnonymousUser = true
+        authState.isAPIConnected = true
+        
+        let features = authState.featureAvailability
+        XCTAssertTrue(features.canGenerateCharts)
+        XCTAssertFalse(features.canSaveData)
+        XCTAssertFalse(features.canAccessPremiumFeatures)
+        XCTAssertEqual(features.maxChartsPerDay, 3)
     }
-
-    func testDependencyInjectionPerformance() throws {
+    
+    func testFeatureAvailabilityQuickStart() throws {
+        let authState = AuthState()
+        authState.isQuickStartUser = true
+        authState.isAPIConnected = true
+        
+        let features = authState.featureAvailability
+        XCTAssertTrue(features.canGenerateCharts)
+        XCTAssertFalse(features.canSaveData)
+        XCTAssertFalse(features.canAccessPremiumFeatures)
+        XCTAssertEqual(features.maxChartsPerDay, 5)
+    }
+    
+    // MARK: - Location Tests
+    
+    func testLocationResultCreation() throws {
+        let coordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+        let location = LocationResult(
+            fullName: "Test City, Test State, Test Country",
+            coordinate: coordinate,
+            timezone: "America/New_York"
+        )
+        
+        XCTAssertEqual(location.name, "Test City")
+        XCTAssertEqual(location.latitude, 40.7128, accuracy: 0.001)
+        XCTAssertEqual(location.longitude, -74.0060, accuracy: 0.001)
+        XCTAssertEqual(location.country, "Test Country")
+        XCTAssertEqual(location.timezone, "America/New_York")
+        XCTAssertEqual(location.fullName, "Test City, Test State, Test Country")
+    }
+    
+    // MARK: - Skeleton View Tests
+    
+    func testSkeletonViewCreation() throws {
+        let skeletonView = SkeletonView()
+        XCTAssertNotNil(skeletonView)
+    }
+    
+    func testSkeletonTextCreation() throws {
+        let skeletonText = SkeletonText(lines: 3, lineHeight: 16, spacing: 8)
+        XCTAssertNotNil(skeletonText)
+    }
+    
+    // MARK: - Performance Tests
+    
+    func testProfileManagerPerformance() throws {
         self.measure {
-            let _ = DependencyContainer()
+            let profileManager = UserProfileManager()
+            profileManager.profile.fullName = "Performance Test User"
+            profileManager.profile.birthDate = Date()
+            profileManager.profile.birthTime = Date()
+            _ = profileManager.isProfileComplete
+        }
+    }
+    
+    func testAuthStatePerformance() throws {
+        self.measure {
+            let authState = AuthState()
+            _ = authState.featureAvailability
         }
     }
 }

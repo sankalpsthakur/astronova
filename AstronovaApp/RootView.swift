@@ -7,6 +7,81 @@ import AuthenticationServices
 import CoreLocation
 import MapKit
 
+// MARK: - Profile Setup Components
+
+struct AnimatedCosmicBackground: View {
+    @Binding var animateGradient: Bool
+    
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color(.systemIndigo).opacity(0.8),
+                Color(.systemPurple).opacity(0.6),
+                Color(.systemBlue).opacity(0.4)
+            ],
+            startPoint: animateGradient ? .topLeading : .bottomTrailing,
+            endPoint: animateGradient ? .bottomTrailing : .topLeading
+        )
+        .ignoresSafeArea()
+        .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateGradient)
+    }
+}
+
+struct FloatingStarsView: View {
+    @Binding var animateStars: Bool
+    
+    var body: some View {
+        ForEach(0..<8, id: \.self) { i in
+            Image(systemName: ["star.fill", "sparkles", "star.circle.fill"].randomElement()!)
+                .font(.system(size: CGFloat.random(in: 12...24)))
+                .foregroundStyle(.white.opacity(0.3))
+                .position(
+                    x: CGFloat.random(in: 50...350),
+                    y: CGFloat.random(in: 100...600)
+                )
+                .animation(
+                    .easeInOut(duration: Double.random(in: 2...4))
+                    .repeatForever(autoreverses: true)
+                    .delay(Double(i) * 0.3),
+                    value: animateStars
+                )
+                .offset(y: animateStars ? -20 : 20)
+        }
+    }
+}
+
+struct PersonalizedInsightOverlay: View {
+    @Binding var showingPersonalizedInsight: Bool
+    @Binding var showingConfetti: Bool
+    let fullName: String
+    let personalizedInsight: String
+    let clearProfileSetupProgress: () -> Void
+    let completeProfileSetup: () -> Void
+    
+    var body: some View {
+        Group {
+            if showingPersonalizedInsight {
+                PersonalizedInsightView(
+                    name: fullName,
+                    insight: personalizedInsight,
+                    onContinue: {
+                        clearProfileSetupProgress()
+                        
+                        withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                            showingPersonalizedInsight = false
+                            showingConfetti = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            completeProfileSetup()
+                        }
+                    }
+                )
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+    }
+}
+
 // MARK: - Pricing Models
 
 struct ReportPricing {
@@ -55,7 +130,6 @@ struct ReportPricing {
     }
 }
 
-
 // MARK: - Notification.Name Helpers
 
 
@@ -82,11 +156,11 @@ struct RootView: View {
 /// Beautiful, delightful onboarding with instant value and smooth animations
 struct SimpleProfileSetupView: View {
     @EnvironmentObject private var auth: AuthState
-    @State private var currentStep = 0
-    @State private var fullName = ""
-    @State private var birthDate = Date()
-    @State private var birthTime = Date()
-    @State private var birthPlace = ""
+    @AppStorage("profile_setup_step") private var currentStep = 0
+    @AppStorage("profile_setup_name") private var fullName = ""
+    @AppStorage("profile_setup_birth_date") private var birthDateTimestamp: Double = Date().timeIntervalSince1970
+    @AppStorage("profile_setup_birth_time") private var birthTimeTimestamp: Double = Date().timeIntervalSince1970
+    @AppStorage("profile_setup_birth_place") private var birthPlace = ""
     @State private var showingPersonalizedInsight = false
     @State private var showingConfetti = false
     @State private var personalizedInsight = ""
@@ -94,6 +168,21 @@ struct SimpleProfileSetupView: View {
     @State private var animateGradient = false
     @State private var saveError: String?
     @State private var showingSaveError = false
+    
+    // Computed properties for date binding
+    private var birthDate: Binding<Date> {
+        Binding(
+            get: { Date(timeIntervalSince1970: birthDateTimestamp) },
+            set: { birthDateTimestamp = $0.timeIntervalSince1970 }
+        )
+    }
+    
+    private var birthTime: Binding<Date> {
+        Binding(
+            get: { Date(timeIntervalSince1970: birthTimeTimestamp) },
+            set: { birthTimeTimestamp = $0.timeIntervalSince1970 }
+        )
+    }
     
     private let totalSteps = 5
     
@@ -103,189 +192,61 @@ struct SimpleProfileSetupView: View {
     
     var body: some View {
         ZStack {
-            // Animated cosmic background
-            LinearGradient(
-                colors: [
-                    Color(.systemIndigo).opacity(0.8),
-                    Color(.systemPurple).opacity(0.6),
-                    Color(.systemBlue).opacity(0.4)
-                ],
-                startPoint: animateGradient ? .topLeading : .bottomTrailing,
-                endPoint: animateGradient ? .bottomTrailing : .topLeading
+            AnimatedCosmicBackground(animateGradient: $animateGradient)
+            
+            FloatingStarsView(animateStars: $animateStars)
+            
+            ProfileSetupContentView(
+                currentStep: $currentStep,
+                fullName: $fullName,
+                birthDate: birthDate,
+                birthTime: birthTime,
+                birthPlace: $birthPlace,
+                showingPersonalizedInsight: $showingPersonalizedInsight,
+                personalizedInsight: $personalizedInsight,
+                handleQuickStart: handleQuickStart,
+                handleContinue: handleContinue,
+                canContinue: canContinue,
+                totalSteps: totalSteps,
+                showPersonalizedInsight: showPersonalizedInsight
             )
-            .ignoresSafeArea()
-            .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateGradient)
-            
-            // Floating stars background
-            ForEach(0..<8, id: \.self) { i in
-                Image(systemName: ["star.fill", "sparkles", "star.circle.fill"].randomElement()!)
-                    .font(.system(size: CGFloat.random(in: 12...24)))
-                    .foregroundStyle(.white.opacity(0.3))
-                    .position(
-                        x: CGFloat.random(in: 50...350),
-                        y: CGFloat.random(in: 100...600)
-                    )
-                    .animation(
-                        .easeInOut(duration: Double.random(in: 2...4))
-                        .repeatForever(autoreverses: true)
-                        .delay(Double(i) * 0.3),
-                        value: animateStars
-                    )
-                    .offset(y: animateStars ? -20 : 20)
-            }
-            
-            VStack(spacing: 0) {
-                if !showingPersonalizedInsight {
-                    // Elegant progress indicator
-                    VStack(spacing: 12) {
-                        HStack {
-                            Text("✨ Creating Your Cosmic Profile")
-                                .font(.title3.weight(.medium))
-                                .foregroundStyle(.white)
-                            Spacer()
-                        }
-                        
-                        HStack(spacing: 8) {
-                            ForEach(0..<totalSteps, id: \.self) { step in
-                                Circle()
-                                    .fill(step <= currentStep ? .white : .white.opacity(0.3))
-                                    .frame(width: 8, height: 8)
-                                    .scaleEffect(step == currentStep ? 1.5 : 1.0)
-                                    .animation(.spring(response: 0.5, dampingFraction: 0.6), value: currentStep)
-                            }
-                            Spacer()
-                            Text("\(currentStep + 1) / \(totalSteps)")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
-                }
-                
-                // Content area with beautiful card design
-                TabView(selection: $currentStep) {
-                    // Step 1: Welcome with value preview
-                    EnhancedWelcomeStepView()
-                        .tag(0)
-                    
-                    // Step 2: Name input with personality hint
-                    EnhancedNameStepView(fullName: $fullName)
-                        .tag(1)
-                    
-                    // Step 3: Birth date with instant insight
-                    EnhancedBirthDateStepView(birthDate: $birthDate)
-                        .tag(2)
-                    
-                    // Step 4: Birth time input
-                    EnhancedBirthTimeStepView(birthTime: $birthTime)
-                        .tag(3)
-                    
-                    // Step 5: Birth place input with completion
-                    EnhancedBirthPlaceStepView(
-                        birthPlace: $birthPlace,
-                        onComplete: { insight in
-                            personalizedInsight = insight
-                            showPersonalizedInsight()
-                        }
-                    )
-                    .tag(4)
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: currentStep)
-                
-                if !showingPersonalizedInsight {
-                    // Beautiful action button
-                    VStack(spacing: 16) {
-                        Button {
-                            handleContinue()
-                        } label: {
-                            HStack {
-                                if currentStep == totalSteps - 1 {
-                                    Image(systemName: "star.circle.fill")
-                                        .font(.title3.weight(.semibold))
-                                    Text("Create My Profile")
-                                        .font(.title3.weight(.semibold))
-                                } else {
-                                    let buttonText = currentStep == 0 ? "Begin Journey" : 
-                                                    currentStep == 4 ? (birthPlace.isEmpty ? "Skip for Now" : "Continue") : 
-                                                    "Continue"
-                                    Text(buttonText)
-                                        .font(.title3.weight(.semibold))
-                                    Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "forward.end" : "arrow.right")
-                                        .font(.title3.weight(.semibold))
-                                }
-                            }
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(
-                                LinearGradient(
-                                    colors: [.orange, .pink, .purple],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 28))
-                            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
-                        }
-                        .disabled(!canContinue)
-                        .scaleEffect(canContinue ? 1.0 : 0.95)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: canContinue)
-                        
-                        if currentStep > 0 {
-                            Button("Back") {
-                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                    currentStep = max(0, currentStep - 1)
-                                }
-                            }
-                            .font(.callout)
-                            .foregroundStyle(.white.opacity(0.7))
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 34)
-                }
-            }
         }
-        .overlay(
-            // Personalized insight overlay
-            Group {
-                if showingPersonalizedInsight {
-                    PersonalizedInsightView(
-                        name: fullName,
-                        insight: personalizedInsight,
-                        onContinue: {
-                            withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
-                                showingPersonalizedInsight = false
-                                showingConfetti = true
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                auth.completeProfileSetup()
-                            }
-                        }
-                    )
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
+        .overlay(personalizedInsightOverlay)
+        .overlay(confettiOverlay)
+        .onAppear(perform: setupAnimations)
+    }
+    
+    @ViewBuilder
+    private var personalizedInsightOverlay: some View {
+        PersonalizedInsightOverlay(
+            showingPersonalizedInsight: $showingPersonalizedInsight,
+            showingConfetti: $showingConfetti,
+            fullName: fullName,
+            personalizedInsight: personalizedInsight,
+            clearProfileSetupProgress: clearProfileSetupProgress,
+            completeProfileSetup: { auth.completeProfileSetup() }
         )
-        .overlay(
-            ConfettiView(isActive: $showingConfetti)
-                .allowsHitTesting(false)
-        )
-        .onAppear {
-            withAnimation(.easeInOut(duration: 2).delay(0.5)) {
-                animateGradient = true
-                animateStars = true
-            }
+    }
+    
+    @ViewBuilder
+    private var confettiOverlay: some View {
+        ConfettiView(isActive: $showingConfetti)
+            .allowsHitTesting(false)
+    }
+    
+    private func setupAnimations() {
+        withAnimation(.easeInOut(duration: 2).delay(0.5)) {
+            animateGradient = true
+            animateStars = true
         }
+        restoreProfileProgress()
     }
     
     private var canContinue: Bool {
         switch currentStep {
         case 0: return true
         case 1: return isValidName(fullName)
-        case 2: return isValidBirthDate(birthDate)
+        case 2: return isValidBirthDate(birthDate.wrappedValue)
         case 3: return true // Birth time is optional but always valid
         case 4: return true // Birth place is optional - can skip or provide
         default: return false
@@ -324,6 +285,32 @@ struct SimpleProfileSetupView: View {
                auth.profileManager.profile.timezone != nil
     }
     
+    private func handleQuickStart() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        
+        // Save minimal profile data (name and birth date)
+        auth.profileManager.profile.fullName = fullName
+        auth.profileManager.profile.birthDate = birthDate.wrappedValue
+        
+        // Mark as quick start user
+        auth.startQuickStart()
+        
+        // Try to save the profile
+        do {
+            try auth.profileManager.saveProfile()
+        } catch {
+            print("Failed to save quick start profile: \(error)")
+        }
+        
+        // Clear persisted setup data since we're done
+        clearProfileSetupProgress()
+        
+        // Generate instant insight with just birth date
+        personalizedInsight = generateQuickStartInsight()
+        showPersonalizedInsight()
+    }
+    
     private func handleContinue() {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
@@ -341,8 +328,8 @@ struct SimpleProfileSetupView: View {
     private func generatePersonalizedInsight() {
         // Save the profile data with error handling
         auth.profileManager.profile.fullName = fullName
-        auth.profileManager.profile.birthDate = birthDate
-        auth.profileManager.profile.birthTime = birthTime
+        auth.profileManager.profile.birthDate = birthDate.wrappedValue
+        auth.profileManager.profile.birthTime = birthTime.wrappedValue
         auth.profileManager.profile.birthPlace = birthPlace
         
         // For birth place, search for coordinates and timezone only if provided
@@ -397,7 +384,7 @@ struct SimpleProfileSetupView: View {
             let insight = """
             Welcome to your cosmic journey, \(fullName)! 
             
-            Born on \(formatDate(birthDate)) at \(formatTime(birthTime))\(locationText), the stars reveal fascinating insights about your celestial blueprint.
+            Born on \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue))\(locationText), the stars reveal fascinating insights about your celestial blueprint.
             
             Your Sun in \(sunSign) illuminates your core identity, while your Moon in \(moonSign) reflects your emotional nature. This unique combination creates a personality that is both dynamic and deeply intuitive.
             
@@ -417,15 +404,47 @@ struct SimpleProfileSetupView: View {
         let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
         
         let fallbackInsights = [
-            "Your birth on \(formatDate(birthDate)) at \(formatTime(birthTime))\(locationText) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
-            "Born under the influence of \(formatDate(birthDate))\(locationText), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
-            "The celestial patterns on \(formatDate(birthDate)) at \(formatTime(birthTime)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery."
+            "Your birth on \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue))\(locationText) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
+            "Born under the influence of \(formatDate(birthDate.wrappedValue))\(locationText), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
+            "The celestial patterns on \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery."
         ]
         
         await MainActor.run {
             personalizedInsight = fallbackInsights.randomElement() ?? fallbackInsights[0]
             showPersonalizedInsight()
         }
+    }
+    
+    private func clearProfileSetupProgress() {
+        currentStep = 0
+        fullName = ""
+        birthDateTimestamp = Date().timeIntervalSince1970
+        birthTimeTimestamp = Date().timeIntervalSince1970
+        birthPlace = ""
+    }
+    
+    private func restoreProfileProgress() {
+        // If we have saved profile data, populate the profile manager
+        if !fullName.isEmpty || currentStep > 0 {
+            auth.profileManager.profile.fullName = fullName
+            auth.profileManager.profile.birthDate = birthDate.wrappedValue
+            auth.profileManager.profile.birthTime = birthTime.wrappedValue
+            auth.profileManager.profile.birthPlace = birthPlace
+        }
+    }
+    
+    private func generateQuickStartInsight() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .long
+        let birthDateString = dateFormatter.string(from: birthDate.wrappedValue)
+        
+        let quickStartInsights = [
+            "Born on \(birthDateString), you're ready to explore the cosmos! Your sun sign reveals natural talents waiting to be discovered. Let's begin your astrological journey!",
+            "Welcome to AstroNova! Your birth date of \(birthDateString) holds the key to understanding your cosmic blueprint. Ready to unlock your potential?",
+            "The universe has been waiting for this moment! Born on \(birthDateString), you carry unique celestial gifts. Let's explore what the stars have in store for you."
+        ]
+        
+        return quickStartInsights.randomElement() ?? quickStartInsights[0]
     }
     
     private func showPersonalizedInsight() {
@@ -655,6 +674,7 @@ struct EnhancedBirthDateStepView: View {
     @Binding var birthDate: Date
     @State private var animateIcon = false
     @State private var validationError: String?
+    let onQuickStart: (() -> Void)?
     
     var body: some View {
         VStack(spacing: 0) {
@@ -739,6 +759,52 @@ struct EnhancedBirthDateStepView: View {
                                     .fill(.white.opacity(0.15))
                             )
                     }
+                }
+                
+                // Quick Start option
+                if validationError == nil {
+                    VStack(spacing: 12) {
+                        Divider()
+                            .background(.white.opacity(0.3))
+                            .padding(.horizontal, 24)
+                        
+                        Button {
+                            onQuickStart?()
+                        } label: {
+                            HStack {
+                                Image(systemName: "bolt.circle.fill")
+                                    .font(.title3)
+                                Text("Quick Start")
+                                    .font(.title3.weight(.medium))
+                                Spacer()
+                                Text("Skip Details")
+                                    .font(.caption.weight(.medium))
+                                    .opacity(0.7)
+                                Image(systemName: "arrow.right")
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.white.opacity(0.1))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(.white.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .padding(.horizontal, 24)
+                        
+                        Text("Start exploring with just your birth date. You can add birth time and location later for more precise readings.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: validationError == nil)
                 }
             }
             
@@ -1343,6 +1409,7 @@ struct ConfettiPiece {
     var opacity: Double
 }
 
+
 // MARK: - Location Search Support
 
 struct LocationSearchView: View {
@@ -1411,7 +1478,7 @@ struct SimpleTabBarView: View {
                     TabGuideOverlay(
                         step: guideStep,
                         onNext: {
-                            if guideStep < 4 {
+                            if guideStep < 3 {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     guideStep += 1
                                     selectedTab = guideStep
@@ -1520,49 +1587,10 @@ struct NexusTabIcon: View {
     
     var body: some View {
         ZStack {
-            // Cosmic terminal design
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(isSelected ? .primary : .secondary, lineWidth: 1.5)
-                .frame(width: 20, height: 16)
-            
-            // Terminal cursor/cosmic elements
-            VStack(spacing: 1) {
-                HStack(spacing: 1) {
-                    Rectangle()
-                        .fill(isSelected ? .primary : .secondary)
-                        .frame(width: 6, height: 1)
-                    Rectangle()
-                        .fill(isSelected ? .primary : .secondary)
-                        .opacity(isSelected ? 1.0 : 0.5)
-                        .frame(width: 3, height: 1)
-                }
-                HStack(spacing: 1) {
-                    Rectangle()
-                        .fill(isSelected ? .primary : .secondary)
-                        .opacity(isSelected ? 1.0 : 0.7)
-                        .frame(width: 4, height: 1)
-                    Rectangle()
-                        .fill(isSelected ? .primary : .secondary)
-                        .frame(width: 2, height: 1)
-                }
-                HStack(spacing: 1) {
-                    Rectangle()
-                        .fill(isSelected ? .primary : .secondary)
-                        .frame(width: 1, height: 1)
-                    Rectangle()
-                        .fill(isSelected ? .primary : .secondary)
-                        .frame(width: 1, height: 1)
-                        .opacity(isSelected ? 1.0 : 0.3)
-                }
-            }
-            
-            // Cosmic sparkle
-            if isSelected {
-                Circle()
-                    .fill(.primary)
-                    .frame(width: 2, height: 2)
-                    .offset(x: 10, y: -8)
-            }
+            // Simple star/sparkle design representing AI magic
+            Image(systemName: "sparkles")
+                .font(.system(size: 18, weight: .medium))
+            // Don't set foregroundColor here - let it inherit from parent
         }
         .frame(width: 22, height: 22)
     }
@@ -1626,7 +1654,6 @@ struct LearnTab: View {
     var body: some View {
         NavigationStack {
             PlanetaryCalculationsView()
-                .navigationBarHidden(true)
                 .environmentObject(auth.profileManager)
         }
     }
@@ -1636,11 +1663,11 @@ struct CustomTabBar: View {
     @Binding var selectedTab: Int
     
     private let tabs = [
-        (title: "Today", icon: "sun.and.horizon.circle.fill", customIcon: nil),
-        (title: "Friends", icon: "", customIcon: "friends"),
-        (title: "Learn", icon: "graduationcap.circle.fill", customIcon: nil),
-        (title: "Nexus", icon: "", customIcon: "nexus"), 
-        (title: "Profile", icon: "", customIcon: "profile")
+        (title: "Discover", icon: "sun.and.horizon.circle.fill", customIcon: nil),
+        (title: "Connect", icon: "", customIcon: "friends"),
+        (title: "Explore", icon: "graduationcap.circle.fill", customIcon: nil),
+        (title: "Ask", icon: "", customIcon: "nexus"), 
+        (title: "Manage", icon: "", customIcon: "profile")
     ]
     
     var body: some View {
@@ -1657,7 +1684,7 @@ struct CustomTabBar: View {
                             if selectedTab == index {
                                 Circle()
                                     .fill(.blue.gradient)
-                                    .frame(width: 28, height: 28)
+                                    .frame(width: 32, height: 32)
                                     .shadow(color: .blue.opacity(0.3), radius: 2, x: 0, y: 1)
                                     .transition(.scale.combined(with: .opacity))
                             }
@@ -1682,7 +1709,12 @@ struct CustomTabBar: View {
                                 }
                             }
                         }
-                        .frame(width: 28, height: 28)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(Color.clear)
+                        )
+                        .contentShape(Circle())
                         .foregroundStyle(selectedTab == index ? .white : .secondary)
                         .scaleEffect(selectedTab == index ? 1.05 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
@@ -1695,8 +1727,9 @@ struct CustomTabBar: View {
                             .minimumScaleFactor(0.8)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 4)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 8)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tabs[index].title)
@@ -1769,17 +1802,7 @@ struct TodayTab: View {
                     animateWelcome = true
                 }
             }
-            // TODO: Re-enable when PlanetaryDataService is properly integrated
-            /*
-            Task {
-                do {
-                    planetaryPositions = try await PlanetaryDataService.shared.getCurrentPlanetaryPositions()
-                } catch {
-                    print("Failed to load planetary positions: \(error)")
-                }
-            }
-            */
-            planetaryPositions = [] // Temporary fallback
+            planetaryPositions = []
         }
     }
     
@@ -2203,36 +2226,29 @@ struct FriendsTab: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 32) {
-                    // Beautiful header with animated hearts
-                    VStack(spacing: 20) {
+                VStack(spacing: 20) {
+                    // Compact modern header
+                    VStack(spacing: 12) {
                         HStack {
-                            ForEach(0..<3, id: \.self) { i in
-                                Image(systemName: "heart.fill")
-                                    .font(.title2)
-                                    .foregroundStyle(.pink)
-                                    .scaleEffect(animateHearts ? 1.2 : 1.0)
-                                    .animation(
-                                        .easeInOut(duration: 1.5)
-                                        .repeatForever(autoreverses: true)
-                                        .delay(Double(i) * 0.3),
-                                        value: animateHearts
-                                    )
-                            }
+                            Image(systemName: "heart.2.fill")
+                                .font(.title2)
+                                .foregroundStyle(.pink)
+                                .scaleEffect(animateHearts ? 1.1 : 1.0)
+                                .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: animateHearts)
+                            
+                            Text("Compatibility Check")
+                                .font(.title2.weight(.bold))
+                            
+                            Spacer()
                         }
                         
-                        VStack(spacing: 12) {
-                            Text("Compatibility Check")
-                                .font(.system(size: 28, weight: .bold, design: .rounded))
-                            
-                            Text("Discover what the stars say about your connection with friends, family, or that special someone")
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                                .lineSpacing(3)
-                        }
+                        Text("Discover your cosmic connection")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.top, 16)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                     
                     // Quick access from contacts
                     Button {
@@ -2258,9 +2274,9 @@ struct FriendsTab: View {
                                 .font(.title3)
                                 .foregroundStyle(.blue)
                         }
-                        .padding(20)
+                        .padding(16)
                         .background(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: 12)
                                 .fill(.blue.opacity(0.08))
                                 .stroke(.blue.opacity(0.2), lineWidth: 1)
                         )
@@ -2269,7 +2285,7 @@ struct FriendsTab: View {
                     .padding(.horizontal)
                     
                     // Manual input form
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         HStack {
                             Text("Or enter details manually")
                                 .font(.headline)
@@ -2277,7 +2293,7 @@ struct FriendsTab: View {
                         }
                         .padding(.horizontal)
                         
-                        VStack(spacing: 16) {
+                        VStack(spacing: 12) {
                             // Name input with beautiful styling
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Name")
@@ -2286,8 +2302,8 @@ struct FriendsTab: View {
                                 
                                 TextField("Friend, family member, partner...", text: $partnerName)
                                     .font(.body)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 12)
                                     .background(
                                         RoundedRectangle(cornerRadius: 12)
                                             .fill(.gray.opacity(0.08))
@@ -2303,8 +2319,8 @@ struct FriendsTab: View {
                                 
                                 DatePicker("", selection: $partnerBirthDate, in: ...Date(), displayedComponents: .date)
                                     .datePickerStyle(.compact)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 14)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 12)
                                     .background(
                                         RoundedRectangle(cornerRadius: 12)
                                             .fill(.gray.opacity(0.08))
@@ -2326,7 +2342,7 @@ struct FriendsTab: View {
                                 }
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
-                                .frame(height: 52)
+                                .frame(height: 46)
                                 .background(
                                     LinearGradient(
                                         colors: [.pink, .purple, .indigo],
@@ -2346,45 +2362,45 @@ struct FriendsTab: View {
                     
                     // Beautiful results section
                     if showingResults {
-                        VStack(spacing: 20) {
+                        VStack(spacing: 16) {
                             // Compatibility score with animation
-                            VStack(spacing: 16) {
+                            VStack(spacing: 12) {
                                 HStack {
                                     Image(systemName: "heart.circle.fill")
-                                        .font(.title)
+                                        .font(.title2)
                                         .foregroundStyle(.pink)
                                     
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    VStack(alignment: .leading, spacing: 2) {
                                         Text("Compatibility Score")
-                                            .font(.headline)
+                                            .font(.subheadline.weight(.semibold))
                                         Text("Based on cosmic alignment")
-                                            .font(.caption)
+                                            .font(.caption2)
                                             .foregroundStyle(.secondary)
                                     }
                                     
                                     Spacer()
                                     
                                     Text("89%")
-                                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                                        .font(.system(size: 28, weight: .bold, design: .rounded))
                                         .foregroundStyle(.green)
                                 }
-                                .padding(20)
+                                .padding(16)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 16)
+                                    RoundedRectangle(cornerRadius: 12)
                                         .fill(.green.opacity(0.08))
                                         .stroke(.green.opacity(0.2), lineWidth: 1)
                                 )
                                 
-                                Text("Great cosmic connection! You and \(partnerName.isEmpty ? "this person" : partnerName) share harmonious energy patterns that suggest strong compatibility in communication and shared values.")
-                                    .font(.callout)
+                                Text("Great cosmic connection! You and \(partnerName.isEmpty ? "this person" : partnerName) share harmonious energy patterns.")
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
-                                    .lineSpacing(4)
-                                    .padding(.horizontal, 8)
+                                    .lineSpacing(2)
+                                    .padding(.horizontal, 4)
                             }
                             
                             // Compatibility breakdown
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
                                 CompatibilityCard(title: "Emotional", score: 92, color: .purple)
                                 CompatibilityCard(title: "Mental", score: 88, color: .blue)
                                 CompatibilityCard(title: "Physical", score: 85, color: .pink)
@@ -2392,13 +2408,16 @@ struct FriendsTab: View {
                             }
                         }
                         .padding(.horizontal)
-                        .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: showingResults)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .move(edge: .top)),
+                            removal: .scale(scale: 0.9).combined(with: .opacity)
+                        ))
+                        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showingResults)
                     }
                     
                     // Recent matches (simplified)
                     if !sampleMatches.isEmpty {
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Recent Checks")
                                     .font(.headline)
@@ -2410,7 +2429,7 @@ struct FriendsTab: View {
                                 HStack {
                                     Circle()
                                         .fill(.blue.opacity(0.2))
-                                        .frame(width: 40, height: 40)
+                                        .frame(width: 36, height: 36)
                                         .overlay(
                                             Text(String(match.name.prefix(1)))
                                                 .font(.headline.weight(.semibold))
@@ -2466,19 +2485,41 @@ struct CompatibilityCard: View {
     let title: String
     let score: Int
     let color: Color
+    @State private var animateScore = false
+    @State private var displayedScore = 0
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Text(title)
                 .font(.caption.weight(.medium))
-            Text("\(score)%")
+                .foregroundStyle(.secondary)
+            
+            Text("\(displayedScore)%")
                 .font(.title3.weight(.bold))
                 .foregroundStyle(color)
+                .scaleEffect(animateScore ? 1.1 : 1.0)
+                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: animateScore)
         }
         .frame(maxWidth: .infinity)
-        .padding(12)
-        .background(color.opacity(0.1))
-        .cornerRadius(8)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(color.opacity(0.08))
+                .stroke(color.opacity(0.2), lineWidth: 1)
+        )
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.8).delay(0.1)) {
+                displayedScore = score
+                animateScore = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    animateScore = false
+                }
+            }
+        }
     }
 }
 
@@ -2564,24 +2605,12 @@ struct NexusTab: View {
             }
             loadMessageCount()
             checkSubscriptionStatus()
-            // TODO: Re-enable when ContentManagementService is properly integrated
-            /*
-            Task {
-                do {
-                    quickQuestions = try await ContentManagementService.shared.getQuickQuestions()
-                } catch {
-                    print("Failed to load quick questions: \(error)")
-                }
-            }
-            */
         }
         .sheet(isPresented: $showingSubscriptionSheet) {
             SubscriptionSheet()
         }
     }
     
-    // TODO: Re-enable when QuickQuestion is properly integrated
-    // @State private var quickQuestions: [QuickQuestion] = []
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
@@ -2812,7 +2841,8 @@ struct SubscriptionSheet: View {
                 VStack(spacing: 16) {
                     Button {
                         Task {
-                            let success = await StoreManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
+                            // TODO: Fix StoreKitManager import issue
+                            let success = false // await StoreKitManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
                             if success {
                                 await MainActor.run {
                                     dismiss()
@@ -3209,8 +3239,6 @@ struct CosmicInputArea: View {
     @State private var isInputFocused = false
     @FocusState private var textFieldFocused: Bool
     
-    // TODO: Re-enable when QuickQuestion is properly integrated
-    // @State private var quickQuestions: [QuickQuestion] = []
     
     var body: some View {
         VStack(spacing: 0) {
@@ -3451,6 +3479,9 @@ struct ProfileOverviewView: View {
                         Button("Edit Profile") {
                             showingEditSheet = true
                         }
+                        .sheet(isPresented: $showingEditSheet) {
+                            ProfileEditView(profileManager: auth.profileManager)
+                        }
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.blue)
                     }
@@ -3547,7 +3578,7 @@ struct ProfileOverviewView: View {
             .padding(.horizontal, 20)
         }
         .sheet(isPresented: $showingEditSheet) {
-            ProfileEditView()
+            ProfileEditView(profileManager: auth.profileManager)
                 .environmentObject(auth)
         }
     }
@@ -3626,9 +3657,14 @@ struct NavigationRowView: View {
 // MARK: - Profile Edit View
 
 struct ProfileEditView: View {
-    @EnvironmentObject private var auth: AuthState
+    @ObservedObject var profileManager: UserProfileManager
     @State private var isEditing = false
-    @State private var editedProfile: UserProfile = UserProfile()
+    @State private var editedProfile: UserProfile
+    
+    init(profileManager: UserProfileManager) {
+        self.profileManager = profileManager
+        _editedProfile = State(initialValue: profileManager.profile)
+    }
     
     var body: some View {
         ScrollView {
@@ -3645,16 +3681,16 @@ struct ProfileEditView: View {
                             ))
                             .frame(width: 120, height: 120)
                         
-                        Text(auth.profileManager.profile.fullName.prefix(2).uppercased())
+                        Text(profileManager.profile.fullName.prefix(2).uppercased())
                             .font(.system(size: 40, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     
                     VStack(spacing: 4) {
-                        Text(auth.profileManager.profile.fullName.isEmpty ? "Your Name" : auth.profileManager.profile.fullName)
+                        Text(profileManager.profile.fullName.isEmpty ? "Your Name" : profileManager.profile.fullName)
                             .font(.title2.weight(.semibold))
                         
-                        if let sunSign = auth.profileManager.profile.sunSign {
+                        if let sunSign = profileManager.profile.sunSign {
                             Text(sunSign)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
@@ -3671,9 +3707,9 @@ struct ProfileEditView: View {
                         Spacer()
                         Button(isEditing ? "Save" : "Edit") {
                             if isEditing {
-                                auth.profileManager.updateProfile(editedProfile)
+                                profileManager.updateProfile(editedProfile)
                             } else {
-                                editedProfile = auth.profileManager.profile
+                                editedProfile = profileManager.profile
                             }
                             isEditing.toggle()
                         }
@@ -3764,17 +3800,17 @@ struct ProfileEditView: View {
                         VStack(spacing: 12) {
                             ProfileInfoRow(
                                 title: "Birth Date",
-                                value: formatDate(auth.profileManager.profile.birthDate)
+                                value: formatDate(profileManager.profile.birthDate)
                             )
                             
                             ProfileInfoRow(
                                 title: "Birth Time",
-                                value: auth.profileManager.profile.birthTime.map(formatTime) ?? "Not set"
+                                value: profileManager.profile.birthTime.map(formatTime) ?? "Not set"
                             )
                             
                             ProfileInfoRow(
                                 title: "Birth Place",
-                                value: auth.profileManager.profile.birthPlace ?? "Not set"
+                                value: profileManager.profile.birthPlace ?? "Not set"
                             )
                         }
                         .padding(.horizontal, 20)
@@ -3804,17 +3840,17 @@ struct ProfileEditView: View {
                     VStack(spacing: 12) {
                         ProfileInfoRow(
                             title: "Sun Sign",
-                            value: auth.profileManager.profile.sunSign ?? "Calculate from birth info"
+                            value: profileManager.profile.sunSign ?? "Calculate from birth info"
                         )
                         
                         ProfileInfoRow(
                             title: "Moon Sign",
-                            value: auth.profileManager.profile.moonSign ?? "Requires birth time & place"
+                            value: profileManager.profile.moonSign ?? "Requires birth time & place"
                         )
                         
                         ProfileInfoRow(
                             title: "Rising Sign",
-                            value: auth.profileManager.profile.risingSign ?? "Requires birth time & place"
+                            value: profileManager.profile.risingSign ?? "Requires birth time & place"
                         )
                     }
                     .padding(.horizontal, 20)
@@ -3832,9 +3868,6 @@ struct ProfileEditView: View {
                 Spacer(minLength: 100)
             }
             .padding(.horizontal, 20)
-        }
-        .onAppear {
-            editedProfile = auth.profileManager.profile
         }
     }
     
@@ -4049,7 +4082,7 @@ struct ProfileSettingsRow: View {
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showingEditProfile) {
-            ProfileEditView()
+            ProfileEditView(profileManager: auth.profileManager)
                 .environmentObject(auth)
         }
     }
@@ -5005,7 +5038,8 @@ struct ReportGenerationSheet: View {
     private func purchaseIndividualReport() {
         isGenerating = true
         Task {
-            let success = await StoreManager.shared.purchaseProduct(productId: reportType)
+            // TODO: Fix StoreKitManager import issue
+            let success = false // await StoreKitManager.shared.purchaseProduct(productId: reportType)
             await MainActor.run {
                 if success {
                     onGenerate(reportType)
@@ -5967,6 +6001,10 @@ struct TabGuideOverlay: View {
     let onSkip: () -> Void
     @State private var animateContent = false
     
+    private var safeStep: Int {
+        min(max(0, step), 3)
+    }
+    
     private let guides = [
         TabGuideContent(
             title: "Welcome to Today",
@@ -5996,7 +6034,6 @@ struct TabGuideOverlay: View {
     
     var body: some View {
         ZStack {
-            // Semi-transparent overlay
             Rectangle()
                 .fill(.black.opacity(0.4))
                 .ignoresSafeArea()
@@ -6004,22 +6041,20 @@ struct TabGuideOverlay: View {
             VStack {
                 Spacer()
                 
-                // Guide content card
                 VStack(spacing: 24) {
-                    // Icon and title
                     VStack(spacing: 16) {
-                        Image(systemName: guides[step].icon)
+                        Image(systemName: guides[safeStep].icon)
                             .font(.system(size: 50))
-                            .foregroundStyle(guides[step].color)
+                            .foregroundStyle(guides[safeStep].color)
                             .scaleEffect(animateContent ? 1.1 : 1.0)
                             .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true), value: animateContent)
                         
                         VStack(spacing: 8) {
-                            Text(guides[step].title)
+                            Text(guides[safeStep].title)
                                 .font(.title2.weight(.bold))
                                 .foregroundStyle(.primary)
                             
-                            Text(guides[step].description)
+                            Text(guides[safeStep].description)
                                 .font(.callout)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
@@ -6027,22 +6062,20 @@ struct TabGuideOverlay: View {
                         }
                     }
                     
-                    // Step indicator
                     HStack(spacing: 8) {
                         ForEach(0..<4, id: \.self) { index in
                             Circle()
-                                .fill(index <= step ? guides[step].color : .gray.opacity(0.3))
+                                .fill(index <= safeStep ? guides[safeStep].color : .gray.opacity(0.3))
                                 .frame(width: 8, height: 8)
-                                .scaleEffect(index == step ? 1.3 : 1.0)
-                                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: step)
+                                .scaleEffect(index == safeStep ? 1.3 : 1.0)
+                                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: safeStep)
                         }
                     }
                     
-                    // Action buttons
                     VStack(spacing: 12) {
                         Button(action: onNext) {
                             HStack {
-                                if step == 3 {
+                                if safeStep == 3 {
                                     Text("Start Your Journey")
                                         .font(.headline.weight(.semibold))
                                     Image(systemName: "arrow.right.circle.fill")
@@ -6057,8 +6090,8 @@ struct TabGuideOverlay: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
-                            .background(guides[step].color, in: RoundedRectangle(cornerRadius: 25))
-                            .shadow(color: guides[step].color.opacity(0.3), radius: 8, y: 4)
+                            .background(guides[safeStep].color, in: RoundedRectangle(cornerRadius: 25))
+                            .shadow(color: guides[safeStep].color.opacity(0.3), radius: 8, y: 4)
                         }
                         
                         Button("Skip Tour", action: onSkip)
@@ -6093,6 +6126,7 @@ struct TabGuideContent {
     let icon: String
     let color: Color
 }
+
 
 // MARK: - Compelling Landing View
 
@@ -6133,7 +6167,6 @@ struct CompellingLandingView: View {
         }
         .onAppear {
             startCosmicJourney()
-            requestLocationPermission()
             generatePersonalizedInsight()
         }
     }
@@ -6542,72 +6575,12 @@ struct CompellingLandingView: View {
     }
 }
 
-// MARK: - Keyboard Dismiss Functionality
 
-class KeyboardManager: ObservableObject {
-    @Published var isKeyboardVisible = false
-    @Published var keyboardHeight: CGFloat = 0
-    
-    private var cancellables = Set<AnyCancellable>()
-    
-    init() {
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
-            .sink { [weak self] notification in
-                self?.isKeyboardVisible = true
-                if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                    self?.keyboardHeight = keyboardFrame.height
-                }
-            }
-            .store(in: &cancellables)
-        
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-            .sink { [weak self] _ in
-                self?.isKeyboardVisible = false
-                self?.keyboardHeight = 0
-            }
-            .store(in: &cancellables)
-    }
-}
-
-struct KeyboardDismissOverlay: View {
-    @StateObject private var keyboardManager = KeyboardManager()
-    
-    var body: some View {
-        ZStack {
-            if keyboardManager.isKeyboardVisible {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Button {
-                            hideKeyboard()
-                        } label: {
-                            Image(systemName: "keyboard.chevron.compact.down")
-                                .font(.title2)
-                                .foregroundStyle(.primary)
-                                .padding(12)
-                                .background(.regularMaterial, in: Circle())
-                                .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-                        }
-                        .padding(.trailing, 16)
-                        .padding(.top, 8)
-                    }
-                    Spacer()
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: keyboardManager.isKeyboardVisible)
-            }
-        }
-        .allowsHitTesting(keyboardManager.isKeyboardVisible)
-    }
-    
-    private func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
-}
+// MARK: - Keyboard Dismiss Extension
 
 extension View {
     func keyboardDismissButton() -> some View {
-        self.overlay(KeyboardDismissOverlay())
+        self
     }
 }
 

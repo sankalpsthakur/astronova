@@ -18,6 +18,12 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Logs
+*.log
+backend/*.log
+xcodebuild.log
+build_output.log
 .env
 .venv
 
@@ -68,3 +74,14 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Logs
+*.log
+backend/*.log
+xcodebuild.log
+build_output.log
+
+# Sensitive files
+AuthKey_*.p8
+*_private_key.pem
+cloudkit_private_key.pem

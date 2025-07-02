@@ -60,7 +60,6 @@ struct CompellingLandingView: View {
         }
         .onAppear {
             startCosmicJourney()
-            requestLocationPermission()
         }
     }
     
@@ -371,6 +370,34 @@ struct CompellingLandingView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.black.opacity(0.3))
                 )
+            } else {
+                // Show button to get cosmic coordinates
+                Button {
+                    requestLocationPermission()
+                } label: {
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "location.circle")
+                                .font(.title2)
+                            Text("Get My Cosmic Coordinates")
+                                .font(.headline.weight(.medium))
+                        }
+                        .foregroundStyle(.white)
+                        
+                        Text("Discover your unique celestial alignment")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.black.opacity(0.3))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(.white.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+                }
             }
         }
         .opacity(showCelestialData ? 1 : 0)

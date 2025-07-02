@@ -23,6 +23,7 @@ class AuthState: ObservableObject {
     
     @AppStorage("is_anonymous_user") var isAnonymousUser = false
     @AppStorage("has_signed_in") private var hasSignedIn = false
+    @AppStorage("is_quick_start_user") var isQuickStartUser = false
     
     private let apiServices = APIServices.shared
     private let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
@@ -96,32 +97,28 @@ class AuthState: ObservableObject {
             await self?.handleTokenExpiry()
         }
         
-        checkAuthState()
+        // Initialize state immediately for fast boot
+        initializeStateImmediately()
+        
+        // Perform background checks without blocking UI
+        Task {
+            await performBackgroundInitialization()
+        }
     }
     
-    private func checkAuthState() {
-        // Check API connectivity in background
-        Task {
-            await checkAPIConnectivity()
-        }
-        
-        // Check for stored JWT token
+    private func initializeStateImmediately() {
+        // Quick local state determination - no network calls
         if let storedToken = getJWTToken() {
             jwtToken = storedToken
             hasSignedIn = true
-            
-            // Verify token is still valid
-            Task {
-                await validateStoredToken()
-            }
         }
         
+        // Set initial state based on stored data only
         if hasSignedIn {
             if profileManager.isProfileComplete {
                 state = .signedIn
             } else {
-                // For anonymous users, allow them to use the app even without complete profile
-                if isAnonymousUser {
+                if isAnonymousUser || isQuickStartUser || profileManager.hasMinimalProfileData {
                     state = .signedIn
                 } else {
                     state = .needsProfileSetup
@@ -129,6 +126,16 @@ class AuthState: ObservableObject {
             }
         } else {
             state = .signedOut
+        }
+    }
+    
+    private func performBackgroundInitialization() async {
+        // Perform network operations in background
+        await checkAPIConnectivity()
+        
+        // Validate stored token if we have one
+        if jwtToken != nil {
+            await validateStoredToken()
         }
     }
     
@@ -152,7 +159,7 @@ class AuthState: ObservableObject {
                         self.connectionError = "Offline mode - some features may be limited"
                     case .timeout:
                         self.connectionError = "Connection timeout - check your internet"
-                    case .serverError(let code, let message):
+                    case .serverError(let code, _):
                         self.connectionError = "Server issue (\(code)) - please try again later"
                     default:
                         self.connectionError = networkError.localizedDescription
@@ -271,7 +278,22 @@ class AuthState: ObservableObject {
             await checkAPIConnectivity()
         }
         
-        state = profileManager.isProfileComplete ? .signedIn : .needsProfileSetup
+        state = (profileManager.isProfileComplete || profileManager.hasMinimalProfileData) ? .signedIn : .needsProfileSetup
+    }
+    
+    func startQuickStart() {
+        // Clear any auth errors
+        authError = nil
+        
+        isQuickStartUser = true
+        hasSignedIn = true
+        
+        // Check API connectivity for quick start users
+        Task {
+            await checkAPIConnectivity()
+        }
+        
+        state = .needsProfileSetup
     }
     
     /// Get feature availability for current user type
@@ -279,11 +301,20 @@ class AuthState: ObservableObject {
         if isAnonymousUser {
             return FeatureAvailability(
                 canGenerateCharts: isAPIConnected,
-                canSaveData: false,
+                canSaveData: true,
                 canAccessPremiumFeatures: false,
                 canSyncAcrossDevices: false,
                 hasUnlimitedAccess: false,
                 maxChartsPerDay: isAPIConnected ? 3 : 1
+            )
+        } else if isQuickStartUser {
+            return FeatureAvailability(
+                canGenerateCharts: isAPIConnected,
+                canSaveData: true,
+                canAccessPremiumFeatures: false,
+                canSyncAcrossDevices: false,
+                hasUnlimitedAccess: false,
+                maxChartsPerDay: isAPIConnected ? 5 : 2
             )
         } else if hasSignedIn && jwtToken != nil {
             return FeatureAvailability(
@@ -443,7 +474,7 @@ extension AuthState {
     
     /// Handle automatic token refresh when token expires
     func handleTokenExpiry() async {
-        guard let currentToken = jwtToken else { return }
+        guard jwtToken != nil else { return }
         
         do {
             // Try to refresh the token

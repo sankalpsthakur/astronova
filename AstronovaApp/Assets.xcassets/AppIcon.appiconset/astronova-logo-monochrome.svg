@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Monochrome variant - suitable for print, laser etching, embossing -->
+  
+  <!-- Logarithmic spiral path (stroke only) -->
+  <path d="M 512,432 
+           Q 592,432 656,456
+           Q 720,480 768,528
+           Q 816,576 840,640
+           Q 864,704 864,768
+           Q 864,832 832,888
+           Q 800,944 736,976
+           Q 672,1008 592,1008
+           Q 512,1008 432,976
+           Q 352,944 288,880
+           Q 224,816 192,736
+           Q 160,656 160,576
+           Q 160,496 200,424
+           Q 240,352 312,304
+           Q 384,256 472,240
+           Q 560,224 648,240
+           Q 736,256 808,304
+           Q 880,352 920,424"
+        fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" 
+        transform="rotate(-45, 512, 512)" />
+  
+  <!-- Planet circle (stroke only for print) -->
+  <circle cx="512" cy="512" r="80" fill="none" stroke="currentColor" stroke-width="16" />
+  
+  <!-- Solar accent node (filled for contrast) -->
+  <circle cx="648" cy="376" r="24" fill="currentColor" />
+  
+  <!-- Star burst (simplified for monochrome) -->
+  <g transform="translate(512, 512)">
+    <circle r="8" fill="currentColor" />
+  </g>
+</svg>

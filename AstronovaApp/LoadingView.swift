@@ -7,6 +7,14 @@ struct LoadingView: View {
         case cosmic
         case inline
         case overlay
+        case skeleton(SkeletonType)
+    }
+    
+    enum SkeletonType {
+        case horoscope
+        case chart
+        case profile
+        case locationSearch
     }
     
     let style: LoadingStyle
@@ -30,6 +38,8 @@ struct LoadingView: View {
                 inlineLoadingView
             case .overlay:
                 overlayLoadingView
+            case .skeleton(let skeletonType):
+                skeletonView(for: skeletonType)
             }
         }
         .onAppear {
@@ -143,6 +153,20 @@ struct LoadingView: View {
             .padding(24)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
             .shadow(radius: 10)
+        }
+    }
+    
+    @ViewBuilder
+    private func skeletonView(for type: SkeletonType) -> some View {
+        switch type {
+        case .horoscope:
+            HoroscopeSkeleton()
+        case .chart:
+            PlanetaryChartSkeleton()
+        case .profile:
+            ProfileSetupSkeleton()
+        case .locationSearch:
+            LocationSearchSkeleton()
         }
     }
 }

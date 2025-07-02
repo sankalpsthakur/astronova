@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 768" width="2048" height="768">
+  <defs>
+    <!-- Define gradients -->
+    <linearGradient id="spaceGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#09092B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6E40FF;stop-opacity:1" />
+    </linearGradient>
+    
+    <radialGradient id="planetGradient" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#4D7FFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0A3AFF;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Logo Mark -->
+  <g transform="translate(100, 84)">
+    <!-- Scale down to fit -->
+    <g transform="scale(0.6)">
+      <!-- Logarithmic spiral path -->
+      <path d="M 512,432 
+               Q 592,432 656,456
+               Q 720,480 768,528
+               Q 816,576 840,640
+               Q 864,704 864,768
+               Q 864,832 832,888
+               Q 800,944 736,976
+               Q 672,1008 592,1008
+               Q 512,1008 432,976
+               Q 352,944 288,880
+               Q 224,816 192,736
+               Q 160,656 160,576
+               Q 160,496 200,424
+               Q 240,352 312,304
+               Q 384,256 472,240
+               Q 560,224 648,240
+               Q 736,256 808,304
+               Q 880,352 920,424"
+            fill="none" stroke="#0A3AFF" stroke-width="20" stroke-linecap="round" 
+            transform="rotate(-45, 512, 512)" />
+      
+      <!-- Planet circle at center with gradient -->
+      <circle cx="512" cy="512" r="80" fill="url(#planetGradient)" />
+      
+      <!-- Inner planet detail (shadow) -->
+      <circle cx="522" cy="522" r="60" fill="#0A3AFF" opacity="0.3" />
+      
+      <!-- Solar accent node (Lagrange point) -->
+      <circle cx="648" cy="376" r="24" fill="#FFB400" />
+      
+      <!-- Star burst at center -->
+      <g transform="translate(512, 512)">
+        <path d="M 0,-24 L 6,-6 L 24,0 L 6,6 L 0,24 L -6,6 L -24,0 L -6,-6 Z" 
+              fill="#FFB400" opacity="0.6" />
+      </g>
+    </g>
+  </g>
+  
+  <!-- Typography: ASTRONOVA -->
+  <!-- Using letter-spacing to achieve +50 units kerning as specified -->
+  <text x="800" y="420" 
+        font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" 
+        font-size="120" 
+        font-weight="600" 
+        fill="#0A3AFF"
+        letter-spacing="50">
+    ASTRONOVA
+  </text>
+  
+  <!-- Alternative with individual letter positioning for precise control -->
+  <g id="wordmark" transform="translate(800, 420)">
+    <text x="0" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">A</text>
+    <text x="130" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">S</text>
+    <text x="250" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">T</text>
+    <text x="370" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">R</text>
+    <text x="500" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">O</text>
+    <text x="650" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">N</text>
+    <text x="800" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">O</text>
+    <text x="950" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">V</text>
+    <text x="1080" y="0" font-family="-apple-system, 'SF Pro Rounded', system-ui, sans-serif" font-size="120" font-weight="600" fill="#0A3AFF">A</text>
+  </g>
+</svg>

@@ -6,7 +6,8 @@ struct UserProfile: Codable {
     var birthDate: Date
     var birthTime: Date?
     var birthPlace: String?
-    var birthCoordinates: CLLocationCoordinate2D?
+    var birthLatitude: Double?
+    var birthLongitude: Double?
     var timezone: String?
     
     // Additional profile information
@@ -16,32 +17,14 @@ struct UserProfile: Codable {
     var moonSign: String?
     var risingSign: String?
     
-    init(fullName: String = "", birthDate: Date = Date(), birthTime: Date? = nil, birthPlace: String? = nil, birthCoordinates: CLLocationCoordinate2D? = nil, timezone: String? = nil) {
+    init(fullName: String = "", birthDate: Date = Date(), birthTime: Date? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
         self.fullName = fullName
         self.birthDate = birthDate
         self.birthTime = birthTime
         self.birthPlace = birthPlace
-        self.birthCoordinates = birthCoordinates
+        self.birthLatitude = birthLatitude
+        self.birthLongitude = birthLongitude
         self.timezone = timezone
-    }
-}
-
-extension CLLocationCoordinate2D: Codable {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(latitude, forKey: .latitude)
-        try container.encode(longitude, forKey: .longitude)
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let latitude = try container.decode(Double.self, forKey: .latitude)
-        let longitude = try container.decode(Double.self, forKey: .longitude)
-        self.init(latitude: latitude, longitude: longitude)
-    }
-    
-    private enum CodingKeys: String, CodingKey {
-        case latitude, longitude
     }
 }
 
@@ -149,7 +132,8 @@ class UserProfileManager: ObservableObject {
     /// Set birth location from location result
     func setBirthLocation(_ location: LocationResult) {
         profile.birthPlace = location.fullName
-        profile.birthCoordinates = location.coordinate
+        profile.birthLatitude = location.coordinate.latitude
+        profile.birthLongitude = location.coordinate.longitude
         profile.timezone = location.timezone
         
         do {
@@ -188,10 +172,16 @@ class UserProfileManager: ObservableObject {
         // Birth place, coordinates, and timezone are optional and can be added later
     }
     
+    /// Whether profile has minimal data needed for Quick Start functionality (just name and birth date)
+    var hasMinimalProfileData: Bool {
+        return !profile.fullName.isEmpty
+    }
+    
     /// Whether profile has all location data needed for advanced astrological calculations
     var hasCompleteLocationData: Bool {
         return profile.birthPlace != nil &&
-               profile.birthCoordinates != nil &&
+               profile.birthLatitude != nil &&
+               profile.birthLongitude != nil &&
                profile.timezone != nil
     }
     
@@ -199,7 +189,7 @@ class UserProfileManager: ObservableObject {
     private func profileSignificantlyChanged(old: UserProfile, new: UserProfile) -> Bool {
         return new.birthDate != old.birthDate ||
                new.birthTime != old.birthTime ||
-               new.birthCoordinates?.latitude != old.birthCoordinates?.latitude ||
-               new.birthCoordinates?.longitude != old.birthCoordinates?.longitude
+               new.birthLatitude != old.birthLatitude ||
+               new.birthLongitude != old.birthLongitude
     }
 }
