@@ -2841,8 +2841,7 @@ struct SubscriptionSheet: View {
                 VStack(spacing: 16) {
                     Button {
                         Task {
-                            // TODO: Fix StoreKitManager import issue
-                            let success = false // await StoreKitManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
+                            let success = await StoreKitManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
                             if success {
                                 await MainActor.run {
                                     dismiss()
@@ -5038,14 +5037,13 @@ struct ReportGenerationSheet: View {
     private func purchaseIndividualReport() {
         isGenerating = true
         Task {
-            // TODO: Fix StoreKitManager import issue
-            let success = false // await StoreKitManager.shared.purchaseProduct(productId: reportType)
+            let success = await StoreKitManager.shared.purchaseProduct(productId: reportType)
             await MainActor.run {
                 if success {
                     onGenerate(reportType)
                 } else {
                     isGenerating = false
-                    // TODO: Show error alert
+                    showPurchaseError = true
                 }
             }
         }
