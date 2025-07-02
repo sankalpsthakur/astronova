@@ -5,6 +5,17 @@ from datetime import datetime
 ephemeris_bp = Blueprint('ephemeris', __name__)
 service = EphemerisService()
 
+@ephemeris_bp.route('', methods=['GET'])
+def ephemeris_info():
+    """Get ephemeris service information"""
+    return jsonify({
+        'service': 'ephemeris',
+        'status': 'available',
+        'endpoints': {
+            'GET /current': 'Get current planetary positions'
+        }
+    })
+
 
 @ephemeris_bp.route('/current', methods=['GET'])
 def current_positions():
