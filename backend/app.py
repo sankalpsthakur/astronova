@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
@@ -16,7 +16,7 @@ from routes.match import match_bp
 from routes.chart import chart_bp
 from routes.reports import reports_bp
 from routes.ephemeris import ephemeris_bp
-from routes.locations import locations_bp
+# from routes.locations import locations_bp
 from routes.content import content_bp
 from routes.misc import misc_bp
 from services.reports_service import ReportsService
@@ -64,6 +64,9 @@ def create_app(anthropic_api_key: str | None = None):
 
     limiter = Limiter(app=app, key_func=get_remote_address,
                       default_limits=["200 per day", "50 per hour"])
+    
+    # Exempt health endpoints from rate limiting
+    limiter.exempt(lambda: request.endpoint in ['health', 'misc.health_check', 'misc.system_status'])
 
     # Register authentication blueprint first
     from routes.auth import auth_bp
@@ -76,7 +79,7 @@ def create_app(anthropic_api_key: str | None = None):
     app.register_blueprint(chart_bp, url_prefix="/api/v1/chart")
     app.register_blueprint(reports_bp, url_prefix="/api/v1/reports")
     app.register_blueprint(ephemeris_bp, url_prefix="/api/v1/ephemeris")
-    app.register_blueprint(locations_bp, url_prefix="/api/v1/locations")
+    # app.register_blueprint(locations_bp, url_prefix="/api/v1/locations")
     app.register_blueprint(content_bp, url_prefix="/api/v1/content")
     app.register_blueprint(misc_bp, url_prefix="/api/v1/misc")
 

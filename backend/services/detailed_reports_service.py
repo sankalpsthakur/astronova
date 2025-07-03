@@ -4,7 +4,7 @@ import json
 from services.astro_calculator import AstroCalculator
 from services.claude_ai import ClaudeService
 from fpdf import FPDF
-import redis
+# import redis
 import os
 
 class DetailedReportsService:

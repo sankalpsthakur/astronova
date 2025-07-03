@@ -43,8 +43,7 @@ def service_info():
             'Birth chart analysis',
             'Compatibility matching',
             'AI astrologer chat',
-            'Planetary ephemeris data',
-            'Location services'
+            'Planetary ephemeris data'
         ],
         'endpoints': {
             'chat': '/api/v1/chat',
@@ -53,7 +52,6 @@ def service_info():
             'chart': '/api/v1/chart',
             'reports': '/api/v1/reports',
             'ephemeris': '/api/v1/ephemeris',
-            'locations': '/api/v1/locations',
             'content': '/api/v1/content'
         },
         'rate_limits': {
@@ -183,9 +181,8 @@ def system_status():
         # Check environment variables (without exposing sensitive data)
         env_status = {
             'anthropic_api_configured': bool(os.getenv('ANTHROPIC_API_KEY')),
-            'google_places_configured': bool(os.getenv('GOOGLE_PLACES_API_KEY')),
-            'redis_configured': bool(os.getenv('REDIS_URL')),
-            'ephemeris_path_configured': bool(os.getenv('EPHEMERIS_PATH'))
+            'gemini_api_configured': bool(os.getenv('GEMINI_API_KEY')),
+            'secret_key_configured': bool(os.getenv('SECRET_KEY'))
         }
         
         return jsonify({
