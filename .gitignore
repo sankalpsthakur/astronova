@@ -81,7 +81,30 @@ backend/*.log
 xcodebuild.log
 build_output.log
 
+# Node.js (if accidentally added)
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backend test artifacts
+backend/test_reports/
+backend/test_*.py
+backend/venv/
+
 # Sensitive files
 AuthKey_*.p8
 *_private_key.pem
 cloudkit_private_key.pem
+
+# Documentation drafts (keep main docs)
+CLOUDKIT_*.md
+COMPELLING_*.md
+DEPLOYMENT_STRATEGY.md
+TESTING_STRATEGY.md
+agents.md
+
+# Build artifacts
+build/
+*.pbxproj.backup

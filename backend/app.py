@@ -122,7 +122,8 @@ def create_app(anthropic_api_key: str | None = None):
     return app
 
 if __name__ == '__main__':
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("ANTHROPIC_API_KEY", "")
     debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+    port = int(os.environ.get("PORT", 8080))
     app = create_app(api_key)
-    app.run(host='0.0.0.0', port=8080, debug=debug_mode)
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)

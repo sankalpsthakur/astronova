@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 from utils.validators import validate_request
 from models.schemas import MatchRequest
@@ -8,6 +8,17 @@ from services.cache_service import cache
 
 match_bp = Blueprint('match', __name__)
 cloudkit = CloudKitService()
+
+@match_bp.route('', methods=['GET'])
+def match_info():
+    """Get match service information"""
+    return jsonify({
+        'service': 'match',
+        'status': 'available',
+        'endpoints': {
+            'POST /': 'Calculate compatibility between two people'
+        }
+    })
 
 @match_bp.route('', methods=['POST'])
 @validate_request(MatchRequest)

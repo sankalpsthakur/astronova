@@ -14,6 +14,22 @@ user_service = UserService()
 cloudkit = CloudKitService()
 logger = logging.getLogger(__name__)
 
+@auth_bp.route('', methods=['GET'])
+def auth_info():
+    """Get authentication service information"""
+    return jsonify({
+        'service': 'auth',
+        'status': 'available',
+        'endpoints': {
+            'POST /apple': 'Authenticate with Apple ID',
+            'GET /validate': 'Validate JWT token',
+            'POST /refresh': 'Refresh JWT token',
+            'POST /logout': 'Logout user',
+            'GET /user': 'Get current user',
+            'PUT /user': 'Update current user'
+        }
+    })
+
 @auth_bp.route('/apple', methods=['POST'])
 @validate_request(AppleAuthRequest)
 def authenticate_with_apple(data: AppleAuthRequest):

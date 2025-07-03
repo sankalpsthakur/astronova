@@ -9,6 +9,20 @@ from datetime import datetime
 reports_bp = Blueprint('reports', __name__)
 detailed_reports_service = DetailedReportsService()
 
+@reports_bp.route('', methods=['GET'])
+def reports_info():
+    """Get reports service information"""
+    return jsonify({
+        'service': 'reports',
+        'status': 'available',
+        'endpoints': {
+            'POST /full': 'Generate detailed report',
+            'GET /<report_id>': 'Get report by ID',
+            'GET /<report_id>/download': 'Download report as PDF',
+            'GET /user/<user_id>': 'Get user reports'
+        }
+    })
+
 
 @reports_bp.route('/full', methods=['POST'])
 @validate_request(DetailedReportRequest)

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: astronova-backend
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        value: AIzaSyDK1UcAyU0e-8WpdooG-6-p10p1UuYmZD8
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 8080
+    autoDeploy: true
+    branch: main
+    rootDir: backend

@@ -3,6 +3,17 @@ from typing import List, Dict, Any
 
 content_bp = Blueprint('content', __name__)
 
+@content_bp.route('', methods=['GET'])
+def content_info():
+    """Get content service information"""
+    return jsonify({
+        'service': 'content',
+        'status': 'available',
+        'endpoints': {
+            'GET /management': 'Get content management data'
+        }
+    })
+
 # Mock data for content management - in production, this would come from a database
 QUICK_QUESTIONS = [
     {

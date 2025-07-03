@@ -22,6 +22,17 @@ ephemeris = EphemerisService()
 chinese_service = ChineseAstrologyService()
 cloudkit = CloudKitService()
 
+@chart_bp.route('', methods=['GET'])
+def chart_info():
+    """Get chart service information"""
+    return jsonify({
+        'service': 'chart',
+        'status': 'available',
+        'endpoints': {
+            'POST /generate': 'Generate birth chart'
+        }
+    })
+
 
 def _chart_cache_key(system: str, req: ChartRequest) -> str:
     b = req.birthData

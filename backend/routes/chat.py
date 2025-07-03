@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.schemas import ChatRequest
 from utils.validators import validate_request
@@ -9,6 +9,17 @@ from services.cache_service import cache
 chat_bp = Blueprint('chat', __name__)
 claude = ClaudeService()
 cloudkit = CloudKitService()
+
+@chat_bp.route('', methods=['GET'])
+def chat_info():
+    """Get chat service information"""
+    return jsonify({
+        'service': 'chat',
+        'status': 'available',
+        'endpoints': {
+            'POST /send': 'Send a chat message'
+        }
+    })
 
 @chat_bp.route('/send', methods=['POST'])
 @jwt_required(optional=True)
