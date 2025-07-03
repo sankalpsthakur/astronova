@@ -21,6 +21,27 @@ def chat_info():
         }
     })
 
+@chat_bp.route('/history', methods=['GET'])
+@jwt_required()
+def get_chat_history():
+    """Get chat history for authenticated user"""
+    try:
+        user_id = get_jwt_identity()
+        conversation_id = request.args.get('conversationId')
+        limit = int(request.args.get('limit', 50))
+        
+        # Get chat history from CloudKit
+        history = cloudkit.get_conversation_history(user_id, conversation_id, limit=limit)
+        
+        return jsonify({
+            'messages': history,
+            'conversationId': conversation_id,
+            'userId': user_id
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to get chat history: {str(e)}'}), 500
+
 @chat_bp.route('/send', methods=['POST'])
 @jwt_required(optional=True)
 @validate_request(ChatRequest)

@@ -305,7 +305,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         )
         
         return try await networkClient.request(
-            endpoint: "/api/reports/generate",
+            endpoint: "/api/v1/reports/generate",
             method: HTTPMethod.POST,
             body: request,
             responseType: ReportResponse.self
@@ -315,7 +315,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     /// Get report status
     func getReportStatus(reportId: String) async throws -> ReportResponse {
         return try await networkClient.request(
-            endpoint: "/api/reports/\(reportId)",
+            endpoint: "/api/v1/reports/\(reportId)",
             responseType: ReportResponse.self
         )
     }
@@ -358,7 +358,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     /// Get current planetary positions
     func getCurrentPlanetaryPositions() async throws -> [String: PlanetaryPosition] {
         return try await networkClient.request(
-            endpoint: "/api/v1/ephemeris/positions",
+            endpoint: "/api/v1/ephemeris/current",
             responseType: [String: PlanetaryPosition].self
         )
     }
@@ -370,7 +370,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         let dateString = formatter.string(from: date)
         
         var components = URLComponents()
-        components.path = "/api/v1/ephemeris/positions"
+        components.path = "/api/v1/ephemeris/current"
         components.queryItems = [
             URLQueryItem(name: "date", value: dateString)
         ]

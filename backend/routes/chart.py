@@ -53,6 +53,63 @@ def _svg_from_dict(title: str, data: dict) -> str:
     return ''.join(lines)
 
 
+@chart_bp.route('/aspects', methods=['POST'])
+@jwt_required(optional=True)
+@validate_request(ChartRequest)
+def get_chart_aspects(data: ChartRequest):
+    """Get astrological aspects for a birth chart"""
+    try:
+        birth = data.birthData
+        dt = datetime.fromisoformat(f"{birth.date}T{birth.time}")
+        
+        # Calculate planetary positions
+        positions = astro.western_chart(dt)
+        
+        # Calculate aspects between planets
+        aspects = []
+        planet_names = list(positions.keys())
+        
+        for i, planet1 in enumerate(planet_names):
+            for planet2 in planet_names[i+1:]:
+                pos1 = positions[planet1]
+                pos2 = positions[planet2]
+                
+                # Calculate aspect angle
+                angle = abs(pos1['longitude'] - pos2['longitude'])
+                if angle > 180:
+                    angle = 360 - angle
+                
+                # Check for major aspects (with 6-degree orb)
+                major_aspects = {
+                    'conjunction': (0, 6),
+                    'sextile': (60, 6),
+                    'square': (90, 6),
+                    'trine': (120, 6),
+                    'opposition': (180, 6)
+                }
+                
+                for aspect_name, (target_angle, orb) in major_aspects.items():
+                    if abs(angle - target_angle) <= orb:
+                        aspects.append({
+                            'planet1': planet1,
+                            'planet2': planet2,
+                            'aspect': aspect_name,
+                            'angle': round(angle, 2),
+                            'orb': round(abs(angle - target_angle), 2),
+                            'exact': abs(angle - target_angle) < 1
+                        })
+                        break
+        
+        return jsonify({
+            'aspects': aspects,
+            'planetaryPositions': positions,
+            'chartType': data.chartType,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to calculate aspects: {str(e)}'}), 500
+
 @chart_bp.route('/generate', methods=['POST'])
 @jwt_required(optional=True)
 @validate_request(ChartRequest)
