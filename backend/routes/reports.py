@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from utils.validators import validate_request
-from models.schemas import ReportRequest, DetailedReportRequest
+from models.schemas import ReportRequest, DetailedReportRequest, SimpleReportRequest
 from services.detailed_reports_service import DetailedReportsService
 import base64
 import uuid
@@ -25,8 +25,8 @@ def reports_info():
 
 
 @reports_bp.route('/full', methods=['POST'])
-@validate_request(DetailedReportRequest)
-def generate_detailed_report(data: DetailedReportRequest):
+@validate_request(SimpleReportRequest)
+def generate_detailed_report(data: SimpleReportRequest):
     """Generate comprehensive astrological report"""
     try:
         # Generate unique report ID
@@ -34,32 +34,32 @@ def generate_detailed_report(data: DetailedReportRequest):
         
         # Convert birth data to dict format
         birth_data_dict = {
-            'date': data.birthData.date,
-            'time': data.birthData.time,
-            'timezone': data.birthData.timezone,
-            'latitude': data.birthData.latitude,
-            'longitude': data.birthData.longitude
+            'date': data.birth_date,
+            'time': data.birth_time,
+            'timezone': data.timezone,
+            'latitude': data.latitude,
+            'longitude': data.longitude
         }
         
         # Generate the detailed report based on type
         report_data = detailed_reports_service.generate_detailed_report(
             birth_data=birth_data_dict,
-            report_type=data.reportType,
-            options=data.options or {},
-            user_id=data.userId
+            report_type=data.report_type,
+            options={},
+            user_id=None
         )
         
         # Store report for retrieval
         report_record = {
             'reportId': report_id,
-            'type': data.reportType,
+            'type': data.report_type,
             'title': report_data['title'],
             'content': report_data['content'],
             'summary': report_data.get('summary', ''),
             'keyInsights': report_data.get('keyInsights', []),
             'downloadUrl': f"/api/v1/reports/{report_id}/download",
             'generatedAt': datetime.utcnow().isoformat(),
-            'userId': data.userId,
+            'userId': None,
             'status': 'completed'
         }
         
@@ -68,7 +68,7 @@ def generate_detailed_report(data: DetailedReportRequest):
         
         return jsonify({
             'reportId': report_id,
-            'type': data.reportType,
+            'type': data.report_type,
             'title': report_data['title'],
             'summary': report_data.get('summary', ''),
             'keyInsights': report_data.get('keyInsights', []),

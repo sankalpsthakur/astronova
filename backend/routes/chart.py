@@ -8,7 +8,7 @@ from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from utils.validators import validate_request
-from models.schemas import ChartRequest
+from models.schemas import ChartRequest, SimpleChartRequest
 from services.astro_calculator import AstroCalculator
 from services.ephemeris_service import EphemerisService
 from services.chinese_astrology_service import ChineseAstrologyService
@@ -34,9 +34,12 @@ def chart_info():
     })
 
 
-def _chart_cache_key(system: str, req: ChartRequest) -> str:
-    b = req.birthData
-    return f"chart:{system}:{b.date}:{b.time}:{b.latitude}:{b.longitude}"
+def _chart_cache_key(system: str, req) -> str:
+    if hasattr(req, 'birthData'):
+        b = req.birthData
+        return f"chart:{system}:{b.date}:{b.time}:{b.latitude}:{b.longitude}"
+    else:
+        return f"chart:{system}:{req.birth_date}:{req.birth_time}:{req.latitude}:{req.longitude}"
 
 
 def _svg_from_dict(title: str, data: dict) -> str:
@@ -53,14 +56,70 @@ def _svg_from_dict(title: str, data: dict) -> str:
     return ''.join(lines)
 
 
-@chart_bp.route('/generate', methods=['POST'])
+@chart_bp.route('/aspects', methods=['POST'])
 @jwt_required(optional=True)
 @validate_request(ChartRequest)
-def generate(data: ChartRequest):
+def get_chart_aspects(data: ChartRequest):
+    """Get astrological aspects for a birth chart"""
     try:
         birth = data.birthData
         dt = datetime.fromisoformat(f"{birth.date}T{birth.time}")
-        systems = [s.lower() for s in data.systems]
+        
+        # Calculate planetary positions
+        positions = astro.western_chart(dt)
+        
+        # Calculate aspects between planets
+        aspects = []
+        planet_names = list(positions.keys())
+        
+        for i, planet1 in enumerate(planet_names):
+            for planet2 in planet_names[i+1:]:
+                pos1 = positions[planet1]
+                pos2 = positions[planet2]
+                
+                # Calculate aspect angle
+                angle = abs(pos1['longitude'] - pos2['longitude'])
+                if angle > 180:
+                    angle = 360 - angle
+                
+                # Check for major aspects (with 6-degree orb)
+                major_aspects = {
+                    'conjunction': (0, 6),
+                    'sextile': (60, 6),
+                    'square': (90, 6),
+                    'trine': (120, 6),
+                    'opposition': (180, 6)
+                }
+                
+                for aspect_name, (target_angle, orb) in major_aspects.items():
+                    if abs(angle - target_angle) <= orb:
+                        aspects.append({
+                            'planet1': planet1,
+                            'planet2': planet2,
+                            'aspect': aspect_name,
+                            'angle': round(angle, 2),
+                            'orb': round(abs(angle - target_angle), 2),
+                            'exact': abs(angle - target_angle) < 1
+                        })
+                        break
+        
+        return jsonify({
+            'aspects': aspects,
+            'planetaryPositions': positions,
+            'chartType': data.chartType,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to calculate aspects: {str(e)}'}), 500
+
+@chart_bp.route('/generate', methods=['POST'])
+@jwt_required(optional=True)
+@validate_request(SimpleChartRequest)
+def generate(data: SimpleChartRequest):
+    try:
+        dt = datetime.fromisoformat(f"{data.birth_date}T{data.birth_time}")
+        systems = [data.system.lower()]
         results: dict[str, dict] = {}
         user_id = get_jwt_identity()
 
@@ -103,16 +162,16 @@ def generate(data: ChartRequest):
                 try:
                     cloudkit.save_birth_chart({
                         'userProfileId': user_id,
-                        'chartType': data.chartType,
-                        'systems': data.systems,
+                        'chartType': data.chart_type,
+                        'systems': [data.system],
                         'planetaryPositions': chart.get('positions', []),
                         'chartSVG': chart.get('svg', ''),
                         'birthData': {
-                            'birthDate': data.birthData.date,
-                            'birthTime': data.birthData.time,
-                            'latitude': data.birthData.latitude,
-                            'longitude': data.birthData.longitude,
-                            'timezone': data.birthData.timezone
+                            'birthDate': data.birth_date,
+                            'birthTime': data.birth_time,
+                            'latitude': data.latitude,
+                            'longitude': data.longitude,
+                            'timezone': data.timezone
                         }
                     })
                 except Exception as e:
@@ -121,7 +180,7 @@ def generate(data: ChartRequest):
                     current_app.logger.exception("CloudKit save_birth_chart failed")
 
         chart_id = str(uuid.uuid4())
-        return jsonify({'chartId': chart_id, 'charts': results, 'type': data.chartType})
+        return jsonify({'chartId': chart_id, 'charts': results, 'type': data.chart_type})
     except Exception:
         return jsonify({'error': 'Chart generation failed'}), 500
 
