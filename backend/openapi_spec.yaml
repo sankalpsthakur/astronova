@@ -1,0 +1,707 @@
+openapi: 3.0.0
+info:
+  title: AstroNova Backend API
+  description: Comprehensive astrology API with AI-powered insights, birth charts, compatibility matching, and personalized reports
+  version: 1.0.0
+  contact:
+    name: AstroNova Support
+    email: support@astronova.app
+    
+servers:
+  - url: https://astronova.onrender.com
+    description: Production server
+  - url: http://localhost:8080
+    description: Development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+          
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        appleUserId:
+          type: string
+          
+    BirthData:
+      type: object
+      required:
+        - date
+        - time
+        - timezone
+        - latitude
+        - longitude
+      properties:
+        date:
+          type: string
+          format: date
+          example: "1990-05-15"
+        time:
+          type: string
+          format: time
+          example: "14:30"
+        timezone:
+          type: string
+          example: "America/New_York"
+        latitude:
+          type: number
+          format: float
+          example: 40.7128
+        longitude:
+          type: number
+          format: float
+          example: -74.0060
+          
+    Planet:
+      type: object
+      properties:
+        id:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        sign:
+          type: string
+        degree:
+          type: number
+        retrograde:
+          type: boolean
+        significance:
+          type: string
+          
+    ChartPosition:
+      type: object
+      properties:
+        sign:
+          type: string
+        degree:
+          type: number
+          
+    SynastryAspect:
+      type: object
+      properties:
+        planet1:
+          type: string
+        planet2:
+          type: string
+        aspect:
+          type: string
+        orb:
+          type: number
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      tags:
+        - System
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  gemini_configured:
+                    type: boolean
+                    
+  /api/v1/auth:
+    get:
+      summary: Get authentication service info
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  endpoints:
+                    type: object
+                    
+  /api/v1/auth/apple:
+    post:
+      summary: Authenticate with Apple ID
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - idToken
+                - userIdentifier
+              properties:
+                idToken:
+                  type: string
+                userIdentifier:
+                  type: string
+                email:
+                  type: string
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jwtToken:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Invalid Apple ID token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                
+  /api/v1/auth/validate:
+    get:
+      summary: Validate JWT token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+                    
+  /api/v1/chat:
+    get:
+      summary: Get chat service info
+      tags:
+        - Chat
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  gemini_configured:
+                    type: boolean
+                  endpoints:
+                    type: object
+                    
+  /api/v1/chat/send:
+    post:
+      summary: Send a chat message to AI
+      tags:
+        - Chat
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  example: "What's my horoscope for today?"
+                conversationId:
+                  type: string
+                context:
+                  type: object
+                  properties:
+                    birthChart:
+                      type: object
+                    transits:
+                      type: object
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                    example: "Here's a quick horoscope for Scorpio today:\n\nScorpio, today you'll find your intuition is incredibly sharp..."
+                  messageId:
+                    type: string
+                  conversationId:
+                    type: string
+                  suggestedFollowUps:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                      - "What's my love forecast? 💖"
+                      - "Career guidance? ⭐"
+                      - "Today's energy? ☀️"
+                      
+  /api/v1/horoscope:
+    get:
+      summary: Get horoscope data
+      tags:
+        - Horoscope
+      responses:
+        '200':
+          description: Horoscope information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  sample_data:
+                    type: object
+                    properties:
+                      sign:
+                        type: string
+                      date:
+                        type: string
+                        format: date
+                      content:
+                        type: string
+                        
+  /api/v1/match:
+    get:
+      summary: Get match service info
+      tags:
+        - Compatibility
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  endpoints:
+                    type: object
+                    
+    post:
+      summary: Calculate compatibility between two people
+      tags:
+        - Compatibility
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user
+                - partner
+              properties:
+                user:
+                  allOf:
+                    - $ref: '#/components/schemas/BirthData'
+                    - type: object
+                      properties:
+                        name:
+                          type: string
+                partner:
+                  allOf:
+                    - $ref: '#/components/schemas/BirthData'
+                    - type: object
+                      properties:
+                        name:
+                          type: string
+      responses:
+        '200':
+          description: Compatibility results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overallScore:
+                    type: integer
+                    example: 85
+                  vedicScore:
+                    type: integer
+                    example: 28
+                  chineseScore:
+                    type: integer
+                    example: 75
+                  synastryAspects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SynastryAspect'
+                  userChart:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/ChartPosition'
+                  partnerChart:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/ChartPosition'
+                      
+  /api/v1/chart:
+    get:
+      summary: Get chart service info
+      tags:
+        - Charts
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  endpoints:
+                    type: object
+                    
+  /api/v1/chart/generate:
+    post:
+      summary: Generate birth chart
+      tags:
+        - Charts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - chartType
+                - systems
+                - birthData
+              properties:
+                chartType:
+                  type: string
+                  enum: [natal, transit, progressed]
+                systems:
+                  type: array
+                  items:
+                    type: string
+                    enum: [western, vedic, chinese]
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+      responses:
+        '200':
+          description: Generated chart data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chartId:
+                    type: string
+                  type:
+                    type: string
+                  charts:
+                    type: object
+                    properties:
+                      western:
+                        type: object
+                        properties:
+                          svg:
+                            type: string
+                            description: Base64 encoded SVG
+                          positions:
+                            type: object
+                            additionalProperties:
+                              $ref: '#/components/schemas/ChartPosition'
+                      vedic:
+                        type: object
+                        properties:
+                          svg:
+                            type: string
+                          positions:
+                            type: object
+                      chinese:
+                        type: object
+                        properties:
+                          svg:
+                            type: string
+                          animal:
+                            type: string
+                          element:
+                            type: string
+                            
+  /api/v1/reports:
+    get:
+      summary: Get reports service info
+      tags:
+        - Reports
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  endpoints:
+                    type: object
+                    
+  /api/v1/reports/full:
+    post:
+      summary: Generate comprehensive astrological report
+      tags:
+        - Reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reportType
+                - birthData
+              properties:
+                reportType:
+                  type: string
+                  enum: [natal, career, love, yearly]
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+                userId:
+                  type: string
+                options:
+                  type: object
+      responses:
+        '200':
+          description: Generated report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId:
+                    type: string
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  summary:
+                    type: string
+                  keyInsights:
+                    type: array
+                    items:
+                      type: string
+                  downloadUrl:
+                    type: string
+                  generatedAt:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+                    
+  /api/v1/ephemeris:
+    get:
+      summary: Get ephemeris service info
+      tags:
+        - Ephemeris
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  endpoints:
+                    type: object
+                    
+  /api/v1/ephemeris/current:
+    get:
+      summary: Get current planetary positions
+      tags:
+        - Ephemeris
+      parameters:
+        - in: query
+          name: lat
+          schema:
+            type: number
+            format: float
+          description: Latitude for rising sign calculation
+        - in: query
+          name: lon
+          schema:
+            type: number
+            format: float
+          description: Longitude for rising sign calculation
+      responses:
+        '200':
+          description: Current planetary positions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  planets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Planet'
+                  timestamp:
+                    type: string
+                    format: date-time
+                  has_rising_sign:
+                    type: boolean
+                    
+  /api/v1/content:
+    get:
+      summary: Get content service info
+      tags:
+        - Content
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                  status:
+                    type: string
+                  endpoints:
+                    type: object
+                    
+  /api/v1/content/management:
+    get:
+      summary: Get content management data
+      tags:
+        - Content
+      responses:
+        '200':
+          description: Content data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quick_questions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        text:
+                          type: string
+                        category:
+                          type: string
+                        order:
+                          type: integer
+                        is_active:
+                          type: boolean
+                  insights:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        content:
+                          type: string
+                        category:
+                          type: string
+                        priority:
+                          type: integer
+                        is_active:
+                          type: boolean
+
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Chat
+    description: AI-powered chat interactions
+  - name: Horoscope
+    description: Daily horoscope generation
+  - name: Compatibility
+    description: Relationship compatibility calculations
+  - name: Charts
+    description: Birth chart generation
+  - name: Reports
+    description: Comprehensive astrological reports
+  - name: Ephemeris
+    description: Planetary position calculations
+  - name: Content
+    description: Content management system

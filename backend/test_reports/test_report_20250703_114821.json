@@ -1,0 +1,185 @@
+{
+  "test_run_info": {
+    "timestamp": "2025-07-03T11:48:18.902536",
+    "base_url": "http://127.0.0.1:5002",
+    "total_tests": 16,
+    "passed": 0,
+    "failed": 16,
+    "warnings": 0
+  },
+  "services": {
+    "health": {
+      "endpoints": [
+        {
+          "endpoint": "/health",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "auth": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/auth",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        },
+        {
+          "endpoint": "/api/v1/auth/mock-login",
+          "method": "POST",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "chat": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/chat",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        },
+        {
+          "endpoint": "/api/v1/chat/send",
+          "method": "POST",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "horoscope": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/horoscope",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "match": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/match",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        },
+        {
+          "endpoint": "/api/v1/match",
+          "method": "POST",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "chart": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/chart",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        },
+        {
+          "endpoint": "/api/v1/chart/generate",
+          "method": "POST",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "reports": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/reports",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        },
+        {
+          "endpoint": "/api/v1/reports/full",
+          "method": "POST",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "ephemeris": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/ephemeris",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        },
+        {
+          "endpoint": "/api/v1/ephemeris/current?lat=40.7128&lon=-74.0060",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    },
+    "content": {
+      "endpoints": [
+        {
+          "endpoint": "/api/v1/content",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        },
+        {
+          "endpoint": "/api/v1/content/management",
+          "method": "GET",
+          "status_code": 0,
+          "response_time": 0,
+          "success": false,
+          "error": "Connection refused - server not running"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "success_rate": 0.0,
+    "services_tested": 9,
+    "total_endpoints": 16,
+    "average_response_time": 0.0,
+    "recommendations": [
+      "Fix failing endpoints before deployment"
+    ]
+  }
+}
