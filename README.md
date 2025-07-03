@@ -986,12 +986,24 @@ The backend is **fully configured** for immediate deployment to Render:
 
 #### **iOS Configuration**
 ```swift
-// Add to your configuration
-struct APIConfiguration {
-    static let backendBaseURL = "http://localhost:8080/api/v1"
-    static let cloudKitContainerID = "iCloud.com.sankalp.AstronovaApp"
+// NetworkClient.swift - Production configuration
+class NetworkClient {
+    private let baseURL: String
+    
+    init() {
+        #if DEBUG
+        self.baseURL = "https://astronova.onrender.com"
+        #else
+        self.baseURL = "https://astronova.onrender.com"
+        #endif
+    }
 }
+
+// CloudKit Configuration
+static let cloudKitContainerID = "iCloud.com.sankalp.AstronovaApp"
 ```
+
+**✅ iOS app is already configured to use the production Render endpoint!**
 
 #### **Backend Configuration**
 ```python
