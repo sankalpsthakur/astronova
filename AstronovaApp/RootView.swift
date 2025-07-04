@@ -7,6 +7,150 @@ import AuthenticationServices
 import CoreLocation
 import MapKit
 
+// MARK: - Temporary Stubs for Missing Components
+
+struct ProfileSetupContentView: View {
+    @EnvironmentObject private var auth: AuthState
+    @Binding var currentStep: Int
+    @Binding var fullName: String
+    @Binding var birthDate: Date
+    @Binding var birthTime: Date
+    @Binding var birthPlace: String
+    @Binding var showingPersonalizedInsight: Bool
+    @Binding var personalizedInsight: String
+    
+    let handleQuickStart: () -> Void
+    let handleContinue: () -> Void
+    let canContinue: Bool
+    let totalSteps: Int
+    let showPersonalizedInsight: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if !showingPersonalizedInsight {
+                // Elegant progress indicator
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("✨ Creating Your Cosmic Profile")
+                            .font(.title3.weight(.medium))
+                            .foregroundStyle(.white)
+                        Spacer()
+                    }
+                    
+                    HStack(spacing: 8) {
+                        ForEach(0..<totalSteps, id: \.self) { step in
+                            Circle()
+                                .fill(step <= currentStep ? .white : .white.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(step == currentStep ? 1.5 : 1.0)
+                                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: currentStep)
+                        }
+                        Spacer()
+                        Text("\(currentStep + 1) / \(totalSteps)")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+            }
+            
+            // Content area with beautiful card design
+            TabView(selection: $currentStep) {
+                // Step 1: Welcome with value preview
+                EnhancedWelcomeStepView()
+                    .tag(0)
+                
+                // Step 2: Name input with personality hint
+                EnhancedNameStepView(fullName: $fullName)
+                    .tag(1)
+                
+                // Step 3: Birth date with instant insight
+                EnhancedBirthDateStepView(birthDate: $birthDate, onQuickStart: handleQuickStart)
+                    .tag(2)
+                
+                // Step 4: Birth time input
+                EnhancedBirthTimeStepView(birthTime: $birthTime)
+                    .tag(3)
+                
+                // Step 5: Birth place input with completion
+                EnhancedBirthPlaceStepView(
+                    birthPlace: $birthPlace,
+                    onComplete: { insight in
+                        personalizedInsight = insight
+                        showPersonalizedInsight()
+                    }
+                )
+                .tag(4)
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: currentStep)
+            
+            if !showingPersonalizedInsight {
+                // Beautiful action button
+                VStack(spacing: 16) {
+                    Button {
+                        handleContinue()
+                    } label: {
+                        HStack {
+                            if currentStep == totalSteps - 1 {
+                                Image(systemName: "moon.stars.circle.fill")
+                                    .font(.title3.weight(.semibold))
+                                Text("Create My Profile")
+                                    .font(.title3.weight(.semibold))
+                            } else {
+                                let buttonText = currentStep == 0 ? "Begin Journey" : 
+                                                currentStep == 4 ? (birthPlace.isEmpty ? "Skip for Now" : "Continue") : 
+                                                "Continue"
+                                Text(buttonText)
+                                    .font(.title3.weight(.semibold))
+                                Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "forward.end" : "arrow.right")
+                                    .font(.title3.weight(.semibold))
+                            }
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(
+                            LinearGradient(
+                                colors: [.orange, .pink, .purple],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 28))
+                        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+                    }
+                    .disabled(!canContinue)
+                    .scaleEffect(canContinue ? 1.0 : 0.95)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: canContinue)
+                    
+                    if currentStep > 0 {
+                        Button("Back") {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                currentStep = max(0, currentStep - 1)
+                            }
+                        }
+                        .font(.callout)
+                        .foregroundStyle(.white.opacity(0.7))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 34)
+            }
+        }
+    }
+}
+
+class StoreKitManager {
+    static let shared = StoreKitManager()
+    private init() {}
+    
+    func purchaseProduct(productId: String) async -> Bool {
+        return false
+    }
+}
+
 // MARK: - Profile Setup Components
 
 struct AnimatedCosmicBackground: View {
@@ -23,7 +167,7 @@ struct AnimatedCosmicBackground: View {
             endPoint: animateGradient ? .bottomTrailing : .topLeading
         )
         .ignoresSafeArea()
-        .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateGradient)
+        .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true), value: animateGradient)
     }
 }
 
@@ -67,7 +211,7 @@ struct PersonalizedInsightOverlay: View {
                     onContinue: {
                         clearProfileSetupProgress()
                         
-                        withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                             showingPersonalizedInsight = false
                             showingConfetti = true
                         }
@@ -235,7 +379,7 @@ struct SimpleProfileSetupView: View {
     }
     
     private func setupAnimations() {
-        withAnimation(.easeInOut(duration: 2).delay(0.5)) {
+        withAnimation(.easeInOut(duration: 0.3).delay(0.5)) {
             animateGradient = true
             animateStars = true
         }
@@ -319,7 +463,7 @@ struct SimpleProfileSetupView: View {
             // Generate personalized insight
             generatePersonalizedInsight()
         } else {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 currentStep = min(totalSteps - 1, currentStep + 1)
             }
         }
@@ -451,7 +595,7 @@ struct SimpleProfileSetupView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
         impactFeedback.impactOccurred()
         
-        withAnimation(.spring(response: 0.8, dampingFraction: 0.6).delay(0.3)) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.3)) {
             showingPersonalizedInsight = true
         }
     }
@@ -540,7 +684,7 @@ struct EnhancedNameStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "person.crop.circle.fill")
+                    Image(systemName: "person.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         // `.bounce` is iOS 18+. Use `.pulse` which is available earlier.
@@ -590,7 +734,7 @@ struct EnhancedNameStepView: View {
                     // Validation feedback
                     if let error = validationError {
                         HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
+                            Image(systemName: "exclamationmark.diamond.fill")
                                 .font(.caption)
                                 .foregroundStyle(.red)
                             Text(error)
@@ -688,7 +832,7 @@ struct EnhancedBirthDateStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "calendar.circle.fill")
+                    Image(systemName: "calendar.badge.star")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         .symbolEffect(.pulse.wholeSymbol, options: .repeating)
@@ -738,7 +882,7 @@ struct EnhancedBirthDateStepView: View {
                     // Validation feedback
                     if let error = validationError {
                         HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
+                            Image(systemName: "exclamationmark.diamond.fill")
                                 .font(.caption)
                                 .foregroundStyle(.red)
                             Text(error)
@@ -772,7 +916,7 @@ struct EnhancedBirthDateStepView: View {
                             onQuickStart?()
                         } label: {
                             HStack {
-                                Image(systemName: "bolt.circle.fill")
+                                Image(systemName: "bolt.shield.fill")
                                     .font(.title3)
                                 Text("Quick Start")
                                     .font(.title3.weight(.medium))
@@ -804,7 +948,7 @@ struct EnhancedBirthDateStepView: View {
                             .padding(.horizontal, 32)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: validationError == nil)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: validationError == nil)
                 }
             }
             
@@ -866,7 +1010,7 @@ struct EnhancedBirthTimeStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "clock.circle.fill")
+                    Image(systemName: "clock.badge.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         .symbolEffect(.pulse.wholeSymbol, options: .repeating)
@@ -951,7 +1095,7 @@ struct EnhancedBirthPlaceStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "location.circle.fill")
+                    Image(systemName: "location.magnifyingglass")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         .scaleEffect(animateIcon ? 1.1 : 1.0)
@@ -1019,7 +1163,7 @@ struct EnhancedBirthPlaceStepView: View {
                                                 .foregroundStyle(.white.opacity(0.7))
                                         }
                                         Spacer()
-                                        Image(systemName: "location.fill")
+                                        Image(systemName: "mappin.and.ellipse")
                                             .font(.caption)
                                             .foregroundStyle(.white.opacity(0.6))
                                     }
@@ -1048,14 +1192,14 @@ struct EnhancedBirthPlaceStepView: View {
                     if !birthPlace.isEmpty && !showDropdown {
                         HStack {
                             if auth.profileManager.profile.birthCoordinates != nil && auth.profileManager.profile.timezone != nil {
-                                Image(systemName: "checkmark.circle.fill")
+                                Image(systemName: "checkmark.seal.fill")
                                     .font(.caption)
                                     .foregroundStyle(.green)
                                 Text("Perfect! Location validated with coordinates.")
                                     .font(.caption)
                                     .foregroundStyle(.white.opacity(0.8))
                             } else {
-                                Image(systemName: "exclamationmark.triangle.fill")
+                                Image(systemName: "exclamationmark.diamond.fill")
                                     .font(.caption)
                                     .foregroundStyle(.orange)
                                 Text("Select a location from the dropdown for best results, or skip to add later.")
@@ -1065,13 +1209,13 @@ struct EnhancedBirthPlaceStepView: View {
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: birthPlace.isEmpty)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: birthPlace.isEmpty)
                     }
                     
                     // Optional skip hint
                     if birthPlace.isEmpty && !showDropdown {
                         HStack {
-                            Image(systemName: "info.circle")
+                            Image(systemName: "questionmark.bubble.fill")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.6))
                             Text("Birth location is optional - you can always add it later in your profile.")
@@ -1080,7 +1224,7 @@ struct EnhancedBirthPlaceStepView: View {
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: birthPlace.isEmpty)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: birthPlace.isEmpty)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -1258,7 +1402,7 @@ struct PersonalizedInsightView: View {
                             Text("✨")
                                 .font(.system(size: 50))
                                 .scaleEffect(showContent ? 1.2 : 1.0)
-                                .animation(.spring(response: 0.6, dampingFraction: 0.6), value: showContent)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showContent)
                             
                             Text("Profile Created!")
                                 .font(.title.weight(.bold))
@@ -1289,7 +1433,7 @@ struct PersonalizedInsightView: View {
                             HStack {
                                 Text("Start Your Journey")
                                     .font(.headline.weight(.semibold))
-                                Image(systemName: "arrow.right.circle.fill")
+                                Image(systemName: "arrow.forward.circle.fill")
                                     .font(.title3)
                             }
                             .foregroundStyle(.white)
@@ -1326,7 +1470,7 @@ struct PersonalizedInsightView: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                 animateElements = true
                 pulseScale = 1.2
                 scanProgress = 1.0
@@ -1334,7 +1478,7 @@ struct PersonalizedInsightView: View {
             
             // Show analyzing phase for 3 seconds, then reveal results
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     isAnalyzing = false
                 }
                 
@@ -1387,7 +1531,7 @@ struct ConfettiView: View {
             confettiPieces.append(piece)
         }
         
-        withAnimation(.easeOut(duration: 3.0)) {
+        withAnimation(.easeOut(duration: 0.3)) {
             for i in confettiPieces.indices {
                 confettiPieces[i].y = UIScreen.main.bounds.height + 100
                 confettiPieces[i].opacity = 0.0
@@ -1513,7 +1657,7 @@ struct SimpleTabBarView: View {
     private func showFirstRunGuideIfNeeded() {
         if appLaunchCount <= 2 && !hasSeenTabGuide {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showTabGuide = true
                 }
             }
@@ -1662,12 +1806,12 @@ struct LearnTab: View {
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
     
-    private let tabs = [
-        (title: "Discover", icon: "sun.and.horizon.circle.fill", customIcon: nil),
-        (title: "Connect", icon: "", customIcon: "friends"),
-        (title: "Explore", icon: "graduationcap.circle.fill", customIcon: nil),
-        (title: "Ask", icon: "", customIcon: "nexus"), 
-        (title: "Manage", icon: "", customIcon: "profile")
+    private let tabs: [(title: String, icon: String, customIcon: String?)] = [
+        (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
+        (title: "Connect", icon: "sparkles.rectangle.stack.fill", customIcon: nil),
+        (title: "Explore", icon: "safari.fill", customIcon: nil),
+        (title: "Ask", icon: "bubble.left.and.bubble.right.fill", customIcon: nil), 
+        (title: "Manage", icon: "person.crop.circle.fill", customIcon: nil)
     ]
     
     var body: some View {
@@ -1684,30 +1828,15 @@ struct CustomTabBar: View {
                             if selectedTab == index {
                                 Circle()
                                     .fill(.blue.gradient)
-                                    .frame(width: 32, height: 32)
+                                    .frame(width: 36, height: 36)
                                     .shadow(color: .blue.opacity(0.3), radius: 2, x: 0, y: 1)
                                     .transition(.scale.combined(with: .opacity))
                             }
                             
                             // Icon
-                            Group {
-                                if let customIcon = tabs[index].customIcon {
-                                    switch customIcon {
-                                    case "friends":
-                                        FriendsTabIcon(isSelected: selectedTab == index)
-                                    case "nexus":
-                                        NexusTabIcon(isSelected: selectedTab == index)
-                                    case "profile":
-                                        ProfileTabIcon(isSelected: selectedTab == index)
-                                    default:
-                                        Image(systemName: tabs[index].icon)
-                                            .font(.system(size: 16, weight: .medium))
-                                    }
-                                } else {
-                                    Image(systemName: tabs[index].icon)
-                                        .font(.system(size: 16, weight: .medium))
-                                }
-                            }
+                            Image(systemName: tabs[index].icon)
+                                .font(.system(size: tabs[index].title == "Ask" ? 20 : 22, weight: .medium))
+                                .symbolRenderingMode(.hierarchical)
                         }
                         .frame(width: 44, height: 44)
                         .background(
@@ -1762,15 +1891,19 @@ struct TodayTab: View {
     @State private var showingWelcome = false
     @State private var animateWelcome = false
     @State private var planetaryPositions: [PlanetaryPosition] = []
+    @State private var showingReportSheet = false
+    @State private var showingReportsLibrary = false
+    @State private var selectedReportType: String = ""
+    @State private var userReports: [DetailedReport] = []
+    @State private var hasSubscription = false
+    
+    private let apiServices = APIServices.shared
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    welcomeSection
-                    PrimaryCTASection()
-                    
-                    // Today's date
+                    // Today's date header
                     HStack {
                         Text("Today's Horoscope")
                             .font(.title2.weight(.semibold))
@@ -1782,10 +1915,23 @@ struct TodayTab: View {
                     
                     todaysHoroscopeSection
                     
+                    // Premium Insights Section (moved from Daily tab)
+                    PremiumInsightsSection(
+                        hasSubscription: hasSubscription,
+                        onInsightTap: { reportType in
+                            selectedReportType = reportType
+                            showingReportSheet = true
+                        },
+                        onViewReports: {
+                            showingReportsLibrary = true
+                        },
+                        savedReports: userReports
+                    )
+                    
                     planetaryPositionsSection
                     
-                    // Discovery CTAs
-                    DiscoveryCTASection()
+                    // Primary CTAs moved to bottom
+                    PrimaryCTASection()
                     
                     Spacer(minLength: 32)
                 }
@@ -1796,13 +1942,28 @@ struct TodayTab: View {
         .onAppear {
             if shouldShowWelcome {
                 showingWelcome = true
-                let springAnimation = Animation.spring(response: 0.8, dampingFraction: 0.6)
+                let springAnimation = Animation.spring(response: 0.3, dampingFraction: 0.6)
                 let delayedAnimation = springAnimation.delay(0.5)
                 withAnimation(delayedAnimation) {
                     animateWelcome = true
                 }
             }
             planetaryPositions = []
+            checkSubscriptionStatus()
+            loadUserReports()
+        }
+        .sheet(isPresented: $showingReportSheet) {
+            ReportGenerationSheet(
+                reportType: selectedReportType,
+                onGenerate: generateReport,
+                onDismiss: {
+                    showingReportSheet = false
+                }
+            )
+            .environmentObject(auth)
+        }
+        .sheet(isPresented: $showingReportsLibrary) {
+            ReportsLibraryView(reports: userReports)
         }
     }
     
@@ -1826,10 +1987,6 @@ struct TodayTab: View {
             Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
                 .font(.body)
                 .lineSpacing(4)
-            
-            Divider()
-            
-            keyThemesSection
             
             Divider()
             
@@ -1888,18 +2045,64 @@ struct TodayTab: View {
     
     @ViewBuilder
     private var luckyElementsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Today's Lucky Elements")
                 .font(.headline)
             
-            HStack {
-                Label("Purple", systemImage: "circle.fill")
-                    .foregroundStyle(Color.purple)
+            HStack(spacing: 32) {
+                // Lucky Color
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Lucky Color")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color.purple)
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.purple.opacity(0.3), lineWidth: 3)
+                            )
+                        
+                        Text("Purple")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.purple)
+                    }
+                }
+                
                 Spacer()
-                Label("7", systemImage: "star.fill")
-                    .foregroundStyle(Color.yellow)
+                
+                // Lucky Number
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Lucky Number")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.yellow.opacity(0.2))
+                                .frame(width: 24, height: 24)
+                            
+                            Text("7")
+                                .font(.body.weight(.bold))
+                                .foregroundStyle(Color.primary)
+                        }
+                        
+                        Text("Seven")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.primary)
+                    }
+                }
             }
-            .font(.subheadline)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.secondary.opacity(0.1))
+            )
         }
     }
     
@@ -1930,6 +2133,46 @@ struct TodayTab: View {
                 showingWelcome = false
             })
             .transition(AnyTransition.scale.combined(with: .opacity))
+        }
+    }
+    
+    private func checkSubscriptionStatus() {
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
+    }
+    
+    private func loadUserReports() {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let response = try await apiServices.getUserReports(userId: userId)
+                await MainActor.run {
+                    userReports = response
+                }
+            } catch {
+                print("Failed to load user reports: \(error)")
+            }
+        }
+    }
+    
+    private func generateReport(reportType: String) {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let _ = try await apiServices.generateDetailedReport(
+                    userId: userId,
+                    reportType: reportType,
+                    profileData: auth.profileManager.profile
+                )
+                
+                await MainActor.run {
+                    showingReportSheet = false
+                    loadUserReports() // Refresh the reports list
+                }
+            } catch {
+                print("Failed to generate report: \(error)")
+            }
         }
     }
 }
@@ -1983,7 +2226,7 @@ struct WelcomeToTodayCard: View {
                 Spacer()
                 
                 Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
+                    Image(systemName: "xmark.seal.fill")
                         .font(.title3)
                         .foregroundStyle(.gray.opacity(0.6))
                 }
@@ -2230,7 +2473,7 @@ struct FriendsTab: View {
                     // Compact modern header
                     VStack(spacing: 12) {
                         HStack {
-                            Image(systemName: "heart.2.fill")
+                            Image(systemName: "heart.text.square.fill")
                                 .font(.title2)
                                 .foregroundStyle(.pink)
                                 .scaleEffect(animateHearts ? 1.1 : 1.0)
@@ -2255,7 +2498,7 @@ struct FriendsTab: View {
                         showingContactsPicker = true
                     } label: {
                         HStack {
-                            Image(systemName: "person.2.circle.fill")
+                            Image(systemName: "person.2.badge.gearshape.fill")
                                 .font(.title2)
                                 .foregroundStyle(.blue)
                             
@@ -2366,7 +2609,7 @@ struct FriendsTab: View {
                             // Compatibility score with animation
                             VStack(spacing: 12) {
                                 HStack {
-                                    Image(systemName: "heart.circle.fill")
+                                    Image(systemName: "heart.rectangle.fill")
                                         .font(.title2)
                                         .foregroundStyle(.pink)
                                     
@@ -2412,7 +2655,7 @@ struct FriendsTab: View {
                             insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .move(edge: .top)),
                             removal: .scale(scale: 0.9).combined(with: .opacity)
                         ))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showingResults)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showingResults)
                     }
                     
                     // Recent matches (simplified)
@@ -2498,7 +2741,7 @@ struct CompatibilityCard: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(color)
                 .scaleEffect(animateScore ? 1.1 : 1.0)
-                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: animateScore)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateScore)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
@@ -2599,7 +2842,7 @@ struct NexusTab: View {
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 2).delay(0.3)) {
+            withAnimation(.easeInOut(duration: 0.3).delay(0.3)) {
                 animateStars = true
                 animateGradient = true
             }
@@ -2634,7 +2877,7 @@ struct NexusTab: View {
             timestamp: Date()
         )
         
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             messages.append(userMessage)
         }
         
@@ -2650,13 +2893,13 @@ struct NexusTab: View {
         
         Task {
             do {
-                let context = ChatContext(
+                _ = ChatContext(
                     userChart: auth.profileManager.lastChart,
                     currentTransits: nil,
                     preferences: nil
                 )
                 
-                let response = try await apiServices.sendChatMessage(currentMessage, context: context)
+                let response = try await apiServices.sendChatMessage(currentMessage, context: "chat_context")
                 
                 await MainActor.run {
                     withAnimation(.easeInOut(duration: 0.3)) {
@@ -2672,7 +2915,7 @@ struct NexusTab: View {
                         timestamp: Date()
                     )
                     
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         messages.append(aiMessage)
                     }
                     
@@ -2699,7 +2942,7 @@ struct NexusTab: View {
                         timestamp: Date()
                     )
                     
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         messages.append(errorMessage)
                     }
                     
@@ -2739,7 +2982,7 @@ struct MessageLimitBanner: View {
     
     var body: some View {
         HStack {
-            Image(systemName: "star.circle.fill")
+            Image(systemName: "moon.stars.circle.fill")
                 .foregroundStyle(.orange)
             
             Text("\(used)/\(limit) free messages today")
@@ -2776,7 +3019,7 @@ struct ErrorMessageView: View {
     
     var body: some View {
         HStack {
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: "exclamationmark.diamond.fill")
                 .foregroundStyle(.orange)
             
             Text(message)
@@ -2807,7 +3050,7 @@ struct SubscriptionSheet: View {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 12) {
-                    Image(systemName: "star.circle.fill")
+                    Image(systemName: "moon.stars.circle.fill")
                         .font(.system(size: 60))
                         .foregroundStyle(.orange)
                     
@@ -3039,7 +3282,7 @@ struct CosmicMessageView: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8).delay(0.1)) {
                 animateMessage = true
             }
         }
@@ -3775,11 +4018,13 @@ struct ProfileEditView: View {
                                         set: { newLocation in
                                             if let location = newLocation {
                                                 editedProfile.birthPlace = location.fullName
-                                                editedProfile.birthCoordinates = location.coordinate
+                                                editedProfile.birthLatitude = location.coordinate.latitude
+                                                editedProfile.birthLongitude = location.coordinate.longitude
                                                 editedProfile.timezone = location.timezone
                                             } else {
                                                 editedProfile.birthPlace = nil
-                                                editedProfile.birthCoordinates = nil
+                                                editedProfile.birthLatitude = nil
+                                                editedProfile.birthLongitude = nil
                                                 editedProfile.timezone = nil
                                             }
                                         }
@@ -3788,7 +4033,8 @@ struct ProfileEditView: View {
                                 ) { location in
                                     // Update profile when location is selected
                                     editedProfile.birthPlace = location.fullName
-                                    editedProfile.birthCoordinates = location.coordinate
+                                    editedProfile.birthLatitude = location.coordinate.latitude
+                                    editedProfile.birthLongitude = location.coordinate.longitude
                                     editedProfile.timezone = location.timezone
                                 }
                             }
@@ -3926,27 +4172,27 @@ struct EnhancedSettingsView: View {
                 // App Preferences
                 Section {
                     HStack {
-                        Label("Notifications", systemImage: "bell.fill")
+                        Label("Notifications", systemImage: "bell.badge.fill")
                         Spacer()
                         Toggle("", isOn: $notificationsEnabled)
                     }
                     
                     if notificationsEnabled {
                         HStack {
-                            Label("Daily Horoscope", systemImage: "sun.max.fill")
+                            Label("Daily Horoscope", systemImage: "sun.and.horizon.fill")
                             Spacer()
                             Toggle("", isOn: $dailyReminder)
                         }
                         
                         HStack {
-                            Label("Weekly Report", systemImage: "calendar.badge.clock")
+                            Label("Weekly Report", systemImage: "calendar.badge.star")
                             Spacer()
                             Toggle("", isOn: $weeklyReport)
                         }
                     }
                     
                     HStack {
-                        Label("Theme", systemImage: "paintbrush.fill")
+                        Label("Theme", systemImage: "paintpalette.fill")
                         Spacer()
                         Picker("Theme", selection: $selectedTheme) {
                             ForEach(themes, id: \.self) { theme in
@@ -3964,13 +4210,13 @@ struct EnhancedSettingsView: View {
                     NavigationLink {
                         DataPrivacyView()
                     } label: {
-                        Label("Data & Privacy", systemImage: "hand.raised.fill")
+                        Label("Data & Privacy", systemImage: "lock.shield.fill")
                     }
                     
                     NavigationLink {
                         ExportDataView(auth: auth)
                     } label: {
-                        Label("Export My Data", systemImage: "square.and.arrow.up.fill")
+                        Label("Export My Data", systemImage: "square.and.arrow.up.on.square.fill")
                     }
                 } header: {
                     Text("Data & Privacy")
@@ -3979,17 +4225,17 @@ struct EnhancedSettingsView: View {
                 // Support
                 Section {
                     Link(destination: URL(string: "mailto:support@astronova.app")!) {
-                        Label("Contact Support", systemImage: "questionmark.circle.fill")
+                        Label("Contact Support", systemImage: "message.badge.filled.fill")
                     }
                     
                     Link(destination: URL(string: "https://astronova.app/help")!) {
-                        Label("Help Center", systemImage: "book.fill")
+                        Label("Help Center", systemImage: "questionmark.app.fill")
                     }
                     
                     NavigationLink {
                         AboutView()
                     } label: {
-                        Label("About", systemImage: "info.circle.fill")
+                        Label("About", systemImage: "star.circle.fill")
                     }
                 } header: {
                     Text("Support")
@@ -4001,14 +4247,14 @@ struct EnhancedSettingsView: View {
                         auth.signOut()
                         dismiss()
                     } label: {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right.fill")
+                        Label("Sign Out", systemImage: "door.left.hand.open")
                             .foregroundStyle(.red)
                     }
                     
                     Button {
                         showingAccountDeletion = true
                     } label: {
-                        Label("Delete Account", systemImage: "trash.fill")
+                        Label("Delete Account", systemImage: "xmark.shield.fill")
                             .foregroundStyle(.red)
                     }
                 } header: {
@@ -4260,14 +4506,7 @@ struct CalendarHoroscopeView: View {
     @Binding var selectedDate: Date
     let onBookmark: (HoroscopeReading) -> Void
     
-    @State private var showingReportSheet = false
-    @State private var showingReportsLibrary = false
-    @State private var selectedReportType: String = ""
-    @State private var userReports: [DetailedReport] = []
-    @State private var hasSubscription = false
     @EnvironmentObject private var auth: AuthState
-    
-    private let apiServices = APIServices.shared
     
     var body: some View {
         ScrollView {
@@ -4280,87 +4519,12 @@ struct CalendarHoroscopeView: View {
                     date: selectedDate,
                     onBookmark: onBookmark,
                     onDiscoverMore: {
-                        // Scroll to Premium Insights section or highlight it
-                        withAnimation(.easeInOut(duration: 0.8)) {
-                            // This could trigger a scroll or highlight animation
-                            // For now, we'll leave this empty as the Premium Insights section is already visible below
-                        }
+                        // Premium Insights have been moved to the Discover page
                     }
-                )
-                
-                // Premium Insights Section
-                PremiumInsightsSection(
-                    hasSubscription: hasSubscription,
-                    onInsightTap: { reportType in
-                        selectedReportType = reportType
-                        showingReportSheet = true
-                    },
-                    onViewReports: {
-                        showingReportsLibrary = true
-                    },
-                    savedReports: userReports
                 )
                 
             }
             .padding()
-        }
-        .onAppear {
-            checkSubscriptionStatus()
-            loadUserReports()
-        }
-        .sheet(isPresented: $showingReportSheet) {
-            ReportGenerationSheet(
-                reportType: selectedReportType,
-                onGenerate: generateReport,
-                onDismiss: {
-                    showingReportSheet = false
-                }
-            )
-            .environmentObject(auth)
-        }
-        .sheet(isPresented: $showingReportsLibrary) {
-            ReportsLibraryView(reports: userReports)
-        }
-    }
-    
-    private func checkSubscriptionStatus() {
-        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
-    }
-    
-    private func loadUserReports() {
-        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
-        
-        Task {
-            do {
-                let response = try await apiServices.getUserReports(userId: userId)
-                await MainActor.run {
-                    userReports = response.reports
-                }
-            } catch {
-                print("Failed to load user reports: \(error)")
-            }
-        }
-    }
-    
-    private func generateReport(reportType: String) {
-        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
-        
-        Task {
-            do {
-                let birthData = try BirthData(from: auth.profileManager.profile)
-                let _ = try await apiServices.generateDetailedReport(
-                    birthData: birthData,
-                    type: reportType,
-                    userId: userId
-                )
-                
-                await MainActor.run {
-                    showingReportSheet = false
-                    loadUserReports() // Refresh the reports list
-                }
-            } catch {
-                print("Failed to generate report: \(error)")
-            }
         }
     }
 }
@@ -4693,7 +4857,7 @@ struct DailySynopsisCard: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Image(systemName: "arrow.right.circle.fill")
+                            Image(systemName: "arrow.forward.circle.fill")
                                 .foregroundStyle(.blue)
                         }
                         .padding(.horizontal, 16)
@@ -4824,23 +4988,9 @@ struct InsightCard: View {
                     Spacer()
                     
                     if isGenerated {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "checkmark.seal.fill")
                             .font(.caption)
                             .foregroundStyle(.green)
-                    } else if !hasSubscription {
-                        if let pricing = ReportPricing.pricing(for: insight.id) {
-                            Text(pricing.localizedPrice ?? pricing.price)
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(insight.color)
-                                .cornerRadius(8)
-                        } else {
-                            Image(systemName: "lock.fill")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                        }
                     }
                 }
                 
@@ -4880,6 +5030,8 @@ struct ReportGenerationSheet: View {
     @State private var isGenerating = false
     @State private var hasSubscription = false
     @State private var showingSubscription = false
+    @State private var showPurchaseError = false
+    @State private var showPaymentOptions = false
     @Environment(\.dismiss) private var dismiss
     
     private var reportInfo: InsightType {
@@ -4899,35 +5051,79 @@ struct ReportGenerationSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 16) {
-                    Image(systemName: reportInfo.icon)
-                        .font(.system(size: 60))
-                        .foregroundStyle(reportInfo.color)
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 12) {
+                        Image(systemName: reportInfo.icon)
+                            .font(.system(size: 50))
+                            .foregroundStyle(reportInfo.color)
+                        
+                        Text("Sample \(reportInfo.title)")
+                            .font(.title2.weight(.bold))
+                        
+                        Text("See what your personalised report will contain")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top)
                     
-                    Text(reportInfo.title)
-                        .font(.largeTitle.weight(.bold))
+                    // Sample Report Preview
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Section 1: Overview (Unlocked)
+                        ReportSectionPreview(
+                            title: "Overview",
+                            isLocked: false,
+                            content: getSampleOverview(),
+                            onLockedTap: nil
+                        )
+                        
+                        // Section 2: Detailed Analysis (Locked)
+                        ReportSectionPreview(
+                            title: "Detailed Analysis",
+                            isLocked: true,
+                            content: "Your complete astrological blueprint including planetary positions, house placements, and aspect patterns...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                        
+                        // Section 3: Key Insights (Locked)
+                        ReportSectionPreview(
+                            title: "Key Life Insights",
+                            isLocked: true,
+                            content: "Discover your life purpose, karmic lessons, and soul's journey based on your unique cosmic signature...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                        
+                        // Section 4: Timing & Predictions (Locked)
+                        ReportSectionPreview(
+                            title: "Timing & Future Trends",
+                            isLocked: true,
+                            content: "Optimal timing for major life decisions, upcoming opportunities, and cosmic cycles affecting you...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                        
+                        // Section 5: Recommendations (Locked)
+                        ReportSectionPreview(
+                            title: "Personalised Recommendations",
+                            isLocked: true,
+                            content: "Specific actions, crystals, colors, and practices aligned with your astrological profile...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                    }
+                    .padding(.horizontal)
                     
-                    Text(reportInfo.description)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                    Spacer(minLength: 20)
                 }
-                
-                // Features
-                VStack(alignment: .leading, spacing: 12) {
-                    SimpleFeatureRow(icon: "brain.head.profile", text: "AI-powered personalized analysis")
-                    SimpleFeatureRow(icon: "clock", text: "Generated in under 60 seconds")
-                    SimpleFeatureRow(icon: "arrow.down.circle", text: "PDF download included")
-                    SimpleFeatureRow(icon: "bookmark", text: "Saved to your profile forever")
-                }
-                .padding()
-                .background(.regularMaterial)
-                .cornerRadius(12)
-                
-                Spacer()
-                
+            }
+            .safeAreaInset(edge: .bottom) {
                 // Action Buttons
                 VStack(spacing: 16) {
                     if hasSubscription {
@@ -4943,7 +5139,7 @@ struct ReportGenerationSheet: View {
                                     Image(systemName: "sparkles")
                                 }
                                 
-                                Text(isGenerating ? "Generating..." : "Generate Report")
+                                Text(isGenerating ? "Generating..." : "Dive Deeper")
                                     .font(.headline)
                             }
                             .frame(maxWidth: .infinity)
@@ -4954,51 +5150,103 @@ struct ReportGenerationSheet: View {
                         }
                         .disabled(isGenerating)
                     } else {
-                        // Individual Purchase Options
+                        // Purchase Options - Astronova Pro as primary decoy
                         VStack(spacing: 12) {
+                            // Astronova Pro - Primary Option (Decoy)
+                            Button {
+                                showingSubscription = true
+                            } label: {
+                                VStack(spacing: 12) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("BEST VALUE")
+                                                .font(.caption.weight(.bold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(.green)
+                                                .cornerRadius(4)
+                                            
+                                            Text("Astronova Pro")
+                                                .font(.title2.weight(.bold))
+                                            
+                                            Text("$9.99/month")
+                                                .font(.title3.weight(.medium))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "crown.fill")
+                                            .font(.largeTitle)
+                                            .foregroundStyle(.yellow)
+                                    }
+                                    
+                                    Divider()
+                                    
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                            Text("All 4 detailed reports included")
+                                                .font(.subheadline)
+                                        }
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                            Text("Unlimited AI chat conversations")
+                                                .font(.subheadline)
+                                        }
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                            Text("Priority support & new features")
+                                                .font(.subheadline)
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    LinearGradient(
+                                        colors: [reportInfo.color.opacity(0.8), reportInfo.color],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .foregroundStyle(.white)
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(.white.opacity(0.3), lineWidth: 2)
+                                )
+                            }
+                            
+                            // Individual Report - Secondary Option
                             if let pricing = ReportPricing.pricing(for: reportType) {
                                 Button {
                                     purchaseIndividualReport()
                                 } label: {
                                     HStack {
-                                        Image(systemName: "creditcard.and.123")
-                                        VStack(spacing: 4) {
-                                            Text("Purchase This Report")
-                                                .font(.headline)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Single Report Only")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Text("Purchase \(reportInfo.title)")
+                                                .font(.subheadline.weight(.medium))
                                             Text(pricing.localizedPrice ?? pricing.price)
-                                                .font(.title2.weight(.bold))
+                                                .font(.headline.weight(.bold))
                                         }
                                         Spacer()
                                         Image(systemName: "apple.logo")
-                                            .font(.title2)
+                                            .font(.title3)
                                     }
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .foregroundStyle(.white)
-                                    .background(reportInfo.color)
+                                    .padding()
+                                    .foregroundStyle(.primary)
+                                    .background(.quaternary)
                                     .cornerRadius(12)
                                 }
-                            }
-                            
-                            Button {
-                                showingSubscription = true
-                            } label: {
-                                VStack(spacing: 8) {
-                                    HStack {
-                                        Text("Or get Astronova Pro")
-                                            .font(.subheadline)
-                                        Text("$9.99/month")
-                                            .font(.subheadline.weight(.bold))
-                                    }
-                                    Text("All reports + unlimited chat")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .foregroundStyle(.primary)
-                                .background(.quaternary)
-                                .cornerRadius(8)
                             }
                         }
                     }
@@ -5008,8 +5256,9 @@ struct ReportGenerationSheet: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
+                .padding()
+                .background(.regularMaterial)
             }
-            .padding()
             .navigationTitle("Premium Insight")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden()
@@ -5026,6 +5275,25 @@ struct ReportGenerationSheet: View {
         }
         .sheet(isPresented: $showingSubscription) {
             SubscriptionSheet()
+        }
+        .sheet(isPresented: $showPaymentOptions) {
+            PaymentOptionsSheet(
+                reportType: reportType,
+                reportInfo: reportInfo,
+                onPurchaseIndividual: {
+                    showPaymentOptions = false
+                    purchaseIndividualReport()
+                },
+                onSubscribe: {
+                    showPaymentOptions = false
+                    showingSubscription = true
+                }
+            )
+        }
+        .alert("Purchase Error", isPresented: $showPurchaseError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Unable to complete purchase. Please try again.")
         }
     }
     
@@ -5044,6 +5312,208 @@ struct ReportGenerationSheet: View {
                 } else {
                     isGenerating = false
                     showPurchaseError = true
+                }
+            }
+        }
+    }
+    
+    private func getSampleOverview() -> String {
+        switch reportType {
+        case "love_forecast":
+            return "Based on your astrological profile, you are entering a powerful period for romantic connections. Venus in your 5th house suggests heightened charm and magnetism. The upcoming months show strong potential for meaningful encounters, especially during the full moon phases..."
+        case "birth_chart":
+            return "You are a unique blend of fire and water elements, creating a dynamic personality that balances passion with emotional depth. Your Sun sign reveals your core identity, while your Moon sign shows your emotional nature. With Mercury in an air sign, you possess quick wit and excellent communication skills..."
+        case "career_forecast":
+            return "Your professional life is entering an expansive phase. Jupiter's transit through your 10th house of career indicates opportunities for growth and recognition. Your natural leadership abilities combined with your strategic thinking make you well-suited for positions of authority..."
+        case "year_ahead":
+            return "The year ahead promises transformation and growth across multiple life areas. The first quarter focuses on personal development and self-discovery. Spring brings opportunities in relationships and partnerships. Summer emphasizes career advancement, while autumn encourages spiritual growth..."
+        default:
+            return "This comprehensive analysis reveals key patterns in your astrological chart that influence your life path. Understanding these cosmic energies helps you make informed decisions and align with your highest potential..."
+        }
+    }
+}
+
+struct ReportSectionPreview: View {
+    let title: String
+    let isLocked: Bool
+    let content: String
+    let onLockedTap: (() -> Void)?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(title)
+                    .font(.headline)
+                
+                Spacer()
+                
+                if isLocked {
+                    HStack(spacing: 4) {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                        Text("LOCKED")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(.orange)
+                }
+            }
+            
+            if isLocked {
+                // Locked content - blurred preview
+                Button(action: {
+                    onLockedTap?()
+                }) {
+                    Text(content)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .lineSpacing(4)
+                        .blur(radius: 6)
+                        .overlay(
+                            VStack(spacing: 8) {
+                                Image(systemName: "lock.circle.fill")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.orange)
+                                Text("Tap to Unlock")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.primary)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(.ultraThinMaterial)
+                        )
+                        .frame(minHeight: 80)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+            } else {
+                // Unlocked content
+                Text(content)
+                    .font(.body)
+                    .lineSpacing(4)
+            }
+        }
+        .padding()
+        .background(.quaternary)
+        .cornerRadius(12)
+    }
+}
+
+struct PaymentOptionsSheet: View {
+    let reportType: String
+    let reportInfo: InsightType
+    let onPurchaseIndividual: () -> Void
+    let onSubscribe: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "lock.open.fill")
+                        .font(.system(size: 50))
+                        .foregroundStyle(reportInfo.color)
+                    
+                    Text("Unlock Full Report")
+                        .font(.title2.weight(.bold))
+                    
+                    Text("Choose how you'd like to access your \(reportInfo.title)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top)
+                
+                // Options
+                VStack(spacing: 16) {
+                    // Astronova Pro Option
+                    Button {
+                        onSubscribe()
+                    } label: {
+                        VStack(spacing: 12) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("RECOMMENDED")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(.green)
+                                        .cornerRadius(4)
+                                    
+                                    Text("Astronova Pro")
+                                        .font(.title3.weight(.bold))
+                                    
+                                    Text("$9.99/month")
+                                        .font(.headline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "crown.fill")
+                                    .font(.title)
+                                    .foregroundStyle(.yellow)
+                            }
+                            
+                            Text("Unlock all reports + unlimited features")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                colors: [reportInfo.color.opacity(0.8), reportInfo.color],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .foregroundStyle(.white)
+                        .cornerRadius(16)
+                    }
+                    
+                    // Individual Report Option
+                    if let pricing = ReportPricing.pricing(for: reportType) {
+                        Button {
+                            onPurchaseIndividual()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Single Report")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text(reportInfo.title)
+                                        .font(.headline)
+                                    Text(pricing.localizedPrice ?? pricing.price)
+                                        .font(.title3.weight(.bold))
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "doc.badge.plus")
+                                    .font(.title2)
+                                    .foregroundStyle(reportInfo.color)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(.quaternary)
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Choose Your Option")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
                 }
             }
         }
@@ -5337,13 +5807,13 @@ struct ReportDetailView: View {
                         Button {
                             downloadPDF()
                         } label: {
-                            Label("Download PDF", systemImage: "arrow.down.circle")
+                            Label("Download PDF", systemImage: "arrow.down.doc.fill")
                         }
                         
                         Button {
                             showingShareSheet = true
                         } label: {
-                            Label("Share", systemImage: "square.and.arrow.up")
+                            Label("Share", systemImage: "shareplay")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -6066,7 +6536,7 @@ struct TabGuideOverlay: View {
                                 .fill(index <= safeStep ? guides[safeStep].color : .gray.opacity(0.3))
                                 .frame(width: 8, height: 8)
                                 .scaleEffect(index == safeStep ? 1.3 : 1.0)
-                                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: safeStep)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: safeStep)
                         }
                     }
                     
@@ -6076,7 +6546,7 @@ struct TabGuideOverlay: View {
                                 if safeStep == 3 {
                                     Text("Start Your Journey")
                                         .font(.headline.weight(.semibold))
-                                    Image(systemName: "arrow.right.circle.fill")
+                                    Image(systemName: "arrow.forward.circle.fill")
                                         .font(.title3)
                                 } else {
                                     Text("Next")
@@ -6111,7 +6581,7 @@ struct TabGuideOverlay: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 animateContent = true
             }
         }

@@ -86,7 +86,7 @@ struct ProfileSetupContentView: View {
                     } label: {
                         HStack {
                             if currentStep == totalSteps - 1 {
-                                Image(systemName: "star.circle.fill")
+                                Image(systemName: "moon.stars.circle.fill")
                                     .font(.title3.weight(.semibold))
                                 Text("Create My Profile")
                                     .font(.title3.weight(.semibold))
@@ -96,7 +96,7 @@ struct ProfileSetupContentView: View {
                                                 "Continue"
                                 Text(buttonText)
                                     .font(.title3.weight(.semibold))
-                                Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "forward.end" : "arrow.right")
+                                Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "arrow.forward.square.fill" : "arrow.right.circle.fill")
                                     .font(.title3.weight(.semibold))
                             }
                         }

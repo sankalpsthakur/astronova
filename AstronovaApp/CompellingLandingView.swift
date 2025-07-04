@@ -207,7 +207,7 @@ struct CompellingLandingView: View {
             } label: {
                 HStack(spacing: 12) {
                     Text("Reveal Your Cosmic Moment")
-                    Image(systemName: "arrow.right.circle.fill")
+                    Image(systemName: "arrow.forward.circle.fill")
                 }
                 .font(.headline.weight(.medium))
                 .foregroundStyle(.white)
@@ -233,7 +233,7 @@ struct CompellingLandingView: View {
             .opacity(currentPhase >= 0 ? 1 : 0)
             .animation(.easeInOut(duration: 1).delay(2), value: currentPhase)
             .overlay(
-                StarburstAnimationView(style: .cosmic, duration: 1.5, particleCount: 15)
+                StarburstAnimationView(style: .cosmic, duration: 0.3, particleCount: 12)
                     .opacity(currentPhase == 1 ? 1 : 0)
                     .allowsHitTesting(false)
             )
@@ -279,7 +279,7 @@ struct CompellingLandingView: View {
             } label: {
                 HStack(spacing: 12) {
                     Text("What Does This Mean For Me?")
-                    Image(systemName: "sparkles")
+                    Image(systemName: "sparkle.magnifyingglass")
                 }
                 .font(.headline.weight(.medium))
                 .foregroundStyle(.white)
@@ -377,7 +377,7 @@ struct CompellingLandingView: View {
                 } label: {
                     VStack(spacing: 8) {
                         HStack {
-                            Image(systemName: "location.circle")
+                            Image(systemName: "location.magnifyingglass")
                                 .font(.title2)
                             Text("Get My Cosmic Coordinates")
                                 .font(.headline.weight(.medium))

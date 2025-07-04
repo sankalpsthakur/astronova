@@ -117,8 +117,8 @@ class NetworkClient: NetworkClientProtocol {
             self.session = session
         } else {
             let config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 30
-            config.timeoutIntervalForResource = 60
+            config.timeoutIntervalForRequest = 10
+            config.timeoutIntervalForResource = 30
             self.session = URLSession(configuration: config)
         }
     }

@@ -15,7 +15,7 @@ struct StarburstAnimationView: View {
     @State private var animationPhase = 0.0
     @State private var isAnimating = false
     
-    init(style: StarburstStyle = .cosmic, duration: Double = 2.0, particleCount: Int = 20) {
+    init(style: StarburstStyle = .cosmic, duration: Double = 0.3, particleCount: Int = 12) {
         self.style = style
         self.duration = duration
         self.particleCount = particleCount
@@ -180,7 +180,7 @@ struct StarburstEffectModifier: ViewModifier {
 
 extension View {
     /// Adds a starburst effect when the view is tapped
-    func starburstEffect(style: StarburstAnimationView.StarburstStyle = .cosmic, duration: Double = 2.0) -> some View {
+    func starburstEffect(style: StarburstAnimationView.StarburstStyle = .cosmic, duration: Double = 0.3) -> some View {
         modifier(StarburstEffectModifier(style: style, duration: duration))
     }
 }

@@ -1,6 +1,46 @@
 import Foundation
 import CoreLocation
 
+// MARK: - Protocol Definitions
+
+/// Simple chat message for protocol conformance
+struct ProtocolChatMessage: Codable {
+    let role: String // "user" or "assistant"
+    let content: String
+    let timestamp: Date?
+    
+    init(role: String, content: String, timestamp: Date? = nil) {
+        self.role = role
+        self.content = content
+        self.timestamp = timestamp
+    }
+}
+
+/// Simple chat response for protocol conformance
+struct ProtocolChatResponse: Codable {
+    let response: String
+    let conversation_id: String
+    
+    init(response: String, conversation_id: String) {
+        self.response = response
+        self.conversation_id = conversation_id
+    }
+}
+
+/// API Services Protocol
+protocol APIServicesProtocol: ObservableObject {
+    func healthCheck() async throws -> HealthResponse
+    func generateChart(birthData: BirthData, systems: [String]) async throws -> ChartResponse
+    func generateChart(from profile: UserProfile) async throws -> ChartResponse
+    func getChartAspects(birthData: BirthData) async throws -> Data
+    func getHoroscope(sign: String, period: String) async throws -> HoroscopeResponse
+    func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse
+    func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse
+    func searchLocations(query: String) async throws -> [LocationResult]
+    func getCurrentTransits() async throws -> TransitsResponse
+    func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse
+}
+
 /// Main API service class that handles all backend communication
 class APIServices: ObservableObject, APIServicesProtocol {
     static let shared = APIServices()
@@ -16,7 +56,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
     }
     
-    // Callback for when token expires and needs refresh
+    // Token expiry callback
     var onTokenExpired: (() async -> Void)?
     
     // Dependency-injectable initializer
@@ -24,27 +64,33 @@ class APIServices: ObservableObject, APIServicesProtocol {
         self.networkClient = networkClient
     }
     
-    // Keep singleton for backward compatibility but prefer DI  
-    private convenience init() {
-        self.init(networkClient: NetworkClient())
+    // Keep singleton for backward compatibility but prefer DI
+    private init() {
+        self.networkClient = NetworkClient()
     }
     
     // MARK: - Health Check
     
-    /// Check if the backend is healthy and accessible
+    /// Check if the backend service is healthy
     func healthCheck() async throws -> HealthResponse {
-        return try await networkClient.healthCheck()
+        return try await networkClient.request(
+            endpoint: "/api/v1/health",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: HealthResponse.self
+        )
     }
     
-    // MARK: - Chart Services
+    // MARK: - Chart Generation
     
-    /// Generate an astrological chart
-    func generateChart(birthData: BirthData, systems: [String] = ["western", "vedic"]) async throws -> ChartResponse {
-        let request = ChartRequest(
-            birthData: birthData,
-            chartType: "natal",
-            systems: systems
-        )
+    /// Generate astrological chart
+    func generateChart(birthData: BirthData, systems: [String]) async throws -> ChartResponse {
+        struct ChartRequest: Codable {
+            let birthData: BirthData
+            let systems: [String]
+        }
+        
+        let request = ChartRequest(birthData: birthData, systems: systems)
         
         return try await networkClient.request(
             endpoint: "/api/v1/chart/generate",
@@ -54,100 +100,63 @@ class APIServices: ObservableObject, APIServicesProtocol {
         )
     }
     
-    /// Generate chart from UserProfile
+    /// Generate chart from user profile
     func generateChart(from profile: UserProfile) async throws -> ChartResponse {
-        let birthData = try BirthData(from: profile)
-        return try await generateChart(birthData: birthData)
+        guard let latitude = profile.birthLatitude,
+              let longitude = profile.birthLongitude,
+              let timezone = profile.timezone else {
+            throw NetworkError.invalidRequest
+        }
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateString = dateFormatter.string(from: profile.birthDate)
+        
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        let timeString = profile.birthTime != nil ? timeFormatter.string(from: profile.birthTime!) : "12:00"
+        
+        let birthData = BirthData(
+            name: profile.fullName,
+            date: dateString,
+            time: timeString,
+            latitude: latitude,
+            longitude: longitude,
+            city: profile.birthPlace ?? "Unknown",
+            state: nil,
+            country: "Unknown",
+            timezone: timezone
+        )
+        
+        let systems = ["tropical"] // Default to tropical system
+        
+        return try await generateChart(birthData: birthData, systems: systems)
     }
     
     /// Get chart aspects
     func getChartAspects(birthData: BirthData) async throws -> Data {
-        let request = ChartRequest(
-            birthData: birthData,
-            chartType: "natal",
-            systems: ["western"]
-        )
-        
-        // Note: Return raw Data for flexible JSON handling
-        // Can be decoded to specific types as needed
-        return try await networkClient.requestData(
+        return try await networkClient.request(
             endpoint: "/api/v1/chart/aspects",
             method: HTTPMethod.POST,
-            body: request
+            body: birthData,
+            responseType: Data.self
         )
     }
-    
-    // MARK: - Location Services
-    
-    /// Search for locations by name (detailed response)
-    func searchLocationsDetailed(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
-        var components = URLComponents()
-        components.path = "/api/v1/locations/search"
-        components.queryItems = [
-            URLQueryItem(name: "query", value: query),
-            URLQueryItem(name: "limit", value: String(limit))
-        ]
-        
-        guard let url = components.url else {
-            throw NetworkError.invalidURL
-        }
-        
-        return try await networkClient.request(
-            endpoint: url.absoluteString,
-            responseType: LocationSearchResponse.self
-        )
-    }
-    
-    /// Get timezone for coordinates
-    func getTimezone(for coordinate: CLLocationCoordinate2D) async throws -> String {
-        var components = URLComponents()
-        components.path = "/api/v1/locations/timezone"
-        components.queryItems = [
-            URLQueryItem(name: "lat", value: String(coordinate.latitude)),
-            URLQueryItem(name: "lng", value: String(coordinate.longitude))
-        ]
-        
-        guard let url = components.url else {
-            throw NetworkError.invalidURL
-        }
-        
-        let response = try await networkClient.request(
-            endpoint: url.absoluteString,
-            responseType: [String: String].self
-        )
-        
-        guard let timezone = response["timezone"] else {
-            throw NetworkError.decodingError
-        }
-        
-        return timezone
-    }
-    
-    // MARK: - Horoscope Services
     
     // MARK: - Protocol Required Methods
     
     /// Get horoscope for protocol conformance
-    func getHoroscope(sign: String, period: String) async throws -> ServiceProtocols.HoroscopeResponse {
-        let horoscope: AstronovaApp.HoroscopeResponse
+    func getHoroscope(sign: String, period: String) async throws -> HoroscopeResponse {
         switch period.lowercased() {
         case "daily":
-            horoscope = try await getDailyHoroscope(for: sign)
+            return try await getDailyHoroscope(for: sign)
         case "weekly":
-            horoscope = try await getWeeklyHoroscope(for: sign)
+            return try await getWeeklyHoroscope(for: sign)
         case "monthly":
-            horoscope = try await getMonthlyHoroscope(for: sign)
+            return try await getMonthlyHoroscope(for: sign)
         default:
-            horoscope = try await getDailyHoroscope(for: sign)
+            return try await getDailyHoroscope(for: sign)
         }
-        
-        // Convert to protocol format
-        return ServiceProtocols.HoroscopeResponse(
-            sign: sign,
-            period: period,
-            content: horoscope.horoscope,
-            date: Date()
-        )
     }
     
     /// Get compatibility report for protocol conformance
@@ -172,6 +181,10 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     /// Search locations for protocol conformance
     func searchLocations(query: String) async throws -> [LocationResult] {
+        if query.isEmpty {
+            return []
+        }
+        
         let response = try await searchLocationsDetailed(query: query, limit: 10)
         return response.locations
     }
@@ -224,236 +237,153 @@ class APIServices: ObservableObject, APIServicesProtocol {
         
         components.queryItems = queryItems
         
-        guard let url = components.url else {
-            throw NetworkError.invalidURL
-        }
-        
         return try await networkClient.request(
-            endpoint: url.absoluteString,
+            endpoint: components.path + "?" + (components.query ?? ""),
+            method: HTTPMethod.GET,
+            body: nil,
             responseType: HoroscopeResponse.self
         )
     }
     
     /// Get weekly horoscope for a sign
-    func getWeeklyHoroscope(for sign: String) async throws -> AstronovaApp.HoroscopeResponse {
-        var components = URLComponents()
-        components.path = "/api/v1/horoscope"
-        components.queryItems = [
-            URLQueryItem(name: "sign", value: sign.lowercased()),
-            URLQueryItem(name: "type", value: "weekly")
-        ]
-        
-        guard let url = components.url else {
-            throw NetworkError.invalidURL
-        }
+    func getWeeklyHoroscope(for sign: String) async throws -> HoroscopeResponse {
+        let queryString = "?sign=\(sign.lowercased())&type=weekly"
         
         return try await networkClient.request(
-            endpoint: url.absoluteString,
+            endpoint: "/api/v1/horoscope\(queryString)",
+            method: HTTPMethod.GET,
+            body: nil,
             responseType: HoroscopeResponse.self
         )
     }
     
     /// Get monthly horoscope for a sign
-    func getMonthlyHoroscope(for sign: String) async throws -> AstronovaApp.HoroscopeResponse {
-        var components = URLComponents()
-        components.path = "/api/v1/horoscope"
-        components.queryItems = [
-            URLQueryItem(name: "sign", value: sign.lowercased()),
-            URLQueryItem(name: "type", value: "monthly")
-        ]
-        
-        guard let url = components.url else {
-            throw NetworkError.invalidURL
-        }
+    func getMonthlyHoroscope(for sign: String) async throws -> HoroscopeResponse {
+        let queryString = "?sign=\(sign.lowercased())&type=monthly"
         
         return try await networkClient.request(
-            endpoint: url.absoluteString,
+            endpoint: "/api/v1/horoscope\(queryString)",
+            method: HTTPMethod.GET,
+            body: nil,
             responseType: HoroscopeResponse.self
         )
     }
     
-    // MARK: - Chat Services
+    /// Search locations with details
+    func searchLocationsDetailed(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
+        var components = URLComponents()
+        components.path = "/api/v1/location/search"
+        components.queryItems = [
+            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
+        
+        let response = try await networkClient.request(
+            endpoint: components.path + "?" + (components.query ?? ""),
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: LocationSearchResponse.self
+        )
+        
+        return response
+    }
     
-    /// Send a chat message to the AI astrologer
-    func sendChatMessage(_ message: String, context: ChatContext? = nil) async throws -> AstronovaApp.ChatResponse {
+    /// Get current planetary positions
+    func getCurrentPlanetaryPositions() async throws -> [String: PlanetaryPosition] {
+        return try await networkClient.request(
+            endpoint: "/api/v1/astrology/positions",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: [String: PlanetaryPosition].self
+        )
+    }
+    
+    /// Send chat message
+    func sendChatMessage(_ message: String, context: String = "") async throws -> ChatResponse {
+        struct ChatRequest: Codable {
+            let message: String
+            let context: String
+        }
+        
         let request = ChatRequest(message: message, context: context)
         
         return try await networkClient.request(
-            endpoint: "/api/v1/chat/send",
+            endpoint: "/api/v1/chat",
             method: HTTPMethod.POST,
             body: request,
             responseType: ChatResponse.self
         )
     }
     
-    /// Retrieve chat history
-    func getChatHistory() async throws -> [ChatMessage] {
-        return try await networkClient.request(
-            endpoint: "/api/v1/chat/history",
-            responseType: [ChatMessage].self
-        )
-    }
-    
-    // MARK: - Report Services
-    
-    /// Generate a detailed astrological report
-    func generateReport(birthData: BirthData, type: String, options: ReportOptions? = nil) async throws -> ReportResponse {
-        let request = ReportRequest(
-            birthData: birthData,
-            reportType: type,
-            options: options
-        )
+    /// Calculate compatibility between two people
+    func calculateCompatibility(person1: BirthData, person2: BirthData) async throws -> Data {
+        struct CompatibilityRequest: Codable {
+            let person1: BirthData
+            let person2: BirthData
+        }
+        
+        let request = CompatibilityRequest(person1: person1, person2: person2)
         
         return try await networkClient.request(
-            endpoint: "/api/v1/reports/generate",
+            endpoint: "/api/v1/compatibility",
             method: HTTPMethod.POST,
             body: request,
-            responseType: ReportResponse.self
+            responseType: Data.self
         )
     }
     
-    /// Get report status
-    func getReportStatus(reportId: String) async throws -> ReportResponse {
-        return try await networkClient.request(
-            endpoint: "/api/v1/reports/\(reportId)",
-            responseType: ReportResponse.self
-        )
-    }
-    
-    /// Generate detailed premium report
-    func generateDetailedReport(birthData: BirthData, type: String, userId: String? = nil, options: [String: String]? = nil) async throws -> DetailedReportResponse {
-        let request = DetailedReportRequest(
-            birthData: birthData,
-            reportType: type,
-            options: options,
-            userId: userId
-        )
+    /// Generate detailed report
+    func generateDetailedReport(birthData: BirthData, type: String) async throws -> DetailedReportResponse {
+        struct ReportRequest: Codable {
+            let birthData: BirthData
+            let reportType: String
+        }
+        
+        let request = ReportRequest(birthData: birthData, reportType: type)
         
         return try await networkClient.request(
-            endpoint: "/api/v1/reports/full",
+            endpoint: "/api/v1/report/generate",
             method: HTTPMethod.POST,
             body: request,
             responseType: DetailedReportResponse.self
         )
     }
     
-    /// Get detailed report by ID
-    func getDetailedReport(reportId: String) async throws -> DetailedReport {
-        return try await networkClient.request(
-            endpoint: "/api/v1/reports/\(reportId)",
-            responseType: DetailedReport.self
-        )
-    }
+    // MARK: - Report Services
     
-    /// Get all reports for user
-    func getUserReports(userId: String) async throws -> UserReportsResponse {
+    /// Get user reports
+    func getUserReports(userId: String) async throws -> [DetailedReport] {
         return try await networkClient.request(
             endpoint: "/api/v1/reports/user/\(userId)",
-            responseType: UserReportsResponse.self
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: [DetailedReport].self
         )
     }
     
-    // MARK: - Ephemeris Services
-    
-    /// Get current planetary positions
-    func getCurrentPlanetaryPositions() async throws -> [String: PlanetaryPosition] {
-        return try await networkClient.request(
-            endpoint: "/api/v1/ephemeris/current",
-            responseType: [String: PlanetaryPosition].self
-        )
-    }
-    
-    /// Get planetary positions for a specific date
-    func getPlanetaryPositions(for date: Date) async throws -> [String: PlanetaryPosition] {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        let dateString = formatter.string(from: date)
-        
-        var components = URLComponents()
-        components.path = "/api/v1/ephemeris/current"
-        components.queryItems = [
-            URLQueryItem(name: "date", value: dateString)
-        ]
-        
-        guard let url = components.url else {
-            throw NetworkError.invalidURL
+    /// Generate detailed report with user profile
+    func generateDetailedReport(userId: String, reportType: String, profileData: UserProfile) async throws -> DetailedReportResponse {
+        struct ReportRequest: Codable {
+            let userId: String
+            let reportType: String
+            let profileData: UserProfile
         }
         
-        return try await networkClient.request(
-            endpoint: url.absoluteString,
-            responseType: [String: PlanetaryPosition].self
-        )
-    }
-    
-    // MARK: - Compatibility Services
-    
-    /// Calculate compatibility between two people using modern match endpoint
-    func calculateMatch(user: MatchUser, partner: MatchPartner, matchType: String = "romantic", systems: [String] = ["vedic", "chinese"]) async throws -> MatchResponse {
-        let request = MatchRequest(
-            user: user,
-            partner: partner,
-            matchType: matchType,
-            systems: systems
+        let request = ReportRequest(
+            userId: userId,
+            reportType: reportType,
+            profileData: profileData
         )
         
         return try await networkClient.request(
-            endpoint: "/api/v1/match",
+            endpoint: "/api/v1/report/generate",
             method: HTTPMethod.POST,
             body: request,
-            responseType: MatchResponse.self
+            responseType: DetailedReportResponse.self
         )
     }
     
-    /// Legacy compatibility calculation (for backward compatibility)
-    func calculateCompatibility(person1: BirthData, person2: BirthData) async throws -> Data {
-        // Convert BirthData to MatchUser format
-        let user = MatchUser(
-            birth_date: person1.date,
-            birth_time: person1.time,
-            timezone: person1.timezone,
-            latitude: person1.latitude,
-            longitude: person1.longitude
-        )
-        
-        let partner = MatchPartner(
-            name: person2.name,
-            birth_date: person2.date,
-            birth_time: person2.time,
-            timezone: person2.timezone,
-            latitude: person2.latitude,
-            longitude: person2.longitude
-        )
-        
-        let matchResponse = try await calculateMatch(user: user, partner: partner)
-        return try JSONEncoder().encode(matchResponse)
-    }
-    
-}
-
-// MARK: - Convenience Extensions
-
-extension APIServices {
-    /// Generate chart and update user profile with calculated signs
-    func generateChartAndUpdateProfile(_ profile: inout UserProfile) async throws -> ChartResponse {
-        let chartResponse = try await generateChart(from: profile)
-        
-        // Update profile with calculated signs from the chart
-        if let westernChart = chartResponse.charts["western"] {
-            profile.sunSign = westernChart.positions["sun"]?.sign
-            profile.moonSign = westernChart.positions["moon"]?.sign
-            // Rising sign would be the ascendant, which might need separate calculation
-        }
-        
-        return chartResponse
-    }
-    
-    /// Search for location and get timezone
-    func findLocationWithTimezone(query: String) async throws -> LocationResult? {
-        let searchResponse = try await searchLocationsDetailed(query: query, limit: 1)
-        return searchResponse.locations.first
-    }
-    
-    // MARK: - Authentication Services
+    // MARK: - Authentication
     
     /// Authenticate with Apple Sign-In
     func authenticateWithApple(
@@ -486,29 +416,45 @@ extension APIServices {
     
     /// Validate stored JWT token
     func validateToken() async throws -> Bool {
-        let response = try await networkClient.request(
-            endpoint: "/api/v1/auth/validate",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: [String: Bool].self
-        )
+        // Check if token exists locally first
+        guard jwtToken != nil && !jwtToken!.isEmpty else {
+            return false
+        }
         
-        return response["valid"] ?? false
+        // Then validate with backend
+        do {
+            let response = try await networkClient.request(
+                endpoint: "/api/v1/auth/validate",
+                method: HTTPMethod.GET,
+                body: nil,
+                responseType: [String: Bool].self
+            )
+            
+            return response["valid"] ?? false
+        } catch {
+            // If validation fails, assume token is invalid
+            return false
+        }
     }
     
     /// Refresh JWT token
     func refreshToken() async throws -> AuthResponse {
-        return try await networkClient.request(
+        let response = try await networkClient.request(
             endpoint: "/api/v1/auth/refresh",
             method: HTTPMethod.POST,
             body: nil,
             responseType: AuthResponse.self
         )
+        
+        // Update stored token
+        jwtToken = response.jwtToken
+        
+        return response
     }
     
     /// Logout user
     func logout() async throws {
-        _ = try await networkClient.request(
+        let _ = try await networkClient.request(
             endpoint: "/api/v1/auth/logout",
             method: HTTPMethod.POST,
             body: nil,
@@ -517,25 +463,5 @@ extension APIServices {
         
         // Clear stored token
         jwtToken = nil
-    }
-    
-    // MARK: - Token Management Helper
-    
-    /// Make a request with automatic token refresh on expiry
-    private func makeRequestWithTokenRefresh<T>(_ request: () async throws -> T) async throws -> T {
-        do {
-            return try await request()
-        } catch {
-            // Check if error is token expiry
-            if let networkError = error as? NetworkError,
-               networkError.requiresReauthentication {
-                // Trigger token refresh callback
-                await onTokenExpired?()
-                // Retry the request once after token refresh
-                return try await request()
-            } else {
-                throw error
-            }
-        }
     }
 }

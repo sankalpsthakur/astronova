@@ -17,6 +17,12 @@ struct UserProfile: Codable {
     var moonSign: String?
     var risingSign: String?
     
+    // Computed property for birth coordinates
+    var birthCoordinates: CLLocationCoordinate2D? {
+        guard let lat = birthLatitude, let lon = birthLongitude else { return nil }
+        return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+    
     init(fullName: String = "", birthDate: Date = Date(), birthTime: Date? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
         self.fullName = fullName
         self.birthDate = birthDate

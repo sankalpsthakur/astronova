@@ -60,7 +60,7 @@ class MockNetworkClient: NetworkClientProtocol {
 
 // MARK: - Mock API Services
 
-class MockAPIServices: ObservableObject, APIServicesProtocol {
+class MockAPIServices: ObservableObject {
     private let mockNetworkClient = MockNetworkClient()
     
     var shouldFailRequests = false {
@@ -109,11 +109,18 @@ class MockAPIServices: ObservableObject, APIServicesProtocol {
             throw NetworkError.serverError(500)
         }
         
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateString = formatter.string(from: Date())
+        
         return HoroscopeResponse(
             sign: sign,
-            period: period,
-            content: "Mock horoscope content for \(sign)",
-            date: Date()
+            type: period,
+            date: dateString,
+            horoscope: "Mock horoscope content for \(sign)",
+            keywords: ["mock", "test"],
+            luckyNumbers: [1, 2, 3],
+            compatibility: ["Aries", "Leo"]
         )
     }
     
@@ -152,9 +159,11 @@ class MockAPIServices: ObservableObject, APIServicesProtocol {
         return [
             LocationResult(
                 name: "Mock City",
-                country: "Mock Country",
+                displayName: "Mock City, Mock State, Mock Country",
                 latitude: 40.7128,
                 longitude: -74.0060,
+                country: "Mock Country",
+                state: "Mock State",
                 timezone: "America/New_York"
             )
         ]
