@@ -59,50 +59,26 @@ class HapticFeedbackService {
     
     /// Mystical pattern for cosmic events and insights
     func cosmicInsight() {
-        DispatchQueue.main.async {
-            self.lightImpact()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.lightImpact()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    self.mediumImpact()
-                }
-            }
-        }
+        // Single medium impact for immediate feedback
+        mediumImpact()
     }
     
     /// Celebration pattern for achievements and positive events
     func celebration() {
-        DispatchQueue.main.async {
-            self.success()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                self.lightImpact()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    self.lightImpact()
-                }
-            }
-        }
+        // Single success notification for immediate feedback
+        success()
     }
     
     /// Starburst pattern for special animations
     func starburst() {
-        DispatchQueue.main.async {
-            self.mediumImpact()
-            for i in 1...3 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.1) {
-                    self.lightImpact()
-                }
-            }
-        }
+        // Single heavy impact for immediate feedback
+        heavyImpact()
     }
     
     /// Gentle wave pattern for transitions
     func transition() {
-        DispatchQueue.main.async {
-            self.lightImpact()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                self.lightImpact()
-            }
-        }
+        // Single light impact for immediate feedback
+        lightImpact()
     }
     
     // MARK: - Contextual Feedback

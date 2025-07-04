@@ -23,7 +23,7 @@ struct AnimatedCosmicBackground: View {
             endPoint: animateGradient ? .bottomTrailing : .topLeading
         )
         .ignoresSafeArea()
-        .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateGradient)
+        .animation(.easeInOut(duration: 1).repeatForever(autoreverses: true), value: animateGradient)
     }
 }
 
@@ -67,7 +67,7 @@ struct PersonalizedInsightOverlay: View {
                     onContinue: {
                         clearProfileSetupProgress()
                         
-                        withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                             showingPersonalizedInsight = false
                             showingConfetti = true
                         }
@@ -235,7 +235,7 @@ struct SimpleProfileSetupView: View {
     }
     
     private func setupAnimations() {
-        withAnimation(.easeInOut(duration: 2).delay(0.5)) {
+        withAnimation(.easeInOut(duration: 0.3).delay(0.5)) {
             animateGradient = true
             animateStars = true
         }
@@ -319,7 +319,7 @@ struct SimpleProfileSetupView: View {
             // Generate personalized insight
             generatePersonalizedInsight()
         } else {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 currentStep = min(totalSteps - 1, currentStep + 1)
             }
         }
@@ -451,7 +451,7 @@ struct SimpleProfileSetupView: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
         impactFeedback.impactOccurred()
         
-        withAnimation(.spring(response: 0.8, dampingFraction: 0.6).delay(0.3)) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.3)) {
             showingPersonalizedInsight = true
         }
     }
@@ -804,7 +804,7 @@ struct EnhancedBirthDateStepView: View {
                             .padding(.horizontal, 32)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: validationError == nil)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: validationError == nil)
                 }
             }
             
@@ -1065,7 +1065,7 @@ struct EnhancedBirthPlaceStepView: View {
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: birthPlace.isEmpty)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: birthPlace.isEmpty)
                     }
                     
                     // Optional skip hint
@@ -1080,7 +1080,7 @@ struct EnhancedBirthPlaceStepView: View {
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: birthPlace.isEmpty)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: birthPlace.isEmpty)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -1258,7 +1258,7 @@ struct PersonalizedInsightView: View {
                             Text("✨")
                                 .font(.system(size: 50))
                                 .scaleEffect(showContent ? 1.2 : 1.0)
-                                .animation(.spring(response: 0.6, dampingFraction: 0.6), value: showContent)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showContent)
                             
                             Text("Profile Created!")
                                 .font(.title.weight(.bold))
@@ -1326,7 +1326,7 @@ struct PersonalizedInsightView: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                 animateElements = true
                 pulseScale = 1.2
                 scanProgress = 1.0
@@ -1334,7 +1334,7 @@ struct PersonalizedInsightView: View {
             
             // Show analyzing phase for 3 seconds, then reveal results
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     isAnalyzing = false
                 }
                 
@@ -1387,7 +1387,7 @@ struct ConfettiView: View {
             confettiPieces.append(piece)
         }
         
-        withAnimation(.easeOut(duration: 3.0)) {
+        withAnimation(.easeOut(duration: 0.3)) {
             for i in confettiPieces.indices {
                 confettiPieces[i].y = UIScreen.main.bounds.height + 100
                 confettiPieces[i].opacity = 0.0
@@ -1513,7 +1513,7 @@ struct SimpleTabBarView: View {
     private func showFirstRunGuideIfNeeded() {
         if appLaunchCount <= 2 && !hasSeenTabGuide {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     showTabGuide = true
                 }
             }
@@ -1796,7 +1796,7 @@ struct TodayTab: View {
         .onAppear {
             if shouldShowWelcome {
                 showingWelcome = true
-                let springAnimation = Animation.spring(response: 0.8, dampingFraction: 0.6)
+                let springAnimation = Animation.spring(response: 0.3, dampingFraction: 0.6)
                 let delayedAnimation = springAnimation.delay(0.5)
                 withAnimation(delayedAnimation) {
                     animateWelcome = true
@@ -2412,7 +2412,7 @@ struct FriendsTab: View {
                             insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .move(edge: .top)),
                             removal: .scale(scale: 0.9).combined(with: .opacity)
                         ))
-                        .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showingResults)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showingResults)
                     }
                     
                     // Recent matches (simplified)
@@ -2498,7 +2498,7 @@ struct CompatibilityCard: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(color)
                 .scaleEffect(animateScore ? 1.1 : 1.0)
-                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: animateScore)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateScore)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
@@ -2599,7 +2599,7 @@ struct NexusTab: View {
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 2).delay(0.3)) {
+            withAnimation(.easeInOut(duration: 0.3).delay(0.3)) {
                 animateStars = true
                 animateGradient = true
             }
@@ -2634,7 +2634,7 @@ struct NexusTab: View {
             timestamp: Date()
         )
         
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             messages.append(userMessage)
         }
         
@@ -2672,7 +2672,7 @@ struct NexusTab: View {
                         timestamp: Date()
                     )
                     
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         messages.append(aiMessage)
                     }
                     
@@ -2699,7 +2699,7 @@ struct NexusTab: View {
                         timestamp: Date()
                     )
                     
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                         messages.append(errorMessage)
                     }
                     
@@ -3039,7 +3039,7 @@ struct CosmicMessageView: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8).delay(0.1)) {
                 animateMessage = true
             }
         }
@@ -6066,7 +6066,7 @@ struct TabGuideOverlay: View {
                                 .fill(index <= safeStep ? guides[safeStep].color : .gray.opacity(0.3))
                                 .frame(width: 8, height: 8)
                                 .scaleEffect(index == safeStep ? 1.3 : 1.0)
-                                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: safeStep)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: safeStep)
                         }
                     }
                     
@@ -6111,7 +6111,7 @@ struct TabGuideOverlay: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 animateContent = true
             }
         }

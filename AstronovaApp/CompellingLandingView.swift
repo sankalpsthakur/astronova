@@ -233,7 +233,7 @@ struct CompellingLandingView: View {
             .opacity(currentPhase >= 0 ? 1 : 0)
             .animation(.easeInOut(duration: 1).delay(2), value: currentPhase)
             .overlay(
-                StarburstAnimationView(style: .cosmic, duration: 1.5, particleCount: 15)
+                StarburstAnimationView(style: .cosmic, duration: 0.3, particleCount: 12)
                     .opacity(currentPhase == 1 ? 1 : 0)
                     .allowsHitTesting(false)
             )
