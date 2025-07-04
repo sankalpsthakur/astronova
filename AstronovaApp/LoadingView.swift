@@ -171,6 +171,94 @@ struct LoadingView: View {
     }
 }
 
+// MARK: - Skeleton Components
+
+struct HoroscopeSkeleton: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            // Title skeleton
+            HStack {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 150, height: 24)
+                    .cornerRadius(6)
+                Spacer()
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 80, height: 20)
+                    .cornerRadius(4)
+            }
+            
+            // Content blocks
+            VStack(spacing: 16) {
+                ForEach(0..<3, id: \.self) { _ in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 100, height: 18)
+                            .cornerRadius(4)
+                        VStack(spacing: 6) {
+                            ForEach(0..<4, id: \.self) { _ in
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(height: 14)
+                                    .cornerRadius(2)
+                            }
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.gray.opacity(0.05))
+                    )
+                }
+            }
+        }
+    }
+}
+
+struct PlanetaryChartSkeleton: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 200, height: 200)
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(height: 100)
+                .cornerRadius(8)
+        }
+    }
+}
+
+struct ProfileSetupSkeleton: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(height: 40)
+                .cornerRadius(8)
+            Rectangle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(height: 40)
+                .cornerRadius(8)
+        }
+    }
+}
+
+struct LocationSearchSkeleton: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            ForEach(0..<5, id: \.self) { _ in
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(height: 50)
+                    .cornerRadius(8)
+            }
+        }
+    }
+}
+
 /// Compatibility wrapper for basic loading indicator
 struct BasicLoadingView: View {
     var body: some View {
