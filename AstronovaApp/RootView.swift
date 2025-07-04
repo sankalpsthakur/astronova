@@ -94,7 +94,7 @@ struct ProfileSetupContentView: View {
                     } label: {
                         HStack {
                             if currentStep == totalSteps - 1 {
-                                Image(systemName: "star.circle.fill")
+                                Image(systemName: "moon.stars.circle.fill")
                                     .font(.title3.weight(.semibold))
                                 Text("Create My Profile")
                                     .font(.title3.weight(.semibold))
@@ -684,7 +684,7 @@ struct EnhancedNameStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "person.crop.circle.fill")
+                    Image(systemName: "person.circle.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         // `.bounce` is iOS 18+. Use `.pulse` which is available earlier.
@@ -734,7 +734,7 @@ struct EnhancedNameStepView: View {
                     // Validation feedback
                     if let error = validationError {
                         HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
+                            Image(systemName: "exclamationmark.diamond.fill")
                                 .font(.caption)
                                 .foregroundStyle(.red)
                             Text(error)
@@ -832,7 +832,7 @@ struct EnhancedBirthDateStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "calendar.circle.fill")
+                    Image(systemName: "calendar.badge.star")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         .symbolEffect(.pulse.wholeSymbol, options: .repeating)
@@ -882,7 +882,7 @@ struct EnhancedBirthDateStepView: View {
                     // Validation feedback
                     if let error = validationError {
                         HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
+                            Image(systemName: "exclamationmark.diamond.fill")
                                 .font(.caption)
                                 .foregroundStyle(.red)
                             Text(error)
@@ -916,7 +916,7 @@ struct EnhancedBirthDateStepView: View {
                             onQuickStart?()
                         } label: {
                             HStack {
-                                Image(systemName: "bolt.circle.fill")
+                                Image(systemName: "bolt.shield.fill")
                                     .font(.title3)
                                 Text("Quick Start")
                                     .font(.title3.weight(.medium))
@@ -1010,7 +1010,7 @@ struct EnhancedBirthTimeStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "clock.circle.fill")
+                    Image(systemName: "clock.badge.fill")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         .symbolEffect(.pulse.wholeSymbol, options: .repeating)
@@ -1095,7 +1095,7 @@ struct EnhancedBirthPlaceStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "location.circle.fill")
+                    Image(systemName: "location.magnifyingglass")
                         .font(.system(size: 45))
                         .foregroundStyle(.white)
                         .scaleEffect(animateIcon ? 1.1 : 1.0)
@@ -1163,7 +1163,7 @@ struct EnhancedBirthPlaceStepView: View {
                                                 .foregroundStyle(.white.opacity(0.7))
                                         }
                                         Spacer()
-                                        Image(systemName: "location.fill")
+                                        Image(systemName: "mappin.and.ellipse")
                                             .font(.caption)
                                             .foregroundStyle(.white.opacity(0.6))
                                     }
@@ -1192,14 +1192,14 @@ struct EnhancedBirthPlaceStepView: View {
                     if !birthPlace.isEmpty && !showDropdown {
                         HStack {
                             if auth.profileManager.profile.birthCoordinates != nil && auth.profileManager.profile.timezone != nil {
-                                Image(systemName: "checkmark.circle.fill")
+                                Image(systemName: "checkmark.seal.fill")
                                     .font(.caption)
                                     .foregroundStyle(.green)
                                 Text("Perfect! Location validated with coordinates.")
                                     .font(.caption)
                                     .foregroundStyle(.white.opacity(0.8))
                             } else {
-                                Image(systemName: "exclamationmark.triangle.fill")
+                                Image(systemName: "exclamationmark.diamond.fill")
                                     .font(.caption)
                                     .foregroundStyle(.orange)
                                 Text("Select a location from the dropdown for best results, or skip to add later.")
@@ -1215,7 +1215,7 @@ struct EnhancedBirthPlaceStepView: View {
                     // Optional skip hint
                     if birthPlace.isEmpty && !showDropdown {
                         HStack {
-                            Image(systemName: "info.circle")
+                            Image(systemName: "questionmark.bubble.fill")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.6))
                             Text("Birth location is optional - you can always add it later in your profile.")
@@ -1433,7 +1433,7 @@ struct PersonalizedInsightView: View {
                             HStack {
                                 Text("Start Your Journey")
                                     .font(.headline.weight(.semibold))
-                                Image(systemName: "arrow.right.circle.fill")
+                                Image(systemName: "arrow.forward.circle.fill")
                                     .font(.title3)
                             }
                             .foregroundStyle(.white)
@@ -1806,12 +1806,12 @@ struct LearnTab: View {
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
     
-    private let tabs = [
-        (title: "Discover", icon: "sun.and.horizon.circle.fill", customIcon: nil),
-        (title: "Connect", icon: "", customIcon: "friends"),
-        (title: "Explore", icon: "graduationcap.circle.fill", customIcon: nil),
-        (title: "Ask", icon: "", customIcon: "nexus"), 
-        (title: "Manage", icon: "", customIcon: "profile")
+    private let tabs: [(title: String, icon: String, customIcon: String?)] = [
+        (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
+        (title: "Connect", icon: "sparkles.rectangle.stack.fill", customIcon: nil),
+        (title: "Explore", icon: "safari.fill", customIcon: nil),
+        (title: "Ask", icon: "bubble.left.and.bubble.right.fill", customIcon: nil), 
+        (title: "Manage", icon: "person.crop.circle.fill", customIcon: nil)
     ]
     
     var body: some View {
@@ -1828,30 +1828,15 @@ struct CustomTabBar: View {
                             if selectedTab == index {
                                 Circle()
                                     .fill(.blue.gradient)
-                                    .frame(width: 32, height: 32)
+                                    .frame(width: 36, height: 36)
                                     .shadow(color: .blue.opacity(0.3), radius: 2, x: 0, y: 1)
                                     .transition(.scale.combined(with: .opacity))
                             }
                             
                             // Icon
-                            Group {
-                                if let customIcon = tabs[index].customIcon {
-                                    switch customIcon {
-                                    case "friends":
-                                        FriendsTabIcon(isSelected: selectedTab == index)
-                                    case "nexus":
-                                        NexusTabIcon(isSelected: selectedTab == index)
-                                    case "profile":
-                                        ProfileTabIcon(isSelected: selectedTab == index)
-                                    default:
-                                        Image(systemName: tabs[index].icon)
-                                            .font(.system(size: 16, weight: .medium))
-                                    }
-                                } else {
-                                    Image(systemName: tabs[index].icon)
-                                        .font(.system(size: 16, weight: .medium))
-                                }
-                            }
+                            Image(systemName: tabs[index].icon)
+                                .font(.system(size: 22, weight: .medium))
+                                .symbolRenderingMode(.hierarchical)
                         }
                         .frame(width: 44, height: 44)
                         .background(
@@ -2037,10 +2022,10 @@ struct TodayTab: View {
                 .font(.headline)
             
             HStack {
-                Label("Purple", systemImage: "circle.fill")
+                Label("Purple", systemImage: "sparkle.magnifyingglass")
                     .foregroundStyle(Color.purple)
                 Spacer()
-                Label("7", systemImage: "star.fill")
+                Label("7", systemImage: "moon.stars.circle.fill")
                     .foregroundStyle(Color.yellow)
             }
             .font(.subheadline)
@@ -2127,7 +2112,7 @@ struct WelcomeToTodayCard: View {
                 Spacer()
                 
                 Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
+                    Image(systemName: "xmark.seal.fill")
                         .font(.title3)
                         .foregroundStyle(.gray.opacity(0.6))
                 }
@@ -2374,7 +2359,7 @@ struct FriendsTab: View {
                     // Compact modern header
                     VStack(spacing: 12) {
                         HStack {
-                            Image(systemName: "heart.2.fill")
+                            Image(systemName: "heart.text.square.fill")
                                 .font(.title2)
                                 .foregroundStyle(.pink)
                                 .scaleEffect(animateHearts ? 1.1 : 1.0)
@@ -2399,7 +2384,7 @@ struct FriendsTab: View {
                         showingContactsPicker = true
                     } label: {
                         HStack {
-                            Image(systemName: "person.2.circle.fill")
+                            Image(systemName: "person.2.badge.gearshape.fill")
                                 .font(.title2)
                                 .foregroundStyle(.blue)
                             
@@ -2510,7 +2495,7 @@ struct FriendsTab: View {
                             // Compatibility score with animation
                             VStack(spacing: 12) {
                                 HStack {
-                                    Image(systemName: "heart.circle.fill")
+                                    Image(systemName: "heart.rectangle.fill")
                                         .font(.title2)
                                         .foregroundStyle(.pink)
                                     
@@ -2883,7 +2868,7 @@ struct MessageLimitBanner: View {
     
     var body: some View {
         HStack {
-            Image(systemName: "star.circle.fill")
+            Image(systemName: "moon.stars.circle.fill")
                 .foregroundStyle(.orange)
             
             Text("\(used)/\(limit) free messages today")
@@ -2920,7 +2905,7 @@ struct ErrorMessageView: View {
     
     var body: some View {
         HStack {
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: "exclamationmark.diamond.fill")
                 .foregroundStyle(.orange)
             
             Text(message)
@@ -2951,7 +2936,7 @@ struct SubscriptionSheet: View {
             VStack(spacing: 24) {
                 // Header
                 VStack(spacing: 12) {
-                    Image(systemName: "star.circle.fill")
+                    Image(systemName: "moon.stars.circle.fill")
                         .font(.system(size: 60))
                         .foregroundStyle(.orange)
                     
@@ -4073,27 +4058,27 @@ struct EnhancedSettingsView: View {
                 // App Preferences
                 Section {
                     HStack {
-                        Label("Notifications", systemImage: "bell.fill")
+                        Label("Notifications", systemImage: "bell.badge.fill")
                         Spacer()
                         Toggle("", isOn: $notificationsEnabled)
                     }
                     
                     if notificationsEnabled {
                         HStack {
-                            Label("Daily Horoscope", systemImage: "sun.max.fill")
+                            Label("Daily Horoscope", systemImage: "sun.and.horizon.fill")
                             Spacer()
                             Toggle("", isOn: $dailyReminder)
                         }
                         
                         HStack {
-                            Label("Weekly Report", systemImage: "calendar.badge.clock")
+                            Label("Weekly Report", systemImage: "calendar.badge.star")
                             Spacer()
                             Toggle("", isOn: $weeklyReport)
                         }
                     }
                     
                     HStack {
-                        Label("Theme", systemImage: "paintbrush.fill")
+                        Label("Theme", systemImage: "paintpalette.fill")
                         Spacer()
                         Picker("Theme", selection: $selectedTheme) {
                             ForEach(themes, id: \.self) { theme in
@@ -4111,13 +4096,13 @@ struct EnhancedSettingsView: View {
                     NavigationLink {
                         DataPrivacyView()
                     } label: {
-                        Label("Data & Privacy", systemImage: "hand.raised.fill")
+                        Label("Data & Privacy", systemImage: "lock.shield.fill")
                     }
                     
                     NavigationLink {
                         ExportDataView(auth: auth)
                     } label: {
-                        Label("Export My Data", systemImage: "square.and.arrow.up.fill")
+                        Label("Export My Data", systemImage: "square.and.arrow.up.on.square.fill")
                     }
                 } header: {
                     Text("Data & Privacy")
@@ -4126,17 +4111,17 @@ struct EnhancedSettingsView: View {
                 // Support
                 Section {
                     Link(destination: URL(string: "mailto:support@astronova.app")!) {
-                        Label("Contact Support", systemImage: "questionmark.circle.fill")
+                        Label("Contact Support", systemImage: "message.badge.filled.fill")
                     }
                     
                     Link(destination: URL(string: "https://astronova.app/help")!) {
-                        Label("Help Center", systemImage: "book.fill")
+                        Label("Help Center", systemImage: "questionmark.app.fill")
                     }
                     
                     NavigationLink {
                         AboutView()
                     } label: {
-                        Label("About", systemImage: "info.circle.fill")
+                        Label("About", systemImage: "star.circle.fill")
                     }
                 } header: {
                     Text("Support")
@@ -4148,14 +4133,14 @@ struct EnhancedSettingsView: View {
                         auth.signOut()
                         dismiss()
                     } label: {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right.fill")
+                        Label("Sign Out", systemImage: "door.left.hand.open")
                             .foregroundStyle(.red)
                     }
                     
                     Button {
                         showingAccountDeletion = true
                     } label: {
-                        Label("Delete Account", systemImage: "trash.fill")
+                        Label("Delete Account", systemImage: "xmark.shield.fill")
                             .foregroundStyle(.red)
                     }
                 } header: {
@@ -4839,7 +4824,7 @@ struct DailySynopsisCard: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Image(systemName: "arrow.right.circle.fill")
+                            Image(systemName: "arrow.forward.circle.fill")
                                 .foregroundStyle(.blue)
                         }
                         .padding(.horizontal, 16)
@@ -4970,7 +4955,7 @@ struct InsightCard: View {
                     Spacer()
                     
                     if isGenerated {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "checkmark.seal.fill")
                             .font(.caption)
                             .foregroundStyle(.green)
                     } else if !hasSubscription {
@@ -5484,13 +5469,13 @@ struct ReportDetailView: View {
                         Button {
                             downloadPDF()
                         } label: {
-                            Label("Download PDF", systemImage: "arrow.down.circle")
+                            Label("Download PDF", systemImage: "arrow.down.doc.fill")
                         }
                         
                         Button {
                             showingShareSheet = true
                         } label: {
-                            Label("Share", systemImage: "square.and.arrow.up")
+                            Label("Share", systemImage: "shareplay")
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -6223,7 +6208,7 @@ struct TabGuideOverlay: View {
                                 if safeStep == 3 {
                                     Text("Start Your Journey")
                                         .font(.headline.weight(.semibold))
-                                    Image(systemName: "arrow.right.circle.fill")
+                                    Image(systemName: "arrow.forward.circle.fill")
                                         .font(.title3)
                                 } else {
                                     Text("Next")

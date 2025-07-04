@@ -309,7 +309,7 @@ struct BirthDateStepView: View {
                         .scaleEffect(animateCalendar ? 1.1 : 1.0)
                         .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateCalendar)
                     
-                    Image(systemName: "calendar.circle.fill")
+                    Image(systemName: "calendar.badge.star")
                         .font(.system(size: 80))
                         .foregroundStyle(.white)
                 }
@@ -360,7 +360,7 @@ struct BirthTimeStepView: View {
                         .fill(.white.opacity(0.1))
                         .frame(width: 120, height: 120)
                     
-                    Image(systemName: "clock.circle.fill")
+                    Image(systemName: "clock.badge.fill")
                         .font(.system(size: 80))
                         .foregroundStyle(.white)
                         .rotationEffect(.degrees(animateClock ? 360 : 0))
@@ -424,7 +424,7 @@ struct LocationStepView: View {
                         .fill(.white.opacity(0.1))
                         .frame(width: 120, height: 120)
                     
-                    Image(systemName: "globe.americas.fill")
+                    Image(systemName: "globe.badge.chevron.backward")
                         .font(.system(size: 60))
                         .foregroundStyle(.white)
                         .rotationEffect(.degrees(animateGlobe ? 360 : 0))
@@ -527,7 +527,7 @@ struct CalculationStepView: View {
                         .rotationEffect(.degrees(-90))
                         .animation(.easeInOut(duration: 0.5), value: calculationProgress)
                     
-                    Image(systemName: isCalculating ? "gearshape.2.fill" : "checkmark.circle.fill")
+                    Image(systemName: isCalculating ? "gearshape.2.fill" : "checkmark.seal.fill")
                         .font(.system(size: 60))
                         .foregroundStyle(.white)
                         .rotationEffect(.degrees(isCalculating ? 360 : 0))

@@ -10,6 +10,7 @@ class LoadingStateService: ObservableObject {
     @Published private(set) var loadingMessage: String?
     
     private var loadingTimer: Timer?
+    private var loadingStartTime: Date?
     private var cancellables = Set<AnyCancellable>()
     
     private init() {}
@@ -23,6 +24,7 @@ class LoadingStateService: ObservableObject {
         // Show loading state immediately
         isLoading = true
         loadingMessage = message
+        loadingStartTime = Date()
         
         // Haptic feedback for loading start
         HapticFeedbackService.shared.lightImpact()
@@ -30,7 +32,14 @@ class LoadingStateService: ObservableObject {
     
     /// Hides loading state with optional minimum display time
     func hideLoading(minimumDisplayTime: TimeInterval = 0.3) {
-        let timeShown = Date().timeIntervalSince(Date())
+        guard let startTime = loadingStartTime else {
+            // If no start time recorded, hide immediately
+            isLoading = false
+            loadingMessage = nil
+            return
+        }
+        
+        let timeShown = Date().timeIntervalSince(startTime)
         
         if timeShown < minimumDisplayTime {
             // Ensure loading is shown for at least minimum time
@@ -39,12 +48,14 @@ class LoadingStateService: ObservableObject {
                 Task { @MainActor in
                     self.isLoading = false
                     self.loadingMessage = nil
+                    self.loadingStartTime = nil
                 }
             }
         } else {
             // Hide immediately
             isLoading = false
             loadingMessage = nil
+            loadingStartTime = nil
         }
         
         // Haptic feedback for loading complete

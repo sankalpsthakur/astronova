@@ -3,21 +3,6 @@ import CoreLocation
 
 // MARK: - Simple Response Types for Protocol Conformance
 
-/// Simple horoscope response for protocol conformance
-struct HoroscopeResponse: Codable {
-    let sign: String
-    let period: String
-    let content: String
-    let date: Date
-    
-    init(sign: String, period: String, content: String, date: Date) {
-        self.sign = sign
-        self.period = period
-        self.content = content
-        self.date = date
-    }
-}
-
 /// Simple chat message for protocol conformance
 struct ProtocolChatMessage: Codable {
     let role: String // "user" or "assistant"
