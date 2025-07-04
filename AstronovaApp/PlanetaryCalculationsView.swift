@@ -246,7 +246,7 @@ struct PlanetaryCalculationsView: View {
             ("Generating Chart Data...", "Finalizing your personalized chart")
         ]
         
-        for (index, (step, description)) in steps.enumerated() {
+        for (index, (step, _)) in steps.enumerated() {
             await MainActor.run {
                 currentCalculationStep = step
                 calculationProgress = Double(index) / Double(steps.count - 1)

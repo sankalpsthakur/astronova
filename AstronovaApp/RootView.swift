@@ -1835,7 +1835,7 @@ struct CustomTabBar: View {
                             
                             // Icon
                             Image(systemName: tabs[index].icon)
-                                .font(.system(size: 22, weight: .medium))
+                                .font(.system(size: tabs[index].title == "Ask" ? 20 : 22, weight: .medium))
                                 .symbolRenderingMode(.hierarchical)
                         }
                         .frame(width: 44, height: 44)
@@ -1891,15 +1891,19 @@ struct TodayTab: View {
     @State private var showingWelcome = false
     @State private var animateWelcome = false
     @State private var planetaryPositions: [PlanetaryPosition] = []
+    @State private var showingReportSheet = false
+    @State private var showingReportsLibrary = false
+    @State private var selectedReportType: String = ""
+    @State private var userReports: [DetailedReport] = []
+    @State private var hasSubscription = false
+    
+    private let apiServices = APIServices.shared
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    welcomeSection
-                    PrimaryCTASection()
-                    
-                    // Today's date
+                    // Today's date header
                     HStack {
                         Text("Today's Horoscope")
                             .font(.title2.weight(.semibold))
@@ -1911,10 +1915,23 @@ struct TodayTab: View {
                     
                     todaysHoroscopeSection
                     
+                    // Premium Insights Section (moved from Daily tab)
+                    PremiumInsightsSection(
+                        hasSubscription: hasSubscription,
+                        onInsightTap: { reportType in
+                            selectedReportType = reportType
+                            showingReportSheet = true
+                        },
+                        onViewReports: {
+                            showingReportsLibrary = true
+                        },
+                        savedReports: userReports
+                    )
+                    
                     planetaryPositionsSection
                     
-                    // Discovery CTAs
-                    DiscoveryCTASection()
+                    // Primary CTAs moved to bottom
+                    PrimaryCTASection()
                     
                     Spacer(minLength: 32)
                 }
@@ -1932,6 +1949,21 @@ struct TodayTab: View {
                 }
             }
             planetaryPositions = []
+            checkSubscriptionStatus()
+            loadUserReports()
+        }
+        .sheet(isPresented: $showingReportSheet) {
+            ReportGenerationSheet(
+                reportType: selectedReportType,
+                onGenerate: generateReport,
+                onDismiss: {
+                    showingReportSheet = false
+                }
+            )
+            .environmentObject(auth)
+        }
+        .sheet(isPresented: $showingReportsLibrary) {
+            ReportsLibraryView(reports: userReports)
         }
     }
     
@@ -1955,10 +1987,6 @@ struct TodayTab: View {
             Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
                 .font(.body)
                 .lineSpacing(4)
-            
-            Divider()
-            
-            keyThemesSection
             
             Divider()
             
@@ -2017,18 +2045,64 @@ struct TodayTab: View {
     
     @ViewBuilder
     private var luckyElementsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Today's Lucky Elements")
                 .font(.headline)
             
-            HStack {
-                Label("Purple", systemImage: "sparkle.magnifyingglass")
-                    .foregroundStyle(Color.purple)
+            HStack(spacing: 32) {
+                // Lucky Color
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Lucky Color")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color.purple)
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.purple.opacity(0.3), lineWidth: 3)
+                            )
+                        
+                        Text("Purple")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.purple)
+                    }
+                }
+                
                 Spacer()
-                Label("7", systemImage: "moon.stars.circle.fill")
-                    .foregroundStyle(Color.yellow)
+                
+                // Lucky Number
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Lucky Number")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                    
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.yellow.opacity(0.2))
+                                .frame(width: 24, height: 24)
+                            
+                            Text("7")
+                                .font(.body.weight(.bold))
+                                .foregroundStyle(Color.primary)
+                        }
+                        
+                        Text("Seven")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.primary)
+                    }
+                }
             }
-            .font(.subheadline)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.secondary.opacity(0.1))
+            )
         }
     }
     
@@ -2059,6 +2133,46 @@ struct TodayTab: View {
                 showingWelcome = false
             })
             .transition(AnyTransition.scale.combined(with: .opacity))
+        }
+    }
+    
+    private func checkSubscriptionStatus() {
+        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
+    }
+    
+    private func loadUserReports() {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let response = try await apiServices.getUserReports(userId: userId)
+                await MainActor.run {
+                    userReports = response
+                }
+            } catch {
+                print("Failed to load user reports: \(error)")
+            }
+        }
+    }
+    
+    private func generateReport(reportType: String) {
+        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        
+        Task {
+            do {
+                let _ = try await apiServices.generateDetailedReport(
+                    userId: userId,
+                    reportType: reportType,
+                    profileData: auth.profileManager.profile
+                )
+                
+                await MainActor.run {
+                    showingReportSheet = false
+                    loadUserReports() // Refresh the reports list
+                }
+            } catch {
+                print("Failed to generate report: \(error)")
+            }
         }
     }
 }
@@ -2779,7 +2893,7 @@ struct NexusTab: View {
         
         Task {
             do {
-                let context = ChatContext(
+                _ = ChatContext(
                     userChart: auth.profileManager.lastChart,
                     currentTransits: nil,
                     preferences: nil
@@ -4392,14 +4506,7 @@ struct CalendarHoroscopeView: View {
     @Binding var selectedDate: Date
     let onBookmark: (HoroscopeReading) -> Void
     
-    @State private var showingReportSheet = false
-    @State private var showingReportsLibrary = false
-    @State private var selectedReportType: String = ""
-    @State private var userReports: [DetailedReport] = []
-    @State private var hasSubscription = false
     @EnvironmentObject private var auth: AuthState
-    
-    private let apiServices = APIServices.shared
     
     var body: some View {
         ScrollView {
@@ -4412,86 +4519,12 @@ struct CalendarHoroscopeView: View {
                     date: selectedDate,
                     onBookmark: onBookmark,
                     onDiscoverMore: {
-                        // Scroll to Premium Insights section or highlight it
-                        withAnimation(.easeInOut(duration: 0.8)) {
-                            // This could trigger a scroll or highlight animation
-                            // For now, we'll leave this empty as the Premium Insights section is already visible below
-                        }
+                        // Premium Insights have been moved to the Discover page
                     }
-                )
-                
-                // Premium Insights Section
-                PremiumInsightsSection(
-                    hasSubscription: hasSubscription,
-                    onInsightTap: { reportType in
-                        selectedReportType = reportType
-                        showingReportSheet = true
-                    },
-                    onViewReports: {
-                        showingReportsLibrary = true
-                    },
-                    savedReports: userReports
                 )
                 
             }
             .padding()
-        }
-        .onAppear {
-            checkSubscriptionStatus()
-            loadUserReports()
-        }
-        .sheet(isPresented: $showingReportSheet) {
-            ReportGenerationSheet(
-                reportType: selectedReportType,
-                onGenerate: generateReport,
-                onDismiss: {
-                    showingReportSheet = false
-                }
-            )
-            .environmentObject(auth)
-        }
-        .sheet(isPresented: $showingReportsLibrary) {
-            ReportsLibraryView(reports: userReports)
-        }
-    }
-    
-    private func checkSubscriptionStatus() {
-        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
-    }
-    
-    private func loadUserReports() {
-        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
-        
-        Task {
-            do {
-                let response = try await apiServices.getUserReports(userId: userId)
-                await MainActor.run {
-                    userReports = response
-                }
-            } catch {
-                print("Failed to load user reports: \(error)")
-            }
-        }
-    }
-    
-    private func generateReport(reportType: String) {
-        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
-        
-        Task {
-            do {
-                let _ = try await apiServices.generateDetailedReport(
-                    userId: userId,
-                    reportType: reportType,
-                    profileData: auth.profileManager.profile
-                )
-                
-                await MainActor.run {
-                    showingReportSheet = false
-                    loadUserReports() // Refresh the reports list
-                }
-            } catch {
-                print("Failed to generate report: \(error)")
-            }
         }
     }
 }
@@ -4958,20 +4991,6 @@ struct InsightCard: View {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.caption)
                             .foregroundStyle(.green)
-                    } else if !hasSubscription {
-                        if let pricing = ReportPricing.pricing(for: insight.id) {
-                            Text(pricing.localizedPrice ?? pricing.price)
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(insight.color)
-                                .cornerRadius(8)
-                        } else {
-                            Image(systemName: "lock.fill")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                        }
                     }
                 }
                 
@@ -5012,6 +5031,7 @@ struct ReportGenerationSheet: View {
     @State private var hasSubscription = false
     @State private var showingSubscription = false
     @State private var showPurchaseError = false
+    @State private var showPaymentOptions = false
     @Environment(\.dismiss) private var dismiss
     
     private var reportInfo: InsightType {
@@ -5031,35 +5051,79 @@ struct ReportGenerationSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                // Header
-                VStack(spacing: 16) {
-                    Image(systemName: reportInfo.icon)
-                        .font(.system(size: 60))
-                        .foregroundStyle(reportInfo.color)
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    VStack(spacing: 12) {
+                        Image(systemName: reportInfo.icon)
+                            .font(.system(size: 50))
+                            .foregroundStyle(reportInfo.color)
+                        
+                        Text("Sample \(reportInfo.title)")
+                            .font(.title2.weight(.bold))
+                        
+                        Text("See what your personalised report will contain")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top)
                     
-                    Text(reportInfo.title)
-                        .font(.largeTitle.weight(.bold))
+                    // Sample Report Preview
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Section 1: Overview (Unlocked)
+                        ReportSectionPreview(
+                            title: "Overview",
+                            isLocked: false,
+                            content: getSampleOverview(),
+                            onLockedTap: nil
+                        )
+                        
+                        // Section 2: Detailed Analysis (Locked)
+                        ReportSectionPreview(
+                            title: "Detailed Analysis",
+                            isLocked: true,
+                            content: "Your complete astrological blueprint including planetary positions, house placements, and aspect patterns...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                        
+                        // Section 3: Key Insights (Locked)
+                        ReportSectionPreview(
+                            title: "Key Life Insights",
+                            isLocked: true,
+                            content: "Discover your life purpose, karmic lessons, and soul's journey based on your unique cosmic signature...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                        
+                        // Section 4: Timing & Predictions (Locked)
+                        ReportSectionPreview(
+                            title: "Timing & Future Trends",
+                            isLocked: true,
+                            content: "Optimal timing for major life decisions, upcoming opportunities, and cosmic cycles affecting you...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                        
+                        // Section 5: Recommendations (Locked)
+                        ReportSectionPreview(
+                            title: "Personalised Recommendations",
+                            isLocked: true,
+                            content: "Specific actions, crystals, colors, and practices aligned with your astrological profile...",
+                            onLockedTap: {
+                                showPaymentOptions = true
+                            }
+                        )
+                    }
+                    .padding(.horizontal)
                     
-                    Text(reportInfo.description)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                    Spacer(minLength: 20)
                 }
-                
-                // Features
-                VStack(alignment: .leading, spacing: 12) {
-                    SimpleFeatureRow(icon: "brain.head.profile", text: "AI-powered personalized analysis")
-                    SimpleFeatureRow(icon: "clock", text: "Generated in under 60 seconds")
-                    SimpleFeatureRow(icon: "arrow.down.circle", text: "PDF download included")
-                    SimpleFeatureRow(icon: "bookmark", text: "Saved to your profile forever")
-                }
-                .padding()
-                .background(.regularMaterial)
-                .cornerRadius(12)
-                
-                Spacer()
-                
+            }
+            .safeAreaInset(edge: .bottom) {
                 // Action Buttons
                 VStack(spacing: 16) {
                     if hasSubscription {
@@ -5075,7 +5139,7 @@ struct ReportGenerationSheet: View {
                                     Image(systemName: "sparkles")
                                 }
                                 
-                                Text(isGenerating ? "Generating..." : "Generate Report")
+                                Text(isGenerating ? "Generating..." : "Dive Deeper")
                                     .font(.headline)
                             }
                             .frame(maxWidth: .infinity)
@@ -5086,51 +5150,103 @@ struct ReportGenerationSheet: View {
                         }
                         .disabled(isGenerating)
                     } else {
-                        // Individual Purchase Options
+                        // Purchase Options - Astronova Pro as primary decoy
                         VStack(spacing: 12) {
+                            // Astronova Pro - Primary Option (Decoy)
+                            Button {
+                                showingSubscription = true
+                            } label: {
+                                VStack(spacing: 12) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("BEST VALUE")
+                                                .font(.caption.weight(.bold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(.green)
+                                                .cornerRadius(4)
+                                            
+                                            Text("Astronova Pro")
+                                                .font(.title2.weight(.bold))
+                                            
+                                            Text("$9.99/month")
+                                                .font(.title3.weight(.medium))
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "crown.fill")
+                                            .font(.largeTitle)
+                                            .foregroundStyle(.yellow)
+                                    }
+                                    
+                                    Divider()
+                                    
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                            Text("All 4 detailed reports included")
+                                                .font(.subheadline)
+                                        }
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                            Text("Unlimited AI chat conversations")
+                                                .font(.subheadline)
+                                        }
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                            Text("Priority support & new features")
+                                                .font(.subheadline)
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    LinearGradient(
+                                        colors: [reportInfo.color.opacity(0.8), reportInfo.color],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .foregroundStyle(.white)
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(.white.opacity(0.3), lineWidth: 2)
+                                )
+                            }
+                            
+                            // Individual Report - Secondary Option
                             if let pricing = ReportPricing.pricing(for: reportType) {
                                 Button {
                                     purchaseIndividualReport()
                                 } label: {
                                     HStack {
-                                        Image(systemName: "creditcard.and.123")
-                                        VStack(spacing: 4) {
-                                            Text("Purchase This Report")
-                                                .font(.headline)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Single Report Only")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                            Text("Purchase \(reportInfo.title)")
+                                                .font(.subheadline.weight(.medium))
                                             Text(pricing.localizedPrice ?? pricing.price)
-                                                .font(.title2.weight(.bold))
+                                                .font(.headline.weight(.bold))
                                         }
                                         Spacer()
                                         Image(systemName: "apple.logo")
-                                            .font(.title2)
+                                            .font(.title3)
                                     }
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 16)
-                                    .foregroundStyle(.white)
-                                    .background(reportInfo.color)
+                                    .padding()
+                                    .foregroundStyle(.primary)
+                                    .background(.quaternary)
                                     .cornerRadius(12)
                                 }
-                            }
-                            
-                            Button {
-                                showingSubscription = true
-                            } label: {
-                                VStack(spacing: 8) {
-                                    HStack {
-                                        Text("Or get Astronova Pro")
-                                            .font(.subheadline)
-                                        Text("$9.99/month")
-                                            .font(.subheadline.weight(.bold))
-                                    }
-                                    Text("All reports + unlimited chat")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .foregroundStyle(.primary)
-                                .background(.quaternary)
-                                .cornerRadius(8)
                             }
                         }
                     }
@@ -5140,8 +5256,9 @@ struct ReportGenerationSheet: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
+                .padding()
+                .background(.regularMaterial)
             }
-            .padding()
             .navigationTitle("Premium Insight")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden()
@@ -5158,6 +5275,25 @@ struct ReportGenerationSheet: View {
         }
         .sheet(isPresented: $showingSubscription) {
             SubscriptionSheet()
+        }
+        .sheet(isPresented: $showPaymentOptions) {
+            PaymentOptionsSheet(
+                reportType: reportType,
+                reportInfo: reportInfo,
+                onPurchaseIndividual: {
+                    showPaymentOptions = false
+                    purchaseIndividualReport()
+                },
+                onSubscribe: {
+                    showPaymentOptions = false
+                    showingSubscription = true
+                }
+            )
+        }
+        .alert("Purchase Error", isPresented: $showPurchaseError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Unable to complete purchase. Please try again.")
         }
     }
     
@@ -5176,6 +5312,208 @@ struct ReportGenerationSheet: View {
                 } else {
                     isGenerating = false
                     showPurchaseError = true
+                }
+            }
+        }
+    }
+    
+    private func getSampleOverview() -> String {
+        switch reportType {
+        case "love_forecast":
+            return "Based on your astrological profile, you are entering a powerful period for romantic connections. Venus in your 5th house suggests heightened charm and magnetism. The upcoming months show strong potential for meaningful encounters, especially during the full moon phases..."
+        case "birth_chart":
+            return "You are a unique blend of fire and water elements, creating a dynamic personality that balances passion with emotional depth. Your Sun sign reveals your core identity, while your Moon sign shows your emotional nature. With Mercury in an air sign, you possess quick wit and excellent communication skills..."
+        case "career_forecast":
+            return "Your professional life is entering an expansive phase. Jupiter's transit through your 10th house of career indicates opportunities for growth and recognition. Your natural leadership abilities combined with your strategic thinking make you well-suited for positions of authority..."
+        case "year_ahead":
+            return "The year ahead promises transformation and growth across multiple life areas. The first quarter focuses on personal development and self-discovery. Spring brings opportunities in relationships and partnerships. Summer emphasizes career advancement, while autumn encourages spiritual growth..."
+        default:
+            return "This comprehensive analysis reveals key patterns in your astrological chart that influence your life path. Understanding these cosmic energies helps you make informed decisions and align with your highest potential..."
+        }
+    }
+}
+
+struct ReportSectionPreview: View {
+    let title: String
+    let isLocked: Bool
+    let content: String
+    let onLockedTap: (() -> Void)?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(title)
+                    .font(.headline)
+                
+                Spacer()
+                
+                if isLocked {
+                    HStack(spacing: 4) {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                        Text("LOCKED")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .foregroundStyle(.orange)
+                }
+            }
+            
+            if isLocked {
+                // Locked content - blurred preview
+                Button(action: {
+                    onLockedTap?()
+                }) {
+                    Text(content)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .lineSpacing(4)
+                        .blur(radius: 6)
+                        .overlay(
+                            VStack(spacing: 8) {
+                                Image(systemName: "lock.circle.fill")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.orange)
+                                Text("Tap to Unlock")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.primary)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(.ultraThinMaterial)
+                        )
+                        .frame(minHeight: 80)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+            } else {
+                // Unlocked content
+                Text(content)
+                    .font(.body)
+                    .lineSpacing(4)
+            }
+        }
+        .padding()
+        .background(.quaternary)
+        .cornerRadius(12)
+    }
+}
+
+struct PaymentOptionsSheet: View {
+    let reportType: String
+    let reportInfo: InsightType
+    let onPurchaseIndividual: () -> Void
+    let onSubscribe: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "lock.open.fill")
+                        .font(.system(size: 50))
+                        .foregroundStyle(reportInfo.color)
+                    
+                    Text("Unlock Full Report")
+                        .font(.title2.weight(.bold))
+                    
+                    Text("Choose how you'd like to access your \(reportInfo.title)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top)
+                
+                // Options
+                VStack(spacing: 16) {
+                    // Astronova Pro Option
+                    Button {
+                        onSubscribe()
+                    } label: {
+                        VStack(spacing: 12) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("RECOMMENDED")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(.green)
+                                        .cornerRadius(4)
+                                    
+                                    Text("Astronova Pro")
+                                        .font(.title3.weight(.bold))
+                                    
+                                    Text("$9.99/month")
+                                        .font(.headline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "crown.fill")
+                                    .font(.title)
+                                    .foregroundStyle(.yellow)
+                            }
+                            
+                            Text("Unlock all reports + unlimited features")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                colors: [reportInfo.color.opacity(0.8), reportInfo.color],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .foregroundStyle(.white)
+                        .cornerRadius(16)
+                    }
+                    
+                    // Individual Report Option
+                    if let pricing = ReportPricing.pricing(for: reportType) {
+                        Button {
+                            onPurchaseIndividual()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Single Report")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Text(reportInfo.title)
+                                        .font(.headline)
+                                    Text(pricing.localizedPrice ?? pricing.price)
+                                        .font(.title3.weight(.bold))
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "doc.badge.plus")
+                                    .font(.title2)
+                                    .foregroundStyle(reportInfo.color)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(.quaternary)
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Choose Your Option")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
                 }
             }
         }

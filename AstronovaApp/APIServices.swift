@@ -454,7 +454,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     /// Logout user
     func logout() async throws {
-        try await networkClient.request(
+        let _ = try await networkClient.request(
             endpoint: "/api/v1/auth/logout",
             method: HTTPMethod.POST,
             body: nil,
