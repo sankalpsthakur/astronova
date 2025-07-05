@@ -68,6 +68,7 @@ class CloudKitService:
             return records[0] if records else None
         except Exception as e:
             logger.error(f"Error fetching user profile {user_id}: {e}")
+            # Don't raise, just return None
             return None
             
     def save_user_profile(self, user_id: str, profile_data: Dict) -> bool:
@@ -118,6 +119,9 @@ class CloudKitService:
     
     def get_conversation_history(self, user_id: str, conv_id: str, limit: int = 10) -> List[Dict]:
         """Get conversation history for user"""
+        if not self._check_enabled("get_conversation_history"):
+            return []
+            
         try:
             records = self.web_client.query_user_records('ChatMessage', user_id, limit=limit)
             
@@ -214,6 +218,9 @@ class CloudKitService:
     
     def get_horoscope(self, user_id: str, sign: str, date: str, type_: str) -> Optional[Dict]:
         """Get cached horoscope for user"""
+        if not self._check_enabled("get_horoscope"):
+            return None
+            
         try:
             records = self.web_client.query_user_records('Horoscope', user_id, limit=50)
             
@@ -230,6 +237,9 @@ class CloudKitService:
 
     def save_horoscope(self, data: Dict) -> bool:
         """Save horoscope to CloudKit"""
+        if not self._check_enabled("save_horoscope"):
+            return False
+            
         try:
             user_id = data.get('userProfileId')
             if not user_id:

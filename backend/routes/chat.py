@@ -2,12 +2,12 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.schemas import ChatRequest
 from utils.validators import validate_request
-from services.claude_ai import ClaudeService
+from services.gemini_ai import GeminiService
 from services.cloudkit_service import CloudKitService
 from services.cache_service import cache
 
 chat_bp = Blueprint('chat', __name__)
-claude = ClaudeService()
+gemini = GeminiService()
 cloudkit = CloudKitService()
 
 @chat_bp.route('', methods=['GET'])
@@ -79,7 +79,7 @@ def send_message(data: ChatRequest):
             from flask import current_app
             current_app.logger.exception("CloudKit save_chat_message (user) failed")
 
-    resp = claude.send_message(
+    resp = gemini.send_message(
         data.message,
         conversation_history=history,
         system_prompt={"birthChart": birth_chart, "transits": transits},

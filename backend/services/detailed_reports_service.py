@@ -2,7 +2,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import json
 from services.astro_calculator import AstroCalculator
-from services.claude_ai import ClaudeService
+from services.gemini_ai import GeminiService
 from fpdf import FPDF
 # import redis
 import os
@@ -10,7 +10,7 @@ import os
 class DetailedReportsService:
     def __init__(self):
         self.astro_calculator = AstroCalculator()
-        self.claude_ai = ClaudeService()
+        self.gemini_ai = GeminiService()
         # In production, use Redis for report storage
         self.redis_client = None
         try:
@@ -48,6 +48,8 @@ class DetailedReportsService:
             return self._generate_career_forecast(chart_data, birth_data, options)
         elif report_type == "year_ahead":
             return self._generate_year_ahead(chart_data, birth_data, options)
+        elif report_type == "personality":
+            return self._generate_personality_report(chart_data, birth_data, options)
         else:
             raise ValueError(f"Unknown report type: {report_type}")
     
@@ -81,7 +83,7 @@ class DetailedReportsService:
         Make it personal, insightful, and actionable. Use astrological terminology appropriately but keep it accessible.
         """
         
-        ai_content = self.claude_ai.generate_content(prompt, max_tokens=2000)
+        ai_content = self.gemini_ai.generate_content(prompt, max_tokens=2000)
         
         key_insights = [
             "Venus placement reveals your love language and attraction patterns",
@@ -126,7 +128,7 @@ class DetailedReportsService:
         Make it a complete personality profile that feels accurate and insightful.
         """
         
-        ai_content = self.claude_ai.generate_content(prompt, max_tokens=2500)
+        ai_content = self.gemini_ai.generate_content(prompt, max_tokens=2500)
         
         key_insights = [
             "Your Sun sign reveals your core life purpose and identity",
@@ -173,7 +175,7 @@ class DetailedReportsService:
         Make it practical and actionable for career development.
         """
         
-        ai_content = self.claude_ai.generate_content(prompt, max_tokens=2000)
+        ai_content = self.gemini_ai.generate_content(prompt, max_tokens=2000)
         
         key_insights = [
             "Midheaven reveals your true professional calling and public image",
@@ -216,7 +218,7 @@ class DetailedReportsService:
         Make it a practical roadmap for the year with specific timing.
         """
         
-        ai_content = self.claude_ai.generate_content(prompt, max_tokens=3000)
+        ai_content = self.gemini_ai.generate_content(prompt, max_tokens=3000)
         
         key_insights = [
             "Solar return chart reveals the main themes for your new year",
@@ -336,3 +338,60 @@ class DetailedReportsService:
                 pdf.cell(0, 5, line, ln=True)
         
         return pdf.output(dest='S').encode('latin1')
+    
+    def _generate_personality_report(self, chart_data: Dict, birth_data: Dict, options: Dict) -> Dict[str, Any]:
+        """Generate comprehensive personality analysis report"""
+        
+        # Extract all major planetary positions
+        sun_position = chart_data.get('planets', {}).get('Sun', {})
+        moon_position = chart_data.get('planets', {}).get('Moon', {})
+        mercury_position = chart_data.get('planets', {}).get('Mercury', {})
+        venus_position = chart_data.get('planets', {}).get('Venus', {})
+        mars_position = chart_data.get('planets', {}).get('Mars', {})
+        jupiter_position = chart_data.get('planets', {}).get('Jupiter', {})
+        saturn_position = chart_data.get('planets', {}).get('Saturn', {})
+        rising_sign = chart_data.get('ascendant', {})
+        
+        prompt = f"""
+        Generate a comprehensive personality analysis based on this birth chart data:
+        
+        Sun (core self, ego): {sun_position}
+        Moon (emotions, subconscious): {moon_position}
+        Mercury (communication, thinking): {mercury_position}
+        Venus (values, relationships): {venus_position}
+        Mars (drive, energy): {mars_position}
+        Jupiter (wisdom, expansion): {jupiter_position}
+        Saturn (discipline, challenges): {saturn_position}
+        Rising/Ascendant: {rising_sign}
+        
+        Provide a detailed personality profile covering:
+        1. Core personality traits and characteristics
+        2. Emotional nature and inner world
+        3. Communication style and mental approach
+        4. Relationship patterns and values
+        5. Motivations, drives, and ambitions
+        6. Life lessons and growth areas
+        7. Natural talents and abilities
+        8. Psychological patterns and tendencies
+        9. Shadow aspects and blind spots
+        10. Path to self-actualization
+        
+        Make it insightful, nuanced, and psychologically astute while remaining accessible.
+        """
+        
+        ai_content = self.gemini_ai.generate_content(prompt, max_tokens=2500)
+        
+        key_insights = [
+            "Your Sun sign reveals your core identity and life purpose",
+            "Moon placement shows your emotional needs and instinctive reactions",
+            "Rising sign influences how others perceive you",
+            "Planetary aspects create your unique personality blueprint",
+            "Understanding your shadow helps integrate all aspects of self"
+        ]
+        
+        return {
+            'title': 'Complete Personality Analysis',
+            'content': ai_content,
+            'summary': 'An in-depth psychological profile revealing your personality traits, patterns, and potential based on your astrological blueprint.',
+            'keyInsights': key_insights
+        }

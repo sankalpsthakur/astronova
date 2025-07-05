@@ -6,5 +6,7 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSContactsUsageDescription</key>
+	<string>Astronova needs access to your contacts to help you share cosmic insights with friends and family.</string>
 </dict>
 </plist>

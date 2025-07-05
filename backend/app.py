@@ -24,7 +24,7 @@ from services.reports_service import ReportsService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_app(anthropic_api_key: str | None = None):
+def create_app(api_key: str | None = None):
     app = Flask(__name__)
     app.config.from_object(Config)
     CORS(app)
@@ -59,8 +59,8 @@ def create_app(anthropic_api_key: str | None = None):
     
     cache.init_app(app)
 
-    if anthropic_api_key:
-        app.config["reports_service"] = ReportsService(anthropic_api_key)
+    if api_key:
+        app.config["reports_service"] = ReportsService(api_key)
 
     limiter = Limiter(app=app, key_func=get_remote_address,
                       default_limits=["200 per day", "50 per hour"])

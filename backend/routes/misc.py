@@ -198,3 +198,87 @@ def system_status():
             'error': str(e),
             'timestamp': datetime.utcnow().isoformat()
         }), 500
+
+@misc_bp.route('/service-health', methods=['GET'])
+def service_health():
+    """
+    Comprehensive health check for all services.
+    
+    Returns:
+        JSON response with individual service status
+    """
+    health_status = {
+        'overall': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'services': {}
+    }
+    
+    # Check Gemini API
+    try:
+        from services.gemini_ai import GeminiService
+        gemini = GeminiService()
+        if gemini.api_key:
+            health_status['services']['gemini_api'] = {'status': 'configured', 'healthy': True}
+        else:
+            health_status['services']['gemini_api'] = {'status': 'not_configured', 'healthy': False}
+            health_status['overall'] = 'degraded'
+    except Exception as e:
+        health_status['services']['gemini_api'] = {'status': 'error', 'healthy': False, 'error': str(e)}
+        health_status['overall'] = 'degraded'
+    
+    # Check CloudKit
+    try:
+        from services.cloudkit_service import CloudKitService
+        cloudkit = CloudKitService()
+        if cloudkit.enabled:
+            health_status['services']['cloudkit'] = {'status': 'enabled', 'healthy': True}
+        else:
+            health_status['services']['cloudkit'] = {'status': 'disabled', 'healthy': False}
+            # CloudKit being disabled is OK for development
+    except Exception as e:
+        health_status['services']['cloudkit'] = {'status': 'error', 'healthy': False, 'error': str(e)}
+    
+    # Check Swiss Ephemeris
+    try:
+        from services.ephemeris_service import SWE_AVAILABLE
+        if SWE_AVAILABLE:
+            health_status['services']['ephemeris'] = {'status': 'available', 'healthy': True}
+        else:
+            health_status['services']['ephemeris'] = {'status': 'fallback_mode', 'healthy': True}
+    except Exception as e:
+        health_status['services']['ephemeris'] = {'status': 'error', 'healthy': False, 'error': str(e)}
+        health_status['overall'] = 'degraded'
+    
+    # Check Cache
+    try:
+        from services.cache_service import cache
+        # Try to set and get a test value
+        cache.set('health_check_test', 'ok', timeout=10)
+        if cache.get('health_check_test') == 'ok':
+            health_status['services']['cache'] = {'status': 'working', 'healthy': True}
+        else:
+            health_status['services']['cache'] = {'status': 'not_working', 'healthy': False}
+    except Exception as e:
+        health_status['services']['cache'] = {'status': 'error', 'healthy': False, 'error': str(e)}
+    
+    # Check Redis Cache
+    try:
+        from services import redis_cache
+        redis_cache.set('health_check', 'ok', ttl=10)
+        if redis_cache.get('health_check') == 'ok':
+            health_status['services']['redis'] = {'status': 'connected', 'healthy': True}
+        else:
+            health_status['services']['redis'] = {'status': 'not_available', 'healthy': False}
+    except Exception:
+        health_status['services']['redis'] = {'status': 'not_available', 'healthy': False}
+    
+    # Determine overall health
+    critical_services = ['gemini_api', 'ephemeris']
+    for service in critical_services:
+        if service in health_status['services'] and not health_status['services'][service]['healthy']:
+            health_status['overall'] = 'unhealthy'
+            break
+    
+    status_code = 200 if health_status['overall'] == 'healthy' else 503 if health_status['overall'] == 'unhealthy' else 200
+    
+    return jsonify(health_status), status_code
