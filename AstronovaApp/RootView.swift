@@ -761,6 +761,10 @@ struct EnhancedNameStepView: View {
             
             Spacer()
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            hideKeyboard()
+        }
         .onAppear {
             animateIcon = true
             // Auto-focus text field for better UX
@@ -768,6 +772,10 @@ struct EnhancedNameStepView: View {
                 isTextFieldFocused = true
             }
         }
+    }
+    
+    private func hideKeyboard() {
+        isTextFieldFocused = false
     }
     
     private func validateName(_ name: String) {
@@ -1591,9 +1599,10 @@ struct SimpleTabBarView: View {
     @State private var guideStep = 0
     @AppStorage("app_launch_count") private var appLaunchCount = 0
     @AppStorage("has_seen_tab_guide") private var hasSeenTabGuide = false
+    @State private var keyboardHeight: CGFloat = 0
     
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .bottom) {
             // Content area
             Group {
                 switch selectedTab {
@@ -1611,9 +1620,25 @@ struct SimpleTabBarView: View {
                     TodayTab()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Custom Tab Bar
-            CustomTabBar(selectedTab: $selectedTab)
+            // Custom Tab Bar - only show when keyboard is not visible
+            if keyboardHeight == 0 {
+                CustomTabBar(selectedTab: $selectedTab)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    self.keyboardHeight = keyboardFrame.height
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.25)) {
+                self.keyboardHeight = 0
+            }
         }
         .overlay(
             // First-run tab guide overlay
@@ -2825,6 +2850,9 @@ struct NexusTab: View {
                         .padding(.horizontal)
                         .padding(.top, 20)
                     }
+                    .onTapGesture {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
                     
                     // Cosmic input area
                     CosmicInputArea(
@@ -3592,6 +3620,17 @@ struct CosmicInputArea: View {
                 */
             }
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                .onChanged { _ in
+                    hideKeyboard()
+                }
+        )
+    }
+    
+    private func hideKeyboard() {
+        textFieldFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

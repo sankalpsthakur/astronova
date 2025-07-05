@@ -261,16 +261,8 @@ def service_health():
     except Exception as e:
         health_status['services']['cache'] = {'status': 'error', 'healthy': False, 'error': str(e)}
     
-    # Check Redis Cache
-    try:
-        from services import redis_cache
-        redis_cache.set('health_check', 'ok', ttl=10)
-        if redis_cache.get('health_check') == 'ok':
-            health_status['services']['redis'] = {'status': 'connected', 'healthy': True}
-        else:
-            health_status['services']['redis'] = {'status': 'not_available', 'healthy': False}
-    except Exception:
-        health_status['services']['redis'] = {'status': 'not_available', 'healthy': False}
+    # Redis Cache removed for simplified deployment
+    health_status['services']['redis'] = {'status': 'not_used', 'healthy': True}
     
     # Determine overall health
     critical_services = ['gemini_api', 'ephemeris']

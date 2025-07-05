@@ -17,14 +17,11 @@ class CloudKitWebClient:
     
     def __init__(self):
         self.container_id = "iCloud.com.sankalp.AstronovaApp"
-        self.environment = os.getenv('CLOUDKIT_ENVIRONMENT', 'development')  # development or production
+        self.environment = "development"  # Using single environment for simplicity
         self.base_url = f"https://api.apple-cloudkit.com/database/1/{self.container_id}/{self.environment}/private"
         
-        # Server-to-Server Authentication configuration
-        # TODO: SECURITY - Move these to environment variables for production
-        # For deployment testing, hardcoded values are used temporarily
+        # Simple CloudKit configuration
         self.key_id = self._get_cloudkit_key_id()
-        self.private_key_path = self._get_private_key_path()
         self.private_key_content = self._get_private_key_content()
         
         # Headers for all requests
@@ -35,8 +32,8 @@ class CloudKitWebClient:
         })
         
         # Validate configuration
-        if not all([self.key_id, (self.private_key_path or self.private_key_content)]):
-            logger.warning("CloudKit Web Services not configured. Set CLOUDKIT_KEY_ID and CLOUDKIT_PRIVATE_KEY_PATH environment variables.")
+        if not all([self.key_id, self.private_key_content]):
+            logger.warning("CloudKit Web Services not configured. Set CLOUDKIT_KEY_ID and CLOUDKIT_PRIVATE_KEY environment variables.")
             self.enabled = False
         else:
             self.enabled = True
@@ -56,24 +53,12 @@ class CloudKitWebClient:
         except ImportError:
             return None
     
-    def _get_private_key_path(self) -> str:
-        """Get private key path from environment variable or config"""
-        env_path = os.getenv('CLOUDKIT_PRIVATE_KEY_PATH')
-        if env_path:
-            return env_path
-        
-        # Try importing from cloudkit_config
-        try:
-            from cloudkit_config import CLOUDKIT_PRIVATE_KEY_PATH
-            return CLOUDKIT_PRIVATE_KEY_PATH
-        except ImportError:
-            return None
-    
     def _get_private_key_content(self) -> str:
-        """Get private key content from config"""
+        """Get private key content from environment or config"""
         # Try environment variable first
-        if self._get_private_key_path():
-            return None
+        env_key = os.getenv('CLOUDKIT_PRIVATE_KEY')
+        if env_key:
+            return env_key
         
         # Try importing from cloudkit_config
         try:
@@ -85,17 +70,11 @@ class CloudKitWebClient:
     def _load_private_key(self):
         """Load the private key for CloudKit authentication"""
         try:
-            # Try loading from file path first (environment variable)
-            if self.private_key_path:
-                with open(self.private_key_path, 'rb') as key_file:
-                    key_data = key_file.read()
-                logger.info("CloudKit private key loaded from file")
-            # Fall back to hardcoded content
-            elif self.private_key_content:
+            if self.private_key_content:
                 key_data = self.private_key_content.encode('utf-8')
-                logger.info("CloudKit private key loaded from hardcoded content")
+                logger.info("CloudKit private key loaded from configuration")
             else:
-                raise Exception("No private key source available")
+                raise Exception("No private key content available")
             
             self.private_key = serialization.load_pem_private_key(
                 key_data,

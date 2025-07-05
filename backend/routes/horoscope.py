@@ -78,17 +78,39 @@ def horoscope():
                  f"With the current planetary alignments, focus on personal growth and positive intentions. " \
                  f"The stars encourage you to embrace new opportunities while staying grounded in your values."
 
-    result = {'sign': sign, 'date': date_str, 'type': type_, 'horoscope': content}
+    # Format response to match ERD schema for Swift compatibility
+    import uuid
+    horoscope_id = str(uuid.uuid4())
+    
+    result = {
+        'id': horoscope_id,
+        'userProfileId': user_id,
+        'sign': sign,
+        'date': dt.isoformat(),  # Use ISO timestamp format
+        'type': type_,
+        'content': content,
+        'luckyElements': {},  # Placeholder for future lucky elements feature
+        # Keep legacy format for backward compatibility
+        'legacy': {
+            'sign': sign, 
+            'date': date_str, 
+            'type': type_, 
+            'horoscope': content
+        }
+    }
+    
     cache.set(cache_key, result, timeout=3600)
     
     # Save to CloudKit with proper structure
     try:
         cloudkit.save_horoscope({
+            'id': horoscope_id,
             'userProfileId': user_id,
             'sign': sign,
-            'date': date_str,
+            'date': dt.isoformat(),
             'type': type_,
-            'content': content
+            'content': content,
+            'luckyElements': {}
         })
     except Exception as e:
         # Don't block the response path – log and continue

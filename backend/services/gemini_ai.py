@@ -61,11 +61,11 @@ class GeminiService:
             # Check for finish reason indicating token limit or other issues
             finish_reason = candidate.get("finishReason", "")
             if finish_reason == "MAX_TOKENS":
-                # Return a proper response instead of an error
+                # Return the actual content if available, don't mention truncation in chat
                 if "content" in candidate and "parts" in candidate["content"]:
-                    reply = candidate["content"]["parts"][0]["text"] + "\n\n[Response truncated due to length]"
+                    reply = candidate["content"]["parts"][0]["text"]
                 else:
-                    reply = "I've prepared a detailed response for you, though it was truncated for brevity. Please ask if you'd like me to elaborate on any specific aspect."
+                    reply = "I've prepared a detailed response for you about your cosmic journey and what the stars reveal."
             elif "content" in candidate and "parts" in candidate["content"]:
                 reply = candidate["content"]["parts"][0]["text"]
             else:
@@ -122,7 +122,7 @@ class GeminiService:
             # Check for finish reason indicating token limit or other issues
             finish_reason = candidate.get("finishReason", "")
             if finish_reason == "MAX_TOKENS":
-                # Return truncated content if available
+                # Return actual content if available, not an error message
                 if "content" in candidate and "parts" in candidate["content"]:
                     return candidate["content"]["parts"][0]["text"]
                 else:

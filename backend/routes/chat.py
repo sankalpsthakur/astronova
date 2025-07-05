@@ -98,14 +98,32 @@ def send_message(data: ChatRequest):
             from flask import current_app
             current_app.logger.exception("CloudKit save_chat_message (AI) failed")
 
-    return jsonify({
-        "reply": resp.get("reply"),
-        "messageId": resp.get("message_id"),
-        "suggestedFollowUps": [
-            "What's my love forecast? \ud83d\udc96",
-            "Career guidance? \u2b50",
-            "Today's energy? \u2600\ufe0f",
-            "Mercury retrograde effects? \u263f",
-            "Best time for decisions? \ud83c\udf19",
-        ],
-    })
+    # Format response to match ERD schema for Swift compatibility
+    import uuid
+    from datetime import datetime
+    
+    message_id = str(uuid.uuid4())
+    
+    response = {
+        'id': message_id,
+        'userProfileId': user_id or 'anonymous',
+        'conversationId': conv_id,
+        'content': resp.get("reply"),
+        'isUser': 0,  # 0 for AI response, 1 for user message
+        'messageType': 'text',
+        'timestamp': datetime.utcnow().isoformat(),
+        # Keep legacy format for backward compatibility
+        'legacy': {
+            "reply": resp.get("reply"),
+            "messageId": resp.get("message_id"),
+            "suggestedFollowUps": [
+                "What's my love forecast? \ud83d\udc96",
+                "Career guidance? \u2b50",
+                "Today's energy? \u2600\ufe0f",
+                "Mercury retrograde effects? \u263f",
+                "Best time for decisions? \ud83c\udf19",
+            ]
+        }
+    }
+    
+    return jsonify(response)
