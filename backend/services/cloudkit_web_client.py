@@ -17,7 +17,7 @@ class CloudKitWebClient:
     
     def __init__(self):
         self.container_id = "iCloud.com.sankalp.AstronovaApp"
-        self.environment = "development"  # Using single environment for simplicity
+        self.environment = os.getenv('CLOUDKIT_ENVIRONMENT', 'development')
         self.base_url = f"https://api.apple-cloudkit.com/database/1/{self.container_id}/{self.environment}/private"
         
         # Simple CloudKit configuration
