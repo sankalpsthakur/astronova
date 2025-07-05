@@ -526,7 +526,7 @@ struct CompellingLandingView: View {
             )
             .signInWithAppleButtonStyle(.white)
             .frame(height: 50)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: 375)
             .disabled(inProgress)
             .overlay(
                 Group {

@@ -13,7 +13,7 @@ from services.astro_calculator import AstroCalculator
 from services.ephemeris_service import EphemerisService
 from services.chinese_astrology_service import ChineseAstrologyService
 from services.cloudkit_service import CloudKitService
-from services.redis_cache import get as redis_get, set as redis_set
+from services.cache_service import cache
 
 chart_bp = Blueprint('chart', __name__)
 
@@ -125,7 +125,7 @@ def generate(data: SimpleChartRequest):
 
         for system in systems:
             key = _chart_cache_key(system, data)
-            cached = redis_get(key)
+            cached = cache.get(key)
             if cached:
                 results[system] = cached
                 continue
@@ -156,7 +156,7 @@ def generate(data: SimpleChartRequest):
                 continue
 
             results[system] = chart
-            redis_set(key, chart)
+            cache.set(key, chart, timeout=3600)
 
             if user_id:
                 try:
@@ -180,7 +180,31 @@ def generate(data: SimpleChartRequest):
                     current_app.logger.exception("CloudKit save_birth_chart failed")
 
         chart_id = str(uuid.uuid4())
-        return jsonify({'chartId': chart_id, 'charts': results, 'type': data.chart_type})
+        
+        # Format response to match ERD schema for Swift compatibility
+        response = {
+            'id': chart_id,
+            'chartType': data.chart_type,
+            'systems': [data.system],
+            'planetaryPositions': results.get(data.system, {}).get('positions', {}),
+            'chartSVG': results.get(data.system, {}).get('svg', ''),
+            'birthData': {
+                'birthDate': data.birth_date,
+                'birthTime': data.birth_time,
+                'latitude': data.latitude,
+                'longitude': data.longitude,
+                'timezone': data.timezone
+            },
+            'userProfileId': user_id or 'anonymous',
+            # Keep legacy format for backward compatibility
+            'legacy': {
+                'chartId': chart_id,
+                'charts': results,
+                'type': data.chart_type
+            }
+        }
+        
+        return jsonify(response)
     except Exception:
         return jsonify({'error': 'Chart generation failed'}), 500
 

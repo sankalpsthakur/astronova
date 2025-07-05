@@ -107,16 +107,41 @@ def validate_token():
     """
     try:
         current_user_id = get_jwt_identity()
-        user = user_service.get_user_by_id(current_user_id)
         
-        if not user:
-            return jsonify({'valid': False, 'error': 'User not found'}), 404
-            
-        return jsonify({'valid': True, 'user': user.to_dict()})
+        # If user_id is present, token is valid
+        if not current_user_id:
+            return jsonify({'valid': False, 'error': 'Invalid token'}), 401
+        
+        # Try to get user details, but don't fail if not found
+        try:
+            user = user_service.get_user_by_id(current_user_id)
+            if user:
+                return jsonify({'valid': True, 'user': user.to_dict()})
+            else:
+                # Token is valid but user not in local cache - still valid
+                return jsonify({
+                    'valid': True, 
+                    'user': {
+                        'id': current_user_id,
+                        'email': get_jwt().get('email', ''),
+                        'user_type': get_jwt().get('user_type', 'authenticated')
+                    }
+                })
+        except Exception as e:
+            # If user service fails, still return valid token
+            logger.warning(f"User service error during validation: {str(e)}")
+            return jsonify({
+                'valid': True,
+                'user': {
+                    'id': current_user_id,
+                    'email': get_jwt().get('email', ''),
+                    'user_type': get_jwt().get('user_type', 'authenticated')
+                }
+            })
         
     except Exception as e:
         logger.error(f"Token validation failed: {str(e)}")
-        return jsonify({'valid': False, 'error': 'Token validation failed'}), 500
+        return jsonify({'valid': False, 'error': 'Token validation failed'}), 401
 
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required()

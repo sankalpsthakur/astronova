@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import Combine
 
 struct MapKitAutocompleteView: View {
     @Binding var selectedLocation: LocationResult?
@@ -20,6 +21,11 @@ struct MapKitAutocompleteView: View {
         self._selectedLocation = selectedLocation
         self.placeholder = placeholder
         self.onLocationSelected = onLocationSelected
+        
+        // Initialize search text with placeholder if it contains existing location
+        if placeholder != "Search for a location..." && placeholder != "City, State/Country" {
+            self._searchText = State(initialValue: placeholder)
+        }
     }
     
     var body: some View {
@@ -70,6 +76,15 @@ struct MapKitAutocompleteView: View {
                 .padding(.top, 4)
             }
         }
+        .onTapGesture {
+            // Prevents tap from dismissing keyboard when tapping on the field itself
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                .onChanged { _ in
+                    hideKeyboard()
+                }
+        )
     }
     
     private func clearSearch() {
@@ -77,11 +92,12 @@ struct MapKitAutocompleteView: View {
         suggestions = []
         selectedLocation = nil
         isSearchFocused = false
+        searchTask?.cancel()
     }
     
     private func selectSuggestion(_ suggestion: LocationSuggestion) {
         searchText = suggestion.displayText
-        isSearchFocused = false
+        hideKeyboard()
         suggestions = []
         
         // Get full location details from the completion using MapKitLocationService
@@ -117,19 +133,26 @@ struct MapKitAutocompleteView: View {
     private func debounceAutocomplete(_ query: String) {
         searchTask?.cancel()
         
-        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        guard !trimmedQuery.isEmpty else {
+            suggestions = []
+            isSearching = false
+            return
+        }
+        
+        guard trimmedQuery.count >= 2 else {
             suggestions = []
             return
         }
-        guard query.count >= 2 else {
-            return
-        }
+        
+        isSearching = true
         
         searchTask = Task {
             try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
             
             if !Task.isCancelled {
-                await performAutocomplete(query)
+                await performAutocomplete(trimmedQuery)
             }
         }
     }
@@ -158,6 +181,10 @@ struct MapKitAutocompleteView: View {
         }
     }
     
+    private func hideKeyboard() {
+        isSearchFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 }
 
 struct LocationSuggestionRow: View {

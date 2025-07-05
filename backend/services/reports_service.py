@@ -2,50 +2,65 @@ from __future__ import annotations
 
 import datetime as _dt
 from io import BytesIO
+import logging
 
-import swisseph as swe
-from anthropic import Anthropic
+try:
+    import swisseph as swe
+    SWE_AVAILABLE = True
+except ImportError:
+    SWE_AVAILABLE = False
+    swe = None
+
 from fpdf import FPDF
+from .gemini_ai import GeminiService
+
+logger = logging.getLogger(__name__)
 
 
 class ReportsService:
     """Service for generating personalized astrology reports."""
 
-    def __init__(self, anthropic_api_key: str):
-        self._anthropic = Anthropic(api_key=anthropic_api_key)
+    def __init__(self, api_key: str = None):
+        self._gemini = GeminiService(api_key)
 
     @staticmethod
     def _calculate_positions(
         birth_dt: _dt.datetime, latitude: float, longitude: float
     ) -> dict:
         """Calculate basic planetary positions using Swiss Ephemeris."""
-        swe.set_ephe_path(".")
-        jd = swe.julday(
-            birth_dt.year,
-            birth_dt.month,
-            birth_dt.day,
-            birth_dt.hour + birth_dt.minute / 60,
-        )
-        sun_long = swe.calc_ut(jd, swe.SUN)[0]
-        moon_long = swe.calc_ut(jd, swe.MOON)[0]
-        return {"sun_longitude": sun_long, "moon_longitude": moon_long}
+        if SWE_AVAILABLE:
+            swe.set_ephe_path(".")
+            jd = swe.julday(
+                birth_dt.year,
+                birth_dt.month,
+                birth_dt.day,
+                birth_dt.hour + birth_dt.minute / 60,
+            )
+            sun_long = swe.calc_ut(jd, swe.SUN)[0]
+            moon_long = swe.calc_ut(jd, swe.MOON)[0]
+            return {"sun_longitude": sun_long, "moon_longitude": moon_long}
+        else:
+            # Fallback calculation
+            day_of_year = birth_dt.timetuple().tm_yday
+            sun_long = (day_of_year / 365.25 * 360) % 360
+            moon_long = ((day_of_year * 13.2) + birth_dt.day * 13.2) % 360
+            return {"sun_longitude": sun_long, "moon_longitude": moon_long}
 
     def _generate_text(self, profile: dict, astro_data: dict) -> str:
-        """Generate report text using Claude AI."""
+        """Generate report text using Gemini AI."""
         prompt = (
-            "Generate a short personalized astrology report.\n"
+            "You are an expert astrologer. Generate a short personalized astrology report.\n"
             f"Name: {profile.get('full_name')}\n"
-            f"Sun longitude: {astro_data['sun_longitude']:.2f}\n"
-            f"Moon longitude: {astro_data['moon_longitude']:.2f}\n"
+            f"Sun longitude: {astro_data['sun_longitude']:.2f} degrees\n"
+            f"Moon longitude: {astro_data['moon_longitude']:.2f} degrees\n"
+            "Provide insights about their personality, strengths, and cosmic guidance."
         )
-        msg = self._anthropic.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=400,
-            temperature=0.6,
-            system="You are an expert astrologer.",
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return msg.content[0].text if msg.content else ""
+        try:
+            content = self._gemini.generate_content(prompt, max_tokens=400)
+            return content
+        except Exception as e:
+            logger.error(f"Failed to generate report text: {e}")
+            return "Your cosmic journey is unique and filled with potential. The alignment of celestial bodies at your birth creates a distinctive energy pattern that guides your path."
 
     def build_report(self, profile: dict) -> BytesIO:
         """Build PDF report for the given profile and return BytesIO."""

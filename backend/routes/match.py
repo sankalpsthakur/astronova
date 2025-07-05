@@ -66,25 +66,48 @@ def match(data: SimpleMatchRequest):
         + min(len(aspects), 10) * 2
     )
 
+    # Format response to match ERD schema for Swift compatibility
+    import uuid
+    from datetime import datetime
+    
+    match_id = str(uuid.uuid4())
+    user_id = get_jwt_identity()
+    
     result = {
-        "overallScore": overall_score,
-        "vedicScore": vedic_score,
-        "chineseScore": chinese_score,
-        "synastryAspects": aspects,
-        "userChart": user_chart,
-        "partnerChart": partner_chart,
+        'id': match_id,
+        'userProfileId': user_id or 'anonymous',
+        'partnerName': person2.get('name', 'Partner'),
+        'partnerBirthDate': f"{person2['birth_date']}T{person2['birth_time']}:00",
+        'partnerLocation': f"{person2['latitude']}, {person2['longitude']}",
+        'compatibilityScore': int(overall_score),
+        'detailedAnalysis': {
+            'vedicScore': vedic_score,
+            'chineseScore': chinese_score,
+            'synastryAspects': aspects,
+            'userChart': user_chart,
+            'partnerChart': partner_chart
+        },
+        # Keep legacy format for backward compatibility
+        'legacy': {
+            "overallScore": overall_score,
+            "vedicScore": vedic_score,
+            "chineseScore": chinese_score,
+            "synastryAspects": aspects,
+            "userChart": user_chart,
+            "partnerChart": partner_chart,
+        }
     }
 
     try:
-        user_id = get_jwt_identity()
         if user_id:
             cloudkit.save_match({
+                'id': match_id,
                 'userProfileId': user_id,
                 'partnerName': person2.get('name', 'Partner'),
-                'partnerBirthDate': person2['birth_date'],
+                'partnerBirthDate': f"{person2['birth_date']}T{person2['birth_time']}:00",
                 'partnerLocation': f"{person2['latitude']}, {person2['longitude']}",
                 'compatibilityScore': int(overall_score),
-                'detailedAnalysis': result
+                'detailedAnalysis': result['detailedAnalysis']
             })
     except Exception:
         pass

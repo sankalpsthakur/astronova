@@ -761,6 +761,10 @@ struct EnhancedNameStepView: View {
             
             Spacer()
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            hideKeyboard()
+        }
         .onAppear {
             animateIcon = true
             // Auto-focus text field for better UX
@@ -768,6 +772,10 @@ struct EnhancedNameStepView: View {
                 isTextFieldFocused = true
             }
         }
+    }
+    
+    private func hideKeyboard() {
+        isTextFieldFocused = false
     }
     
     private func validateName(_ name: String) {
@@ -1591,9 +1599,10 @@ struct SimpleTabBarView: View {
     @State private var guideStep = 0
     @AppStorage("app_launch_count") private var appLaunchCount = 0
     @AppStorage("has_seen_tab_guide") private var hasSeenTabGuide = false
+    @State private var keyboardHeight: CGFloat = 0
     
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .bottom) {
             // Content area
             Group {
                 switch selectedTab {
@@ -1611,9 +1620,25 @@ struct SimpleTabBarView: View {
                     TodayTab()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Custom Tab Bar
-            CustomTabBar(selectedTab: $selectedTab)
+            // Custom Tab Bar - only show when keyboard is not visible
+            if keyboardHeight == 0 {
+                CustomTabBar(selectedTab: $selectedTab)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    self.keyboardHeight = keyboardFrame.height
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.25)) {
+                self.keyboardHeight = 0
+            }
         }
         .overlay(
             // First-run tab guide overlay
@@ -1808,7 +1833,7 @@ struct CustomTabBar: View {
     
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
         (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
-        (title: "Connect", icon: "sparkles.rectangle.stack.fill", customIcon: nil),
+        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
         (title: "Explore", icon: "safari.fill", customIcon: nil),
         (title: "Ask", icon: "bubble.left.and.bubble.right.fill", customIcon: nil), 
         (title: "Manage", icon: "person.crop.circle.fill", customIcon: nil)
@@ -1826,7 +1851,7 @@ struct CustomTabBar: View {
                         // Icon with background
                         ZStack {
                             if selectedTab == index {
-                                Circle()
+                                RoundedRectangle(cornerRadius: 8)
                                     .fill(.blue.gradient)
                                     .frame(width: 36, height: 36)
                                     .shadow(color: .blue.opacity(0.3), radius: 2, x: 0, y: 1)
@@ -1840,10 +1865,10 @@ struct CustomTabBar: View {
                         }
                         .frame(width: 44, height: 44)
                         .background(
-                            Circle()
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.clear)
                         )
-                        .contentShape(Circle())
+                        .contentShape(RoundedRectangle(cornerRadius: 8))
                         .foregroundStyle(selectedTab == index ? .white : .secondary)
                         .scaleEffect(selectedTab == index ? 1.05 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
@@ -2825,6 +2850,9 @@ struct NexusTab: View {
                         .padding(.horizontal)
                         .padding(.top, 20)
                     }
+                    .onTapGesture {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
                     
                     // Cosmic input area
                     CosmicInputArea(
@@ -3592,6 +3620,17 @@ struct CosmicInputArea: View {
                 */
             }
         }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 20, coordinateSpace: .local)
+                .onChanged { _ in
+                    hideKeyboard()
+                }
+        )
+    }
+    
+    private func hideKeyboard() {
+        textFieldFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
@@ -4001,35 +4040,8 @@ struct ProfileEditView: View {
                                     .foregroundStyle(.secondary)
                                 
                                 MapKitAutocompleteView(
-                                    selectedLocation: Binding(
-                                        get: { 
-                                            // Convert current birth place to LocationResult if available
-                                            if let birthPlace = editedProfile.birthPlace,
-                                               let coordinates = editedProfile.birthCoordinates,
-                                               let timezone = editedProfile.timezone {
-                                                return LocationResult(
-                                                    fullName: birthPlace,
-                                                    coordinate: coordinates,
-                                                    timezone: timezone
-                                                )
-                                            }
-                                            return nil
-                                        },
-                                        set: { newLocation in
-                                            if let location = newLocation {
-                                                editedProfile.birthPlace = location.fullName
-                                                editedProfile.birthLatitude = location.coordinate.latitude
-                                                editedProfile.birthLongitude = location.coordinate.longitude
-                                                editedProfile.timezone = location.timezone
-                                            } else {
-                                                editedProfile.birthPlace = nil
-                                                editedProfile.birthLatitude = nil
-                                                editedProfile.birthLongitude = nil
-                                                editedProfile.timezone = nil
-                                            }
-                                        }
-                                    ),
-                                    placeholder: "City, State/Country"
+                                    selectedLocation: .constant(nil),
+                                    placeholder: editedProfile.birthPlace ?? "City, State/Country"
                                 ) { location in
                                     // Update profile when location is selected
                                     editedProfile.birthPlace = location.fullName
@@ -4944,17 +4956,55 @@ struct PremiumInsightsSection: View {
                 }
             }
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
-                ForEach(insights, id: \.id) { insight in
-                    InsightCard(
-                        insight: insight,
+            // Bento Box Layout
+            VStack(spacing: 12) {
+                // Top row: Large tile on left, two small tiles stacked on right
+                HStack(spacing: 12) {
+                    // Large Love Forecast tile
+                    BentoInsightCard(
+                        insight: insights[0],
                         hasSubscription: hasSubscription,
-                        isGenerated: savedReports.contains { $0.type == insight.id },
+                        isGenerated: savedReports.contains { $0.type == insights[0].id },
+                        size: .large,
                         onTap: {
-                            onInsightTap(insight.id)
+                            onInsightTap(insights[0].id)
                         }
                     )
+                    
+                    // Stack of two small tiles
+                    VStack(spacing: 12) {
+                        BentoInsightCard(
+                            insight: insights[1],
+                            hasSubscription: hasSubscription,
+                            isGenerated: savedReports.contains { $0.type == insights[1].id },
+                            size: .small,
+                            onTap: {
+                                onInsightTap(insights[1].id)
+                            }
+                        )
+                        
+                        BentoInsightCard(
+                            insight: insights[2],
+                            hasSubscription: hasSubscription,
+                            isGenerated: savedReports.contains { $0.type == insights[2].id },
+                            size: .small,
+                            onTap: {
+                                onInsightTap(insights[2].id)
+                            }
+                        )
+                    }
                 }
+                
+                // Bottom row: Wide tile
+                BentoInsightCard(
+                    insight: insights[3],
+                    hasSubscription: hasSubscription,
+                    isGenerated: savedReports.contains { $0.type == insights[3].id },
+                    size: .wide,
+                    onTap: {
+                        onInsightTap(insights[3].id)
+                    }
+                )
             }
         }
         .padding()
@@ -4971,6 +5021,124 @@ struct InsightType {
     let description: String
 }
 
+enum BentoSize {
+    case small
+    case large
+    case wide
+}
+
+struct BentoInsightCard: View {
+    let insight: InsightType
+    let hasSubscription: Bool
+    let isGenerated: Bool
+    let size: BentoSize
+    let onTap: () -> Void
+    
+    private var cardHeight: CGFloat {
+        switch size {
+        case .small: return 120
+        case .large: return 252 // Height of two small cards + spacing
+        case .wide: return 140
+        }
+    }
+    
+    private var iconSize: Font {
+        switch size {
+        case .small: return .title3
+        case .large: return .largeTitle
+        case .wide: return .title
+        }
+    }
+    
+    private var showDescription: Bool {
+        size != .small
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    colors: [
+                        insight.color.opacity(0.15),
+                        insight.color.opacity(0.05)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                
+                VStack(alignment: .leading, spacing: size == .small ? 8 : 16) {
+                    HStack(alignment: .top) {
+                        Image(systemName: insight.icon)
+                            .font(iconSize)
+                            .foregroundStyle(insight.color)
+                        
+                        Spacer()
+                        
+                        if isGenerated {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(insight.title)
+                            .font(size == .small ? .subheadline : .headline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(size == .small ? 2 : nil)
+                        
+                        if showDescription {
+                            Text(insight.description)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.leading)
+                                .lineLimit(2)
+                        }
+                    }
+                    
+                    if size == .large {
+                        Spacer()
+                        
+                        HStack {
+                            Text("Tap to explore")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                            
+                            Image(systemName: "arrow.right")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+                .padding(size == .small ? 12 : 16)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: cardHeight)
+            .background(.regularMaterial)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(insight.color.opacity(0.2), lineWidth: 1)
+            )
+            .shadow(color: insight.color.opacity(0.1), radius: 4, x: 0, y: 2)
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+}
+
+// Scale button style for better interaction feedback
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+// Keep the original InsightCard for backwards compatibility
 struct InsightCard: View {
     let insight: InsightType
     let hasSubscription: Bool

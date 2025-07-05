@@ -5,8 +5,6 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from services.cache_service import cache
 
 from config import Config
@@ -24,7 +22,7 @@ from services.reports_service import ReportsService
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_app(anthropic_api_key: str | None = None):
+def create_app(api_key: str | None = None):
     app = Flask(__name__)
     app.config.from_object(Config)
     CORS(app)
@@ -59,14 +57,10 @@ def create_app(anthropic_api_key: str | None = None):
     
     cache.init_app(app)
 
-    if anthropic_api_key:
-        app.config["reports_service"] = ReportsService(anthropic_api_key)
+    if api_key:
+        app.config["reports_service"] = ReportsService(api_key)
 
-    limiter = Limiter(app=app, key_func=get_remote_address,
-                      default_limits=["200 per day", "50 per hour"])
-    
-    # Exempt health endpoints from rate limiting
-    limiter.exempt(lambda: request.endpoint in ['health', 'misc.health_check', 'misc.system_status'])
+    # Rate limiting removed for simplified deployment
 
     # Register authentication blueprint first
     from routes.auth import auth_bp

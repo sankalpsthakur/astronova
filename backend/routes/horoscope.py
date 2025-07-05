@@ -3,15 +3,18 @@ from __future__ import annotations
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+import logging
 
 from services.astro_calculator import AstroCalculator
-from services.claude_ai import ClaudeService
+from services.gemini_ai import GeminiService
 from services.cloudkit_service import CloudKitService
 from services.cache_service import cache
 
+logger = logging.getLogger(__name__)
+
 horoscope_bp = Blueprint('horoscope', __name__)
 calculator = AstroCalculator()
-claude = ClaudeService()
+gemini = GeminiService()
 cloudkit = CloudKitService()
 
 VALID_SIGNS = [
@@ -48,10 +51,16 @@ def horoscope():
         user_id = get_jwt_identity() or f"public_{sign}"
     except Exception:
         user_id = f"public_{sign}"
-    stored = cloudkit.get_horoscope(user_id, sign, date_str, type_)
-    if stored:
-        cache.set(cache_key, stored, timeout=3600)
-        return jsonify(stored)
+    
+    # Try to get from CloudKit but don't fail if service is down
+    try:
+        stored = cloudkit.get_horoscope(user_id, sign, date_str, type_)
+        if stored:
+            cache.set(cache_key, stored, timeout=3600)
+            return jsonify(stored)
+    except Exception as e:
+        # Log error but continue with generation
+        logger.warning(f"CloudKit fetch failed for horoscope: {e}")
 
     positions = calculator.get_positions(dt)
     position_lines = [
@@ -62,24 +71,46 @@ def horoscope():
         "Use the following planetary positions:\n" + "\n".join(position_lines)
     )
     try:
-        content = claude.generate_content(prompt, max_tokens=300)
+        content = gemini.generate_content(prompt, max_tokens=300)
     except Exception as e:
         # Fallback to a simple horoscope template when Claude API fails
         content = f"Today brings unique cosmic energies for {sign.title()}. " \
                  f"With the current planetary alignments, focus on personal growth and positive intentions. " \
                  f"The stars encourage you to embrace new opportunities while staying grounded in your values."
 
-    result = {'sign': sign, 'date': date_str, 'type': type_, 'horoscope': content}
+    # Format response to match ERD schema for Swift compatibility
+    import uuid
+    horoscope_id = str(uuid.uuid4())
+    
+    result = {
+        'id': horoscope_id,
+        'userProfileId': user_id,
+        'sign': sign,
+        'date': dt.isoformat(),  # Use ISO timestamp format
+        'type': type_,
+        'content': content,
+        'luckyElements': {},  # Placeholder for future lucky elements feature
+        # Keep legacy format for backward compatibility
+        'legacy': {
+            'sign': sign, 
+            'date': date_str, 
+            'type': type_, 
+            'horoscope': content
+        }
+    }
+    
     cache.set(cache_key, result, timeout=3600)
     
     # Save to CloudKit with proper structure
     try:
         cloudkit.save_horoscope({
+            'id': horoscope_id,
             'userProfileId': user_id,
             'sign': sign,
-            'date': date_str,
+            'date': dt.isoformat(),
             'type': type_,
-            'content': content
+            'content': content,
+            'luckyElements': {}
         })
     except Exception as e:
         # Don't block the response path – log and continue

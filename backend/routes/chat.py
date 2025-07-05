@@ -2,12 +2,12 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.schemas import ChatRequest
 from utils.validators import validate_request
-from services.claude_ai import ClaudeService
+from services.gemini_ai import GeminiService
 from services.cloudkit_service import CloudKitService
 from services.cache_service import cache
 
 chat_bp = Blueprint('chat', __name__)
-claude = ClaudeService()
+gemini = GeminiService()
 cloudkit = CloudKitService()
 
 @chat_bp.route('', methods=['GET'])
@@ -79,7 +79,7 @@ def send_message(data: ChatRequest):
             from flask import current_app
             current_app.logger.exception("CloudKit save_chat_message (user) failed")
 
-    resp = claude.send_message(
+    resp = gemini.send_message(
         data.message,
         conversation_history=history,
         system_prompt={"birthChart": birth_chart, "transits": transits},
@@ -98,14 +98,32 @@ def send_message(data: ChatRequest):
             from flask import current_app
             current_app.logger.exception("CloudKit save_chat_message (AI) failed")
 
-    return jsonify({
-        "reply": resp.get("reply"),
-        "messageId": resp.get("message_id"),
-        "suggestedFollowUps": [
-            "What's my love forecast? \ud83d\udc96",
-            "Career guidance? \u2b50",
-            "Today's energy? \u2600\ufe0f",
-            "Mercury retrograde effects? \u263f",
-            "Best time for decisions? \ud83c\udf19",
-        ],
-    })
+    # Format response to match ERD schema for Swift compatibility
+    import uuid
+    from datetime import datetime
+    
+    message_id = str(uuid.uuid4())
+    
+    response = {
+        'id': message_id,
+        'userProfileId': user_id or 'anonymous',
+        'conversationId': conv_id,
+        'content': resp.get("reply"),
+        'isUser': 0,  # 0 for AI response, 1 for user message
+        'messageType': 'text',
+        'timestamp': datetime.utcnow().isoformat(),
+        # Keep legacy format for backward compatibility
+        'legacy': {
+            "reply": resp.get("reply"),
+            "messageId": resp.get("message_id"),
+            "suggestedFollowUps": [
+                "What's my love forecast? \ud83d\udc96",
+                "Career guidance? \u2b50",
+                "Today's energy? \u2600\ufe0f",
+                "Mercury retrograde effects? \u263f",
+                "Best time for decisions? \ud83c\udf19",
+            ]
+        }
+    }
+    
+    return jsonify(response)
