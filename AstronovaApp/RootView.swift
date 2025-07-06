@@ -1602,8 +1602,8 @@ struct SimpleTabBarView: View {
     @State private var keyboardHeight: CGFloat = 0
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Content area
+        ZStack {
+            // Content area - extends full screen behind floating tab bar
             Group {
                 switch selectedTab {
                 case 0:
@@ -1621,13 +1621,22 @@ struct SimpleTabBarView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea(.container, edges: .bottom) // Allow content to extend behind tab bar
             
-            // Custom Tab Bar - only show when keyboard is not visible
-            if keyboardHeight == 0 {
-                CustomTabBar(selectedTab: $selectedTab)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            // Floating Glassy Tab Bar - overlaid on top of content
+            VStack {
+                Spacer()
+                if keyboardHeight == 0 {
+                    FloatingTabBar(selectedTab: $selectedTab)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: keyboardHeight)
+                }
             }
         }
+        .ignoresSafeArea(.keyboard)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
             if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
                 withAnimation(.easeOut(duration: 0.25)) {
@@ -1843,7 +1852,9 @@ struct CustomTabBar: View {
         HStack(spacing: 0) {
             ForEach(tabs.indices, id: \.self) { index in
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    let impact = UIImpactFeedbackGenerator(style: .light)
+                    impact.impactOccurred()
+                    withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
                         selectedTab = index
                     }
                 } label: {
@@ -1891,11 +1902,11 @@ struct CustomTabBar: View {
                 .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, max(4, 0)) // Use 0 instead of deprecated windows API
         .background(
-            .regularMaterial,
+            .ultraThinMaterial,
             in: RoundedRectangle(cornerRadius: 0)
         )
         .overlay(
@@ -1906,6 +1917,89 @@ struct CustomTabBar: View {
         )
         .ignoresSafeArea(.container, edges: .bottom)
     .clipShape(Rectangle())
+    }
+}
+
+/// Floating, glassy, translucent tab bar that sits above content
+struct FloatingTabBar: View {
+    @Binding var selectedTab: Int
+    
+    private let tabs: [(title: String, icon: String, customIcon: String?)] = [
+        (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
+        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
+        (title: "Explore", icon: "safari.fill", customIcon: nil),
+        (title: "Ask", icon: "bubble.left.and.bubble.right.fill", customIcon: nil), 
+        (title: "Manage", icon: "person.crop.circle.fill", customIcon: nil)
+    ]
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(tabs.indices, id: \.self) { index in
+                Button {
+                    let impact = UIImpactFeedbackGenerator(style: .light)
+                    impact.impactOccurred()
+                    withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                        selectedTab = index
+                    }
+                } label: {
+                    VStack(spacing: 6) {
+                        // Icon with modern floating design
+                        ZStack {
+                            // Background glow for selected tab
+                            if selectedTab == index {
+                                Circle()
+                                    .fill(.blue.gradient)
+                                    .frame(width: 40, height: 40)
+                                    .shadow(color: .blue.opacity(0.4), radius: 8, x: 0, y: 2)
+                                    .scaleEffect(1.1)
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                            
+                            // Icon
+                            Image(systemName: tabs[index].icon)
+                                .font(.system(size: 20, weight: .medium))
+                                .symbolRenderingMode(.hierarchical)
+                        }
+                        .frame(width: 50, height: 40)
+                        .foregroundStyle(selectedTab == index ? .white : .primary.opacity(0.7))
+                        .scaleEffect(selectedTab == index ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
+                        
+                        // Title with fade effect
+                        Text(tabs[index].title)
+                            .font(.system(size: 11, weight: selectedTab == index ? .semibold : .medium))
+                            .foregroundStyle(selectedTab == index ? .primary : .secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .opacity(selectedTab == index ? 1.0 : 0.8)
+                            .animation(.easeInOut(duration: 0.2), value: selectedTab)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tabs[index].title)
+                .accessibilityHint("Tab \(index + 1) of \(tabs.count)")
+                .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            // Pure glass effect with minimal solid background
+            RoundedRectangle(cornerRadius: 25)
+                .fill(.ultraThinMaterial) // Pure material effect
+                .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 8)
+                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+        )
+        .overlay(
+            // Subtle border glow with better transparency
+            RoundedRectangle(cornerRadius: 25)
+                .strokeBorder(.white.opacity(0.15), lineWidth: 0.5)
+        )
+        .padding(.horizontal, 16)
+        .padding(.bottom, 20) // Float above bottom edge
     }
 }
 
@@ -1958,9 +2052,10 @@ struct TodayTab: View {
                     // Primary CTAs moved to bottom
                     PrimaryCTASection()
                     
-                    Spacer(minLength: 32)
+                    Spacer(minLength: 120) // Extra padding for floating tab bar
                 }
                 .padding()
+                .padding(.bottom, 120) // Ensure last content is visible above floating tab bar
             }
             .navigationTitle("Today")
         }
@@ -2137,66 +2232,151 @@ struct TodayTab: View {
             Text("Current Planetary Energies")
                 .font(.headline)
             
-            Text("Planetary data will be displayed here when available.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            PlanetaryEnergiesView()
         }
     }
     
-    private var shouldShowWelcome: Bool {
-        // Show welcome for first few app opens
-        UserDefaults.standard.integer(forKey: "app_launch_count") < 3
-    }
-    
-    @ViewBuilder
-    private var welcomeSection: some View {
-        if shouldShowWelcome {
-            WelcomeToTodayCard(onDismiss: {
-                showingWelcome = false
-            })
-            .transition(AnyTransition.scale.combined(with: .opacity))
-        }
-    }
+    // MARK: - Helper Functions
     
     private func checkSubscriptionStatus() {
         hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
     }
     
     private func loadUserReports() {
-        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
-        
         Task {
             do {
-                let response = try await apiServices.getUserReports(userId: userId)
+                // Use auth.userId once implemented or use a placeholder
+                let reports = try await apiServices.getUserReports(userId: "current_user")
                 await MainActor.run {
-                    userReports = response
+                    self.userReports = reports
                 }
             } catch {
                 print("Failed to load user reports: \(error)")
+                await MainActor.run {
+                    self.userReports = []
+                }
             }
         }
     }
     
     private func generateReport(reportType: String) {
-        guard let userId = UserDefaults.standard.string(forKey: "apple_user_id") else { return }
+        Task {
+            do {
+                // Create birth data from auth user profile
+                let birthData = BirthData(
+                    name: auth.authenticatedUser?.fullName ?? "User",
+                    date: "1990-01-01", // Placeholder - should come from user profile
+                    time: "12:00",
+                    latitude: 40.7128,
+                    longitude: -74.0060,
+                    city: "New York",
+                    state: "NY",
+                    country: "USA",
+                    timezone: "America/New_York"
+                )
+                
+                let _ = try await apiServices.generateReport(birthData: birthData, type: reportType)
+                
+                // Reload user reports after generation
+                loadUserReports()
+            } catch {
+                print("Failed to generate report: \(error)")
+            }
+        }
+    }
+    
+    private var shouldShowWelcome: Bool {
+        return !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+    }
+}
+
+struct PlanetaryEnergiesView: View {
+    @State private var planetaryPositions: [DetailedPlanetaryPosition] = []
+    @State private var isLoading = true
+    @State private var errorMessage: String?
+    
+    var body: some View {
+        Group {
+            if isLoading {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                    Text("Loading planetary energies...")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            } else if let errorMessage = errorMessage {
+                VStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button("Retry") {
+                        loadPlanetaryData()
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            } else {
+                LazyVStack(spacing: 8) {
+                    ForEach(planetaryPositions.prefix(5), id: \.id) { planet in
+                        HStack {
+                            Text(planet.symbol)
+                                .font(.title2)
+                                .frame(width: 30)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(planet.name)
+                                    .font(.subheadline.weight(.medium))
+                                Text("\(planet.sign) \(String(format: "%.1f", planet.degree))°")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            if planet.retrograde {
+                                Text("℞")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+            }
+        }
+        .onAppear {
+            loadPlanetaryData()
+        }
+    }
+    
+    private func loadPlanetaryData() {
+        isLoading = true
+        errorMessage = nil
         
         Task {
             do {
-                let _ = try await apiServices.generateDetailedReport(
-                    userId: userId,
-                    reportType: reportType,
-                    profileData: auth.profileManager.profile
-                )
-                
+                let positions = try await APIServices.shared.getDetailedPlanetaryPositions()
                 await MainActor.run {
-                    showingReportSheet = false
-                    loadUserReports() // Refresh the reports list
+                    self.planetaryPositions = positions
+                    self.isLoading = false
                 }
             } catch {
-                print("Failed to generate report: \(error)")
+                await MainActor.run {
+                    self.errorMessage = "Unable to load planetary data"
+                    self.isLoading = false
+                }
             }
         }
     }
@@ -2270,7 +2450,7 @@ struct WelcomeToTodayCard: View {
                     Text("• Find compatibility matches")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("• Chat with your AI astrologer")
+                    Text("• Ask anything")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -2318,7 +2498,7 @@ struct PrimaryCTASection: View {
                     icon: "message.circle.fill",
                     color: .blue,
                     action: {
-                        switchToTab(2) // Switch to Chat tab
+                        switchToTab(3) // Switch to NexusTab (Ask page)
                     }
                 )
             }
@@ -2730,6 +2910,7 @@ struct FriendsTab: View {
                     }
                 }
                 .padding(.vertical)
+                .padding(.bottom, 120) // Additional bottom padding to show content behind floating tab bar
             }
             .navigationTitle("Friends")
             .navigationBarTitleDisplayMode(.inline)
@@ -2794,7 +2975,13 @@ struct CompatibilityCard: View {
 struct NexusTab: View {
     @State private var messageText = ""
     @State private var messages: [CosmicMessage] = [
-        CosmicMessage(id: "welcome", text: "✨ Welcome to the Cosmic Nexus! I'm your AI astrologer, here to illuminate your path through the stars. What cosmic wisdom can I share with you today?", isUser: false, messageType: .welcome, timestamp: Date().addingTimeInterval(-3600))
+        CosmicMessage(
+            id: "welcome",
+            text: "How can I help you this morning?",
+            isUser: false,
+            messageType: .welcome,
+            timestamp: Date()
+        )
     ]
     @State private var animateStars = false
     @State private var animateGradient = false
@@ -2804,20 +2991,24 @@ struct NexusTab: View {
     @State private var dailyMessageCount = 0
     @State private var hasSubscription = false
     @State private var showingSubscriptionSheet = false
+    @State private var selectedModel = "zodiac"
+    @State private var showingVoiceMode = false
     
     @EnvironmentObject private var auth: AuthState
     private let apiServices = APIServices.shared
     private let freeMessageLimit = 5
+    private let models = ["rashi", "zodiac", "loshu", "combined"]
     
     var body: some View {
         NavigationStack {
             ZStack {
-                // Cosmic animated background
-                CosmicChatBackground(animateStars: $animateStars, animateGradient: $animateGradient)
+                // Simple white background
+                Color.white
+                    .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Message Limit Banner (for free users)
-                    if !hasSubscription {
+                    if !hasSubscription && dailyMessageCount >= freeMessageLimit {
                         MessageLimitBanner(
                             used: dailyMessageCount,
                             limit: freeMessageLimit,
@@ -2827,7 +3018,7 @@ struct NexusTab: View {
                         )
                     }
                     
-                    // Chat messages with cosmic styling
+                    // Chat messages
                     ScrollView {
                         LazyVStack(spacing: 20) {
                             ForEach(messages) { message in
@@ -2836,8 +3027,28 @@ struct NexusTab: View {
                             
                             // Typing indicator
                             if showingTypingIndicator {
-                                CosmicTypingIndicator()
-                                    .transition(.scale.combined(with: .opacity))
+                                HStack {
+                                    HStack(spacing: 4) {
+                                        ForEach(0..<3) { index in
+                                            Circle()
+                                                .fill(Color.gray.opacity(0.6))
+                                                .frame(width: 8, height: 8)
+                                                .scaleEffect(showingTypingIndicator ? 1.0 : 0.5)
+                                                .animation(
+                                                    .easeInOut(duration: 0.6)
+                                                        .repeatForever(autoreverses: true)
+                                                        .delay(Double(index) * 0.2),
+                                                    value: showingTypingIndicator
+                                                )
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 14)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(20)
+                                    Spacer()
+                                }
+                                .padding(.horizontal)
                             }
                             
                             // Error message
@@ -2845,16 +3056,20 @@ struct NexusTab: View {
                                 ErrorMessageView(message: errorMessage) {
                                     self.errorMessage = nil
                                 }
+                                .padding(.horizontal)
                             }
                         }
                         .padding(.horizontal)
                         .padding(.top, 20)
+                        .padding(.bottom, 20)
                     }
                     .onTapGesture {
                         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
                     
-                    // Cosmic input area
+                    Spacer()
+                    
+                    // Input area
                     CosmicInputArea(
                         messageText: $messageText,
                         onSend: sendMessage,
@@ -2863,17 +3078,42 @@ struct NexusTab: View {
                         }
                     )
                     .disabled(isLoading || (!hasSubscription && dailyMessageCount >= freeMessageLimit))
+                    .padding(.bottom, 100)
                 }
             }
-            .navigationTitle("Cosmic Nexus")
+            .ignoresSafeArea(.keyboard)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    // Model Picker
+                    Menu {
+                        ForEach(models, id: \.self) { model in
+                            Button {
+                                selectedModel = model
+                            } label: {
+                                HStack {
+                                    Text(model.capitalized)
+                                    if selectedModel == model {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(selectedModel.capitalized)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.3).delay(0.3)) {
-                animateStars = true
-                animateGradient = true
-            }
+            animateStars = true
             loadMessageCount()
             checkSubscriptionStatus()
         }
@@ -2888,13 +3128,9 @@ struct NexusTab: View {
         
         // Check message limit for free users
         if !hasSubscription && dailyMessageCount >= freeMessageLimit {
-            errorMessage = "✨ You've reached your daily message limit! Upgrade to Astronova Plus for unlimited cosmic conversations and unlock the full power of the stars."
+            errorMessage = "DAILY LIMIT REACHED"
             return
         }
-        
-        // Haptic feedback
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-        impactFeedback.impactOccurred()
         
         // Add user message
         let userMessage = CosmicMessage(
@@ -2930,10 +3166,7 @@ struct NexusTab: View {
                 let response = try await apiServices.sendChatMessage(currentMessage, context: "chat_context")
                 
                 await MainActor.run {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showingTypingIndicator = false
-                        isLoading = false
-                    }
+                    isLoading = false
                     
                     let aiMessage = CosmicMessage(
                         id: UUID().uuidString,
@@ -2943,9 +3176,7 @@ struct NexusTab: View {
                         timestamp: Date()
                     )
                     
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        messages.append(aiMessage)
-                    }
+                    messages.append(aiMessage)
                     
                     // Increment message count for free users
                     if !hasSubscription {
@@ -2956,25 +3187,8 @@ struct NexusTab: View {
                 
             } catch {
                 await MainActor.run {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showingTypingIndicator = false
-                        isLoading = false
-                    }
-                    
-                    // Show error message instead of fake responses
-                    let errorMessage = CosmicMessage(
-                        id: UUID().uuidString,
-                        text: "🌙 I'm having trouble connecting to the cosmic network right now. Please check your internet connection and try again.",
-                        isUser: false,
-                        messageType: .guidance,
-                        timestamp: Date()
-                    )
-                    
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        messages.append(errorMessage)
-                    }
-                    
-                    print("Chat API error: \(error)")
+                    isLoading = false
+                    self.errorMessage = "CONNECTION ERROR"
                 }
             }
         }
@@ -3092,7 +3306,7 @@ struct SubscriptionSheet: View {
                 
                 // Features
                 VStack(alignment: .leading, spacing: 16) {
-                    FeatureRow(icon: "bubble.left.and.bubble.right.fill", title: "Unlimited Chat Messages", description: "Chat with AI astrologer without daily limits")
+                    FeatureRow(icon: "bubble.left.and.bubble.right.fill", title: "Unlimited Messages", description: "Ask unlimited questions without daily limits")
                     
                     FeatureRow(icon: "heart.fill", title: "Detailed Love Forecasts", description: "Deep romantic insights and compatibility")
                     
@@ -3227,11 +3441,11 @@ enum CosmicMessageType {
     
     var icon: String {
         switch self {
-        case .welcome: return "sparkles"
+        case .welcome: return "circle.fill"
         case .question: return "questionmark.circle"
-        case .insight: return "star.fill"
+        case .insight: return "circle.fill"
         case .guidance: return "lightbulb.fill"
-        case .prediction: return "crystal.ball"
+        case .prediction: return "circle.fill"
         }
     }
     
@@ -3373,7 +3587,6 @@ struct CosmicMessageView: View {
                     Image(systemName: message.messageType.icon)
                         .font(.title3)
                         .foregroundStyle(message.messageType.accentColor)
-                        .symbolEffect(.variableColor)
                 }
                 
                 // Message content
@@ -3508,124 +3721,155 @@ struct CosmicInputArea: View {
     
     @State private var isInputFocused = false
     @FocusState private var textFieldFocused: Bool
+    @State private var showingVoiceMode = false
+    @State private var isDeepDiveEnabled = false
     
+    private let allQuickQuestions = [
+        "Should I change careers?",
+        "What's my life purpose?",
+        "How do I find balance?",
+        "Will I find love soon?",
+        "Is my relationship healthy?",
+        "Should I sell out?",
+        "Should I start a substack?",
+        "Should I move cities?",
+        "How to make better friends?",
+        "What are my hidden strengths?",
+        "Should I commit more?",
+        "How to improve communication?",
+        "Should I start my own business?",
+        "Will I ever have my dream job?"
+    ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Quick Questions Scroll
+        VStack(spacing: 8) {
+            // Horizontal scrollable quick questions
             if !isInputFocused {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        // TODO: Re-enable when quickQuestions is properly integrated
-                        /*
-                        ForEach(quickQuestions, id: \.id) { question in
+                    HStack(spacing: 8) {
+                        ForEach(allQuickQuestions.shuffled().prefix(6), id: \.self) { question in
                             Button {
-                                onQuickQuestion(question.text)
+                                onQuickQuestion(question)
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                                 impactFeedback.impactOccurred()
                             } label: {
-                                Text(question.text)
-                                    .font(.caption.weight(.medium))
-                                    .foregroundStyle(.primary)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 8)
+                                Text(question)
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.black)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
                                     .background(
-                                        .regularMaterial,
+                                        Color.gray.opacity(0.1),
                                         in: Capsule()
                                     )
                                     .overlay(
                                         Capsule()
-                                            .stroke(.purple.opacity(0.3), lineWidth: 1)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                                     )
-                                    .shadow(color: .purple.opacity(0.1), radius: 4, y: 2)
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
-                        */
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
                 }
-                .padding(.vertical, 16)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
-                .animation(.easeInOut(duration: 0.3), value: isInputFocused)
             }
             
-            // Input Container
-            HStack(spacing: 12) {
-                // Text Input Field
-                HStack {
-                    TextField("Ask the cosmos anything...", text: $messageText, axis: .vertical)
-                        .font(.callout)
-                        .lineLimit(1...4)
+            // Deep Dive toggle button positioned above input area
+            HStack {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isDeepDiveEnabled.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: isDeepDiveEnabled ? "magnifyingglass.circle.fill" : "magnifyingglass.circle")
+                            .font(.system(size: 16))
+                        Text("Deep Dive")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(isDeepDiveEnabled ? .white : .blue)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(isDeepDiveEnabled ? Color.blue : Color.blue.opacity(0.1))
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(isDeepDiveEnabled ? Color.blue : Color.blue.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .padding(.leading, 16)
+                Spacer()
+            }
+            .padding(.bottom, 8)
+            
+            // Input area container
+            VStack(spacing: 0) {
+                // Text input field with integrated buttons
+                HStack(spacing: 12) {
+                    // Text field
+                    TextField("Ask anything...", text: $messageText, axis: .vertical)
+                        .font(.system(size: 16))
+                        .lineLimit(1...5)
                         .focused($textFieldFocused)
-                        .padding(.horizontal, 18)
+                        .padding(.leading, 16)
+                        .padding(.trailing, 8)
                         .padding(.vertical, 12)
-                        .background(
-                            .regularMaterial,
-                            in: RoundedRectangle(cornerRadius: 25)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 25)
-                                .stroke(isInputFocused ? .purple.opacity(0.5) : .gray.opacity(0.2), lineWidth: 1.5)
-                        )
-                        .shadow(color: isInputFocused ? .purple.opacity(0.2) : .clear, radius: 8, y: 4)
-                }
-                
-                // Send Button
-                Button(action: {
-                    onSend()
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                    impactFeedback.impactOccurred()
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: messageText.isEmpty ? [.gray.opacity(0.3)] : [.purple, .indigo],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 44, height: 44)
-                            .shadow(color: messageText.isEmpty ? .clear : .purple.opacity(0.4), radius: 8, y: 4)
-                        
-                        Image(systemName: "paperplane.fill")
-                            .font(.title3)
-                            .foregroundStyle(.white)
-                            .rotationEffect(.degrees(45))
+                        .background(Color.clear)
+                        .onSubmit {
+                            if !messageText.isEmpty {
+                                onSend()
+                            }
+                        }
+                    
+                    // Voice button
+                    Button {
+                        showingVoiceMode = true
+                    } label: {
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                            .frame(width: 32, height: 32)
+                            .background(Color.gray.opacity(0.1))
+                            .clipShape(Circle())
                     }
-                }
-                .disabled(messageText.isEmpty)
-                .scaleEffect(messageText.isEmpty ? 0.9 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: messageText.isEmpty)
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
-            .background(.ultraThinMaterial)
-            .onChange(of: textFieldFocused) { _, focused in
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isInputFocused = focused
-                }
-            }
-            .onAppear {
-                // TODO: Re-enable when ContentManagementService is properly integrated
-                /*
-                Task {
-                    do {
-                        quickQuestions = try await ContentManagementService.shared.getQuickQuestions()
-                    } catch {
-                        print("Failed to load quick questions: \(error)")
+                    .padding(.trailing, 4)
+                    
+                    // Send button
+                    Button {
+                        if !messageText.isEmpty {
+                            onSend()
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(messageText.isEmpty ? .gray : .white)
+                            .frame(width: 32, height: 32)
+                            .background(messageText.isEmpty ? Color.gray.opacity(0.3) : Color.blue)
+                            .clipShape(Circle())
                     }
+                    .disabled(messageText.isEmpty)
+                    .padding(.trailing, 8)
                 }
-                */
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+            }
+            
+        }
+        .onChange(of: textFieldFocused) { _, focused in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isInputFocused = focused
             }
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 20, coordinateSpace: .local)
-                .onChanged { _ in
-                    hideKeyboard()
-                }
-        )
+        .sheet(isPresented: $showingVoiceMode) {
+            VoiceModeView()
+        }
     }
     
     private func hideKeyboard() {
@@ -3639,9 +3883,10 @@ struct ProfileTab: View {
     @State private var selectedDate = Date()
     @State private var selectedTab = 0
     @State private var showingSettings = false
+    @State private var showingAPITests = false
     @State private var bookmarkedReadings: [BookmarkedReading] = []
     
-    private let tabs = ["Overview", "Birth Chart", "Daily", "Saved"]
+    private let tabs = ["Overview", "Daily", "Saved"]
     
     var body: some View {
         NavigationStack {
@@ -3662,15 +3907,11 @@ struct ProfileTab: View {
                         ProfileOverviewView()
                             .environmentObject(auth)
                     case 1:
-                        InteractiveChartsView(
-                            selectedDate: selectedDate
-                        )
-                    case 2:
                         CalendarHoroscopeView(
                             selectedDate: $selectedDate,
                             onBookmark: bookmarkReading
                         )
-                    case 3:
+                    case 2:
                         BookmarkedReadingsView(
                             bookmarks: bookmarkedReadings,
                             onRemove: removeBookmark
@@ -3680,12 +3921,25 @@ struct ProfileTab: View {
                             .environmentObject(auth)
                     }
                 }
+                .padding(.bottom, 120) // Additional bottom padding to show content behind floating tab bar
             }
             .navigationTitle("Profile")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingSettings = true
+                    Menu {
+                        Button {
+                            showingSettings = true
+                        } label: {
+                            Label("Settings", systemImage: "gearshape")
+                        }
+                        
+                        #if DEBUG
+                        Button {
+                            showingAPITests = true
+                        } label: {
+                            Label("API Tests", systemImage: "network")
+                        }
+                        #endif
                     } label: {
                         Image(systemName: "gearshape")
                     }
@@ -3694,6 +3948,16 @@ struct ProfileTab: View {
         }
         .sheet(isPresented: $showingSettings) {
             EnhancedSettingsView(auth: auth)
+        }
+        .sheet(isPresented: $showingAPITests) {
+            VStack {
+                Text("API Testing")
+                    .font(.headline)
+                Text("API testing interface will be implemented")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToProfileSection)) { notification in
             if let sectionIndex = notification.object as? Int {
@@ -3802,57 +4066,6 @@ struct ProfileOverviewView: View {
                         color: .green
                     )
                 }
-                
-                // Recent Activity or Next Steps
-                VStack(spacing: 0) {
-                    HStack {
-                        Text("Your Astrological Journey")
-                            .font(.headline.weight(.semibold))
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 16)
-                    
-                    VStack(spacing: 12) {
-                        NavigationRowView(
-                            title: "Complete Birth Chart",
-                            subtitle: "Calculate your full astrological profile",
-                            icon: "chart.pie.fill",
-                            action: { 
-                                NotificationCenter.default.post(name: .switchToProfileSection, object: 1)
-                            }
-                        )
-                        
-                        NavigationRowView(
-                            title: "Today's Horoscope",
-                            subtitle: "See what the stars have in store",
-                            icon: "calendar.circle.fill",
-                            action: { 
-                                NotificationCenter.default.post(name: .switchToTab, object: 0)
-                            }
-                        )
-                        
-                        NavigationRowView(
-                            title: "Compatibility Check",
-                            subtitle: "Compare with friends and partners",
-                            icon: "heart.circle.fill",
-                            action: { 
-                                NotificationCenter.default.post(name: .switchToTab, object: 1)
-                            }
-                        )
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(.secondary.opacity(0.3), lineWidth: 1)
-                        )
-                )
                 
                 Spacer(minLength: 100)
             }
@@ -4256,18 +4469,28 @@ struct EnhancedSettingsView: View {
                 // Account Actions
                 Section {
                     Button {
-                        auth.signOut()
-                        dismiss()
+                        Task {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            auth.signOut()
+                            dismiss()
+                        }
                     } label: {
-                        Label("Sign Out", systemImage: "door.left.hand.open")
-                            .foregroundStyle(.red)
+                        HStack {
+                            Label("Sign Out", systemImage: "door.left.hand.open")
+                            Spacer()
+                        }
+                        .foregroundStyle(.red)
                     }
                     
                     Button {
                         showingAccountDeletion = true
                     } label: {
-                        Label("Delete Account", systemImage: "xmark.shield.fill")
-                            .foregroundStyle(.red)
+                        HStack {
+                            Label("Delete Account", systemImage: "xmark.shield.fill")
+                            Spacer()
+                        }
+                        .foregroundStyle(.red)
                     }
                 } header: {
                     Text("Account")
@@ -4286,9 +4509,24 @@ struct EnhancedSettingsView: View {
         .alert("Delete Account", isPresented: $showingAccountDeletion) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
-                // Handle account deletion
-                auth.signOut()
-                dismiss()
+                Task {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
+                    impactFeedback.impactOccurred()
+                    
+                    do {
+                        try await APIServices.shared.deleteAccount()
+                        await MainActor.run {
+                            auth.signOut()
+                            dismiss()
+                        }
+                    } catch {
+                        // If API call fails, still sign out locally
+                        await MainActor.run {
+                            auth.signOut()
+                            dismiss()
+                        }
+                    }
+                }
             }
         } message: {
             Text("This action cannot be undone. All your data will be permanently deleted.")
@@ -4823,7 +5061,7 @@ struct DailySynopsisCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Daily Synopsis")
                         .font(.headline)
-                    Text(DateFormatter.fullDate.string(from: date))
+                    Text("General cosmic overview • \(DateFormatter.fullDate.string(from: date))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -4900,26 +5138,30 @@ struct DailySynopsisCard: View {
     
     @MainActor
     private func loadDailyReading() async {
-        try? await Task.sleep(for: .milliseconds(500))
-        
-        reading = HoroscopeReading(
-            id: UUID(),
-            date: date,
-            type: .daily,
-            title: "Daily Synopsis",
-            content: generateDailySynopsis(for: date)
-        )
-    }
-    
-    private func generateDailySynopsis(for date: Date) -> String {
-        let insights = [
-            "The cosmic energies today bring opportunities for personal growth and meaningful connections.",
-            "Your intuition is heightened today, making it an excellent time for important decisions.",
-            "Creative energy flows strongly through you today, perfect for artistic pursuits.",
-            "Focus on relationships and communication today as the planets align favorably.",
-            "Financial opportunities may present themselves today - stay alert to possibilities."
-        ]
-        return insights.randomElement() ?? insights[0]
+        do {
+            // For now, use a default sign since we need user's birth data to determine it
+            let horoscopeResponse = try await APIServices.shared.getHoroscope(
+                sign: "general",
+                period: "daily"
+            )
+            
+            reading = HoroscopeReading(
+                id: UUID(),
+                date: date,
+                type: .daily,
+                title: "Daily Synopsis",
+                content: horoscopeResponse.horoscope
+            )
+        } catch {
+            // Fallback content if API fails
+            reading = HoroscopeReading(
+                id: UUID(),
+                date: date,
+                type: .daily,
+                title: "Daily Synopsis",
+                content: "Unable to load today's cosmic insights. Please check your connection and try again."
+            )
+        }
     }
 }
 
@@ -6003,10 +6245,30 @@ struct ReportDetailView: View {
     }
     
     private func downloadPDF() {
-        // TODO: Implement PDF download
+        // PDF download implementation
         Task {
-            // TODO: Integrate real download endpoint. For now, just log.
-            print("Downloading PDF for report: \(report.reportId)")
+            do {
+                // Generate and download PDF via API
+                let pdfData = try await APIServices.shared.generateReportPDF(reportId: report.reportId)
+                // Save PDF to user's files or share
+                await savePDFToFiles(data: pdfData, filename: "\(report.title).pdf")
+            } catch {
+                print("Failed to download PDF: \(error)")
+            }
+        }
+    }
+    
+    @MainActor
+    private func savePDFToFiles(data: Data, filename: String) async {
+        // Save PDF to Documents directory
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let pdfURL = documentsPath.appendingPathComponent(filename)
+        
+        do {
+            try data.write(to: pdfURL)
+            print("PDF saved to: \(pdfURL)")
+        } catch {
+            print("Failed to save PDF: \(error)")
         }
     }
     
@@ -6656,7 +6918,7 @@ struct TabGuideOverlay: View {
         ),
         TabGuideContent(
             title: "Enter the Cosmic Nexus",
-            description: "Chat with your AI astrologer for personalized insights about love, career, and life decisions in a beautiful cosmic interface.",
+            description: "Ask questions for insights about love, career, and life decisions in a minimal interface.",
             icon: "brain.head.profile",
             color: .blue
         ),
@@ -7208,6 +7470,74 @@ struct CompellingLandingView: View {
         UserDefaults.standard.set(true, forKey: "is_anonymous_user")
         await auth.requestSignIn()
         inProgress = false
+    }
+}
+
+
+// MARK: - Voice Mode View
+
+struct VoiceModeView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var isRecording = false
+    @State private var transcript = ""
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                // Background
+                LinearGradient(
+                    colors: [
+                        Color.purple.opacity(0.3),
+                        Color.indigo.opacity(0.2),
+                        Color.black
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 40) {
+                    Text("Tap to speak")
+                        .font(.title2)
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    // Recording button
+                    Button {
+                        isRecording.toggle()
+                    } label: {
+                        ZStack {
+                            Circle()
+                                .fill(isRecording ? Color.red : Color.white.opacity(0.2))
+                                .frame(width: 120, height: 120)
+                            
+                            Image(systemName: isRecording ? "mic.fill" : "mic")
+                                .font(.system(size: 50))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .scaleEffect(isRecording ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 0.3), value: isRecording)
+                    
+                    if !transcript.isEmpty {
+                        Text(transcript)
+                            .font(.body)
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding()
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .navigationTitle("Voice Mode")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 

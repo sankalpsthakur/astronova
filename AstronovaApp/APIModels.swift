@@ -29,6 +29,22 @@ struct PlanetaryPosition: Codable {
     let sign: String
 }
 
+/// Detailed planetary position with additional metadata
+struct DetailedPlanetaryPosition: Codable, Identifiable {
+    let id: String
+    let symbol: String
+    let name: String
+    let sign: String
+    let degree: Double
+    let retrograde: Bool
+    let house: Int?
+    let significance: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, symbol, name, sign, degree, retrograde, house, significance
+    }
+}
+
 /// Chart system (Western or Vedic) response
 struct ChartSystem: Codable {
     let positions: [String: PlanetaryPosition]

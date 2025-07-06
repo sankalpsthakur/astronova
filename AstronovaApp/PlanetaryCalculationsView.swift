@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreLocation
+import Foundation
 
 struct PlanetaryCalculationsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -77,6 +78,7 @@ struct PlanetaryCalculationsView: View {
                     }
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .animation(.easeInOut(duration: 0.3), value: currentStep)
                     
                     // Navigation Controls
                     navigationControls
@@ -170,6 +172,38 @@ struct PlanetaryCalculationsView: View {
         }
     }
     
+    private func planetSymbol(for planet: String) -> String {
+        switch planet {
+        case "Sun": return "☉"
+        case "Moon": return "☽"
+        case "Mercury": return "☿"
+        case "Venus": return "♀"
+        case "Mars": return "♂"
+        case "Jupiter": return "♃"
+        case "Saturn": return "♄"
+        case "Uranus": return "♅"
+        case "Neptune": return "♆"
+        case "Pluto": return "♇"
+        default: return "●"
+        }
+    }
+    
+    private func planetSignificance(for planet: String) -> String {
+        switch planet {
+        case "Sun": return "Core identity and vitality"
+        case "Moon": return "Emotions and intuition"
+        case "Mercury": return "Communication and thinking"
+        case "Venus": return "Love and values"
+        case "Mars": return "Energy and action"
+        case "Jupiter": return "Growth and wisdom"
+        case "Saturn": return "Structure and discipline"
+        case "Uranus": return "Innovation and change"
+        case "Neptune": return "Dreams and spirituality"
+        case "Pluto": return "Transformation and power"
+        default: return "Planetary influence"
+        }
+    }
+    
     private func initializeWithUserProfile() {
         // Pre-fill with user's profile data if available
         selectedDate = profileManager.profile.birthDate
@@ -256,21 +290,96 @@ struct PlanetaryCalculationsView: View {
             try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
             
             // Add calculated positions progressively
-            await MainActor.run {
-                switch index {
-                case 2: // Planetary positions
-                    calculatedPositions["Sun"] = DetailedPlanetaryPosition(name: "Sun", position: Double.random(in: 0...360))
-                    calculatedPositions["Moon"] = DetailedPlanetaryPosition(name: "Moon", position: Double.random(in: 0...360))
-                    calculatedPositions["Mercury"] = DetailedPlanetaryPosition(name: "Mercury", position: Double.random(in: 0...360))
-                case 3: // More planets
-                    calculatedPositions["Venus"] = DetailedPlanetaryPosition(name: "Venus", position: Double.random(in: 0...360))
-                    calculatedPositions["Mars"] = DetailedPlanetaryPosition(name: "Mars", position: Double.random(in: 0...360))
-                case 4: // Outer planets
-                    calculatedPositions["Jupiter"] = DetailedPlanetaryPosition(name: "Jupiter", position: Double.random(in: 0...360))
-                    calculatedPositions["Saturn"] = DetailedPlanetaryPosition(name: "Saturn", position: Double.random(in: 0...360))
-                default:
-                    break
+            switch index {
+            case 2: // Calculate planetary positions for birth date/time
+                do {
+                    // Combine birth date and time
+                    let calendar = Calendar.current
+                    let dateComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+                    let timeComponents = calendar.dateComponents([.hour, .minute], from: selectedTime)
+                    
+                    var combinedComponents = DateComponents()
+                    combinedComponents.year = dateComponents.year
+                    combinedComponents.month = dateComponents.month
+                    combinedComponents.day = dateComponents.day
+                    combinedComponents.hour = timeComponents.hour
+                    combinedComponents.minute = timeComponents.minute
+                    combinedComponents.second = 0
+                    combinedComponents.timeZone = TimeZone.current // Will be adjusted based on birth location
+                    
+                    guard let birthDateTime = calendar.date(from: combinedComponents) else {
+                        throw NSError(domain: "ChartCalculation", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid date/time"])
+                    }
+                    
+                    // Format date and time for the service
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                    let timeFormatter = DateFormatter()
+                    timeFormatter.dateFormat = "HH:mm"
+                    
+                    let birthDateStr = dateFormatter.string(from: birthDateTime)
+                    let birthTimeStr = timeFormatter.string(from: birthDateTime)
+                    
+                    // Get positions using APIServices
+                    let birthData = BirthData(
+                        name: profileManager.profile.fullName,
+                        date: birthDateStr,
+                        time: birthTimeStr,
+                        latitude: coordinate.latitude,
+                        longitude: coordinate.longitude,
+                        city: selectedLocation,
+                        state: nil,
+                        country: "Unknown",
+                        timezone: TimeZone.current.identifier
+                    )
+                    
+                    let chartResponse = try await APIServices.shared.generateChart(
+                        birthData: birthData,
+                        systems: ["tropical"]
+                    )
+                    
+                    // Convert chart positions to DetailedPlanetaryPosition format
+                    var positions: [DetailedPlanetaryPosition] = []
+                    
+                    if let westernChart = chartResponse.westernChart {
+                        for (planetName, position) in westernChart.positions {
+                            let planetPosition = DetailedPlanetaryPosition(
+                                id: planetName.lowercased(),
+                                symbol: planetSymbol(for: planetName),
+                                name: planetName,
+                                sign: position.sign,
+                                degree: position.degree,
+                                retrograde: false, // TODO: Get retrograde status from API
+                                house: position.house,
+                                significance: planetSignificance(for: planetName)
+                            )
+                            positions.append(planetPosition)
+                        }
+                    }
+                    
+                    await MainActor.run {
+                        for planetData in positions {
+                            calculatedPositions[planetData.name] = planetData
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        currentCalculationStep = "Error calculating planetary positions: \(error.localizedDescription)"
+                    }
                 }
+            case 3: // Calculate house cusps and update planet houses
+                await MainActor.run {
+                    currentCalculationStep = "Calculating house positions..."
+                }
+            case 4: // Additional calculations or aspects
+                await MainActor.run {
+                    if !calculatedPositions.isEmpty {
+                        currentCalculationStep = "Calculating planetary aspects..."
+                        // Aspect calculations would go here
+                    }
+                }
+            default:
+                break
             }
         }
         
@@ -579,7 +688,7 @@ struct CalculationStepView: View {
                                     
                                     Spacer()
                                     
-                                    Text("\(Int(position.position))°")
+                                    Text("\(Int(position.degree))°")
                                         .font(.body)
                                         .foregroundStyle(.white.opacity(0.8))
                                 }
@@ -619,15 +728,9 @@ struct ResultsStepView: View {
     let birthTime: Date
     let location: String
     
-    @State private var animateChart = false
-    
     var body: some View {
         ScrollView {
             VStack(spacing: 30) {
-                Text("Your Astrological Chart")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(.white)
-                
                 // Birth Data Summary
                 VStack(spacing: 12) {
                     InfoRowView(title: "Birth Date", value: birthDate.formatted(date: .complete, time: .omitted))
@@ -637,95 +740,34 @@ struct ResultsStepView: View {
                 .padding(.horizontal, 40)
                 
                 // Interactive Chart Visualization
-                ZStack {
-                    // Outer circle
-                    Circle()
-                        .stroke(.white.opacity(0.3), lineWidth: 2)
-                        .frame(width: 240, height: 240)
-                    
-                    // Inner circles for houses
-                    Circle()
-                        .stroke(.white.opacity(0.2), lineWidth: 1)
-                        .frame(width: 180, height: 180)
-                    
-                    Circle()
-                        .stroke(.white.opacity(0.1), lineWidth: 1)
-                        .frame(width: 120, height: 120)
-                    
-                    // Zodiac divisions (12 houses)
-                    ForEach(0..<12, id: \.self) { house in
-                        Path { path in
-                            path.move(to: CGPoint(x: 120, y: 120))
-                            path.addLine(to: CGPoint(x: 120, y: 0))
-                        }
-                        .stroke(.white.opacity(0.2), lineWidth: 1)
-                        .rotationEffect(.degrees(Double(house * 30)))
-                    }
-                    
-                    // Planet positions
-                    ForEach(Array(positions.keys.enumerated()), id: \.element) { index, planet in
-                        if let position = positions[planet] {
-                            VStack(spacing: 4) {
-                                Image(systemName: planetIcon(for: planet))
-                                    .font(.system(size: 16))
-                                    .foregroundStyle(planetColor(for: planet))
-                                    .background(
-                                        Circle()
-                                            .fill(.white)
-                                            .frame(width: 24, height: 24)
-                                    )
-                                
-                                Text(planet.prefix(3))
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(.white)
-                            }
-                            .offset(x: 100)
-                            .rotationEffect(.degrees(position.position))
-                            .scaleEffect(animateChart ? 1.0 : 0.0)
-                            .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(Double(index) * 0.1), value: animateChart)
-                        }
-                    }
-                }
-                .padding(.vertical, 20)
+                AstrologicalChartView(
+                    positions: positions,
+                    birthDate: birthDate,
+                    birthTime: birthTime,
+                    location: location
+                )
+                .frame(height: 400)
+                .padding(.horizontal, 20)
                 
-                Text("This chart shows your planets' positions at the moment of birth. Each planet influences different aspects of your personality and life path.")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                // Explanation
+                VStack(spacing: 16) {
+                    Text("Understanding Your Chart")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                    
+                    Text("This wheel represents the sky at your exact moment of birth. The outer ring shows the 12 zodiac signs, while the inner sections represent the 12 houses of life. Each planet's position reveals unique aspects of your personality and life path.")
+                        .font(.body)
+                        .foregroundStyle(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                    
+                    Text("Tap on any planet to learn more about its influence.")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                        .italic()
+                }
+                .padding(.horizontal, 40)
             }
             .padding(.vertical, 40)
-        }
-        .onAppear {
-            withAnimation {
-                animateChart = true
-            }
-        }
-    }
-    
-    private func planetIcon(for planet: String) -> String {
-        switch planet {
-        case "Sun": return "sun.max.fill"
-        case "Moon": return "moon.fill"
-        case "Mercury": return "circle.fill"
-        case "Venus": return "heart.fill"
-        case "Mars": return "flame.fill"
-        case "Jupiter": return "j.circle.fill"
-        case "Saturn": return "s.circle.fill"
-        default: return "circle.fill"
-        }
-    }
-    
-    private func planetColor(for planet: String) -> Color {
-        switch planet {
-        case "Sun": return .orange
-        case "Moon": return .gray
-        case "Mercury": return .yellow
-        case "Venus": return .pink
-        case "Mars": return .red
-        case "Jupiter": return .purple
-        case "Saturn": return .brown
-        default: return .blue
         }
     }
 }
@@ -754,10 +796,404 @@ struct InfoRowView: View {
     }
 }
 
-// MARK: - Stub types for compilation
-struct DetailedPlanetaryPosition {
-    let name: String
-    let position: Double
+// Note: DetailedPlanetaryPosition is now defined in PlanetaryDataService.swift
+
+// MARK: - Astrological Chart View
+
+struct AstrologicalChartView: View {
+    let positions: [String: DetailedPlanetaryPosition]
+    let birthDate: Date
+    let birthTime: Date
+    let location: String
+    
+    @State private var selectedPlanet: String?
+    @State private var showPlanetInfo = false
+    @State private var rotationAngle: Double = 0
+    @State private var isAnimating = false
+    
+    private let zodiacSigns = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"]
+    private let zodiacNames = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", 
+                               "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+    private let houseNumbers = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
+    
+    var body: some View {
+        ZStack {
+            // Background gradient
+            RadialGradient(
+                colors: [
+                    Color.purple.opacity(0.1),
+                    Color.blue.opacity(0.1),
+                    Color.indigo.opacity(0.2)
+                ],
+                center: .center,
+                startRadius: 50,
+                endRadius: 200
+            )
+            .blur(radius: 20)
+            
+            // Main chart
+            GeometryReader { geometry in
+                let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                let outerRadius = min(geometry.size.width, geometry.size.height) / 2 - 20
+                
+                ZStack {
+                    // Outer zodiac ring
+                    ZodiacRing(
+                        center: center,
+                        radius: outerRadius,
+                        zodiacSigns: zodiacSigns,
+                        zodiacNames: zodiacNames,
+                        rotationAngle: rotationAngle
+                    )
+                    
+                    // House divisions
+                    HouseDivisions(
+                        center: center,
+                        radius: outerRadius * 0.85,
+                        houseNumbers: houseNumbers
+                    )
+                    
+                    // Inner circle
+                    Circle()
+                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        .frame(width: outerRadius * 1.4, height: outerRadius * 1.4)
+                        .position(center)
+                    
+                    // Planet positions
+                    ForEach(Array(positions.keys), id: \.self) { planetName in
+                        if let position = positions[planetName] {
+                            PlanetMarker(
+                                planet: planetName,
+                                position: position,
+                                center: center,
+                                radius: outerRadius * 0.7,
+                                isSelected: selectedPlanet == planetName,
+                                onTap: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        selectedPlanet = planetName
+                                        showPlanetInfo = true
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    
+                    // Center info
+                    VStack(spacing: 4) {
+                        Text("Birth Chart")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(.white)
+                        Text(birthDate.formatted(date: .abbreviated, time: .omitted))
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.7))
+                        Text(birthTime.formatted(date: .omitted, time: .shortened))
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .position(center)
+                }
+            }
+            .onAppear {
+                withAnimation(.linear(duration: 60).repeatForever(autoreverses: false)) {
+                    rotationAngle = 360
+                }
+                isAnimating = true
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+        )
+        .sheet(isPresented: $showPlanetInfo) {
+            if let planet = selectedPlanet, let position = positions[planet] {
+                PlanetInfoSheet(planet: planet, position: position)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+    }
+}
+
+// MARK: - Zodiac Ring Component
+
+struct ZodiacRing: View {
+    let center: CGPoint
+    let radius: CGFloat
+    let zodiacSigns: [String]
+    let zodiacNames: [String]
+    let rotationAngle: Double
+    
+    var body: some View {
+        ZStack {
+            // Outer circle
+            Circle()
+                .stroke(Color.white.opacity(0.5), lineWidth: 2)
+                .frame(width: radius * 2, height: radius * 2)
+                .position(center)
+            
+            // Zodiac divisions and signs
+            ForEach(0..<12) { index in
+                // Each zodiac sign spans 30 degrees
+                // Starting from Aries at 0 degrees (Spring Equinox)
+                let startAngle = Double(index) * 30.0
+                let signAngle = startAngle + 15.0 // Center of each sign
+                
+                // Convert to drawing coordinates (subtract 90 to start from East)
+                let drawAngle = startAngle - 90.0
+                let drawSignAngle = signAngle - 90.0
+                
+                // Division lines
+                Path { path in
+                    path.move(to: center)
+                    let endX = center.x + radius * cos(drawAngle * .pi / 180)
+                    let endY = center.y + radius * sin(drawAngle * .pi / 180)
+                    path.addLine(to: CGPoint(x: endX, y: endY))
+                }
+                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                
+                // Zodiac signs
+                Text(zodiacSigns[index])
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(0.8))
+                    .position(
+                        x: center.x + (radius - 25) * cos(drawSignAngle * .pi / 180),
+                        y: center.y + (radius - 25) * sin(drawSignAngle * .pi / 180)
+                    )
+                    .rotationEffect(.degrees(-rotationAngle))
+            }
+        }
+        .rotationEffect(.degrees(rotationAngle))
+    }
+}
+
+// MARK: - House Divisions Component
+
+struct HouseDivisions: View {
+    let center: CGPoint
+    let radius: CGFloat
+    let houseNumbers: [String]
+    
+    var body: some View {
+        ZStack {
+            // House circle
+            Circle()
+                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                .frame(width: radius * 2, height: radius * 2)
+                .position(center)
+            
+            // House divisions
+            ForEach(0..<12) { index in
+                // For equal houses, each house spans 30 degrees
+                // In real implementation, this would use calculated house cusps
+                let angle = Double(index) * 30.0 - 90.0
+                let numberAngle = angle + 15.0
+                
+                // Division lines
+                Path { path in
+                    let startRadius = radius * 0.3
+                    let startX = center.x + startRadius * cos(angle * .pi / 180)
+                    let startY = center.y + startRadius * sin(angle * .pi / 180)
+                    path.move(to: CGPoint(x: startX, y: startY))
+                    
+                    let endX = center.x + radius * cos(angle * .pi / 180)
+                    let endY = center.y + radius * sin(angle * .pi / 180)
+                    path.addLine(to: CGPoint(x: endX, y: endY))
+                }
+                .stroke(Color.white.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                
+                // House numbers
+                Text(houseNumbers[index])
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+                    .position(
+                        x: center.x + (radius * 0.6) * cos(numberAngle * .pi / 180),
+                        y: center.y + (radius * 0.6) * sin(numberAngle * .pi / 180)
+                    )
+            }
+        }
+    }
+}
+
+// MARK: - Planet Marker Component
+
+struct PlanetMarker: View {
+    let planet: String
+    let position: DetailedPlanetaryPosition
+    let center: CGPoint
+    let radius: CGFloat
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    private var planetSymbol: String {
+        switch planet {
+        case "Sun": return "☉"
+        case "Moon": return "☽"
+        case "Mercury": return "☿"
+        case "Venus": return "♀"
+        case "Mars": return "♂"
+        case "Jupiter": return "♃"
+        case "Saturn": return "♄"
+        case "Uranus": return "♅"
+        case "Neptune": return "♆"
+        case "Pluto": return "♇"
+        default: return "●"
+        }
+    }
+    
+    private var planetColor: Color {
+        switch planet {
+        case "Sun": return .yellow
+        case "Moon": return .gray
+        case "Mercury": return .orange
+        case "Venus": return .pink
+        case "Mars": return .red
+        case "Jupiter": return .purple
+        case "Saturn": return .brown
+        case "Uranus": return .cyan
+        case "Neptune": return .blue
+        case "Pluto": return .indigo
+        default: return .white
+        }
+    }
+    
+    var body: some View {
+        // Ensure we're using the full ecliptic longitude (0-360 degrees)
+        // Subtract 90 to start from the Ascendant (East) position
+        let normalizedDegree = position.degree.truncatingRemainder(dividingBy: 360.0)
+        let angle = (normalizedDegree < 0 ? normalizedDegree + 360.0 : normalizedDegree) - 90.0
+        let angleRadians = angle * .pi / 180
+        let x = center.x + radius * cos(angleRadians)
+        let y = center.y + radius * sin(angleRadians)
+        
+        Button(action: onTap) {
+            ZStack {
+                Circle()
+                    .fill(planetColor.opacity(0.3))
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Circle()
+                            .stroke(planetColor, lineWidth: 2)
+                    )
+                    .scaleEffect(isSelected ? 1.3 : 1.0)
+                
+                Text(planetSymbol)
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+            }
+        }
+        .position(x: x, y: y)
+        .shadow(color: planetColor.opacity(0.5), radius: isSelected ? 8 : 4)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
+    }
+}
+
+// MARK: - Planet Info Sheet
+
+struct PlanetInfoSheet: View {
+    let planet: String
+    let position: DetailedPlanetaryPosition
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header
+            HStack {
+                Text(planet)
+                    .font(.title.weight(.bold))
+                Spacer()
+                Button("Done") {
+                    dismiss()
+                }
+                .font(.body.weight(.medium))
+            }
+            .padding(.horizontal)
+            .padding(.top)
+            
+            // Planet info
+            VStack(spacing: 20) {
+                // Symbol and sign
+                HStack(spacing: 20) {
+                    Text(position.symbol)
+                        .font(.system(size: 60))
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        let degreeInSign = position.degree.truncatingRemainder(dividingBy: 30.0)
+                        let degrees = Int(degreeInSign)
+                        let minutes = Int((degreeInSign - Double(degrees)) * 60)
+                        
+                        Text("in \(position.sign)")
+                            .font(.title2.weight(.semibold))
+                        Text("\(degrees)° \(minutes)' \(position.sign)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text("Ecliptic: \(String(format: "%.2f", position.degree))°")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        if position.retrograde {
+                            Label("Retrograde", systemImage: "arrow.uturn.backward")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+                
+                // House position
+                if let house = position.house {
+                    HStack {
+                        Image(systemName: "house.fill")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                        Text("House \(house)")
+                            .font(.title3.weight(.medium))
+                    }
+                }
+                
+                // Significance
+                if let significance = position.significance {
+                    Text(significance)
+                        .font(.body)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                }
+                
+                // Additional interpretations
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Key Influences:")
+                        .font(.headline)
+                    
+                    Text(getPlanetInterpretation(planet: planet, sign: position.sign))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(12)
+            }
+            .padding()
+            
+            Spacer()
+        }
+    }
+    
+    private func getPlanetInterpretation(planet: String, sign: String) -> String {
+        // Simplified interpretations - in a real app, these would be more detailed
+        switch planet {
+        case "Sun":
+            return "Your \(sign) Sun represents your core identity, ego, and life purpose. It shows how you express yourself and seek recognition."
+        case "Moon":
+            return "Your \(sign) Moon reveals your emotional nature, instincts, and subconscious patterns. It shows what makes you feel secure."
+        case "Mercury":
+            return "Mercury in \(sign) shapes your communication style, thinking patterns, and how you process information."
+        case "Venus":
+            return "Venus in \(sign) influences your approach to love, relationships, beauty, and what brings you pleasure."
+        case "Mars":
+            return "Mars in \(sign) drives your ambition, energy, and how you assert yourself in pursuit of your desires."
+        default:
+            return "\(planet) in \(sign) brings unique energies and influences to your chart."
+        }
+    }
 }
 
 #Preview {

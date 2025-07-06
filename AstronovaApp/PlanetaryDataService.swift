@@ -1,19 +1,5 @@
 import Foundation
-
-struct DetailedPlanetaryPosition: Codable, Identifiable {
-    let id: String
-    let symbol: String
-    let name: String
-    let sign: String
-    let degree: Double
-    let retrograde: Bool
-    let house: Int?
-    let significance: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case id, symbol, name, sign, degree, retrograde, house, significance
-    }
-}
+import CoreLocation
 
 struct PlanetaryDataResponse: Codable {
     let planets: [DetailedPlanetaryPosition]
@@ -38,11 +24,11 @@ struct BirthChartRequest: Codable {
     }
 }
 
-class PlanetaryDataService {
-    static let shared = PlanetaryDataService()
+public class PlanetaryDataService {
+    public static let shared = PlanetaryDataService()
     
     private let networkClient = NetworkClient.shared
-    private var cachedPlanets: [PlanetaryPosition] = []
+    private var cachedPlanets: [DetailedPlanetaryPosition] = []
     private var lastFetchTime: Date?
     private let cacheTimeout: TimeInterval = 3600 // 1 hour
     
@@ -53,51 +39,38 @@ class PlanetaryDataService {
     
     private init() {}
     
-    func getCurrentPlanetaryPositions() async throws -> [DetailedPlanetaryPosition] {
+    public func getCurrentPlanetaryPositions() async throws -> [DetailedPlanetaryPosition] {
         // Check if we should use custom static data
         if isUsingCustomPositions() {
             return getCustomPlanetaryPositions()
         }
         
-        if shouldRefreshCache() {
-            try await refreshCurrentPositions()
-        }
-        
-        if cachedPlanets.isEmpty {
-            return getDefaultPlanetaryPositions()
-        }
-        
-        return cachedPlanets
+        // Calculate real-time positions using astronomical calculations
+        let julianDay = AstronomicalCalculator.julianDay(from: Date())
+        return calculatePlanetaryPositions(julianDay: julianDay, birthLocation: nil)
     }
     
-    func getBirthChartPositions(
+    public func getBirthChartPositions(
         birthDate: String,
         birthTime: String,
         latitude: Double,
         longitude: Double,
         timezone: String
     ) async throws -> [DetailedPlanetaryPosition] {
-        let request = BirthChartRequest(
-            birthDate: birthDate,
-            birthTime: birthTime,
-            latitude: latitude,
-            longitude: longitude,
-            timezone: timezone
-        )
+        // Convert birth date and time to Date object
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+        dateFormatter.timeZone = TimeZone(identifier: timezone) ?? TimeZone.current
         
-        do {
-            let response = try await networkClient.request(
-                endpoint: "/api/v1/chart/calculate",
-                method: .POST,
-                body: request,
-                responseType: PlanetaryDataResponse.self
-            )
-            
-            return response.planets
-        } catch {
-            print("Failed to fetch birth chart positions: \(error)")
-            return getDefaultPlanetaryPositions()
+        guard let date = dateFormatter.date(from: "\(birthDate) \(birthTime)") else {
+            throw NSError(domain: "PlanetaryDataService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid date format"])
         }
+        
+        // Calculate positions using astronomical calculations
+        let julianDay = AstronomicalCalculator.julianDay(from: date)
+        let location = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        
+        return calculatePlanetaryPositions(julianDay: julianDay, birthLocation: location)
     }
     
     private func shouldRefreshCache() -> Bool {
@@ -122,19 +95,88 @@ class PlanetaryDataService {
         }
     }
     
-    private func getDefaultPlanetaryPositions() -> [DetailedPlanetaryPosition] {
-        return [
-            DetailedPlanetaryPosition(id: "sun", symbol: "☉", name: "Sun", sign: "Sagittarius", degree: 15.5, retrograde: false, house: 1, significance: "Core identity and vitality"),
-            DetailedPlanetaryPosition(id: "moon", symbol: "☽", name: "Moon", sign: "Pisces", degree: 22.3, retrograde: false, house: 4, significance: "Emotions and intuition"),
-            DetailedPlanetaryPosition(id: "mercury", symbol: "☿", name: "Mercury", sign: "Scorpio", degree: 8.7, retrograde: false, house: 12, significance: "Communication and thinking"),
-            DetailedPlanetaryPosition(id: "venus", symbol: "♀", name: "Venus", sign: "Capricorn", degree: 2.1, retrograde: false, house: 2, significance: "Love and values"),
-            DetailedPlanetaryPosition(id: "mars", symbol: "♂", name: "Mars", sign: "Leo", degree: 18.9, retrograde: false, house: 9, significance: "Energy and action"),
-            DetailedPlanetaryPosition(id: "jupiter", symbol: "♃", name: "Jupiter", sign: "Gemini", degree: 12.4, retrograde: true, house: 7, significance: "Growth and wisdom"),
-            DetailedPlanetaryPosition(id: "saturn", symbol: "♄", name: "Saturn", sign: "Aquarius", degree: 6.8, retrograde: false, house: 3, significance: "Structure and discipline"),
-            DetailedPlanetaryPosition(id: "uranus", symbol: "♅", name: "Uranus", sign: "Taurus", degree: 25.2, retrograde: true, house: 6, significance: "Innovation and change"),
-            DetailedPlanetaryPosition(id: "neptune", symbol: "♆", name: "Neptune", sign: "Pisces", degree: 29.7, retrograde: false, house: 4, significance: "Dreams and spirituality"),
-            DetailedPlanetaryPosition(id: "pluto", symbol: "♇", name: "Pluto", sign: "Capricorn", degree: 28.1, retrograde: false, house: 2, significance: "Transformation and power")
+    private func calculatePlanetaryPositions(julianDay: Double, birthLocation: CLLocationCoordinate2D?) -> [DetailedPlanetaryPosition] {
+        var positions: [DetailedPlanetaryPosition] = []
+        
+        // Calculate house cusps if birth location is provided
+        var houseCusps: [Double]?
+        if let location = birthLocation {
+            houseCusps = AstronomicalCalculator.calculateHouseCusps(
+                julianDay: julianDay,
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+        }
+        
+        // Calculate Sun position
+        let sunPos = AstronomicalCalculator.calculateSunPosition(julianDay: julianDay)
+        let sunZodiac = AstronomicalCalculator.getExactZodiacPosition(longitude: sunPos.longitude)
+        let sunHouse = houseCusps != nil ? AstronomicalCalculator.getHousePosition(planetLongitude: sunPos.longitude, houseCusps: houseCusps!) : nil
+        
+        positions.append(DetailedPlanetaryPosition(
+            id: "sun",
+            symbol: "☉",
+            name: "Sun",
+            sign: sunZodiac.sign,
+            degree: sunPos.longitude,
+            retrograde: false,
+            house: sunHouse,
+            significance: "Core identity and vitality"
+        ))
+        
+        // Calculate Moon position
+        let moonPos = AstronomicalCalculator.calculateMoonPosition(julianDay: julianDay)
+        let moonZodiac = AstronomicalCalculator.getExactZodiacPosition(longitude: moonPos.longitude)
+        let moonHouse = houseCusps != nil ? AstronomicalCalculator.getHousePosition(planetLongitude: moonPos.longitude, houseCusps: houseCusps!) : nil
+        
+        positions.append(DetailedPlanetaryPosition(
+            id: "moon",
+            symbol: "☽",
+            name: "Moon",
+            sign: moonZodiac.sign,
+            degree: moonPos.longitude,
+            retrograde: false,
+            house: moonHouse,
+            significance: "Emotions and intuition"
+        ))
+        
+        // Calculate positions for other planets
+        let planets = [
+            ("Mercury", "mercury", "☿", "Communication and thinking"),
+            ("Venus", "venus", "♀", "Love and values"),
+            ("Mars", "mars", "♂", "Energy and action"),
+            ("Jupiter", "jupiter", "♃", "Growth and wisdom"),
+            ("Saturn", "saturn", "♄", "Structure and discipline"),
+            ("Uranus", "uranus", "♅", "Innovation and change"),
+            ("Neptune", "neptune", "♆", "Dreams and spirituality")
         ]
+        
+        for (planetName, id, symbol, significance) in planets {
+            if let planetPos = AstronomicalCalculator.calculatePlanetPosition(planetName: planetName, julianDay: julianDay) {
+                let zodiac = AstronomicalCalculator.getExactZodiacPosition(longitude: planetPos.longitude)
+                let house = houseCusps != nil ? AstronomicalCalculator.getHousePosition(planetLongitude: planetPos.longitude, houseCusps: houseCusps!) : nil
+                let isRetrograde = AstronomicalCalculator.isRetrograde(planetName: planetName, julianDay: julianDay)
+                
+                positions.append(DetailedPlanetaryPosition(
+                    id: id,
+                    symbol: symbol,
+                    name: planetName,
+                    sign: zodiac.sign,
+                    degree: planetPos.longitude,
+                    retrograde: isRetrograde,
+                    house: house,
+                    significance: significance
+                ))
+            }
+        }
+        
+        return positions
+    }
+    
+    private func getDefaultPlanetaryPositions() -> [DetailedPlanetaryPosition] {
+        // This is now only used as a fallback
+        let julianDay = AstronomicalCalculator.julianDay(from: Date())
+        return calculatePlanetaryPositions(julianDay: julianDay, birthLocation: nil)
     }
     
     // MARK: - Static Data CRUD Operations

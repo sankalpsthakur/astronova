@@ -76,35 +76,82 @@ struct Provider: TimelineProvider {
     }
     
     private func fetchHoroscopeData() async -> HoroscopeData {
-        // In a real implementation, this would call the app's API
-        // For now, return sample data with some variation
-        let horoscopes = [
-            "The cosmos aligns in your favor today. Trust your intuition and embrace new opportunities.",
-            "Today brings powerful energies for transformation and growth. Focus on your inner wisdom.",
-            "The planetary movements suggest a time of reflection and new beginnings. Stay open to change.",
-            "Cosmic currents flow strongly in your direction. This is a perfect time for manifestation.",
-            "The universe whispers secrets of success. Listen carefully to your heart's guidance."
+        do {
+            // Try to fetch real horoscope data from shared app container
+            // Note: Widgets run in separate process, so we'd need shared UserDefaults or App Groups
+            let apiServices = APIServices.shared
+            let horoscopeResponse = try await apiServices.getHoroscope(for: Date(), type: .daily)
+            
+            // Get current lunar phase from planetary data
+            let lunarData = try await apiServices.getCurrentPlanetaryPositions()
+            let moonData = lunarData["moon"]
+            let moonPhase = calculateMoonPhase(from: moonData)
+            
+            // Extract themes and lucky elements from horoscope content
+            let (themes, color, number) = extractLuckyElements(from: horoscopeResponse.content)
+            
+            return HoroscopeData(
+                horoscope: horoscopeResponse.content,
+                keyThemes: themes,
+                luckyColor: color,
+                luckyNumber: number,
+                moonPhase: moonPhase
+            )
+        } catch {
+            // Fallback to basic message if API fails
+            return HoroscopeData(
+                horoscope: "Connect to see your personalized cosmic insights for today.",
+                keyThemes: ["Connection", "Insight", "Growth"],
+                luckyColor: "Blue",
+                luckyNumber: 7,
+                moonPhase: "🌙"
+            )
+        }
+    }
+    
+    private func calculateMoonPhase(from moonData: PlanetaryPosition?) -> String {
+        guard let moon = moonData else { return "🌙" }
+        
+        // Calculate moon phase based on moon's position relative to sun
+        let moonDegree = moon.degrees
+        let phaseIndex = Int(moonDegree / 45) % 8
+        
+        let phases = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
+        return phases[phaseIndex]
+    }
+    
+    private func extractLuckyElements(from content: String) -> ([String], String, Int) {
+        // Simple keyword extraction for themes
+        let themeKeywords = [
+            "love": "Love", "career": "Career", "growth": "Growth",
+            "wisdom": "Wisdom", "change": "Change", "balance": "Balance",
+            "success": "Success", "intuition": "Intuition", "harmony": "Harmony"
         ]
         
-        let themes = [
-            ["Career", "Love", "Growth"],
-            ["Wisdom", "Change", "Balance"],
-            ["Success", "Intuition", "Harmony"],
-            ["Transformation", "Opportunity", "Peace"],
-            ["Manifestation", "Clarity", "Joy"]
-        ]
+        let colors = ["Purple", "Blue", "Green", "Gold", "Silver", "Red", "Orange"]
+        let numbers = [1, 3, 7, 9, 11, 13, 21]
         
-        let colors = ["Purple", "Blue", "Green", "Gold", "Silver"]
-        let numbers = [1, 3, 7, 9, 11, 13]
-        let moonPhases = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
+        var themes: [String] = []
+        let lowercaseContent = content.lowercased()
         
-        return HoroscopeData(
-            horoscope: horoscopes.randomElement() ?? horoscopes[0],
-            keyThemes: themes.randomElement() ?? themes[0],
-            luckyColor: colors.randomElement() ?? colors[0],
-            luckyNumber: numbers.randomElement() ?? numbers[0],
-            moonPhase: moonPhases.randomElement() ?? moonPhases[0]
-        )
+        for (keyword, theme) in themeKeywords {
+            if lowercaseContent.contains(keyword) && themes.count < 3 {
+                themes.append(theme)
+            }
+        }
+        
+        // Ensure we have at least 3 themes
+        while themes.count < 3 {
+            let defaultThemes = ["Insight", "Growth", "Balance"]
+            themes.append(defaultThemes[themes.count])
+        }
+        
+        // Derive color and number from content hash for consistency
+        let contentHash = abs(content.hashValue)
+        let color = colors[contentHash % colors.count]
+        let number = numbers[contentHash % numbers.count]
+        
+        return (Array(themes.prefix(3)), color, number)
     }
 }
 

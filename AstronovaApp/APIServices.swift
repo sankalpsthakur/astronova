@@ -464,4 +464,95 @@ class APIServices: ObservableObject, APIServicesProtocol {
         // Clear stored token
         jwtToken = nil
     }
+    
+    /// Delete user account
+    func deleteAccount() async throws {
+        let _ = try await networkClient.request(
+            endpoint: "/api/v1/auth/delete-account",
+            method: HTTPMethod.DELETE,
+            body: nil,
+            responseType: [String: String].self
+        )
+        
+        // Clear stored token after successful deletion
+        jwtToken = nil
+    }
+    
+    /// Generate PDF for report
+    func generateReportPDF(reportId: String) async throws -> Data {
+        return try await networkClient.request(
+            endpoint: "/api/v1/reports/\(reportId)/pdf",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: Data.self
+        )
+    }
+    
+    /// Check subscription status
+    func checkSubscriptionStatus() async throws -> Bool {
+        let response = try await networkClient.request(
+            endpoint: "/api/v1/subscription/status",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: [String: Bool].self
+        )
+        
+        return response["isActive"] ?? false
+    }
+    
+    /// Generate report (alias for generateDetailedReport)
+    func generateReport(birthData: BirthData, type: String) async throws -> DetailedReportResponse {
+        return try await generateDetailedReport(birthData: birthData, type: type)
+    }
+    
+    /// Get detailed planetary positions
+    func getDetailedPlanetaryPositions() async throws -> [DetailedPlanetaryPosition] {
+        // For now, convert from current basic positions to detailed format
+        let basicPositions = try await getCurrentPlanetaryPositions()
+        
+        return basicPositions.map { (planetName, position) in
+            DetailedPlanetaryPosition(
+                id: planetName.lowercased(),
+                symbol: planetSymbol(for: planetName),
+                name: planetName,
+                sign: position.sign,
+                degree: position.degree,
+                retrograde: false, // TODO: Get from API
+                house: nil, // TODO: Calculate house position
+                significance: planetSignificance(for: planetName)
+            )
+        }
+    }
+    
+    private func planetSymbol(for planet: String) -> String {
+        switch planet {
+        case "Sun": return "☉"
+        case "Moon": return "☽"
+        case "Mercury": return "☿"
+        case "Venus": return "♀"
+        case "Mars": return "♂"
+        case "Jupiter": return "♃"
+        case "Saturn": return "♄"
+        case "Uranus": return "♅"
+        case "Neptune": return "♆"
+        case "Pluto": return "♇"
+        default: return "●"
+        }
+    }
+    
+    private func planetSignificance(for planet: String) -> String {
+        switch planet {
+        case "Sun": return "Core identity and vitality"
+        case "Moon": return "Emotions and intuition"
+        case "Mercury": return "Communication and thinking"
+        case "Venus": return "Love and values"
+        case "Mars": return "Energy and action"
+        case "Jupiter": return "Growth and wisdom"
+        case "Saturn": return "Structure and discipline"
+        case "Uranus": return "Innovation and change"
+        case "Neptune": return "Dreams and spirituality"
+        case "Pluto": return "Transformation and power"
+        default: return "Planetary influence"
+        }
+    }
 }
