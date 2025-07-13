@@ -237,3 +237,58 @@ def update_current_user():
     except Exception as e:
         logger.error(f"Update user failed: {str(e)}")
         return jsonify({'error': 'Failed to update user'}), 500
+
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    """
+    Login endpoint that iOS app expects - handles Apple ID authentication
+    """
+    try:
+        # Get raw JSON data
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No JSON data provided'}), 400
+        
+        # Extract Apple ID token from different possible keys
+        apple_token = data.get('apple_identity_token') or data.get('idToken') or data.get('identityToken')
+        user_id = data.get('user_id') or data.get('userIdentifier')
+        
+        if not apple_token:
+            return jsonify({'error': 'Apple identity token is required'}), 400
+        
+        # For now, create a simple mock response since we don't have Apple verification setup
+        # In production, this would verify the token with Apple's servers
+        try:
+            # Generate a mock JWT token for testing
+            mock_user_id = user_id or f"user_{apple_token[:8]}"
+            jwt_token = create_access_token(
+                identity=mock_user_id,
+                additional_claims={
+                    'apple_user_id': apple_token[:16],  # Mock Apple user ID
+                    'email': f"{mock_user_id}@icloud.com",
+                    'user_type': 'authenticated'
+                }
+            )
+            
+            logger.info(f"Mock user authenticated: {mock_user_id}")
+            
+            response = {
+                'access_token': jwt_token,
+                'token_type': 'Bearer',
+                'user': {
+                    'id': mock_user_id,
+                    'email': f"{mock_user_id}@icloud.com",
+                    'user_type': 'authenticated'
+                },
+                'success': True
+            }
+            
+            return jsonify(response)
+            
+        except Exception as e:
+            logger.error(f"Login token generation failed: {str(e)}")
+            return jsonify({'error': 'Authentication failed'}), 500
+        
+    except Exception as e:
+        logger.error(f"Login endpoint error: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500

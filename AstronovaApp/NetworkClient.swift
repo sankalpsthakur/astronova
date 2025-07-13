@@ -107,7 +107,7 @@ class NetworkClient: NetworkClientProtocol {
             self.baseURL = baseURL
         } else {
             #if DEBUG
-            self.baseURL = "https://astronova.onrender.com"
+            self.baseURL = "http://localhost:8082"
             #else
             self.baseURL = "https://astronova.onrender.com"
             #endif
