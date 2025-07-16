@@ -9,6 +9,7 @@ import SwiftUI
 
 @main
 struct AstronovaAppApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var authState = AuthState()
 
     var body: some Scene {
