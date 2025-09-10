@@ -80,6 +80,7 @@
 		AA000100000000000000000B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		AA000100000000000000000C /* ShareImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareImageService.swift; sourceTree = "<group>"; };
 		AA000100000000000000000D /* Zodiac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zodiac.swift; sourceTree = "<group>"; };
+		AA0001000000000000000010 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
 		3D01F8082C0A000000000007 /* APIServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIServices.swift; sourceTree = "<group>"; };
 		3D01F8092C0A000000000006 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
 		7C7D7E7F2E00000000000001 /* TimeTravelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeTravelView.swift; sourceTree = "<group>"; };
@@ -143,6 +144,7 @@
 				AA0003000000000000000004 /* Features */,
 				AA0003000000000000000008 /* Services2 */,
 				AA0003000000000000000009 /* Utils */,
+				AA000300000000000000000A /* Protocols */,
 				AA000100000000000000000F /* StoreKitManager.swift */,
 				5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */,
 				5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */,
@@ -235,6 +237,14 @@
 				AA000100000000000000000D /* Zodiac.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		AA000300000000000000000A /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				AA0001000000000000000010 /* ServiceProtocols.swift */,
+			);
+			path = Protocols;
 			sourceTree = "<group>";
 		};
 		AA0003000000000000000007 /* Paywall */ = {
@@ -426,6 +436,7 @@
 				AA000200000000000000000B /* NotificationService.swift in Sources */,
 				AA000200000000000000000C /* ShareImageService.swift in Sources */,
 				AA000200000000000000000D /* Zodiac.swift in Sources */,
+				AA0002000000000000000010 /* ServiceProtocols.swift in Sources */,
 				AA000200000000000000000F /* StoreKitManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
