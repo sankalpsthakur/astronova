@@ -1,0 +1,26 @@
+# Exclude files not needed in the container image
+.git
+.gitignore
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.Python
+.DS_Store
+
+# Local and editor files
+.venv
+venv
+.pytest_cache
+.idea
+.vscode
+
+# Tests and tooling not required for runtime
+tests/
+openapi_spec.yaml
+render.yaml
+runtime.txt
+
+# Client app and iOS project (outside context typically, but safe)
+../client/
+../astronova.xcodeproj/

@@ -896,7 +896,7 @@ flowchart TD
 ```
 
 #### **📱 iOS App Setup**
-1. Open `astronova.xcodeproj` in Xcode
+1. Open `client/astronova.xcodeproj` in Xcode
 2. Configure your Apple Developer team in project settings
 3. Configure CloudKit container in capabilities
 4. Build and run on simulator or device
@@ -1111,10 +1111,10 @@ curl http://localhost:8080/api/v1/misc/health
 ### **iOS Testing**
 ```bash
 # Run iOS unit tests
-xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -project client/astronova.xcodeproj -scheme AstronovaApp -destination 'platform=iOS Simulator,name=iPhone 15'
 
 # Run iOS UI tests  
-xcodebuild test -project astronova.xcodeproj -scheme AstronovaAppUITests -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -project client/astronova.xcodeproj -scheme AstronovaAppUITests -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
 ### **Backend Testing**
