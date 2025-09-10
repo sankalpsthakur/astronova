@@ -28,6 +28,7 @@
 		AA0002000000000000000002 /* RemoteConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000002 /* RemoteConfigService.swift */; };
 		AA0002000000000000000003 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000003 /* AnalyticsService.swift */; };
 		AA0002000000000000000004 /* BirthTimePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000004 /* BirthTimePicker.swift */; };
+		AA000200000000000000000E /* ShareCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000E /* ShareCards.swift */; };
 		AA0002000000000000000005 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000005 /* OnboardingView.swift */; };
 		AA0002000000000000000006 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000006 /* HomeView.swift */; };
 		AA0002000000000000000007 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000007 /* PaywallView.swift */; };
@@ -69,6 +70,7 @@
 		AA0001000000000000000002 /* RemoteConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config/RemoteConfigService.swift; sourceTree = "<group>"; };
 		AA0001000000000000000003 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Analytics/AnalyticsService.swift; sourceTree = "<group>"; };
 		AA0001000000000000000004 /* BirthTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components/BirthTimePicker.swift; sourceTree = "<group>"; };
+		AA000100000000000000000E /* ShareCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components/ShareCards.swift; sourceTree = "<group>"; };
 		AA0001000000000000000005 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000006 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Home/HomeView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000007 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Paywall/PaywallView.swift; sourceTree = "<group>"; };
@@ -184,6 +186,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0001000000000000000004 /* BirthTimePicker.swift */,
+				AA000100000000000000000E /* ShareCards.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -413,6 +416,7 @@
 				AA0002000000000000000002 /* RemoteConfigService.swift in Sources */,
 				AA0002000000000000000003 /* AnalyticsService.swift in Sources */,
 				AA0002000000000000000004 /* BirthTimePicker.swift in Sources */,
+				AA000200000000000000000E /* ShareCards.swift in Sources */,
 				AA0002000000000000000005 /* OnboardingView.swift in Sources */,
 				AA0002000000000000000006 /* HomeView.swift in Sources */,
 				AA0002000000000000000007 /* PaywallView.swift in Sources */,
