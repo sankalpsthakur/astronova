@@ -142,14 +142,7 @@ struct ProfileSetupContentView: View {
     }
 }
 
-class StoreKitManager {
-    static let shared = StoreKitManager()
-    private init() {}
-    
-    func purchaseProduct(productId: String) async -> Bool {
-        return false
-    }
-}
+// StoreKitManager is implemented as a full StoreKit 2 manager in StoreKitManager.swift
 
 // MARK: - Profile Setup Components
 

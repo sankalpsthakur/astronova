@@ -143,6 +143,7 @@
 				AA0003000000000000000004 /* Features */,
 				AA0003000000000000000008 /* Services2 */,
 				AA0003000000000000000009 /* Utils */,
+				AA000100000000000000000F /* StoreKitManager.swift */,
 				5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */,
 				5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */,
 				5A811C052DF79DA000BD6D7F /* PlanetaryCalculationsView.swift */,
@@ -425,6 +426,7 @@
 				AA000200000000000000000B /* NotificationService.swift in Sources */,
 				AA000200000000000000000C /* ShareImageService.swift in Sources */,
 				AA000200000000000000000D /* Zodiac.swift in Sources */,
+				AA000200000000000000000F /* StoreKitManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -759,5 +761,7 @@
 		};
 /* End XCConfigurationList section */
 	};
+		AA000200000000000000000F /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000F /* StoreKitManager.swift */; };
+		AA000100000000000000000F /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
 	rootObject = 3D01F7D82C0A000000000001 /* Project object */;
 }
