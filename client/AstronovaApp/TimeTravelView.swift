@@ -96,11 +96,11 @@ struct TimeTravelView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Aspects")
                             .font(.headline)
-                        ForEach(aspects.prefix(8), id: \.self) { a in
+                        ForEach(Array(aspects.prefix(8).enumerated()), id: \.offset) { _, a in
                             HStack {
                                 Text("\(a.planet1.capitalized) – \(a.planet2.capitalized)")
                                 Spacer()
-                                Text("\(a.aspect.capitalized) (orb \(String(format: "%.1f", a.orb)))")
+                                Text("\(a.type.capitalized) (orb \(String(format: "%.1f", a.orb)))")
                                     .foregroundStyle(.secondary)
                             }
                             .font(.footnote)
@@ -166,9 +166,4 @@ struct TimeTravelView: View {
     }
 }
 
-struct Aspect: Codable, Hashable {
-    let planet1: String
-    let planet2: String
-    let aspect: String
-    let orb: Double
-}
+// Uses Aspect defined in APIModels.swift
