@@ -12,9 +12,11 @@ final class HomeViewModel: ObservableObject {
 
     private let guidanceService = HomeGuidanceService.shared
     private let profileManager: UserProfileManager
+    private let store: StoreManagerProtocol
 
-    init(profileManager: UserProfileManager) {
+    init(profileManager: UserProfileManager, store: StoreManagerProtocol = DependencyContainer.shared.storeManager) {
         self.profileManager = profileManager
+        self.store = store
     }
 
     func load() async {
@@ -37,10 +39,9 @@ final class HomeViewModel: ObservableObject {
 
     func triggerPaywallIfLocked() {
         // Simple gating: if Pro not active, show paywall when expanding tile details
-        if !StoreKitManager.shared.hasProSubscription {
+        if !store.hasProSubscription {
             showPaywall = true
             Analytics.shared.track(.paywallShown, properties: ["trigger": "home_tile_expand"])
         }
     }
 }
-
