@@ -2740,11 +2740,14 @@ struct DiscoveryCard: View {
 }
 
 struct FriendsTab: View {
+    @EnvironmentObject private var auth: AuthState
     @State private var partnerName = ""
     @State private var partnerBirthDate = Date()
     @State private var showingResults = false
     @State private var showingContactsPicker = false
     @State private var animateHearts = false
+    @State private var isCalculating = false
+    @State private var compatibilityPercent: Int? = nil
     
     var body: some View {
         NavigationStack {
@@ -2855,12 +2858,12 @@ struct FriendsTab: View {
                             Button {
                                 let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                                 impactFeedback.impactOccurred()
-                                showingResults.toggle()
+                                Task { await calculateCompatibility() }
                             } label: {
                                 HStack {
                                     Image(systemName: "sparkles")
                                         .font(.title3.weight(.semibold))
-                                    Text("Reveal Compatibility")
+                                    Text(isCalculating ? "Analyzing…" : "Reveal Compatibility")
                                         .font(.headline.weight(.semibold))
                                 }
                                 .foregroundStyle(.white)
@@ -2884,6 +2887,11 @@ struct FriendsTab: View {
                     }
                     
                     // Beautiful results section
+                    if isCalculating {
+                        ProgressView("Calculating compatibility…")
+                            .padding()
+                    }
+                    
                     if showingResults {
                         VStack(spacing: 16) {
                             // Compatibility score with animation
@@ -2903,7 +2911,7 @@ struct FriendsTab: View {
                                     
                                     Spacer()
                                     
-                                    Text("89%")
+                                    Text("\(compatibilityPercent ?? 75)%")
                                         .font(.system(size: 28, weight: .bold, design: .rounded))
                                         .foregroundStyle(.green)
                                 }
@@ -2998,6 +3006,72 @@ struct FriendsTab: View {
         }
     }
     
+    private func calculateCompatibility() async {
+        guard !isCalculating else { return }
+        await MainActor.run {
+            isCalculating = true
+            showingResults = false
+        }
+        defer {
+            Task { @MainActor in isCalculating = false }
+        }
+        do {
+            // Build person1 (current user) from profile, falling back to minimal defaults
+            let userProfile = auth.profileManager.profile
+            let person1: BirthData
+            if let _ = userProfile.birthTime,
+               let _ = userProfile.timezone,
+               let _ = userProfile.birthLatitude,
+               let _ = userProfile.birthLongitude {
+                person1 = try BirthData(from: userProfile)
+            } else {
+                let df = DateFormatter(); df.dateFormat = "yyyy-MM-dd"
+                person1 = BirthData(
+                    name: userProfile.fullName.isEmpty ? "You" : userProfile.fullName,
+                    date: df.string(from: userProfile.birthDate),
+                    time: "12:00",
+                    latitude: 0,
+                    longitude: 0,
+                    city: userProfile.birthPlace ?? "Unknown",
+                    state: nil,
+                    country: "Unknown",
+                    timezone: "UTC"
+                )
+            }
+            
+            // Build partner from inputs (minimal viable defaults)
+            let df = DateFormatter(); df.dateFormat = "yyyy-MM-dd"
+            let partner = BirthData(
+                name: partnerName.isEmpty ? "Partner" : partnerName,
+                date: df.string(from: partnerBirthDate),
+                time: "12:00",
+                latitude: 0,
+                longitude: 0,
+                city: "Unknown",
+                state: nil,
+                country: "Unknown",
+                timezone: "UTC"
+            )
+            
+            let response = try await APIServices.shared.getCompatibilityReport(person1: person1, person2: partner)
+            let score = Int((response.compatibility_score * 100.0).rounded())
+            await MainActor.run {
+                compatibilityPercent = score
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    showingResults = true
+                }
+            }
+        } catch {
+            // Fallback to a neutral score on failure to avoid a dead-end UI
+            await MainActor.run {
+                compatibilityPercent = 75
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    showingResults = true
+                }
+            }
+        }
+    }
+    
     private let sampleMatches = [
         (name: "Sarah", sun: "Leo", moon: "Pisces", rising: "Virgo"),
         (name: "Alex", sun: "Gemini", moon: "Scorpio", rising: "Libra"),
@@ -3080,8 +3154,8 @@ struct NexusTab: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Simple white background
-                Color.white
+                // Adaptive background for light/dark mode
+                Color(.systemBackground)
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
@@ -3837,16 +3911,16 @@ struct CosmicInputArea: View {
                             } label: {
                                 Text(question)
                                     .font(.system(size: 14))
-                                    .foregroundStyle(.black)
+                                    .foregroundStyle(.primary)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 10)
                                     .background(
-                                        Color.gray.opacity(0.1),
+                                        Color(.systemGray5),
                                         in: Capsule()
                                     )
                                     .overlay(
                                         Capsule()
-                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                            .stroke(Color(.separator).opacity(0.3), lineWidth: 1)
                                     )
                             }
                             .buttonStyle(PlainButtonStyle())

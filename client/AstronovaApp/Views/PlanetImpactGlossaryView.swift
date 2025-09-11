@@ -5,6 +5,13 @@ struct PlanetImpactGlossaryView: View {
     var activeAntardasha: String?
     @Environment(\.dismiss) private var dismiss
     @State private var query: String = ""
+    
+    private var dominantDasha: String? {
+        // Prefer Antardasha if available (more immediate influence), otherwise Mahadasha
+        if let antar = activeAntardasha, !antar.trimmingCharacters(in: .whitespaces).isEmpty { return antar }
+        if let maha = activeMahadasha, !maha.trimmingCharacters(in: .whitespaces).isEmpty { return maha }
+        return nil
+    }
 
     private var filtered: [PlanetImpact] {
         if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return PlanetImpacts.all }
@@ -19,21 +26,18 @@ struct PlanetImpactGlossaryView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let maha = activeMahadasha {
-                    Section(header: Text("Active Dasha")) {
+                if let dom = dominantDasha {
+                    Section(header: Text("Dominant Dasha")) {
                         HStack {
-                            Text("Mahadasha")
-                            Spacer()
-                            Label("\(maha)", systemImage: "sparkles")
+                            Label(dom, systemImage: "sparkles")
                                 .labelStyle(.titleAndIcon)
                                 .foregroundStyle(.primary)
-                        }
-                        if let antar = activeAntardasha {
-                            HStack {
-                                Text("Antardasha")
-                                Spacer()
-                                Text(antar)
-                            }
+                            Spacer()
+                            Text("active")
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.thinMaterial, in: Capsule())
                         }
                     }
                 }
@@ -45,7 +49,7 @@ struct PlanetImpactGlossaryView: View {
                                 Text(p.symbol).font(.title3)
                                 Text(p.name)
                                     .font(.headline)
-                                if p.name == activeMahadasha || p.name == activeAntardasha {
+                                if let dom = dominantDasha, p.name == dom {
                                     Text("active")
                                         .font(.caption2)
                                         .padding(.horizontal, 6)
@@ -92,4 +96,3 @@ struct PlanetImpactGlossaryView: View {
         }
     }
 }
-
