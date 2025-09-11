@@ -2442,18 +2442,9 @@ struct PlanetaryEnergiesView: View {
                     self.isLoading = false
                 }
             } catch {
-                // Fallback: compute on-device
-                do {
-                    let positions = try await PlanetaryDataService.shared.getCurrentPlanetaryPositions()
-                    await MainActor.run {
-                        self.planetaryPositions = positions
-                        self.isLoading = false
-                    }
-                } catch {
-                    await MainActor.run {
-                        self.errorMessage = "Unable to load planetary data"
-                        self.isLoading = false
-                    }
+                await MainActor.run {
+                    self.errorMessage = "Unable to load planetary data"
+                    self.isLoading = false
                 }
             }
         }
@@ -2651,7 +2642,7 @@ struct DiscoveryCTASection: View {
                     icon: "circle.grid.cross.fill",
                     color: .purple,
                     action: {
-                        switchToProfileCharts()
+                        switchToTimeTravelTab()
                     }
                 )
                 
@@ -2682,17 +2673,23 @@ struct DiscoveryCTASection: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Switch to Profile tab and then to Charts section
-        NotificationCenter.default.post(name: .switchToTab, object: 3)
+        // Switch to Profile (Manage) tab and then to Charts section
+        NotificationCenter.default.post(name: .switchToTab, object: 4)
         NotificationCenter.default.post(name: .switchToProfileSection, object: 1)
     }
     
+    private func switchToTimeTravelTab() {
+        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        impactFeedback.impactOccurred()
+        NotificationCenter.default.post(name: .switchToTab, object: 2)
+    }
+
     private func switchToProfileBookmarks() {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         
-        // Switch to Profile tab and then to Bookmarks section
-        NotificationCenter.default.post(name: .switchToTab, object: 3)
+        // Switch to Profile (Manage) tab and then to Bookmarks section
+        NotificationCenter.default.post(name: .switchToTab, object: 4)
         NotificationCenter.default.post(name: .switchToProfileSection, object: 2)
     }
 }

@@ -299,9 +299,10 @@ class APIServices: ObservableObject, APIServicesProtocol {
         } catch {
             // 2) Try ephemeris endpoint and map to expected type
             do {
-                let ephemeris: PlanetaryDataResponse = try await networkClient.request(
+                struct EphemerisResponse: Codable { let planets: [DetailedPlanetaryPosition] }
+                let ephemeris: EphemerisResponse = try await networkClient.request(
                     endpoint: "/api/v1/ephemeris/current",
-                    responseType: PlanetaryDataResponse.self
+                    responseType: EphemerisResponse.self
                 )
                 var mapped: [String: PlanetaryPosition] = [:]
                 for p in ephemeris.planets {
@@ -310,13 +311,8 @@ class APIServices: ObservableObject, APIServicesProtocol {
                 if !mapped.isEmpty { return mapped }
             } catch { /* continue to fallback */ }
 
-            // 3) Fallback to local calculation to avoid empty UI
-            let local = try await PlanetaryDataService.shared.getCurrentPlanetaryPositions()
-            var mapped: [String: PlanetaryPosition] = [:]
-            for p in local {
-                mapped[p.name] = PlanetaryPosition(degree: p.degree, sign: p.sign)
-            }
-            return mapped
+            // 3) No local calculation; propagate error to caller
+            throw error
         }
     }
     
@@ -529,20 +525,29 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     /// Get detailed planetary positions
     func getDetailedPlanetaryPositions() async throws -> [DetailedPlanetaryPosition] {
-        // For now, convert from current basic positions to detailed format
-        let basicPositions = try await getCurrentPlanetaryPositions()
-        
-        return basicPositions.map { (planetName, position) in
-            DetailedPlanetaryPosition(
-                id: planetName.lowercased(),
-                symbol: planetSymbol(for: planetName),
-                name: planetName,
-                sign: position.sign,
-                degree: position.degree,
-                retrograde: false, // TODO: Get from API
-                house: nil, // TODO: Calculate house position
-                significance: planetSignificance(for: planetName)
+        // Prefer detailed ephemeris endpoint
+        do {
+            struct EphemerisResponse: Codable { let planets: [DetailedPlanetaryPosition] }
+            let res: EphemerisResponse = try await networkClient.request(
+                endpoint: "/api/v1/ephemeris/current",
+                responseType: EphemerisResponse.self
             )
+            return res.planets
+        } catch {
+            // Fallback to legacy positions endpoint and map to detailed
+            let basicPositions = try await getCurrentPlanetaryPositions()
+            return basicPositions.map { (planetName, position) in
+                DetailedPlanetaryPosition(
+                    id: planetName.lowercased(),
+                    symbol: planetSymbol(for: planetName),
+                    name: planetName,
+                    sign: position.sign,
+                    degree: position.degree,
+                    retrograde: false,
+                    house: nil,
+                    significance: planetSignificance(for: planetName)
+                )
+            }
         }
     }
     

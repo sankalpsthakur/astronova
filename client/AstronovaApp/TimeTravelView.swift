@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -19,23 +20,25 @@ struct TimeTravelView: View {
     @EnvironmentObject private var auth: AuthState
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var planets: [DetailedPlanetaryPosition] = []
-    @State private var dashas: DashasResponse?
     @State private var isLoading = false
     @State private var aspects: [Aspect] = []
-    @State private var lastMahadashaLord: String?
-    @State private var showInsightChip: Bool = false
-    @State private var stickyTargets: Set<Int> = [] // years that contain dasha boundaries
     @State private var planetAnimVersion: Int = 0
     @State private var zodiacSystem: ZodiacSystem = .western
 
-    private let api = APIServices.shared
+    // Local algorithmic animation (no API)
+    @State private var isAnimatingLocal = true
+    @State private var daysPerSecond: Double = 10 // base speed
+    @State private var simulationDate: Date = Calendar.current.date(from: DateComponents(year: Calendar.current.component(.year, from: Date()), month: 1, day: 1)) ?? Date()
+    @State private var simTick: Int = 0
+    private let timer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
+
     private let yearRange = (1900...2100)
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                // Year slider (sticky to Dasha boundaries) + system toggle
+                // Year slider + controls
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Year")
@@ -44,6 +47,45 @@ struct TimeTravelView: View {
                         Text("\(selectedYear)")
                             .font(.title2.weight(.semibold))
                             .monospacedDigit()
+                    }
+                    HStack(spacing: 12) {
+                        // Play / Pause
+                        Button {
+                            isAnimatingLocal = true
+                        } label: {
+                            Label("Play", systemImage: "play.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button {
+                            isAnimatingLocal = false
+                        } label: {
+                            Label("Pause", systemImage: "pause.fill")
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button {
+                            // Increase speed and jump one month forward
+                            daysPerSecond = min(daysPerSecond * 2, 320)
+                            if let newDate = Calendar.current.date(byAdding: .month, value: 1, to: simulationDate) {
+                                simulationDate = newDate
+                                let frame = computeLocalPositions(for: simulationDate)
+                                let asp = computeLocalAspects(for: simulationDate)
+                                planets = frame
+                                aspects = asp
+                                let newY = Calendar.current.component(.year, from: simulationDate)
+                                if newY != selectedYear { selectedYear = newY }
+                                planetAnimVersion &+= 1
+                            }
+                        } label: {
+                            Label("Speed +", systemImage: "forward.end.fill")
+                        }
+                        .buttonStyle(.bordered)
+
+                        Spacer()
+                        Text("\(displayMonthYear(simulationDate))")
+                            .font(.subheadline.monospaced())
+                            .foregroundStyle(.secondary)
                     }
                     Picker("Zodiac", selection: $zodiacSystem) {
                         Text("Western").tag(ZodiacSystem.western)
@@ -54,32 +96,15 @@ struct TimeTravelView: View {
                         value: yearBinding,
                         in: Double(yearRange.lowerBound)...Double(yearRange.upperBound),
                         step: 1,
-                        onEditingChanged: { editing in
-                            if !editing { snapToNearbyDashaBoundary() }
-                        }
+                        onEditingChanged: { _ in }
                     )
                 }
                 .padding(.horizontal)
                 
-                if isLoading {
-                    ProgressView("Computing planetary positions…")
-                        .padding()
-                }
-                
                 // Planetary Visual
-                PlanetariumCanvasView(planets: planets, dasha: dashas, year: selectedYear, mode: zodiacSystem)
+                PlanetariumCanvasView(planets: planets, dasha: nil, year: selectedYear, mode: zodiacSystem, showDashaOverlay: false)
                     .frame(height: 320)
                     .padding(.horizontal)
-                    // Animations can be reintroduced after stabilizing type-checker
-                    .overlay(alignment: .top) {
-                        if showInsightChip, let d = dashas, let end = d.mahadasha.end, let endDate = isoDate(end) {
-                            InlineInsightChip(text: "\(d.mahadasha.lord) period until \(displayMonthYear(endDate)). Tap for glossary.") {
-                                showGlossary.toggle()
-                            }
-                            .padding(.top, 8)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                        }
-                    }
 
                 // Planet list (scrolls with the page)
                 VStack(alignment: .leading, spacing: 8) {
@@ -108,64 +133,7 @@ struct TimeTravelView: View {
                 }
 
                 // Dashas panel
-                if let d = dashas {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Vimshottari Dashas")
-                            .font(.headline)
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text("Mahadasha: \(d.mahadasha.lord)")
-                                    .font(.subheadline.weight(.semibold))
-                                Text(d.mahadasha.annotation)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            VStack(alignment: .leading) {
-                                Text("Antardasha: \(d.antardasha.lord)")
-                                    .font(.subheadline.weight(.semibold))
-                                Text(d.antardasha.annotation)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        if let info = dashaRangeAndProgress(for: selectedYear) {
-                            DashaRingView(
-                                mahadasha: d.mahadasha.lord,
-                                antardasha: d.antardasha.lord,
-                                progress: info.progress
-                            )
-                            .frame(width: 120, height: 120)
-                            .padding(.top, 6)
-                            Text("\(displayMonthYear(info.start)) → \(displayMonthYear(info.end))")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal)
-                } else {
-                    // Prompt to enable Dashas if profile incomplete
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "wand.and.stars")
-                                .foregroundStyle(.purple)
-                            Text("Add your birth details to see Dashas for any year")
-                                .font(.subheadline)
-                        }
-                        Button {
-                            NotificationCenter.default.post(name: .switchToTab, object: 4)
-                            NotificationCenter.default.post(name: .switchToProfileSection, object: 0)
-                        } label: {
-                            Label("Complete Profile", systemImage: "person.crop.circle.badge.plus")
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    .padding(.horizontal)
-                }
+                // Dashas section removed for local-only mode
 
                 // Aspects panel
                 if !aspects.isEmpty {
@@ -190,7 +158,7 @@ struct TimeTravelView: View {
                 .padding(.vertical)
             }
             .navigationTitle("Time Travel")
-            .task { await loadData() }
+            .task { await loadData(resetSim: true) }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -202,177 +170,151 @@ struct TimeTravelView: View {
                 }
             }
             .sheet(isPresented: $showGlossary) {
-                InlinePlanetImpactGlossaryView(activeMahadasha: dashas?.mahadasha.lord, activeAntardasha: dashas?.antardasha.lord)
+                InlinePlanetImpactGlossaryView(activeMahadasha: nil, activeAntardasha: nil)
             }
-            .onChange(of: zodiacSystem) { _ in
+            .onChange(of: zodiacSystem) { _, _ in
                 Task { await loadData() }
             }
+            .onReceive(timer) { _ in
+                guard isAnimatingLocal else { return }
+                // Advance simulation based on speed (days/sec)
+                simTick &+= 1
+                let dt: TimeInterval = 0.05 * 24 * 3600 * max(0.1, daysPerSecond)
+                simulationDate.addTimeInterval(dt)
+                let frame = computeLocalPositions(for: simulationDate)
+                let asp = computeLocalAspects(for: simulationDate)
+                planets = frame
+                aspects = asp
+                let newY = Calendar.current.component(.year, from: simulationDate)
+                if newY != selectedYear { selectedYear = newY }
+                planetAnimVersion &+= 1
+            }
         }
     }
     
-    private func loadData() async {
-        await MainActor.run { isLoading = true }
-        defer { Task { await MainActor.run { isLoading = false } } }
-        do {
-            // Build date for Jan 1 of selected year
-            var comps = DateComponents()
-            comps.year = selectedYear
-            comps.month = 1
-            comps.day = 1
-            let date = Calendar.current.date(from: comps) ?? Date()
-            
-            // Fetch planetary positions
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            let dateStr = dateFormatter.string(from: date)
-            
-            struct PlanetaryDataResponse: Codable { let planets: [DetailedPlanetaryPosition] }
-            var endpoint = "/api/v1/ephemeris/at?date=\(dateStr)"
-            if zodiacSystem == .vedic { endpoint += "&system=vedic" }
-            let response: PlanetaryDataResponse = try await api.directGET(
-                endpoint: endpoint,
-                responseType: PlanetaryDataResponse.self
-            )
-            await MainActor.run { planets = response.planets; planetAnimVersion &+= 1 }
-            
-            // Fetch dashas based on profile if available
-            if let bd = try? BirthData(from: auth.profileManager.profile) {
-                // Build encoded URL to avoid issues with timezone or time formats
-                var comps = URLComponents()
-                comps.path = "/api/v1/astrology/dashas"
-                comps.queryItems = [
-                    URLQueryItem(name: "birth_date", value: bd.date),
-                    URLQueryItem(name: "birth_time", value: bd.time),
-                    URLQueryItem(name: "timezone", value: bd.timezone),
-                    URLQueryItem(name: "target_date", value: dateStr),
-                    URLQueryItem(name: "lat", value: String(bd.latitude)),
-                    URLQueryItem(name: "lon", value: String(bd.longitude))
-                ]
-                let dashaEndpoint = comps.path + "?" + (comps.percentEncodedQuery ?? comps.query ?? "")
-                let d: DashasResponse = try await api.directGET(
-                    endpoint: dashaEndpoint,
-                    responseType: DashasResponse.self
-                )
-                // Update dasha, sticky targets and insight chip
-                await MainActor.run {
-                    let previous = lastMahadashaLord
-                    dashas = d
-                    lastMahadashaLord = d.mahadasha.lord
-                    updateStickyTargets()
-                    if let prev = previous, prev != d.mahadasha.lord {
-                        hapticInsight()
-                        withAnimation(.spring()) { showInsightChip = true }
-                        // Auto-hide after a moment
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                            withAnimation(.easeInOut) { showInsightChip = false }
-                        }
-                    }
-                }
-            } else {
-                await MainActor.run { dashas = nil }
-            }
+    private func loadData(resetSim: Bool = false) async {
+        await MainActor.run {
+            let base = Calendar.current.date(from: DateComponents(year: selectedYear, month: 1, day: 1)) ?? Date()
+            if resetSim { simulationDate = base; simTick = 0 }
+            planets = computeLocalPositions(for: base)
+            aspects = computeLocalAspects(for: base)
+            isLoading = false
+        }
+    }
 
-            // Fetch aspects for date
-            let asp: [Aspect] = try await api.directGET(
-                endpoint: "/api/v1/chart/aspects?date=\(dateStr)",
-                responseType: [Aspect].self
-            )
-            await MainActor.run { aspects = asp }
-        } catch {
-            // Fallback: compute approximate positions locally and synthesize simple dashas
-            var comps = DateComponents(); comps.year = selectedYear; comps.month = 1; comps.day = 1
-            let date = Calendar.current.date(from: comps) ?? Date()
-            let fallback = computeFallbackPositions(for: date)
-            await MainActor.run {
-                self.planets = fallback
-                self.aspects = []
-                // Always recompute fallback dashas so they update with year changes
-                let previous = self.lastMahadashaLord
-                let synthesized = synthesizeDashas(for: date)
-                self.dashas = synthesized
-                self.lastMahadashaLord = synthesized.mahadasha.lord
-                self.updateStickyTargets()
-                if let prev = previous, prev != synthesized.mahadasha.lord {
-                    hapticInsight()
-                    withAnimation(.spring()) { showInsightChip = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        withAnimation(.easeInOut) { showInsightChip = false }
-                    }
-                }
-                self.planetAnimVersion &+= 1
-            }
-        }
-    }
-    
-    private func computeFallbackPositions(for date: Date) -> [DetailedPlanetaryPosition] {
-        // Deterministic, offline-friendly approximation based on year and simple speeds
-        let year = Double(Calendar.current.component(.year, from: date))
-        let speeds: [String: Double] = [
-            "Sun": 360.0,
-            "Mercury": 1400.0,
-            "Venus": 1200.0,
-            "Mars": 500.0,
-            "Jupiter": 30.0,
-            "Saturn": 12.0,
-            "Uranus": 4.0,
-            "Neptune": 2.0
+    // MARK: - Local algorithmic positions (no API)
+    private func computeLocalPositions(for date: Date) -> [DetailedPlanetaryPosition] {
+        // Simple deterministic orbital model (approximate mean motion)
+        let epoch = DateComponents(calendar: Calendar(identifier: .gregorian), year: 2000, month: 1, day: 1).date ?? Date(timeIntervalSince1970: 946684800)
+        let days = date.timeIntervalSince(epoch) / (24*3600)
+        
+        // deg/day mean motions
+        let rate: [String: Double] = [
+            "Sun": 0.9856,      // 365.24 d
+            "Moon": 13.1764,    // synodic ~29.53 d
+            "Mercury": 4.0923,  // 87.97 d
+            "Venus": 1.6021,    // 224.70 d
+            "Mars": 0.5240,     // 686.98 d
+            "Jupiter": 0.0831,  // 4332.6 d
+            "Saturn": 0.0335,   // 10759 d
+            "Uranus": 0.0117,   // 30685 d
+            "Neptune": 0.0060   // 60190 d
         ]
-        let offsets: [String: Double] = [
-            "Sun": 0, "Mercury": 45, "Venus": 90, "Mars": 135,
+        // Visual spacing offsets
+        let offset: [String: Double] = [
+            "Sun": 0, "Moon": 120, "Mercury": 45, "Venus": 90, "Mars": 135,
             "Jupiter": 180, "Saturn": 225, "Uranus": 270, "Neptune": 315
         ]
-        let names = ["Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]
-        return names.map { name in
-            let speed = speeds[name] ?? 10.0
-            let offset = offsets[name] ?? 0.0
-            let longitude = fmod(year * speed + offset, 360.0)
-            let (sign, deg) = signAndDegree(from: longitude < 0 ? longitude + 360.0 : longitude)
+        
+        func norm(_ x: Double) -> Double { var v = x.truncatingRemainder(dividingBy: 360); if v < 0 { v += 360 }; return v }
+        func signAndDegree(from lon: Double) -> (String, Double) {
+            let signs = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"]
+            let n = norm(lon)
+            let idx = Int(n / 30.0) % 12
+            let deg = n - Double(idx)*30.0
+            return (signs[idx], deg)
+        }
+        func isRetrograde(_ name: String, day: Double) -> Bool {
+            // Crude periodic retrograde simulation for visual cue
+            switch name {
+            case "Mercury": return cos(2 * .pi * day / 116.0) < -0.6
+            case "Mars": return cos(2 * .pi * day / 780.0) < -0.8
+            case "Jupiter": return cos(2 * .pi * day / 399.0) < -0.8
+            case "Saturn": return cos(2 * .pi * day / 378.0) < -0.8
+            default: return false
+            }
+        }
+        
+        let defs: [(String,String,String)] = [
+            ("Sun","sun","☉"),("Moon","moon","☽"),("Mercury","mercury","☿"),("Venus","venus","♀"),("Mars","mars","♂"),("Jupiter","jupiter","♃"),("Saturn","saturn","♄"),("Uranus","uranus","♅"),("Neptune","neptune","♆")
+        ]
+        return defs.map { (name,id,symbol) in
+            let lon = norm((rate[name] ?? 0.5) * days + (offset[name] ?? 0))
+            let sd = signAndDegree(from: lon)
             return DetailedPlanetaryPosition(
-                id: name.lowercased(),
-                symbol: symbol(for: name),
+                id: id,
+                symbol: symbol,
                 name: name,
-                sign: sign,
-                degree: deg,
-                retrograde: false,
+                sign: sd.0,
+                degree: sd.1,
+                retrograde: isRetrograde(name, day: days),
                 house: nil,
-                significance: nil
+                significance: planetImpact(name)
             )
         }
     }
 
-    private func signAndDegree(from eclipticLongitude: Double) -> (String, Double) {
-        let signs = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"]
-        let normalized = (eclipticLongitude.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
-        let index = Int(floor(normalized / 30.0)) % 12
-        let degree = normalized - Double(index) * 30.0
-        return (signs[index], degree)
+    private func computeLocalAspects(for date: Date) -> [Aspect] {
+        // Build simple ecliptic longitudes for planets
+        let epoch = DateComponents(calendar: Calendar(identifier: .gregorian), year: 2000, month: 1, day: 1).date ?? Date(timeIntervalSince1970: 946684800)
+        let days = date.timeIntervalSince(epoch) / (24*3600)
+        let rate: [String: Double] = [
+            "Sun": 0.9856, "Moon": 13.1764, "Mercury": 4.0923, "Venus": 1.6021,
+            "Mars": 0.5240, "Jupiter": 0.0831, "Saturn": 0.0335, "Uranus": 0.0117, "Neptune": 0.0060
+        ]
+        let offset: [String: Double] = [
+            "Sun": 0, "Moon": 120, "Mercury": 45, "Venus": 90, "Mars": 135,
+            "Jupiter": 180, "Saturn": 225, "Uranus": 270, "Neptune": 315
+        ]
+        func norm(_ x: Double) -> Double { var v = x.truncatingRemainder(dividingBy: 360); if v < 0 { v += 360 }; return v }
+        let names = ["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn","Uranus","Neptune"]
+        var lon: [String: Double] = [:]
+        for n in names { lon[n] = norm((rate[n] ?? 0.5) * days + (offset[n] ?? 0)) }
+        
+        // Compute aspects
+        let aspectDefs: [(name: String, angle: Double, orb: Double)] = [
+            ("conjunction", 0, 8), ("sextile", 60, 6), ("square", 90, 8), ("trine", 120, 8), ("opposition", 180, 8)
+        ]
+        var results: [Aspect] = []
+        for i in 0..<names.count {
+            for j in (i+1)..<names.count {
+                let a = lon[names[i]] ?? 0
+                let b = lon[names[j]] ?? 0
+                let diff = abs(a - b)
+                let angle = min(diff, 360 - diff)
+                if let asp = aspectDefs.min(by: { abs(angle - $0.angle) < abs(angle - $1.angle) }), abs(angle - asp.angle) <= asp.orb {
+                    results.append(Aspect(planet1: names[i].lowercased(), planet2: names[j].lowercased(), type: asp.name, orb: abs(angle - asp.angle)))
+                }
+            }
+        }
+        return results
     }
 
-    private func symbol(for planet: String) -> String {
-        switch planet {
-        case "Sun": return "☉"
-        case "Mercury": return "☿"
-        case "Venus": return "♀"
-        case "Mars": return "♂"
-        case "Jupiter": return "♃"
-        case "Saturn": return "♄"
-        case "Uranus": return "♅"
-        case "Neptune": return "♆"
-        default: return "●"
+    private func planetImpact(_ name: String) -> String {
+        switch name {
+        case "Sun": return "Core identity and vitality"
+        case "Moon": return "Emotions and intuition"
+        case "Mercury": return "Communication and thinking"
+        case "Venus": return "Love and values"
+        case "Mars": return "Energy and action"
+        case "Jupiter": return "Growth and wisdom"
+        case "Saturn": return "Structure and discipline"
+        case "Uranus": return "Innovation and change"
+        case "Neptune": return "Dreams and spirituality"
+        default: return "Planetary influence"
         }
     }
-
-    private func synthesizeDashas(for date: Date) -> DashasResponse {
-        let lords = ["Ketu","Venus","Sun","Moon","Mars","Rahu","Jupiter","Saturn","Mercury"]
-        let year = Calendar.current.component(.year, from: date)
-        let mahadasha = lords[year % lords.count]
-        let antardasha = lords[(year / 3) % lords.count]
-        return DashasResponse(
-            mahadasha: .init(lord: mahadasha, start: nil, end: nil, annotation: "Approximate period (offline)"),
-            antardasha: .init(lord: antardasha, start: nil, end: nil, annotation: "Approximate sub-period")
-        )
-    }
-
+    
     // MARK: - Sticky + Helpers
 
     @State private var showGlossary = false
@@ -401,44 +343,16 @@ struct TimeTravelView: View {
                 let newYear = Int(newVal.rounded())
                 if newYear != selectedYear {
                     selectedYear = newYear
-                    Task { await loadData() }
+                    // Reset simulation to Jan 1 of the chosen year and recompute
+                    let base = Calendar.current.date(from: DateComponents(year: newYear, month: 1, day: 1)) ?? Date()
+                    simulationDate = base
+                    simTick = 0
+                    planets = computeLocalPositions(for: base)
+                    aspects = computeLocalAspects(for: base)
+                    planetAnimVersion &+= 1
                 }
             }
         )
-    }
-
-    private func dashaRangeAndProgress(for year: Int) -> (start: Date, end: Date, progress: Double)? {
-        guard let d = dashas, let s = d.mahadasha.start, let e = d.mahadasha.end,
-              let sd = isoDate(s), let ed = isoDate(e) else { return nil }
-        return (sd, ed, progressFraction(for: sd, end: ed, year: year))
-    }
-
-    private func updateStickyTargets() {
-        guard let d = dashas, let s = d.mahadasha.start, let e = d.mahadasha.end, let sd = isoDate(s), let ed = isoDate(e) else {
-            stickyTargets = []
-            return
-        }
-        let y1 = Calendar.current.component(.year, from: sd)
-        let y2 = Calendar.current.component(.year, from: ed)
-        stickyTargets = [y1, y2]
-    }
-
-    private func snapToNearbyDashaBoundary() {
-        guard !stickyTargets.isEmpty else { return }
-        // If close to a boundary year (within +/- 0), snap to that exact year
-        if stickyTargets.contains(selectedYear) {
-            // Already at a boundary year; emphasize with haptic
-            hapticSelection()
-            return
-        }
-        // If we are one year away from boundary and the end is in early/late year, snap to boundary year
-        if stickyTargets.contains(selectedYear + 1) || stickyTargets.contains(selectedYear - 1) {
-            hapticSelection()
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                if stickyTargets.contains(selectedYear + 1) { selectedYear += 1 } else { selectedYear -= 1 }
-            }
-            Task { await loadData() }
-        }
     }
 
     private func hapticSelection() {
@@ -447,12 +361,6 @@ struct TimeTravelView: View {
         #endif
     }
 
-    private func hapticInsight() {
-        #if canImport(UIKit)
-        let gen = UINotificationFeedbackGenerator()
-        gen.notificationOccurred(.success)
-        #endif
-    }
 }
 
 // Uses Aspect defined in APIModels.swift
@@ -464,6 +372,7 @@ struct PlanetariumCanvasView: View {
     let dasha: DashasResponse?
     let year: Int
     let mode: ZodiacSystem
+    var showDashaOverlay: Bool = false
     
     private let order: [String] = ["Mercury","Venus","Sun","Mars","Jupiter","Saturn","Uranus","Neptune"]
     private let colors: [String: Color] = [
@@ -498,21 +407,17 @@ struct PlanetariumCanvasView: View {
                 drawPlanets(&context, center: center, maxR: maxR)
             }
 
-            // Dasha inline label
-            VStack(spacing: 4) {
-                if let d = dasha {
-                    Text("Mahadasha: \(d.mahadasha.lord) • Antardasha: \(d.antardasha.lord)")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.9))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(.white.opacity(0.08), in: Capsule())
-                } else {
-                    Text("Add birth details for precise Dashas")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .padding(6)
-                        .background(.white.opacity(0.06), in: Capsule())
+            // Optional Dasha label
+            if showDashaOverlay {
+                VStack(spacing: 4) {
+                    if let d = dasha {
+                        Text("Mahadasha: \(d.mahadasha.lord) • Antardasha: \(d.antardasha.lord)")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.9))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.white.opacity(0.08), in: Capsule())
+                    }
                 }
             }
         }
