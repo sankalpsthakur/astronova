@@ -16,6 +16,7 @@ from routes.reports import reports_bp
 from routes.astrology import astrology_bp
 from routes.compatibility import compat_bp
 from routes.content import content_bp
+from db import init_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,6 +25,12 @@ logger = logging.getLogger(__name__)
 def create_app():
     app = Flask(__name__)
     CORS(app)
+
+    # Ensure local SQLite is initialized once on startup
+    try:
+        init_db()
+    except Exception as e:
+        logger.warning(f"DB init failed: {e}")
 
     # Register minimal blueprints
     app.register_blueprint(horoscope_bp, url_prefix="/api/v1/horoscope")
@@ -34,8 +41,14 @@ def create_app():
     app.register_blueprint(chart_bp, url_prefix="/api/v1/chart")
     app.register_blueprint(locations_bp, url_prefix="/api/v1/location")
     app.register_blueprint(reports_bp, url_prefix="/api/v1/reports")
-    # Also mount under singular for compatibility with client
-    app.register_blueprint(reports_bp, url_prefix="/api/v1/report")
+
+    # Backward-compatibility alias: redirect singular to plural
+    @app.route('/api/v1/report', defaults={'path': ''}, methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+    @app.route('/api/v1/report/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+    def report_alias(path: str):
+        from flask import redirect
+        target = '/api/v1/reports' + ('' if not path else f'/{path}')
+        return redirect(target, code=307)
     app.register_blueprint(astrology_bp, url_prefix="/api/v1/astrology")
     app.register_blueprint(compat_bp, url_prefix="/api/v1/compatibility")
     app.register_blueprint(content_bp, url_prefix="/api/v1/content")

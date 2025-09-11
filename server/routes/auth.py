@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 import uuid
 
-from db import init_db, upsert_user
+from db import upsert_user
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -13,10 +13,6 @@ def _fake_jwt() -> str:
     # Minimal dev token
     return "demo-token"
 
-
-@auth_bp.before_app_first_request
-def _ensure_db():
-    init_db()
 
 
 @auth_bp.route('/apple', methods=['POST'])

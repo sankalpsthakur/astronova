@@ -3,14 +3,10 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request, Response
 import uuid
 
-from db import init_db, insert_report, get_user_reports
+from db import insert_report, get_user_reports
 
 reports_bp = Blueprint('reports', __name__)
 
-
-@reports_bp.before_app_first_request
-def _ensure_db():
-    init_db()
 
 
 @reports_bp.route('/user/<user_id>', methods=['GET'])
