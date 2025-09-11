@@ -23,4 +23,4 @@ services:
         value: 8080
     autoDeploy: true
     branch: main
-    rootDir: backend
+    rootDir: server
