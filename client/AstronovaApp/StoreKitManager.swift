@@ -10,7 +10,7 @@ enum StoreError: Error {
 
 // MARK: - StoreKit 2 Manager
 
-class StoreKitManager: ObservableObject, StoreManagerProtocol {
+class StoreKitManager: ObservableObject {
     static let shared = StoreKitManager()
     
     @AppStorage("hasAstronovaPro") var hasProSubscription = false
@@ -139,7 +139,7 @@ class StoreKitManager: ObservableObject, StoreManagerProtocol {
     private func listenForTransactions() -> Task<Void, Error> {
         return Task.detached {
             // Listen for transaction updates using StoreKit 2's Transaction.updates
-            for await result in Transaction.updates {
+            for await result in StoreKit.Transaction.updates {
                 do {
                     let transaction = try self.checkVerified(result)
                     await self.handleSuccessfulPurchase(transaction: transaction)
@@ -151,7 +151,7 @@ class StoreKitManager: ObservableObject, StoreManagerProtocol {
         }
     }
     
-    private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
+    private func checkVerified<T>(_ result: StoreKit.VerificationResult<T>) throws -> T {
         switch result {
         case .unverified:
             throw StoreError.failedVerification
@@ -160,7 +160,7 @@ class StoreKitManager: ObservableObject, StoreManagerProtocol {
         }
     }
     
-    private func handleSuccessfulPurchase(transaction: Transaction) async {
+    private func handleSuccessfulPurchase(transaction: StoreKit.Transaction) async {
         await MainActor.run {
             if transaction.productID == "astronova_pro_monthly" {
                 self.hasProSubscription = true
@@ -181,7 +181,7 @@ class StoreKitManager: ObservableObject, StoreManagerProtocol {
     
     private func checkCurrentEntitlements() async {
         // Check for current subscription entitlements
-        for await result in Transaction.currentEntitlements {
+        for await result in StoreKit.Transaction.currentEntitlements {
             do {
                 let transaction = try checkVerified(result)
                 

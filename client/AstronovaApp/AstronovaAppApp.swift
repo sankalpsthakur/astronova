@@ -15,7 +15,6 @@ struct AstronovaAppApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(authState)
-                .withDependencies()
                 .onAppear { Analytics.shared.track(.appLaunched, properties: nil) }
         }
     }

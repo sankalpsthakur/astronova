@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import UIKit
 
+@MainActor
 final class ShareImageService {
     static func snapshot<V: View>(of view: V, scale: CGFloat = 2) -> UIImage? {
         if #available(iOS 16.0, *) {
@@ -19,12 +20,3 @@ final class ShareImageService {
         }
     }
 }
-
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
-}
-

@@ -15,11 +15,14 @@ final class AppConfig {
         }
 
         #if DEBUG
-        // Prefer IPv4 loopback to avoid ::1 issues on Simulator
+        // Use localhost only on Simulator; use remote on device during Debug
+        #if targetEnvironment(simulator)
         apiBaseURL = "http://127.0.0.1:8080"
+        #else
+        apiBaseURL = "https://astronova.onrender.com"
+        #endif
         #else
         apiBaseURL = "https://astronova.onrender.com"
         #endif
     }
 }
-

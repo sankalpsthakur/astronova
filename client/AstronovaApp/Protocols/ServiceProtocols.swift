@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import Combine
 
 // MARK: - Simple Response Types for Protocol Conformance
 

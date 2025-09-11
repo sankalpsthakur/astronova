@@ -18,11 +18,17 @@ struct OnboardingView: View {
                     TextField("Birth place", text: $birthPlace)
                 }
                 Section {
-                    Button("See my insights") {
+                    Button("See my free insight") {
                         Analytics.shared.track(.onboardingCompleted, properties: nil)
                         onComplete?()
                     }
                     .buttonStyle(.borderedProminent)
+                    Button {
+                        // Jump to Today tab and open Reports shop from there
+                        NotificationCenter.default.post(name: .switchToTab, object: 0)
+                    } label: {
+                        Label("Skip to detailed reports (from $12.99)", systemImage: "doc.text")
+                    }
                 }
             }
             .navigationTitle("Create Profile")
@@ -38,4 +44,3 @@ struct OnboardingView_Previews: PreviewProvider {
     }
 }
 #endif
-

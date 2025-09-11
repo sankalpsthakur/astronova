@@ -418,7 +418,7 @@ struct BirthDateStepView: View {
                         .scaleEffect(animateCalendar ? 1.1 : 1.0)
                         .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateCalendar)
                     
-                    Image(systemName: "calendar.badge.star")
+                    Image(systemName: "calendar")
                         .font(.system(size: 80))
                         .foregroundStyle(.white)
                 }

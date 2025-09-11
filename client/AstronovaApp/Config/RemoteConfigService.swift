@@ -8,6 +8,7 @@ final class RemoteConfigService: ObservableObject {
 
     private init() {
         loadFromBundle()
+        fetchFromServer()
     }
 
     private func loadFromBundle() {
@@ -39,5 +40,26 @@ final class RemoteConfigService: ObservableObject {
         if let n = values[key] as? NSNumber { return n.doubleValue }
         return defaultValue
     }
+    
+    // MARK: - Remote Fetch
+    private func fetchFromServer() {
+        // Fire-and-forget; silently ignore failures
+        Task {
+            do {
+                let data = try await NetworkClient.shared.requestData(
+                    endpoint: "/api/v1/config",
+                    method: .GET,
+                    body: Optional<Data>.none
+                )
+                if let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    await MainActor.run {
+                        // Overlay remote values on top of bundled
+                        for (k, v) in obj { self.values[k] = v }
+                    }
+                }
+            } catch {
+                // No-op: keep bundled config
+            }
+        }
+    }
 }
-

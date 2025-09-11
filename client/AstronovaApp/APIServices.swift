@@ -73,12 +73,8 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     /// Check if the backend service is healthy
     func healthCheck() async throws -> HealthResponse {
-        return try await networkClient.request(
-            endpoint: "/api/v1/health",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: HealthResponse.self
-        )
+        // Use NetworkClient's healthCheck to match server route
+        return try await networkClient.healthCheck()
     }
     
     // MARK: - Chart Generation
@@ -289,13 +285,39 @@ class APIServices: ObservableObject, APIServicesProtocol {
     }
     
     /// Get current planetary positions
+    /// Primary attempt: legacy endpoint returning a dictionary of basic positions.
+    /// Fallbacks: new ephemeris endpoint (array) mapped to dictionary, then on-device calculation.
     func getCurrentPlanetaryPositions() async throws -> [String: PlanetaryPosition] {
-        return try await networkClient.request(
-            endpoint: "/api/v1/astrology/positions",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: [String: PlanetaryPosition].self
-        )
+        // 1) Try legacy dictionary endpoint
+        do {
+            return try await networkClient.request(
+                endpoint: "/api/v1/astrology/positions",
+                method: HTTPMethod.GET,
+                body: nil,
+                responseType: [String: PlanetaryPosition].self
+            )
+        } catch {
+            // 2) Try ephemeris endpoint and map to expected type
+            do {
+                let ephemeris: PlanetaryDataResponse = try await networkClient.request(
+                    endpoint: "/api/v1/ephemeris/current",
+                    responseType: PlanetaryDataResponse.self
+                )
+                var mapped: [String: PlanetaryPosition] = [:]
+                for p in ephemeris.planets {
+                    mapped[p.name] = PlanetaryPosition(degree: p.degree, sign: p.sign)
+                }
+                if !mapped.isEmpty { return mapped }
+            } catch { /* continue to fallback */ }
+
+            // 3) Fallback to local calculation to avoid empty UI
+            let local = try await PlanetaryDataService.shared.getCurrentPlanetaryPositions()
+            var mapped: [String: PlanetaryPosition] = [:]
+            for p in local {
+                mapped[p.name] = PlanetaryPosition(degree: p.degree, sign: p.sign)
+            }
+            return mapped
+        }
     }
     
     /// Send chat message

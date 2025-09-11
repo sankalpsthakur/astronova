@@ -471,6 +471,19 @@ struct CompellingLandingView: View {
                     .multilineTextAlignment(.center)
                 
                 signInButtons
+                
+                // Conversion CTA: Buy a detailed report
+                Button {
+                    // Present reports shop via notification to switch or using a lightweight sheet
+                    // Simple approach: store flag and post notification to open Today tab where shop can be opened
+                    NotificationCenter.default.post(name: .switchToTab, object: 0)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                        Text("Get a detailed report (from $12.99)")
+                    }
+                }
+                .buttonStyle(.bordered)
             }
             
             Spacer(minLength: 30)
@@ -487,8 +500,7 @@ struct CompellingLandingView: View {
             Spacer()
             
             VStack(spacing: 16) {
-                Text("🌌")
-                    .font(.system(size: 80))
+                BrandLogoView(size: 72)
                 
                 Text("Welcome to Astronova")
                     .font(.largeTitle.weight(.bold))

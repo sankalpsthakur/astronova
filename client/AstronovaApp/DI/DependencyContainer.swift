@@ -10,17 +10,17 @@ class DependencyContainer: ObservableObject {
     
     private let _networkClient: NetworkClientProtocol
     private let _apiServices: APIServicesProtocol
-    private let _storeManager: StoreManagerProtocol
+    private let _storeManager: any StoreManagerProtocol
     
     // MARK: - Initialization
     
     init(
         networkClient: NetworkClientProtocol = NetworkClient(),
         apiServices: APIServicesProtocol? = nil,
-        storeManager: StoreManagerProtocol = StoreKitManager.shared
+        storeManager: (any StoreManagerProtocol)? = nil
     ) {
         self._networkClient = networkClient
-        self._storeManager = storeManager
+        self._storeManager = storeManager ?? BasicStoreManager.shared
         
         // Initialize APIServices with the provided networkClient
         if let apiServices = apiServices {
@@ -40,7 +40,7 @@ class DependencyContainer: ObservableObject {
         return _apiServices
     }
     
-    var storeManager: StoreManagerProtocol {
+    var storeManager: any StoreManagerProtocol {
         return _storeManager
     }
 }

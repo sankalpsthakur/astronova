@@ -23,7 +23,7 @@ final class NotificationService: ObservableObject {
 
     func scheduleDailyReminder(at hour: Int) async {
         let center = UNUserNotificationCenter.current()
-        await center.removePendingNotificationRequests(withIdentifiers: ["daily_reminder"]) 
+        center.removePendingNotificationRequests(withIdentifiers: ["daily_reminder"]) 
 
         var date = DateComponents()
         date.hour = hour
@@ -38,4 +38,3 @@ final class NotificationService: ObservableObject {
         try? await center.add(request)
     }
 }
-

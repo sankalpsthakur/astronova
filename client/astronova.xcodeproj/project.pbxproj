@@ -38,6 +38,9 @@
 		AA000200000000000000000B /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000B /* NotificationService.swift */; };
 		AA000200000000000000000C /* ShareImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000C /* ShareImageService.swift */; };
 		AA000200000000000000000D /* Zodiac.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000D /* Zodiac.swift */; };
+		AA0002000000000000000011 /* BasicStoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000011 /* BasicStoreManager.swift */; };
+		AA0002000000000000000012 /* ShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* ShopCatalog.swift */; };
+		AA000200000000000000000F /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000F /* StoreKitManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,6 +84,9 @@
 		AA000100000000000000000C /* ShareImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareImageService.swift; sourceTree = "<group>"; };
 		AA000100000000000000000D /* Zodiac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zodiac.swift; sourceTree = "<group>"; };
 		AA0001000000000000000010 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
+		AA0001000000000000000011 /* BasicStoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicStoreManager.swift; sourceTree = "<group>"; };
+		AA0001000000000000000012 /* ShopCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCatalog.swift; sourceTree = "<group>"; };
+		AA000100000000000000000F /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
 		3D01F8082C0A000000000007 /* APIServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIServices.swift; sourceTree = "<group>"; };
 		3D01F8092C0A000000000006 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
 		7C7D7E7F2E00000000000001 /* TimeTravelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeTravelView.swift; sourceTree = "<group>"; };
@@ -227,6 +233,8 @@
 			children = (
 				AA000100000000000000000B /* NotificationService.swift */,
 				AA000100000000000000000C /* ShareImageService.swift */,
+				AA0001000000000000000011 /* BasicStoreManager.swift */,
+				AA0001000000000000000012 /* ShopCatalog.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -438,6 +446,8 @@
 				AA000200000000000000000D /* Zodiac.swift in Sources */,
 				AA0002000000000000000010 /* ServiceProtocols.swift in Sources */,
 				AA000200000000000000000F /* StoreKitManager.swift in Sources */,
+				AA0002000000000000000011 /* BasicStoreManager.swift in Sources */,
+				AA0002000000000000000012 /* ShopCatalog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -772,7 +782,5 @@
 		};
 /* End XCConfigurationList section */
 	};
-		AA000200000000000000000F /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000F /* StoreKitManager.swift */; };
-		AA000100000000000000000F /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
 	rootObject = 3D01F7D82C0A000000000001 /* Project object */;
 }

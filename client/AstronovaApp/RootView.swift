@@ -42,8 +42,7 @@ struct ProfileSetupContentView: View {
                             Circle()
                                 .fill(step <= currentStep ? .white : .white.opacity(0.3))
                                 .frame(width: 8, height: 8)
-                                .scaleEffect(step == currentStep ? 1.5 : 1.0)
-                                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: currentStep)
+                                .scaleEffect(step == currentStep ? 1.3 : 1.0)
                         }
                         Spacer()
                         Text("\(currentStep + 1) / \(totalSteps)")
@@ -84,7 +83,6 @@ struct ProfileSetupContentView: View {
                 .tag(4)
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: currentStep)
             
             if !showingPersonalizedInsight {
                 // Beautiful action button
@@ -166,9 +164,11 @@ struct AnimatedCosmicBackground: View {
 
 struct FloatingStarsView: View {
     @Binding var animateStars: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
-        ForEach(0..<8, id: \.self) { i in
+        let count = reduceMotion ? 0 : 6
+        ForEach(0..<count, id: \.self) { i in
             Image(systemName: ["star.fill", "sparkles", "star.circle.fill"].randomElement()!)
                 .font(.system(size: CGFloat.random(in: 12...24)))
                 .foregroundStyle(.white.opacity(0.3))
@@ -176,13 +176,8 @@ struct FloatingStarsView: View {
                     x: CGFloat.random(in: 50...350),
                     y: CGFloat.random(in: 100...600)
                 )
-                .animation(
-                    .easeInOut(duration: Double.random(in: 2...4))
-                    .repeatForever(autoreverses: true)
-                    .delay(Double(i) * 0.3),
-                    value: animateStars
-                )
-                .offset(y: animateStars ? -20 : 20)
+                .offset(y: animateStars ? -12 : 12)
+                .animation(!reduceMotion ? .easeInOut(duration: Double.random(in: 2...4)).repeatForever(autoreverses: true).delay(Double(i) * 0.2) : nil, value: animateStars)
         }
     }
 }
@@ -213,7 +208,7 @@ struct PersonalizedInsightOverlay: View {
                         }
                     }
                 )
-                .transition(.scale.combined(with: .opacity))
+                .transition(.opacity)
             }
         }
     }
@@ -293,6 +288,7 @@ struct RootView: View {
 /// Beautiful, delightful onboarding with instant value and smooth animations
 struct SimpleProfileSetupView: View {
     @EnvironmentObject private var auth: AuthState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("profile_setup_step") private var currentStep = 0
     @AppStorage("profile_setup_name") private var fullName = ""
     @AppStorage("profile_setup_birth_date") private var birthDateTimestamp: Double = Date().timeIntervalSince1970
@@ -372,11 +368,18 @@ struct SimpleProfileSetupView: View {
     }
     
     private func setupAnimations() {
-        withAnimation(.easeInOut(duration: 0.3).delay(0.5)) {
-            animateGradient = true
-            animateStars = true
+        let lean = true // default to lean onboarding for speed
+        if !lean && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.3).delay(0.4)) {
+                animateGradient = true
+                animateStars = true
+            }
+        } else {
+            animateGradient = false
+            animateStars = false
         }
         restoreProfileProgress()
+        if currentStep == 0 { currentStep = 2 }
     }
     
     private var canContinue: Bool {
@@ -610,6 +613,7 @@ struct SimpleProfileSetupView: View {
 
 struct EnhancedWelcomeStepView: View {
     @State private var animateIcon = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         VStack(spacing: 0) {
@@ -623,12 +627,20 @@ struct EnhancedWelcomeStepView: View {
                         .frame(width: 120, height: 120)
                         .scaleEffect(animateIcon ? 1.1 : 1.0)
                     
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 50, weight: .light))
-                        .foregroundStyle(.white)
-                        .symbolEffect(.variableColor, options: .repeating)
+                    Group {
+                        if !reduceMotion {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 50, weight: .light))
+                                .foregroundStyle(.white)
+                                .symbolEffect(.variableColor, options: .repeating)
+                        } else {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 50, weight: .light))
+                                .foregroundStyle(.white)
+                        }
+                    }
                 }
-                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
                 VStack(spacing: 20) {
                     VStack(spacing: 8) {
@@ -653,9 +665,7 @@ struct EnhancedWelcomeStepView: View {
             
             Spacer()
         }
-        .onAppear {
-            animateIcon = true
-        }
+        .onAppear { animateIcon = true }
     }
 }
 
@@ -664,6 +674,7 @@ struct EnhancedNameStepView: View {
     @State private var animateIcon = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var validationError: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         VStack(spacing: 0) {
@@ -677,13 +688,20 @@ struct EnhancedNameStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 45))
-                        .foregroundStyle(.white)
-                        // `.bounce` is iOS 18+. Use `.pulse` which is available earlier.
-                        .symbolEffect(.pulse, options: .repeating)
+                    Group {
+                        if !reduceMotion {
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 45))
+                                .foregroundStyle(.white)
+                                .symbolEffect(.pulse, options: .repeating)
+                        } else {
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 45))
+                                .foregroundStyle(.white)
+                        }
+                    }
                 }
-                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
                 VStack(spacing: 16) {
                     Text("What should we call you?")
@@ -758,13 +776,7 @@ struct EnhancedNameStepView: View {
         .onTapGesture {
             hideKeyboard()
         }
-        .onAppear {
-            animateIcon = true
-            // Auto-focus text field for better UX
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isTextFieldFocused = true
-            }
-        }
+        .onAppear { animateIcon = true }
     }
     
     private func hideKeyboard() {
@@ -820,6 +832,7 @@ struct EnhancedBirthDateStepView: View {
     @State private var animateIcon = false
     @State private var validationError: String?
     let onQuickStart: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         VStack(spacing: 0) {
@@ -833,12 +846,20 @@ struct EnhancedBirthDateStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
-                    Image(systemName: "calendar.badge.star")
-                        .font(.system(size: 45))
-                        .foregroundStyle(.white)
-                        .symbolEffect(.pulse.wholeSymbol, options: .repeating)
+                    Group {
+                        if !reduceMotion {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 45))
+                                .foregroundStyle(.white)
+                                .symbolEffect(.pulse, options: .repeating)
+                        } else {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 45))
+                                .foregroundStyle(.white)
+                        }
+                    }
                 }
-                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
                 VStack(spacing: 16) {
                     Text("When were you born?")
@@ -955,10 +976,7 @@ struct EnhancedBirthDateStepView: View {
             
             Spacer()
         }
-        .onAppear {
-            animateIcon = true
-            validateBirthDate(birthDate)
-        }
+        .onAppear { animateIcon = true; validateBirthDate(birthDate) }
     }
     
     private func getDateRange() -> ClosedRange<Date> {
@@ -1000,6 +1018,7 @@ struct EnhancedBirthTimeStepView: View {
     @State private var animateIcon = false
     @State private var unknownTime = false
     @State private var showWhy = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1013,12 +1032,20 @@ struct EnhancedBirthTimeStepView: View {
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
 
-                    Image(systemName: "clock.badge.fill")
-                        .font(.system(size: 45))
-                        .foregroundStyle(.white)
-                        .symbolEffect(.pulse.wholeSymbol, options: .repeating)
+                    Group {
+                        if !reduceMotion {
+                            Image(systemName: "clock.badge.fill")
+                                .font(.system(size: 45))
+                                .foregroundStyle(.white)
+                                .symbolEffect(.pulse, options: .repeating)
+                        } else {
+                            Image(systemName: "clock.badge.fill")
+                                .font(.system(size: 45))
+                                .foregroundStyle(.white)
+                        }
+                    }
                 }
-                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
 
                 VStack(spacing: 16) {
                     Text("What time were you born?")
@@ -1092,9 +1119,7 @@ struct EnhancedBirthTimeStepView: View {
 
             Spacer()
         }
-        .onAppear {
-            animateIcon = true
-        }
+        .onAppear { animateIcon = true }
     }
 
     private func formatSelectedTime() -> String {
@@ -1114,6 +1139,7 @@ struct EnhancedBirthPlaceStepView: View {
     @State private var showDropdown = false
     @State private var searchTask: Task<Void, Never>?
     @EnvironmentObject private var auth: AuthState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         VStack(spacing: 0) {
@@ -1132,7 +1158,7 @@ struct EnhancedBirthPlaceStepView: View {
                         .foregroundStyle(.white)
                         .scaleEffect(animateIcon ? 1.1 : 1.0)
                 }
-                .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
+                .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
                 VStack(spacing: 16) {
                     Text("Where were you born?")
@@ -1264,13 +1290,7 @@ struct EnhancedBirthPlaceStepView: View {
             
             Spacer()
         }
-        .onAppear {
-            animateIcon = true
-            // Auto-focus text field for better UX
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isTextFieldFocused = true
-            }
-        }
+        .onAppear { animateIcon = true }
         .onTapGesture {
             if showDropdown {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -1584,6 +1604,10 @@ struct ConfettiPiece {
     let color: Color
     var opacity: Double
 }
+
+// MARK: - Utilities
+
+// Removed older InlineReportsShopView to avoid SKU drift; using InlineReportsStoreSheet everywhere.
 
 
 // MARK: - Location Search Support
@@ -1973,25 +1997,25 @@ struct FloatingTabBar: View {
                             if selectedTab == index {
                                 Circle()
                                     .fill(.blue.gradient)
-                                    .frame(width: 40, height: 40)
-                                    .shadow(color: .blue.opacity(0.4), radius: 8, x: 0, y: 2)
+                                    .frame(width: 32, height: 32)
+                                    .shadow(color: .blue.opacity(0.25), radius: 6, x: 0, y: 2)
                                     .scaleEffect(1.1)
                                     .transition(.scale.combined(with: .opacity))
                             }
                             
                             // Icon
                             Image(systemName: tabs[index].icon)
-                                .font(.system(size: 20, weight: .medium))
+                                .font(.system(size: 18, weight: .medium))
                                 .symbolRenderingMode(.hierarchical)
                         }
-                        .frame(width: 50, height: 40)
+                        .frame(width: 44, height: 32)
                         .foregroundStyle(selectedTab == index ? .white : .primary.opacity(0.7))
-                        .scaleEffect(selectedTab == index ? 1.1 : 1.0)
+                        .scaleEffect(selectedTab == index ? 1.05 : 1.0)
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: selectedTab)
                         
                         // Title with fade effect
                         Text(tabs[index].title)
-                            .font(.system(size: 11, weight: selectedTab == index ? .semibold : .medium))
+                            .font(.system(size: 10, weight: selectedTab == index ? .semibold : .medium))
                             .foregroundStyle(selectedTab == index ? .primary : .secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -1999,7 +2023,7 @@ struct FloatingTabBar: View {
                             .animation(.easeInOut(duration: 0.2), value: selectedTab)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 6)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -2008,14 +2032,14 @@ struct FloatingTabBar: View {
                 .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(
             // Pure glass effect with minimal solid background
             RoundedRectangle(cornerRadius: 25)
                 .fill(.ultraThinMaterial) // Pure material effect
-                .shadow(color: .black.opacity(0.1), radius: 20, x: 0, y: 8)
-                .shadow(color: .black.opacity(0.05), radius: 5, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.08), radius: 14, x: 0, y: 6)
+                .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 1)
         )
         .overlay(
             // Subtle border glow with better transparency
@@ -2023,7 +2047,7 @@ struct FloatingTabBar: View {
                 .strokeBorder(.white.opacity(0.15), lineWidth: 0.5)
         )
         .padding(.horizontal, 16)
-        .padding(.bottom, 20) // Float above bottom edge
+        .padding(.bottom, 8) // Thinner and lower towards the edge
     }
 }
 
@@ -2039,6 +2063,8 @@ struct TodayTab: View {
     @State private var selectedReportType: String = ""
     @State private var userReports: [DetailedReport] = []
     @State private var hasSubscription = false
+    @State private var showingReportShop = false
+    @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
     
     private let apiServices = APIServices.shared
     
@@ -2070,6 +2096,17 @@ struct TodayTab: View {
                         },
                         savedReports: userReports
                     )
+
+                    Button {
+                        showingReportShop = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "doc.text.magnifyingglass")
+                            Text("Explore all 7 detailed reports (from $12.99)")
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.bordered)
                     
                     planetaryPositionsSection
                     
@@ -2095,6 +2132,10 @@ struct TodayTab: View {
             planetaryPositions = []
             checkSubscriptionStatus()
             loadUserReports()
+            if triggerShowReportShop {
+                triggerShowReportShop = false
+                showingReportShop = true
+            }
         }
         .sheet(isPresented: $showingReportSheet) {
             ReportGenerationSheet(
@@ -2108,6 +2149,9 @@ struct TodayTab: View {
         }
         .sheet(isPresented: $showingReportsLibrary) {
             ReportsLibraryView(reports: userReports)
+        }
+        .sheet(isPresented: $showingReportShop) {
+            InlineReportsStoreSheet().environmentObject(auth)
         }
     }
     
@@ -2388,18 +2432,28 @@ struct PlanetaryEnergiesView: View {
     private func loadPlanetaryData() {
         isLoading = true
         errorMessage = nil
-        
+
         Task {
             do {
+                // Primary: fetch via API (now with robust fallbacks inside APIServices)
                 let positions = try await APIServices.shared.getDetailedPlanetaryPositions()
                 await MainActor.run {
                     self.planetaryPositions = positions
                     self.isLoading = false
                 }
             } catch {
-                await MainActor.run {
-                    self.errorMessage = "Unable to load planetary data"
-                    self.isLoading = false
+                // Fallback: compute on-device
+                do {
+                    let positions = try await PlanetaryDataService.shared.getCurrentPlanetaryPositions()
+                    await MainActor.run {
+                        self.planetaryPositions = positions
+                        self.isLoading = false
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.errorMessage = "Unable to load planetary data"
+                        self.isLoading = false
+                    }
                 }
             }
         }
@@ -3015,8 +3069,11 @@ struct NexusTab: View {
     @State private var dailyMessageCount = 0
     @State private var hasSubscription = false
     @State private var showingSubscriptionSheet = false
+    @State private var showingChatPackages = false
     @State private var selectedModel = "zodiac"
     @State private var showingVoiceMode = false
+    @AppStorage("chat_credits") private var chatCredits: Int = 0
+    @AppStorage("trigger_show_chat_packages") private var triggerShowChatPackages: Bool = false
     
     @EnvironmentObject private var auth: AuthState
     private let apiServices = APIServices.shared
@@ -3032,13 +3089,12 @@ struct NexusTab: View {
                 
                 VStack(spacing: 0) {
                     // Message Limit Banner (for free users)
-                    if !hasSubscription && dailyMessageCount >= freeMessageLimit {
+                    if !hasSubscription && dailyMessageCount >= freeMessageLimit && chatCredits == 0 {
                         MessageLimitBanner(
                             used: dailyMessageCount,
                             limit: freeMessageLimit,
-                            onUpgrade: {
-                                showingSubscriptionSheet = true
-                            }
+                            onUpgrade: { showingSubscriptionSheet = true },
+                            onBuyCredits: { showingChatPackages = true }
                         )
                     }
                     
@@ -3101,7 +3157,7 @@ struct NexusTab: View {
                             messageText = question
                         }
                     )
-                    .disabled(isLoading || (!hasSubscription && dailyMessageCount >= freeMessageLimit))
+                    .disabled(isLoading || (!hasSubscription && dailyMessageCount >= freeMessageLimit && chatCredits == 0))
                     .padding(.bottom, 100)
                 }
             }
@@ -3140,18 +3196,21 @@ struct NexusTab: View {
             animateStars = true
             loadMessageCount()
             checkSubscriptionStatus()
+            if triggerShowChatPackages {
+                triggerShowChatPackages = false
+                showingChatPackages = true
+            }
         }
-        .sheet(isPresented: $showingSubscriptionSheet) {
-            SubscriptionSheet()
-        }
+        .sheet(isPresented: $showingSubscriptionSheet) { SubscriptionSheet() }
+        .sheet(isPresented: $showingChatPackages) { InlineChatPackagesSheet() }
     }
     
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
         
-        // Check message limit for free users
-        if !hasSubscription && dailyMessageCount >= freeMessageLimit {
+        // Check message limit for free users; allow credits to bypass
+        if !hasSubscription && dailyMessageCount >= freeMessageLimit && chatCredits == 0 {
             errorMessage = "DAILY LIMIT REACHED"
             return
         }
@@ -3202,10 +3261,14 @@ struct NexusTab: View {
                     
                     messages.append(aiMessage)
                     
-                    // Increment message count for free users
+                    // Increment counters: use credits first if out of free messages
                     if !hasSubscription {
-                        dailyMessageCount += 1
-                        saveMessageCount()
+                        if dailyMessageCount >= freeMessageLimit {
+                            if chatCredits > 0 { chatCredits -= 1 }
+                        } else {
+                            dailyMessageCount += 1
+                            saveMessageCount()
+                        }
                     }
                 }
                 
@@ -3245,9 +3308,10 @@ struct MessageLimitBanner: View {
     let used: Int
     let limit: Int
     let onUpgrade: () -> Void
+    let onBuyCredits: () -> Void
     
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Image(systemName: "moon.stars.circle.fill")
                 .foregroundStyle(.orange)
             
@@ -3258,11 +3322,10 @@ struct MessageLimitBanner: View {
             Spacer()
             
             if used >= limit {
-                Button("Upgrade to Plus") {
-                    onUpgrade()
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.blue)
+                Button("Get Chat Packages") { onBuyCredits() }
+                    .font(.caption.weight(.medium))
+                Button("Go Unlimited") { onUpgrade() }
+                    .font(.caption.weight(.medium))
             }
         }
         .padding(.horizontal)
@@ -3350,11 +3413,9 @@ struct SubscriptionSheet: View {
                 VStack(spacing: 16) {
                     Button {
                         Task {
-                            let success = await StoreKitManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
+                            let success = await BasicStoreManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
                             if success {
-                                await MainActor.run {
-                                    dismiss()
-                                }
+                                await MainActor.run { dismiss() }
                             }
                         }
                     } label: {
@@ -3904,71 +3965,36 @@ struct CosmicInputArea: View {
 
 struct ProfileTab: View {
     @EnvironmentObject private var auth: AuthState
-    @State private var selectedDate = Date()
-    @State private var selectedTab = 0
     @State private var showingSettings = false
     @State private var showingAPITests = false
     @State private var bookmarkedReadings: [BookmarkedReading] = []
     
-    private let tabs = ["Overview", "Daily", "Saved"]
-    
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Tab Selector
-                Picker("View", selection: $selectedTab) {
-                    ForEach(tabs.indices, id: \.self) { index in
-                        Text(tabs[index]).tag(index)
-                    }
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
-                
-                // Content based on selected tab
-                Group {
-                    switch selectedTab {
-                    case 0:
-                        ProfileOverviewView()
-                            .environmentObject(auth)
-                    case 1:
-                        CalendarHoroscopeView(
-                            selectedDate: $selectedDate,
-                            onBookmark: bookmarkReading
-                        )
-                    case 2:
-                        BookmarkedReadingsView(
-                            bookmarks: bookmarkedReadings,
-                            onRemove: removeBookmark
-                        )
-                    default:
-                        ProfileOverviewView()
-                            .environmentObject(auth)
-                    }
-                }
-                .padding(.bottom, 120) // Additional bottom padding to show content behind floating tab bar
-            }
-            .navigationTitle("Profile")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            showingSettings = true
+            ManageDashboardView(bookmarks: $bookmarkedReadings)
+                .environmentObject(auth)
+                .navigationTitle("Manage")
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Menu {
+                            Button {
+                                showingSettings = true
+                            } label: {
+                                Label("Settings", systemImage: "gearshape")
+                            }
+                            
+                            #if DEBUG
+                            Button {
+                                showingAPITests = true
+                            } label: {
+                                Label("API Tests", systemImage: "network")
+                            }
+                            #endif
                         } label: {
-                            Label("Settings", systemImage: "gearshape")
+                            Image(systemName: "gearshape")
                         }
-                        
-                        #if DEBUG
-                        Button {
-                            showingAPITests = true
-                        } label: {
-                            Label("API Tests", systemImage: "network")
-                        }
-                        #endif
-                    } label: {
-                        Image(systemName: "gearshape")
                     }
                 }
-            }
         }
         .sheet(isPresented: $showingSettings) {
             EnhancedSettingsView(auth: auth)
@@ -3983,29 +4009,156 @@ struct ProfileTab: View {
             }
             .padding()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .switchToProfileSection)) { notification in
-            if let sectionIndex = notification.object as? Int {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    selectedTab = sectionIndex
+        .onReceive(NotificationCenter.default.publisher(for: .switchToProfileSection)) { _ in
+            // Reserved for future deep-links to sections
+        }
+    }
+}
+
+// MARK: - Manage Dashboard
+
+struct ManageDashboardView: View {
+    @EnvironmentObject private var auth: AuthState
+    @Binding var bookmarks: [BookmarkedReading]
+    
+    @State private var showingSettings = false
+    @State private var showingPaywall = false
+    @State private var showingQuickBirthEdit = false
+    
+    var body: some View {
+        List {
+            // Profile
+            Section(header: Text("Profile")) {
+                ProfileSettingsRow(auth: auth)
+                Button {
+                    showingQuickBirthEdit = true
+                } label: {
+                    HStack {
+                        Label("Edit Birth Information", systemImage: "person.text.rectangle")
+                        Spacer()
+                        Text(summaryBirthInfo(profile: auth.profileManager.profile))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Membership
+            Section(header: Text("Membership")) {
+                HStack {
+                    Label("Astronova Pro", systemImage: "crown.fill")
+                    Spacer()
+                    // Use StoreKitManager in Release, BasicStoreManager in Debug
+                    let isPro: Bool = {
+                        #if DEBUG
+                        return BasicStoreManager.shared.hasProSubscription
+                        #else
+                        return StoreKitManager.shared.hasProSubscription
+                        #endif
+                    }()
+                    Text(isPro ? "Active" : "Free")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button(isPro ? "Manage" : "Start Pro") {
+                        showingPaywall = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+            
+            // Library
+            Section(header: Text("Library")) {
+                NavigationLink {
+                    BookmarksListScreen(bookmarks: $bookmarks)
+                } label: {
+                    HStack {
+                        Label("Saved Bookmarks", systemImage: "bookmark.fill")
+                        Spacer()
+                        if !bookmarks.isEmpty {
+                            Text("\(bookmarks.count)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                
+                NavigationLink {
+                    InlineReportsStoreSheet()
+                        .environmentObject(auth)
+                } label: {
+                    Label("Reports Shop", systemImage: "doc.text.magnifyingglass")
+                }
+            }
+            
+            // Settings & Support
+            Section(header: Text("Settings & Support")) {
+                Button {
+                    showingSettings = true
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                
+                NavigationLink {
+                    DataPrivacyView()
+                } label: {
+                    Label("Data & Privacy", systemImage: "lock.shield.fill")
+                }
+                
+                NavigationLink {
+                    ExportDataView(auth: auth)
+                } label: {
+                    Label("Export My Data", systemImage: "square.and.arrow.up.on.square.fill")
+                }
+                
+                NavigationLink {
+                    AboutView()
+                } label: {
+                    Label("About", systemImage: "star.circle.fill")
+                }
+                
+                Link(destination: URL(string: "mailto:support@astronova.app")!) {
+                    Label("Contact Support", systemImage: "message.badge.filled.fill")
+                }
+                
+                Link(destination: URL(string: "https://astronova.app/help")!) {
+                    Label("Help Center", systemImage: "questionmark.app.fill")
                 }
             }
         }
+        .listStyle(.insetGrouped)
+        .sheet(isPresented: $showingSettings) {
+            EnhancedSettingsView(auth: auth)
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()
+        }
+        .sheet(isPresented: $showingQuickBirthEdit) {
+            QuickBirthEditView()
+                .environmentObject(auth)
+        }
     }
-    
-    private func bookmarkReading(_ reading: HoroscopeReading) {
-        let bookmark = BookmarkedReading(
-            id: UUID(),
-            date: reading.date,
-            type: reading.type,
-            title: reading.title,
-            content: reading.content,
-            createdAt: Date()
-        )
-        bookmarkedReadings.append(bookmark)
+
+    private func summaryBirthInfo(profile: UserProfile) -> String {
+        let dateStr = {
+            let f = DateFormatter(); f.dateStyle = .medium; return f.string(from: profile.birthDate)
+        }()
+        let timeStr = profile.birthTime.map { t -> String in
+            let f = DateFormatter(); f.timeStyle = .short; return f.string(from: t)
+        } ?? "–"
+        let placeStr = profile.birthPlace ?? "–"
+        return "\(dateStr) • \(timeStr) • \(placeStr)"
     }
+}
+
+struct BookmarksListScreen: View {
+    @Binding var bookmarks: [BookmarkedReading]
     
-    private func removeBookmark(_ bookmark: BookmarkedReading) {
-        bookmarkedReadings.removeAll { $0.id == bookmark.id }
+    var body: some View {
+        BookmarkedReadingsView(bookmarks: bookmarks) { bookmark in
+            bookmarks.removeAll { $0.id == bookmark.id }
+        }
+        .navigationTitle("Bookmarks")
     }
 }
 
@@ -4397,6 +4550,88 @@ struct ProfileInfoRow: View {
 
 // MARK: - Enhanced Settings View
 
+// MARK: - Quick Birth Edit Sheet (fast 2‑tap flow)
+
+struct QuickBirthEditView: View {
+    @EnvironmentObject private var auth: AuthState
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var birthDate: Date = Date()
+    @State private var birthTime: Date = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date()) ?? Date()
+    @State private var unknownTime: Bool = false
+    @State private var birthPlaceText: String = ""
+    @State private var pendingLocation: LocationResult?
+    @State private var saving: Bool = false
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Birth Date")) {
+                    DatePicker("Date", selection: $birthDate, displayedComponents: .date)
+                }
+                Section(header: Text("Birth Time")) {
+                    Toggle("I don't know my birth time", isOn: $unknownTime)
+                    if !unknownTime {
+                        DatePicker("Time", selection: $birthTime, displayedComponents: .hourAndMinute)
+                    }
+                }
+                Section(header: Text("Birth Place")) {
+                    MapKitAutocompleteView(
+                        selectedLocation: $pendingLocation,
+                        placeholder: birthPlaceText.isEmpty ? "City, State/Country" : birthPlaceText
+                    ) { loc in
+                        pendingLocation = loc
+                        birthPlaceText = loc.fullName
+                    }
+                }
+                if let e = error {
+                    Section { Text(e).foregroundStyle(.red) }
+                }
+            }
+            .navigationTitle("Birth Information")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saving ? "Saving…" : "Save") { Task { await save() } }
+                        .disabled(saving)
+                }
+            }
+            .onAppear { preloadFromProfile() }
+        }
+    }
+
+    private func save() async {
+        saving = true
+        defer { saving = false }
+        var profile = auth.profileManager.profile
+        profile.birthDate = birthDate
+        profile.birthTime = unknownTime ? nil : birthTime
+        if let loc = pendingLocation {
+            profile.birthPlace = loc.fullName
+            profile.birthLatitude = loc.coordinate.latitude
+            profile.birthLongitude = loc.coordinate.longitude
+            profile.timezone = loc.timezone
+        } else if !birthPlaceText.isEmpty {
+            profile.birthPlace = birthPlaceText
+        }
+        auth.profileManager.updateProfile(profile)
+        do {
+            try auth.profileManager.saveProfile()
+            await MainActor.run { dismiss() }
+        } catch {
+            await MainActor.run { self.error = "Failed to save: \(error.localizedDescription)" }
+        }
+    }
+
+    private func preloadFromProfile() {
+        let p = auth.profileManager.profile
+        birthDate = p.birthDate
+        if let t = p.birthTime { birthTime = t; unknownTime = false } else { unknownTime = true }
+        birthPlaceText = p.birthPlace ?? ""
+    }
+}
+
 struct EnhancedSettingsView: View {
     @ObservedObject var auth: AuthState
     @Environment(\.dismiss) private var dismiss
@@ -4434,7 +4669,7 @@ struct EnhancedSettingsView: View {
                         }
                         
                         HStack {
-                            Label("Weekly Report", systemImage: "calendar.badge.star")
+                            Label("Weekly Report", systemImage: "calendar")
                             Spacer()
                             Toggle("", isOn: $weeklyReport)
                         }
@@ -4796,6 +5031,7 @@ struct CalendarHoroscopeView: View {
                         // Premium Insights have been moved to the Discover page
                     }
                 )
+                .environmentObject(auth)
                 
             }
             .padding()
@@ -5078,6 +5314,7 @@ struct DailySynopsisCard: View {
     let onDiscoverMore: () -> Void
     
     @State private var reading: HoroscopeReading?
+    @EnvironmentObject private var auth: AuthState
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -5163,11 +5400,8 @@ struct DailySynopsisCard: View {
     @MainActor
     private func loadDailyReading() async {
         do {
-            // For now, use a default sign since we need user's birth data to determine it
-            let horoscopeResponse = try await APIServices.shared.getHoroscope(
-                sign: "general",
-                period: "daily"
-            )
+            let sign = auth.profileManager.profile.sunSign?.lowercased() ?? "aries"
+            let horoscopeResponse = try await APIServices.shared.getHoroscope(sign: sign, period: "daily")
             
             reading = HoroscopeReading(
                 id: UUID(),
@@ -5657,7 +5891,7 @@ struct ReportGenerationSheet: View {
                             }
                             
                             // Individual Report - Secondary Option
-                            if let pricing = ReportPricing.pricing(for: reportType) {
+                            if ReportPricing.pricing(for: reportType) != nil {
                                 Button {
                                     purchaseIndividualReport()
                                 } label: {
@@ -5668,7 +5902,7 @@ struct ReportGenerationSheet: View {
                                                 .foregroundStyle(.secondary)
                                             Text("Purchase \(reportInfo.title)")
                                                 .font(.subheadline.weight(.medium))
-                                            Text(pricing.localizedPrice ?? pricing.price)
+                                            Text("from $12.99")
                                                 .font(.headline.weight(.bold))
                                         }
                                         Spacer()
@@ -5739,7 +5973,7 @@ struct ReportGenerationSheet: View {
     private func purchaseIndividualReport() {
         isGenerating = true
         Task {
-            let success = await StoreKitManager.shared.purchaseProduct(productId: reportType)
+            let success = await BasicStoreManager.shared.purchaseProduct(productId: reportType)
             await MainActor.run {
                 if success {
                     onGenerate(reportType)
@@ -5908,7 +6142,7 @@ struct PaymentOptionsSheet: View {
                     }
                     
                     // Individual Report Option
-                    if let pricing = ReportPricing.pricing(for: reportType) {
+                    if ReportPricing.pricing(for: reportType) != nil {
                         Button {
                             onPurchaseIndividual()
                         } label: {
@@ -5919,7 +6153,7 @@ struct PaymentOptionsSheet: View {
                                         .foregroundStyle(.secondary)
                                     Text(reportInfo.title)
                                         .font(.headline)
-                                    Text(pricing.localizedPrice ?? pricing.price)
+                                    Text("from $12.99")
                                         .font(.title3.weight(.bold))
                                 }
                                 
@@ -5951,6 +6185,100 @@ struct PaymentOptionsSheet: View {
                 }
             }
         }
+    }
+}
+
+// Inline minimal Reports Store to avoid cross-target visibility issues
+struct InlineReportsStoreSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var auth: AuthState
+    @State private var isPurchasing: String? = nil
+    
+    private let offers: [ShopCatalog.Report] = ShopCatalog.reports
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Detailed Reports") {
+                    ForEach(offers) { offer in
+                        HStack(spacing: 12) {
+                            Circle().fill(offer.color.opacity(0.15)).frame(width: 28, height: 28)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(offer.title).font(.headline)
+                                Text(offer.subtitle).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button {
+                                Task { await buy(offer) }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    if isPurchasing == offer.productId { ProgressView().tint(.white) }
+                                    Text(isPurchasing == offer.productId ? "Processing…" : ShopCatalog.price(for: offer.productId))
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(isPurchasing != nil)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Reports Shop")
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { dismiss() } } }
+        }
+    }
+    
+    private func buy(_ offer: ShopCatalog.Report) async {
+        guard isPurchasing == nil else { return }
+        isPurchasing = offer.productId
+        defer { isPurchasing = nil }
+        _ = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
+        // Optionally kick off async generation using APIServices as in full view
+    }
+}
+
+// Inline minimal Chat Packages sheet
+struct InlineChatPackagesSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("chat_credits") private var chatCredits: Int = 0
+    @State private var isPurchasing: String? = nil
+    
+    private let packs: [ShopCatalog.ChatPack] = ShopCatalog.chatPacks
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                Section(header: Text("Available credits: \(chatCredits)")) {
+                    ForEach(packs) { p in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(p.title).font(.headline)
+                                Text(p.subtitle).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button {
+                                Task { await buy(p) }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    if isPurchasing == p.productId { ProgressView().tint(.white) }
+                                    Text(isPurchasing == p.productId ? "Processing…" : ShopCatalog.price(for: p.productId))
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(isPurchasing != nil)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Chat Packages")
+            .toolbar { ToolbarItem(placement: .navigationBarTrailing) { Button("Done") { dismiss() } } }
+        }
+    }
+    
+    private func buy(_ p: ShopCatalog.ChatPack) async {
+        guard isPurchasing == nil else { return }
+        isPurchasing = p.productId
+        defer { isPurchasing = nil }
+        _ = await BasicStoreManager.shared.purchaseProduct(productId: p.productId)
     }
 }
 
