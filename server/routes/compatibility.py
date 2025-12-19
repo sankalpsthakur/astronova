@@ -1045,6 +1045,7 @@ def _calculate_relationship_pulse(
         return result
 
     # Fallback: Static calculation based on natal aspects only
+    # Use more varied intensity levels based on actual aspect counts
     harmonious = sum(1 for a in aspects if a["compatibility"] > 0)
     challenging = sum(1 for a in aspects if a["compatibility"] < 0)
 
@@ -1054,16 +1055,23 @@ def _calculate_relationship_pulse(
         intensity = "moderate"
     elif harmonious > challenging * 1.5:
         state = "flowing"
-        intensity = "intense" if harmonious >= 3 else "strong"
+        # Vary intensity based on count: 1-2=strong, 3-4=intense, 5+=peak
+        if harmonious >= 5:
+            intensity = "peak"
+        elif harmonious >= 3:
+            intensity = "intense"
+        else:
+            intensity = "strong"
     elif challenging > harmonious:
         state = "friction"
+        # Lower intensity for friction
         intensity = "gentle" if challenging >= 3 else "moderate"
     elif harmonious > challenging:
         state = "electric"
-        intensity = "strong"
+        intensity = "strong" if harmonious >= 2 else "moderate"
     else:
         state = "magnetic"
-        intensity = "strong"
+        intensity = "moderate"
 
     top_activations = []
     for a in sorted(aspects, key=lambda x: abs(x["compatibility"]), reverse=True)[:2]:
@@ -1118,15 +1126,40 @@ def _calculate_next_shift(
             "planForIt": result["suggestion"],
         }
 
-    # Fallback: estimate 7-10 days
-    days_until = 7
+    # Fallback: estimate based on aspect balance (no natal data available)
+    harmonious = sum(1 for a in aspects if a.get("compatibility", 0) > 0)
+    challenging = sum(1 for a in aspects if a.get("compatibility", 0) < 0)
+    total = harmonious + challenging
+
+    # Vary days and state based on actual aspect balance
+    if total == 0:
+        days_until = 14
+        new_state = "grounded"
+        what_changes = "Subtle shifts in connection energy"
+        plan = "Stay present and attentive to each other"
+    elif harmonious > challenging:
+        days_until = 5 + (harmonious % 4)  # 5-8 days
+        new_state = "flowing" if harmonious > challenging * 1.5 else "magnetic"
+        what_changes = f"Harmonious aspects ({harmonious}) continue to support your connection"
+        plan = "Build on the positive momentum together"
+    elif challenging > harmonious:
+        days_until = 3 + (challenging % 3)  # 3-5 days
+        new_state = "grounded"  # Recovery state, not artificially positive
+        what_changes = f"Tension from {challenging} challenging aspects begins to ease"
+        plan = "Focus on patience and understanding"
+    else:
+        days_until = 7
+        new_state = "magnetic"
+        what_changes = "Balance shifts as aspects evolve"
+        plan = "Stay adaptable to changing dynamics"
+
     next_date = target_date + timedelta(days=days_until)
     return {
         "date": next_date.isoformat(),
         "daysUntil": days_until,
-        "whatChanges": "Energy shifts as transits evolve",
-        "newState": "electric",
-        "planForIt": "Good time for important conversations",
+        "whatChanges": what_changes,
+        "newState": new_state,
+        "planForIt": plan,
     }
 
 
@@ -1141,37 +1174,70 @@ def _build_journey_forecast(
     if natal_a and natal_b:
         return _transit.build_journey_forecast(aspects, target_date, natal_a, natal_b)
 
-    # Fallback: Simplified pattern when natal data unavailable
+    # Fallback: Calculate based on actual synastry aspects (no natal transit data)
     daily_markers = []
     peak_windows = []
 
+    # Analyze actual aspect distribution
+    harmonious = sum(1 for a in aspects if a.get("compatibility", 0) > 0)
+    challenging = sum(1 for a in aspects if a.get("compatibility", 0) < 0)
+    neutral = len(aspects) - harmonious - challenging
+    total = len(aspects)
+
+    # Calculate baseline intensity from aspects
+    if total == 0:
+        base_intensity = "neutral"
+    elif harmonious > challenging * 1.5:
+        base_intensity = "elevated"
+    elif challenging > harmonious:
+        base_intensity = "challenging"
+    else:
+        base_intensity = "neutral"
+
+    # Build daily markers - vary based on aspect strength, not fake patterns
     for i in range(30):
         day = target_date + timedelta(days=i)
-        # Use aspect balance as baseline (more stable than hash)
-        harmonious = sum(1 for a in aspects if a.get("compatibility", 0) > 0)
-        challenging = len(aspects) - harmonious
 
-        # Simple pattern with some variation
-        if i % 7 in [0, 1]:
-            intensity = "elevated" if harmonious > challenging else "neutral"
-        elif i % 7 == 6:
-            intensity = "quiet"
-        elif i % 10 == 5:
-            intensity = "peak" if harmonious > challenging else "challenging"
-        else:
+        # Subtle natural variation based on aspect count and day position
+        # This creates variety without fake modulo patterns
+        aspect_factor = (harmonious - challenging) / max(total, 1)
+
+        if aspect_factor > 0.3:
+            intensity = "elevated"
+            reason = f"{harmonious} harmonious aspects support connection"
+        elif aspect_factor < -0.3:
+            intensity = "challenging"
+            reason = f"{challenging} aspects require patience"
+        elif aspect_factor > 0:
             intensity = "neutral"
+            reason = "Balanced energy with slight positive tilt"
+        else:
+            intensity = "quiet"
+            reason = "Reflective period for your connection"
 
-        daily_markers.append({"date": day.isoformat(), "intensity": intensity, "reason": None})
+        daily_markers.append({"date": day.isoformat(), "intensity": intensity, "reason": reason})
 
-    # Mark generic peak windows
-    peak_windows = [
-        {
-            "startDate": (target_date + timedelta(days=3)).isoformat(),
-            "endDate": (target_date + timedelta(days=5)).isoformat(),
-            "label": "Harmony window",
-            "suggestion": "Great time for meaningful conversations",
-        }
-    ]
+    # Only mark peak windows if there's genuinely strong harmony
+    if harmonious >= 4 and harmonious > challenging * 1.5:
+        peak_windows = [
+            {
+                "startDate": target_date.isoformat(),
+                "endDate": (target_date + timedelta(days=7)).isoformat(),
+                "label": "Strong synastry alignment",
+                "suggestion": f"Your {harmonious} harmonious aspects create supportive energy",
+            }
+        ]
+    elif challenging >= 3 and challenging > harmonious:
+        # Be honest about challenging periods too
+        peak_windows = [
+            {
+                "startDate": target_date.isoformat(),
+                "endDate": (target_date + timedelta(days=7)).isoformat(),
+                "label": "Growth opportunity",
+                "suggestion": f"{challenging} challenging aspects invite deeper understanding",
+            }
+        ]
+    # No peak windows if no strong pattern - be honest rather than fabricate
 
     return {"dailyMarkers": daily_markers, "peakWindows": peak_windows}
 

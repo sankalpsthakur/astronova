@@ -418,7 +418,12 @@ extension AuthState {
                     self.state = .needsProfileSetup
                 }
             }
-            
+
+            // Sync birth data to server after successful auth
+            if profileManager.hasCompleteLocationData {
+                await profileManager.syncBirthDataToServer(userId: authResponse.user.id)
+            }
+
         } catch {
             #if DEBUG
             debugPrint("[Auth] Apple authentication failed: \(error.localizedDescription)")

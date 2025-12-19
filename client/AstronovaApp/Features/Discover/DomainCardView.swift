@@ -21,56 +21,53 @@ struct DomainCardView: View {
     }
 
     var body: some View {
-        Button {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+            // Icon and title row
+            HStack(spacing: Cosmic.Spacing.xs) {
+                Image(systemName: insight.domain.icon)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(accentColor)
+
+                Text(insight.domain.displayName)
+                    .font(.cosmicCalloutEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+
+                Spacer()
+
+                // Intensity indicator
+                intensityDot
+            }
+
+            // Short insight text
+            Text(insight.shortInsight)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+        }
+        .padding(Cosmic.Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .fill(Color.cosmicSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .stroke(
+                    isPressed ? accentColor.opacity(0.4) : accentColor.opacity(0.15),
+                    lineWidth: Cosmic.Border.hairline
+                )
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .contentShape(Rectangle())
+        .onTapGesture {
             CosmicHaptics.light()
             onTap()
-        } label: {
-            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-                // Icon and title row
-                HStack(spacing: Cosmic.Spacing.xs) {
-                    Image(systemName: insight.domain.icon)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(accentColor)
-
-                    Text(insight.domain.displayName)
-                        .font(.cosmicCalloutEmphasis)
-                        .foregroundStyle(Color.cosmicTextPrimary)
-
-                    Spacer()
-
-                    // Intensity indicator
-                    intensityDot
-                }
-
-                // Short insight text
-                Text(insight.shortInsight)
-                    .font(.cosmicCaption)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(Cosmic.Spacing.m)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
-                    .fill(Color.cosmicSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
-                    .stroke(
-                        isPressed ? accentColor.opacity(0.4) : accentColor.opacity(0.15),
-                        lineWidth: Cosmic.Border.hairline
-                    )
-            )
-            .scaleEffect(isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        .onLongPressGesture(minimumDuration: 0.01, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
     }
 
     private var intensityDot: some View {
@@ -103,57 +100,54 @@ struct DomainCardWideView: View {
     }
 
     var body: some View {
-        Button {
+        HStack(spacing: Cosmic.Spacing.m) {
+            // Icon
+            Image(systemName: insight.domain.icon)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(accentColor)
+                .frame(width: 40)
+
+            // Content
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                Text(insight.domain.displayName)
+                    .font(.cosmicCalloutEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+
+                Text(insight.shortInsight)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            // Chevron
+            Image(systemName: "chevron.right")
+                .font(.cosmicCaptionEmphasis)
+                .foregroundStyle(Color.cosmicTextTertiary)
+        }
+        .padding(Cosmic.Spacing.m)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .fill(Color.cosmicSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .stroke(
+                    isPressed ? accentColor.opacity(0.4) : accentColor.opacity(0.15),
+                    lineWidth: Cosmic.Border.hairline
+                )
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .contentShape(Rectangle())
+        .onTapGesture {
             CosmicHaptics.light()
             onTap()
-        } label: {
-            HStack(spacing: Cosmic.Spacing.m) {
-                // Icon
-                Image(systemName: insight.domain.icon)
-                    .font(.system(size: 24, weight: .medium))
-                    .foregroundStyle(accentColor)
-                    .frame(width: 40)
-
-                // Content
-                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                    Text(insight.domain.displayName)
-                        .font(.cosmicCalloutEmphasis)
-                        .foregroundStyle(Color.cosmicTextPrimary)
-
-                    Text(insight.shortInsight)
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                // Chevron
-                Image(systemName: "chevron.right")
-                    .font(.cosmicCaptionEmphasis)
-                    .foregroundStyle(Color.cosmicTextTertiary)
-            }
-            .padding(Cosmic.Spacing.m)
-            .background(
-                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
-                    .fill(Color.cosmicSurface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
-                    .stroke(
-                        isPressed ? accentColor.opacity(0.4) : accentColor.opacity(0.15),
-                        lineWidth: Cosmic.Border.hairline
-                    )
-            )
-            .scaleEffect(isPressed ? 0.98 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isPressed)
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false }
-        )
+        .onLongPressGesture(minimumDuration: 0.01, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
     }
 }
 

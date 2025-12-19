@@ -551,15 +551,12 @@ struct SimpleProfileSetupView: View {
     
     private func generateOfflineInsight() async {
         let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
-        
-        let fallbackInsights = [
-            "Your birth on \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue))\(locationText) reveals a powerful cosmic alignment. The stars suggest you have natural leadership qualities and a deep connection to creative energies.",
-            "Born under the influence of \(formatDate(birthDate.wrappedValue))\(locationText), you carry the gift of intuition and emotional wisdom. The universe has blessed you with the ability to inspire others.",
-            "The celestial patterns on \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue)) indicate a soul destined for transformation and growth. Your journey is one of continuous evolution and self-discovery."
-        ]
-        
+
+        // Be honest when offline - we can't calculate real astrological data without the server
+        let offlineMessage = "Your birth data has been recorded: \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue))\(locationText). Connect to the internet to receive your personalized cosmic insights based on actual planetary positions at your time of birth."
+
         await MainActor.run {
-            personalizedInsight = fallbackInsights.randomElement() ?? fallbackInsights[0]
+            personalizedInsight = offlineMessage
             showPersonalizedInsight()
         }
     }
@@ -8072,7 +8069,7 @@ struct CompellingLandingView: View {
                 }
                 
                 UserDefaults.standard.set(userID, forKey: "apple_user_id")
-                await auth.requestSignIn()
+                await auth.handleAppleSignIn(authorization)
             }
         case .failure(let error):
             #if DEBUG

@@ -267,21 +267,26 @@ class TransitService:
         total_strength = sum(a["strength"] for a in activations)
 
         # Determine state based on activation balance
+        # Scores are calibrated so: 85+=peak, 70+=intense, 55+=strong, 40+=moderate, <40=gentle
         if not activations:
             state = "grounded"
-            score = 55
+            score = 50  # moderate
         elif harmonious_count > challenging_count * 1.5:
             state = "flowing"
-            score = min(100, 65 + int(harmonious_count * 8))
+            # Scale from 55 (strong) to 80 (intense) based on harmonious count
+            score = min(80, 55 + int(harmonious_count * 5))
         elif harmonious_count > challenging_count:
             state = "electric"
-            score = min(95, 60 + int(harmonious_count * 6))
+            # Scale from 50 to 70
+            score = min(70, 50 + int(harmonious_count * 4))
         elif challenging_count > harmonious_count:
             state = "friction"
-            score = max(30, 50 - int(challenging_count * 5))
+            # Lower scores for friction (40-55)
+            score = max(35, 55 - int(challenging_count * 4))
         else:
             state = "magnetic"
-            score = min(85, 60 + int(total_strength * 10))
+            # Balanced state (55-75)
+            score = min(75, 55 + int(total_strength * 5))
 
         # Get top activations for display
         top_activations = [a["description"] for a in activations[:2]]

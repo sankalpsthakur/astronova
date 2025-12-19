@@ -58,11 +58,12 @@ struct MeaningStack: View {
                     }
                 }
 
-                // Theme
-                Text(snapshot.now.theme)
+                // Theme - with fallback to ensure visibility
+                Text(snapshot.now.theme.isEmpty ? "\(snapshot.currentDasha.mahadasha.lord) • \(snapshot.currentDasha.antardasha.lord) Period" : snapshot.now.theme)
                     .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 // Risk & Opportunity
                 HStack(spacing: Cosmic.Spacing.md) {
@@ -71,7 +72,7 @@ struct MeaningStack: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicWarning)
-                        Text(snapshot.now.risk)
+                        Text(snapshot.now.risk.isEmpty ? "Be mindful" : snapshot.now.risk)
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
@@ -83,7 +84,7 @@ struct MeaningStack: View {
                         Image(systemName: "sparkles")
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicGold)
-                        Text(snapshot.now.opportunity)
+                        Text(snapshot.now.opportunity.isEmpty ? "Growth available" : snapshot.now.opportunity)
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }

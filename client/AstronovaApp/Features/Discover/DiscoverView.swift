@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// Main Discover tab view - daily check-in hub with life domain cards
 struct DiscoverView: View {
@@ -14,6 +15,10 @@ struct DiscoverView: View {
     @State private var selectedReport: DetailedReport?
     @State private var showingDomainDetail = false
     @State private var selectedDomainInsight: DomainInsight?
+    @State private var showingShareSheet = false
+    @State private var shareContent: String = ""
+    @State private var showingReminderConfirmation = false
+    @State private var reminderMessage = ""
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -212,10 +217,7 @@ struct DiscoverView: View {
     private func actionsRow(_ snapshot: DiscoverSnapshot) -> some View {
         HStack(spacing: Cosmic.Spacing.m) {
             // Share button
-            Button {
-                CosmicHaptics.light()
-                // Share functionality
-            } label: {
+            ShareLink(item: shareableText(from: snapshot)) {
                 Label("Share", systemImage: "square.and.arrow.up")
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextSecondary)
@@ -226,7 +228,7 @@ struct DiscoverView: View {
             // Reminder button
             Button {
                 CosmicHaptics.light()
-                // Set reminder
+                scheduleReminder(for: snapshot)
             } label: {
                 Label("Remind me", systemImage: "bell")
                     .font(.cosmicCaption)
@@ -234,6 +236,66 @@ struct DiscoverView: View {
             }
         }
         .padding(.vertical, Cosmic.Spacing.s)
+        .alert("Reminder Set", isPresented: $showingReminderConfirmation) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(reminderMessage)
+        }
+    }
+
+    // MARK: - Share & Reminder Helpers
+
+    private func shareableText(from snapshot: DiscoverSnapshot) -> String {
+        var text = "✨ My Cosmic Insight for Today ✨\n\n"
+        text += "Theme: \(snapshot.now.theme)\n\n"
+
+        if let firstTile = snapshot.now.narrativeTiles.first {
+            text += "\"\(firstTile.text)\"\n\n"
+        }
+
+        if let keywords = snapshot.keywords, !keywords.isEmpty {
+            text += "Keywords: \(keywords.joined(separator: ", "))\n\n"
+        }
+
+        text += "— Astronova 🌟"
+        return text
+    }
+
+    private func scheduleReminder(for snapshot: DiscoverSnapshot) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else {
+                DispatchQueue.main.async {
+                    reminderMessage = "Please enable notifications in Settings to use reminders."
+                    showingReminderConfirmation = true
+                }
+                return
+            }
+
+            let content = UNMutableNotificationContent()
+            content.title = "🌟 Your Daily Cosmic Check-in"
+            content.body = "Today's theme: \(snapshot.now.theme). Tap to discover your insights!"
+            content.sound = .default
+
+            // Schedule for tomorrow at 8 AM
+            var dateComponents = DateComponents()
+            dateComponents.hour = 8
+            dateComponents.minute = 0
+
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+            let request = UNNotificationRequest(identifier: "daily-cosmic-reminder", content: content, trigger: trigger)
+
+            UNUserNotificationCenter.current().add(request) { error in
+                DispatchQueue.main.async {
+                    if error == nil {
+                        reminderMessage = "You'll be reminded tomorrow at 8:00 AM to check your cosmic insights!"
+                        CosmicHaptics.success()
+                    } else {
+                        reminderMessage = "Could not set reminder. Please try again."
+                    }
+                    showingReminderConfirmation = true
+                }
+            }
+        }
     }
 
     // MARK: - Loading State

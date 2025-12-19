@@ -84,6 +84,11 @@ struct SynastryCompassView: View {
             .overlay(tooltipOverlay)
         }
         .aspectRatio(1, contentMode: .fit)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                .fill(Color.cosmicBackgroundDark)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Synastry compass showing planetary connections between two people")
     }

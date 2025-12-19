@@ -140,128 +140,6 @@ ASPECT_MEANINGS = {
     "opposition": {"label": "opposite", "strength": 0.8, "nature": "polarizing"},
 }
 
-# Domain-specific insight templates
-DOMAIN_INSIGHTS = {
-    "personal": {
-        "high": [
-            "Strong focus day awaits",
-            "Your authentic self shines today",
-            "Personal power is amplified",
-        ],
-        "medium": [
-            "Steady progress on self-development",
-            "Inner clarity available today",
-            "Good day for self-reflection",
-        ],
-        "low": [
-            "Take time for self-care",
-            "Gentle approach to personal goals",
-            "Rest and recharge your spirit",
-        ],
-    },
-    "love": {
-        "high": [
-            "Gentle day for bonding",
-            "Romance energy is heightened",
-            "Hearts connect easily today",
-        ],
-        "medium": [
-            "Warm connections possible",
-            "Love flows at comfortable pace",
-            "Good for relationship conversations",
-        ],
-        "low": [
-            "Give relationships extra patience",
-            "Focus on self-love today",
-            "Quiet companionship preferred",
-        ],
-    },
-    "career": {
-        "high": [
-            "Take bold initiatives",
-            "Career momentum building",
-            "Professional recognition likely",
-        ],
-        "medium": [
-            "Steady work progress",
-            "Good for planning ahead",
-            "Collaboration opportunities arise",
-        ],
-        "low": [
-            "Avoid major decisions",
-            "Review before committing",
-            "Behind-the-scenes work favored",
-        ],
-    },
-    "wealth": {
-        "high": [
-            "Financial opportunities present",
-            "Abundance energy flowing",
-            "Good for investments",
-        ],
-        "medium": [
-            "Steady financial currents",
-            "Moderate spending advised",
-            "Plan for long-term growth",
-        ],
-        "low": [
-            "Avoid major decisions",
-            "Review finances carefully",
-            "Postpone big purchases",
-        ],
-    },
-    "health": {
-        "high": [
-            "High energy for exercise",
-            "Physical vitality peaks",
-            "Active pursuits rewarding",
-        ],
-        "medium": [
-            "Moderate energy available",
-            "Balance activity with rest",
-            "Good for routine maintenance",
-        ],
-        "low": [
-            "Rest and recovery day",
-            "Gentle movement preferred",
-            "Listen to your body",
-        ],
-    },
-    "family": {
-        "high": [
-            "Harmony at home today",
-            "Family bonds strengthen",
-            "Nurturing energy flows",
-        ],
-        "medium": [
-            "Comfortable domestic energy",
-            "Good for family conversations",
-            "Home improvements favored",
-        ],
-        "low": [
-            "Give family members space",
-            "Quiet home time preferred",
-            "Address tensions gently",
-        ],
-    },
-    "spiritual": {
-        "high": [
-            "Deep meditation rewarding",
-            "Spiritual insights available",
-            "Intuition heightened",
-        ],
-        "medium": [
-            "Gentle spiritual practice",
-            "Dreams may be meaningful",
-            "Trust quiet guidance",
-        ],
-        "low": [
-            "Stay grounded today",
-            "Practical spirituality favored",
-            "Journal your thoughts",
-        ],
-    },
-}
 
 # Energy state mapping based on planetary aspects
 ENERGY_STATES = {
@@ -494,7 +372,6 @@ def _detect_aspects(planets: Dict[str, Any], target_planet: str) -> List[Dict[st
 
 def _generate_domain_insights(planets: Dict[str, Any], moon_phase: float = 0.5) -> List[Dict[str, Any]]:
     """Generate insights for all 7 life domains based on planetary positions."""
-    import random
     import uuid
 
     insights = []
@@ -543,16 +420,42 @@ def _generate_domain_insights(planets: Dict[str, Any], moon_phase: float = 0.5) 
         # Calculate intensity (0.0 to 1.0)
         intensity = min(1.0, total_strength / max(len(ruling_planets), 1))
 
-        # Select appropriate insight based on intensity
-        if intensity >= 0.7:
-            level = "high"
-        elif intensity >= 0.4:
-            level = "medium"
-        else:
-            level = "low"
+        # Generate dynamic short insight based on actual drivers
+        display_name = domain_config.get("displayName", domain_key.capitalize())
 
-        domain_texts = DOMAIN_INSIGHTS.get(domain_key, DOMAIN_INSIGHTS["personal"])
-        short_insight = random.choice(domain_texts.get(level, domain_texts["medium"]))
+        # Build insight from actual planetary conditions
+        if drivers:
+            primary_driver = drivers[0]
+            planet_name = primary_driver["planet"]
+            sign = primary_driver.get("sign", "")
+            aspect = primary_driver.get("aspect")
+
+            # Determine intensity descriptor
+            if intensity >= 0.7:
+                intensity_word = "strongly"
+                tone = "supportive"
+            elif intensity >= 0.4:
+                intensity_word = "moderately"
+                tone = "steady"
+            else:
+                intensity_word = "gently"
+                tone = "reflective"
+
+            # Build the insight dynamically
+            if aspect:
+                short_insight = f"{planet_name} {aspect} {intensity_word} influences {display_name.lower()}"
+            elif sign:
+                short_insight = f"{planet_name} in {sign} shapes your {display_name.lower()} energy"
+            else:
+                short_insight = f"{planet_name} {intensity_word} activates {display_name.lower()} matters"
+        else:
+            # Fallback when no drivers (should be rare)
+            if intensity >= 0.7:
+                short_insight = f"Strong cosmic support for {display_name.lower()} today"
+            elif intensity >= 0.4:
+                short_insight = f"Steady energy available for {display_name.lower()}"
+            else:
+                short_insight = f"Gentle day for {display_name.lower()} reflection"
 
         # Generate full insight
         full_insight = _generate_full_insight(domain_key, drivers, intensity)
@@ -624,20 +527,49 @@ def _get_cosmic_weather(planets: Dict[str, Any], moon_phase: float, target_date:
                 max_speed = speed
                 dominant = name.capitalize()
 
-    # Determine mood
+    # Determine mood based on actual planetary positions
     retrograde_count = sum(1 for p in planets.values() if isinstance(p, dict) and p.get("retrograde", False))
+    retrograde_planets = [name for name, p in planets.items() if isinstance(p, dict) and p.get("retrograde", False)]
+
+    # Build dynamic summary based on actual conditions
     if retrograde_count >= 3:
         mood = "reflective"
-        summary = "Multiple retrograde planets encourage introspection and revisiting past matters. Take time to review before moving forward."
+        planet_list = ", ".join(retrograde_planets[:3])
+        summary = f"{retrograde_count} planets retrograde ({planet_list}). A time for review and reconsideration rather than new initiatives."
+    elif retrograde_count >= 1:
+        mood = "mixed"
+        summary = f"{retrograde_planets[0]} retrograde adds a reflective undertone. Balance forward motion with periodic review."
     elif moon_phase > 0.45 and moon_phase < 0.55:
         mood = "illuminating"
-        summary = "The Full Moon illuminates your path with clarity. Emotions run high but insights flow freely. Culminations and completions are favored."
+        if dominant:
+            summary = f"Full Moon with {dominant} emphasis. Heightened awareness in {dominant.lower()}-ruled areas. Emotions visible, insights available."
+        else:
+            summary = "Full Moon brings visibility to ongoing matters. What's been building reaches a culmination point."
     elif moon_phase < 0.1 or moon_phase > 0.9:
         mood = "initiating"
-        summary = "The New Moon phase supports fresh starts and new intentions. Plant seeds for what you wish to grow."
+        if dominant:
+            summary = f"New Moon aligns with {dominant} energy. Fresh starts in {dominant.lower()}-influenced areas are supported."
+        else:
+            summary = "New Moon period. Low visibility favors planning over action. Set intentions quietly."
+    elif moon_phase < 0.25:
+        mood = "building"
+        summary = "Waxing phase builds momentum. Actions taken now gain traction. Good for steady progress."
+    elif moon_phase > 0.75:
+        mood = "releasing"
+        summary = "Waning phase favors completion and letting go. Clear out what no longer serves before the next cycle."
     else:
-        mood = "harmonious"
-        summary = "A balanced day of cosmic harmony awaits. The planets support steady progress across all areas of life."
+        # Calculate actual planetary distribution for honest assessment
+        strong_planets = sum(1 for p in planets.values() if isinstance(p, dict) and p.get("strength", 0) > 0.6)
+        weak_planets = sum(1 for p in planets.values() if isinstance(p, dict) and p.get("strength", 0) < 0.4)
+        if strong_planets > weak_planets:
+            mood = "supportive"
+            summary = f"{strong_planets} planets in strong positions. Conditions favor initiative in their domains."
+        elif weak_planets > strong_planets:
+            mood = "cautious"
+            summary = f"Several planets in weaker positions. A day for maintenance rather than major launches."
+        else:
+            mood = "balanced"
+            summary = "Mixed planetary strengths create a neutral backdrop. Results depend more on your own effort today."
 
     # Moon phase name
     if moon_phase < 0.03:

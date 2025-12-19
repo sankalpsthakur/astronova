@@ -12,6 +12,7 @@ struct ConnectView: View {
     @State private var isLoading = true
     @State private var loadError: Error?
     @State private var refreshing = false
+    @StateObject private var contactsService = ContactsService.shared
 
     var body: some View {
         NavigationStack {
@@ -48,6 +49,7 @@ struct ConnectView: View {
             }
             .task {
                 await loadRelationships()
+                await contactsService.fetchContacts()
             }
             .refreshable {
                 await loadRelationships()
@@ -200,17 +202,14 @@ struct ConnectView: View {
                         action: { showAddSheet = true }
                     )
 
-                    // Suggested people (could be from contacts, recent, etc.)
-                    ForEach(suggestedPeople, id: \.name) { person in
-                        SuggestedPersonCard(
-                            name: person.name,
-                            handle: person.handle,
+                    // Suggested contacts from device
+                    ForEach(suggestedContacts) { contact in
+                        SuggestedContactCard(
+                            contact: contact,
                             onAdd: {
-                                // Add to relationships
+                                // Pre-fill add sheet with contact info
+                                showAddSheet = true
                                 CosmicHaptics.success()
-                            },
-                            onDismiss: {
-                                // Remove from suggestions
                             }
                         )
                     }
@@ -220,12 +219,17 @@ struct ConnectView: View {
         }
     }
 
-    private var suggestedPeople: [(name: String, handle: String)] {
-        [
-            ("Sejal D'souza", "@sejsej123"),
-            ("Arpit Agrawal", "@arpit5028"),
-            ("Yukti Agrawal", "@yuktiagr")
-        ]
+    /// Suggested contacts from device - prioritizes those with birthdays
+    private var suggestedContacts: [ContactPerson] {
+        // Filter out contacts already in relationships
+        let existingNames = Set(relationships.map { $0.name.lowercased() })
+        let available = contactsService.contacts.filter { contact in
+            !existingNames.contains(contact.fullName.lowercased())
+        }
+        // Prioritize contacts with birthdays (more useful for astrology)
+        let withBirthdays = available.filter { $0.hasBirthday }
+        let suggestions = withBirthdays.isEmpty ? Array(available.prefix(5)) : Array(withBirthdays.prefix(5))
+        return suggestions
     }
 
     // MARK: - Relationships Section
@@ -358,6 +362,70 @@ struct SuggestedPersonCard: View {
                     .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .lineLimit(1)
+            }
+            .frame(width: 80)
+
+            Button(action: onAdd) {
+                Text("ADD")
+                    .font(.cosmicMicro)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color.cosmicBackground)
+                    .padding(.horizontal, Cosmic.Spacing.md)
+                    .padding(.vertical, Cosmic.Spacing.xxs)
+                    .background(
+                        Capsule()
+                            .fill(Color.cosmicTextPrimary)
+                    )
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(width: 100)
+    }
+}
+
+// MARK: - Suggested Contact Card (from device contacts)
+
+struct SuggestedContactCard: View {
+    let contact: ContactPerson
+    let onAdd: () -> Void
+
+    var body: some View {
+        VStack(spacing: Cosmic.Spacing.xs) {
+            // Avatar with contact image or initials
+            if let imageData = contact.imageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 56, height: 56)
+                    .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(Color.cosmicSurface)
+                    .frame(width: 56, height: 56)
+                    .overlay(
+                        Text(contact.initials)
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                    )
+            }
+
+            VStack(spacing: 2) {
+                Text(contact.fullName)
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .lineLimit(1)
+
+                if let birthday = contact.birthdayString {
+                    Text(birthday)
+                        .font(.cosmicMicro)
+                        .foregroundStyle(Color.cosmicGold)
+                        .lineLimit(1)
+                } else {
+                    Text("Add birthday")
+                        .font(.cosmicMicro)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .lineLimit(1)
+                }
             }
             .frame(width: 80)
 

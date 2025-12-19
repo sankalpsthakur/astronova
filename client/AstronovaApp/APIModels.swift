@@ -859,79 +859,22 @@ struct CosmicWeather: Codable {
     let moonPhase: String?
 }
 
-// MARK: - Sample Data
+// MARK: - Unavailable State Data (shown when API fails)
 
 extension DomainInsight {
-    static let samples: [DomainInsight] = [
+    /// Creates an unavailable insight for a given domain when API fails
+    static func unavailable(for domain: LifeDomain) -> DomainInsight {
         DomainInsight(
-            domain: .personal,
-            shortInsight: "Strong focus day awaits",
-            fullInsight: "Today's planetary alignments support deep self-reflection and personal growth. Your inner clarity is heightened, making this an excellent time for journaling, meditation, or setting intentions for the weeks ahead.",
-            drivers: [
-                PlanetaryDriver(planet: "Sun", sign: "Sagittarius", explanation: "Your core vitality is boosted, bringing confidence and clarity to personal matters."),
-                PlanetaryDriver(planet: "Mercury", aspect: "trine Saturn", explanation: "Mental discipline supports focused thinking and long-term planning.")
-            ],
-            intensity: 0.8
-        ),
-        DomainInsight(
-            domain: .love,
-            shortInsight: "Gentle day for bonding",
-            fullInsight: "Venus's harmonious aspect creates a warm atmosphere for romantic connections. Whether single or partnered, express your affection openly today. Small gestures of love carry extra weight.",
-            drivers: [
-                PlanetaryDriver(planet: "Venus", aspect: "trine Jupiter", explanation: "Harmonious energy for relationships. Good time for expressing affection."),
-                PlanetaryDriver(planet: "Moon", sign: "Cancer", explanation: "Emotional sensitivity heightened. Focus on nurturing close bonds.")
-            ],
-            intensity: 0.7
-        ),
-        DomainInsight(
-            domain: .career,
-            shortInsight: "Take bold initiatives",
-            fullInsight: "Mars energizes your professional sector, making this an ideal time to pitch ideas, negotiate deals, or take on challenging projects. Your assertiveness is well-received today.",
-            drivers: [
-                PlanetaryDriver(planet: "Mars", sign: "Leo", explanation: "Courage and initiative are amplified in professional matters."),
-                PlanetaryDriver(planet: "Jupiter", aspect: "sextile Sun", explanation: "Opportunities for expansion and recognition are present.")
-            ],
-            intensity: 0.85
-        ),
-        DomainInsight(
-            domain: .wealth,
-            shortInsight: "Avoid major decisions",
-            fullInsight: "Mercury's challenging aspect suggests caution with financial decisions today. Review contracts carefully and postpone major investments if possible. Focus on research rather than action.",
-            drivers: [
-                PlanetaryDriver(planet: "Mercury", aspect: "square Neptune", explanation: "Potential for confusion in financial matters. Double-check details."),
-                PlanetaryDriver(planet: "Saturn", sign: "Pisces", explanation: "Long-term financial restructuring continues in the background.")
-            ],
-            intensity: 0.4
-        ),
-        DomainInsight(
-            domain: .health,
-            shortInsight: "High energy for exercise",
-            fullInsight: "Your physical vitality peaks today. Channel this energy into movement, whether intense workouts or refreshing walks. Your body responds well to activity and craves motion.",
-            drivers: [
-                PlanetaryDriver(planet: "Mars", aspect: "trine Ascendant", explanation: "Physical energy and motivation are at a high point."),
-                PlanetaryDriver(planet: "Sun", sign: "Sagittarius", explanation: "Fire sign energy promotes active pursuits and outdoor activities.")
-            ],
-            intensity: 0.9
-        ),
-        DomainInsight(
-            domain: .family,
-            shortInsight: "Harmony at home today",
-            fullInsight: "The Moon's gentle aspects support domestic peace and family bonding. Plan a shared meal or simply enjoy quality time together. Conversations flow easily and understanding comes naturally.",
-            drivers: [
-                PlanetaryDriver(planet: "Moon", aspect: "trine Venus", explanation: "Emotional warmth flows easily in family interactions."),
-                PlanetaryDriver(planet: "Cancer", sign: "4th House", explanation: "Home and family matters receive cosmic support today.")
-            ],
-            intensity: 0.75
-        ),
-        DomainInsight(
-            domain: .spiritual,
-            shortInsight: "Deep meditation rewarding",
-            fullInsight: "Neptune's influence opens intuitive channels today. Meditation, contemplation, or spiritual practices yield profound insights. Trust your inner guidance and pay attention to dreams.",
-            drivers: [
-                PlanetaryDriver(planet: "Neptune", sign: "Pisces", explanation: "Spiritual sensitivity and intuition are heightened."),
-                PlanetaryDriver(planet: "Moon", aspect: "sextile Neptune", explanation: "Emotional and spiritual realms are harmoniously connected.")
-            ],
-            intensity: 0.8
+            domain: domain,
+            shortInsight: "Unable to load",
+            fullInsight: "Connect to the internet to receive your personalized \(domain.rawValue) insights based on current planetary positions.",
+            drivers: [],
+            intensity: 0.5
         )
-    ]
+    }
+
+    /// Fallback insights shown when API is unavailable - honest about the offline state
+    static let samples: [DomainInsight] = LifeDomain.allCases.map { domain in
+        unavailable(for: domain)
+    }
 }
