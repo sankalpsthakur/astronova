@@ -307,12 +307,14 @@ def create_app():
 </html>"""
         return Response(html, mimetype="text/html")
 
-    # Health endpoints
+    # Health endpoints - exempt from rate limiting for Render health checks
     @app.route("/health", methods=["GET"])
+    @limiter.exempt
     def root_health():
         return jsonify({"status": "ok"})
 
     @app.route("/api/v1/health", methods=["GET"])
+    @limiter.exempt
     def api_health():
         return jsonify({"status": "ok"})
 
