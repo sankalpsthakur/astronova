@@ -100,6 +100,8 @@ class NetworkClient: NetworkClientProtocol {
     private let baseURL: String
     private let session: URLSession
     private var jwtToken: String?
+    private let userIdKey = "client_user_id"
+    private var cachedUserId: String?
     
     public init(baseURL: String? = nil, session: URLSession? = nil) {
         // Prefer explicit param, otherwise fall back to AppConfig
@@ -113,6 +115,22 @@ class NetworkClient: NetworkClientProtocol {
             config.timeoutIntervalForResource = 30
             self.session = URLSession(configuration: config)
         }
+    }
+
+    private func getOrCreateUserId() -> String {
+        if let cachedUserId {
+            return cachedUserId
+        }
+
+        if let existing = UserDefaults.standard.string(forKey: userIdKey), !existing.isEmpty {
+            cachedUserId = existing
+            return existing
+        }
+
+        let created = UUID().uuidString
+        UserDefaults.standard.set(created, forKey: userIdKey)
+        cachedUserId = created
+        return created
     }
     
     /// Generic method to make API requests
@@ -129,6 +147,7 @@ class NetworkClient: NetworkClientProtocol {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(getOrCreateUserId(), forHTTPHeaderField: "X-User-Id")
         
         // Add JWT token if available
         if let jwtToken = jwtToken {
@@ -179,11 +198,53 @@ class NetworkClient: NetworkClientProtocol {
             
             do {
                 let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
+                // Use custom date decoding to handle ISO8601 with fractional seconds
+                decoder.dateDecodingStrategy = .custom { decoder in
+                    let container = try decoder.singleValueContainer()
+                    let dateString = try container.decode(String.self)
+
+                    // Try ISO8601 with fractional seconds first
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                    if let date = isoFormatter.date(from: dateString) {
+                        return date
+                    }
+
+                    // Fall back to standard ISO8601
+                    isoFormatter.formatOptions = [.withInternetDateTime]
+                    if let date = isoFormatter.date(from: dateString) {
+                        return date
+                    }
+
+                    // Try ISO8601-like format without timezone (common in Python datetime.isoformat())
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+                    dateFormatter.timeZone = TimeZone(identifier: "UTC")
+                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+                    if let date = dateFormatter.date(from: dateString) {
+                        return date
+                    }
+
+                    // Try without fractional seconds
+                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                    if let date = dateFormatter.date(from: dateString) {
+                        return date
+                    }
+
+                    // Try date-only format
+                    dateFormatter.dateFormat = "yyyy-MM-dd"
+                    if let date = dateFormatter.date(from: dateString) {
+                        return date
+                    }
+
+                    throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date: \(dateString)")
+                }
                 return try decoder.decode(responseType, from: data)
             } catch {
-                print("Decoding error: \(error)")
-                print("Response data: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+                #if DEBUG
+                // Only log decoding errors in debug builds, never response data
+                debugPrint("[NetworkClient] Decoding error for \(responseType): \(error.localizedDescription)")
+                #endif
                 throw NetworkError.decodingError
             }
         } catch {

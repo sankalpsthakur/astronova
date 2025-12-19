@@ -45,9 +45,11 @@ class AuthState: ObservableObject {
         
         // Add new item
         let status = SecItemAdd(query as CFDictionary, nil)
+        #if DEBUG
         if status != errSecSuccess {
-            print("Failed to store JWT token in Keychain: \(status)")
+            debugPrint("[AuthState] Failed to store JWT token in Keychain: \(status)")
         }
+        #endif
     }
     
     private func getJWTToken() -> String? {
@@ -77,9 +79,11 @@ class AuthState: ObservableObject {
         ]
         
         let status = SecItemDelete(query as CFDictionary)
+        #if DEBUG
         if status != errSecSuccess && status != errSecItemNotFound {
-            print("Failed to delete JWT token from Keychain: \(status)")
+            debugPrint("[AuthState] Failed to delete JWT token from Keychain: \(status)")
         }
+        #endif
     }
     
     // Generate nonce for Apple Sign-In security
@@ -168,7 +172,9 @@ class AuthState: ObservableObject {
                     self.connectionError = error.localizedDescription
                 }
             }
-            print("API connectivity check failed: \(error)")
+            #if DEBUG
+            debugPrint("[Auth] API connectivity check failed: \(error.localizedDescription)")
+            #endif
         }
     }
     
@@ -196,7 +202,9 @@ class AuthState: ObservableObject {
         let apiConnected = await MainActor.run { self.isAPIConnected }
         if !apiConnected {
             // Still allow offline functionality
-            print("API not connected, proceeding with offline mode")
+            #if DEBUG
+            debugPrint("[Auth] API not connected, proceeding with offline mode")
+            #endif
         }
         
         // Simulate sign-in process - in production this would integrate with authentication provider
@@ -232,7 +240,9 @@ class AuthState: ObservableObject {
                 state = .signedIn
             }
         } catch {
-            print("Failed to save profile during setup completion: \(error)")
+            #if DEBUG
+            debugPrint("[Auth] Failed to save profile during setup completion: \(error.localizedDescription)")
+            #endif
             await MainActor.run {
                 // Still transition to signedIn state as profile data is in memory
                 state = .signedIn
@@ -298,23 +308,23 @@ class AuthState: ObservableObject {
     
     /// Get feature availability for current user type
     var featureAvailability: FeatureAvailability {
-        if isAnonymousUser {
+        if isQuickStartUser {
             return FeatureAvailability(
                 canGenerateCharts: isAPIConnected,
-                canSaveData: true,
-                canAccessPremiumFeatures: false,
-                canSyncAcrossDevices: false,
-                hasUnlimitedAccess: false,
-                maxChartsPerDay: isAPIConnected ? 3 : 1
-            )
-        } else if isQuickStartUser {
-            return FeatureAvailability(
-                canGenerateCharts: isAPIConnected,
-                canSaveData: true,
+                canSaveData: false,
                 canAccessPremiumFeatures: false,
                 canSyncAcrossDevices: false,
                 hasUnlimitedAccess: false,
                 maxChartsPerDay: isAPIConnected ? 5 : 2
+            )
+        } else if isAnonymousUser {
+            return FeatureAvailability(
+                canGenerateCharts: isAPIConnected,
+                canSaveData: false,
+                canAccessPremiumFeatures: false,
+                canSyncAcrossDevices: false,
+                hasUnlimitedAccess: false,
+                maxChartsPerDay: isAPIConnected ? 3 : 1
             )
         } else if hasSignedIn && jwtToken != nil {
             return FeatureAvailability(
@@ -369,7 +379,9 @@ extension AuthState {
             await MainActor.run {
                 self.authError = "Failed to get Apple ID token"
             }
-            print("Failed to get Apple ID token")
+            #if DEBUG
+            debugPrint("[Auth] Failed to get Apple ID token")
+            #endif
             return
         }
         
@@ -408,7 +420,9 @@ extension AuthState {
             }
             
         } catch {
-            print("Apple authentication failed: \(error)")
+            #if DEBUG
+            debugPrint("[Auth] Apple authentication failed: \(error.localizedDescription)")
+            #endif
             await MainActor.run {
                 if let networkError = error as? NetworkError {
                     switch networkError {
@@ -466,8 +480,10 @@ extension AuthState {
                     break
                 }
             } else {
-                // Unknown error, keep user signed in but log
-                print("Token validation failed with unknown error: \(error)")
+                // Unknown error, keep user signed in
+                #if DEBUG
+                debugPrint("[Auth] Token validation failed with unknown error: \(error.localizedDescription)")
+                #endif
             }
         }
     }

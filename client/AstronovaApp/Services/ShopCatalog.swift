@@ -86,8 +86,15 @@ struct ShopCatalog {
         .init(id: "c50", productId: "chat_credits_50", title: "50 Replies", subtitle: "Best value", credits: 50)
     ]
 
-    // Price helper sourced from BasicStoreManager so prices don't drift
+    // Price helper - prefer StoreKitManager (real prices), fallback to BasicStoreManager for tests
     static func price(for productId: String) -> String {
-        BasicStoreManager.shared.products[productId] ?? "$12.99"
+        // Try StoreKitManager first (real App Store prices)
+        if let storeKitPrice = StoreKitManager.shared.products[productId], !storeKitPrice.isEmpty {
+            return storeKitPrice
+        }
+        // Fallback to mock prices (for testing/development only)
+        return BasicStoreManager.shared.products[productId] ?? "$12.99"
     }
 }
+
+

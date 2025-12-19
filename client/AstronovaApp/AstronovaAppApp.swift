@@ -9,13 +9,32 @@ import SwiftUI
 
 @main
 struct AstronovaAppApp: App {
-    @StateObject private var authState = AuthState()
+    @StateObject private var authState: AuthState
+
+    init() {
+        // Apply UI test configuration if running in test mode
+        TestEnvironment.shared.applyTestConfiguration()
+
+        // Pro bypass only for explicit UI tests, not all Debug builds
+        // This prevents accidental free access in development builds
+        #if DEBUG
+        if TestEnvironment.shared.isUITest {
+            UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
+        }
+        #endif
+
+        _authState = StateObject(wrappedValue: AuthState())
+    }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(authState)
-                .onAppear { Analytics.shared.track(.appLaunched, properties: nil) }
+                .onAppear {
+                    if !TestEnvironment.shared.isUITest {
+                        Analytics.shared.track(.appLaunched, properties: nil)
+                    }
+                }
         }
     }
 }

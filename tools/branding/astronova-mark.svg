@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="orbitStroke" x1="512" y1="1024" x2="512" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CCF2FF" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#73D9FF" stop-opacity="0.60"/>
+    </linearGradient>
+    <linearGradient id="starFill" x1="512" y1="307" x2="512" y2="717" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#9EEBFF"/>
+    </linearGradient>
+    <radialGradient id="planetGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(829 384) rotate(90) scale(96)">
+      <stop offset="0" stop-color="#FABF26" stop-opacity="0.40"/>
+      <stop offset="1" stop-color="#FABF26" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="planetHighlight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(815 396) rotate(90) scale(48)">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Orbit -->
+  <path d="M 395 191 A 342 342 0 1 1 190 395" stroke="url(#orbitStroke)" stroke-width="72" stroke-linecap="round"/>
+
+  <!-- Planet -->
+  <circle cx="829" cy="384" r="96" fill="url(#planetGlow)"/>
+  <circle cx="829" cy="384" r="41" fill="#FABF26"/>
+  <circle cx="829" cy="384" r="41" fill="url(#planetHighlight)"/>
+
+  <!-- Nova star -->
+  <path d="M512 307 L566 458 L717 512 L566 566 L512 717 L458 566 L307 512 L458 458 Z" fill="url(#starFill)"/>
+</svg>
+

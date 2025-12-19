@@ -8,6 +8,10 @@ struct DailyGuidance: Codable, Equatable {
     let relationships: String
     let energy: String
     let sourceSummary: String?
+    let horoscopeText: String?
+    let keywords: [String]?
+    let luckyNumbers: [Int]?
+    let compatibility: [String]?
 }
 
 /// Maps HoroscopeResponse to compact Home tiles and caches last 3 days per sign.
@@ -19,7 +23,7 @@ final class HomeGuidanceService: ObservableObject {
 
     func loadGuidance(sign: String, date: Date = Date()) async throws -> DailyGuidance {
         let key = cacheKey(sign: sign, date: date)
-        if let cached = read(key: key) { return cached }
+        if let cached = read(key: key), cached.horoscopeText != nil { return cached }
 
         let response = try await api.getDailyHoroscope(for: sign, date: date)
         let dg = transform(response)
@@ -51,7 +55,18 @@ final class HomeGuidanceService: ObservableObject {
         let relationships = pick(["love","relationship","partner","friend","family","communicat","listen"], fallback: "Lead with empathy; ask one more question.")
         let energy = pick(["energy","rest","health","exercise","sleep","recharge","pace"], fallback: "Energy peaks mid‑day; schedule deep work 10–1.")
 
-        return DailyGuidance(date: hr.date, sign: hr.sign.capitalized, focus: focus, relationships: relationships, energy: energy, sourceSummary: sentences.first)
+        return DailyGuidance(
+            date: hr.date,
+            sign: hr.sign.capitalized,
+            focus: focus,
+            relationships: relationships,
+            energy: energy,
+            sourceSummary: sentences.first,
+            horoscopeText: hr.horoscope,
+            keywords: hr.keywords,
+            luckyNumbers: hr.luckyNumbers,
+            compatibility: hr.compatibility
+        )
     }
 
     // MARK: - Cache
@@ -87,4 +102,3 @@ final class HomeGuidanceService: ObservableObject {
         userDefaults.set(index, forKey: idxKey)
     }
 }
-

@@ -1,11 +1,10 @@
 import SwiftUI
 import MapKit
-import Combine
 
 struct MapKitAutocompleteView: View {
     @Binding var selectedLocation: LocationResult?
     @State private var searchText = ""
-    @State private var suggestions: [LocationSuggestion] = []
+    @State private var suggestions: [LocationResult] = []
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
@@ -64,10 +63,8 @@ struct MapKitAutocompleteView: View {
             // Autocomplete suggestions
             if !suggestions.isEmpty && isSearchFocused {
                 VStack(spacing: 0) {
-                    ForEach(suggestions) { suggestion in
-                        LocationSuggestionRow(suggestion: suggestion) {
-                            selectSuggestion(suggestion)
-                        }
+                    ForEach(suggestions, id: \.self) { suggestion in
+                        LocationResultRow(location: suggestion) { selectSuggestion(suggestion) }
                     }
                 }
                 .background(Color(.systemBackground))
@@ -95,39 +92,13 @@ struct MapKitAutocompleteView: View {
         searchTask?.cancel()
     }
     
-    private func selectSuggestion(_ suggestion: LocationSuggestion) {
-        searchText = suggestion.displayText
+    private func selectSuggestion(_ suggestion: LocationResult) {
+        searchText = suggestion.fullName
         hideKeyboard()
         suggestions = []
-        
-        // Get full location details from the completion using MapKitLocationService
-        Task {
-            do {
-                let locationResult = try await MapKitLocationService.shared.getLocationFromCompletion(suggestion.completion)
-                
-                await MainActor.run {
-                    selectedLocation = locationResult
-                    onLocationSelected(locationResult)
-                }
-            } catch {
-                print("Failed to get location details: \(error)")
-                await handleFallbackSelection(suggestion)
-            }
-        }
-    }
-    
-    private func handleFallbackSelection(_ suggestion: LocationSuggestion) async {
-        // Fallback - create location without detailed coordinates
-        let fallbackLocation = LocationResult(
-            fullName: suggestion.displayText,
-            coordinate: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-            timezone: TimeZone.current.identifier
-        )
-        
-        await MainActor.run {
-            selectedLocation = fallbackLocation
-            onLocationSelected(fallbackLocation)
-        }
+
+        selectedLocation = suggestion
+        onLocationSelected(suggestion)
     }
     
     private func debounceAutocomplete(_ query: String) {
@@ -165,19 +136,22 @@ struct MapKitAutocompleteView: View {
         }
         
         do {
-            let results = try await MapKitLocationService.shared.autocomplete(input: query)
-            
-            await MainActor.run {
-                suggestions = results
-                isSearching = false
-            }
+            let results = try await MapKitLocationService.shared.searchPlaces(query: query)
+            await MainActor.run { suggestions = Array(results.prefix(8)) }
         } catch {
-            print("Autocomplete failed: \(error)")
-            
-            await MainActor.run {
-                suggestions = []
-                isSearching = false
+            #if DEBUG
+            debugPrint("[MapKit] Search failed: \(error)")
+            #endif
+            do {
+                let results = try await APIServices.shared.searchLocations(query: query)
+                await MainActor.run { suggestions = Array(results.prefix(8)) }
+            } catch {
+                await MainActor.run { suggestions = [] }
             }
+        }
+
+        await MainActor.run {
+            isSearching = false
         }
     }
     
@@ -187,8 +161,8 @@ struct MapKitAutocompleteView: View {
     }
 }
 
-struct LocationSuggestionRow: View {
-    let suggestion: LocationSuggestion
+struct LocationResultRow: View {
+    let location: LocationResult
     let onTap: () -> Void
     
     var body: some View {
@@ -200,17 +174,15 @@ struct LocationSuggestionRow: View {
                     .frame(width: 20)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(suggestion.title)
+                    Text(location.fullName)
                         .font(.body)
                         .foregroundColor(.primary)
                         .lineLimit(1)
-                    
-                    if let subtitle = suggestion.subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
+
+                    Text(location.timezone)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
                 
                 Spacer()

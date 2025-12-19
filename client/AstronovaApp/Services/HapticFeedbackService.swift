@@ -1,56 +1,71 @@
 import UIKit
 import SwiftUI
+import CoreHaptics
 
 /// Centralized haptic feedback service for consistent tactile experiences
 class HapticFeedbackService {
     static let shared = HapticFeedbackService()
-    
+
     private init() {}
+
+    // MARK: - Hardware Support Check
+
+    /// Check if the device supports haptics
+    private var supportsHaptics: Bool {
+        return CHHapticEngine.capabilitiesForHardware().supportsHaptics
+    }
     
     // MARK: - Impact Feedback
-    
+
     /// Light impact for subtle interactions (button taps, small selections)
     func lightImpact() {
+        guard supportsHaptics else { return }
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
     }
-    
+
     /// Medium impact for standard interactions (navigation, confirmations)
     func mediumImpact() {
+        guard supportsHaptics else { return }
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
     }
-    
+
     /// Heavy impact for significant actions (important confirmations, errors)
     func heavyImpact() {
+        guard supportsHaptics else { return }
         let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
         impactFeedback.impactOccurred()
     }
     
     // MARK: - Notification Feedback
-    
+
     /// Success feedback for positive outcomes
     func success() {
+        guard supportsHaptics else { return }
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.success)
     }
-    
+
     /// Warning feedback for caution situations
     func warning() {
+        guard supportsHaptics else { return }
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.warning)
     }
-    
+
     /// Error feedback for negative outcomes
     func error() {
+        guard supportsHaptics else { return }
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.error)
     }
     
     // MARK: - Selection Feedback
-    
+
     /// Selection feedback for picker changes, list selections
     func selection() {
+        guard supportsHaptics else { return }
         let selectionFeedback = UISelectionFeedbackGenerator()
         selectionFeedback.selectionChanged()
     }

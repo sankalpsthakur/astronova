@@ -1,32 +1,37 @@
 from __future__ import annotations
 
-from flask import Blueprint, jsonify
-from flask import request
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from flask import Blueprint, jsonify, request
+
+from services.dasha_interpretation_service import DashaInterpretationService
+from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
+from services.planetary_strength_service import PlanetaryStrengthService
+
 try:
     # Access Swiss Ephemeris if available for sidereal Moon (nakshatra) calculations
-    from services.ephemeris_service import SWE_AVAILABLE, swe as _swe
+    from services.ephemeris_service import SWE_AVAILABLE
+    from services.ephemeris_service import swe as _swe
 except Exception:  # pragma: no cover - defensive
     SWE_AVAILABLE = False
     _swe = None
 
-astrology_bp = Blueprint('astrology', __name__)
+astrology_bp = Blueprint("astrology", __name__)
 _svc = EphemerisService()
+_dasha_svc = DashaService()
+_strength_svc = PlanetaryStrengthService()
+_interp_svc = DashaInterpretationService()
 
 
-@astrology_bp.route('/positions', methods=['GET'])
+@astrology_bp.route("/positions", methods=["GET"])
 def positions():
     positions = _svc.get_positions_for_date(datetime.utcnow())
     result = {}
-    for name, info in positions.get('planets', {}).items():
+    for name, info in positions.get("planets", {}).items():
         key = name.title()
-        result[key] = {
-            'degree': float(info.get('degree', 0.0)),
-            'sign': str(info.get('sign', 'Unknown'))
-        }
+        result[key] = {"degree": float(info.get("degree", 0.0)), "sign": str(info.get("sign", "Unknown"))}
     return jsonify(result)
 
 
@@ -60,208 +65,324 @@ def _lord_annotation(lord: str) -> str:
     return notes.get(lord, "Period of karmic development and learning.")
 
 
-@astrology_bp.route('/dashas', methods=['GET'])
+@astrology_bp.route("/dashas", methods=["GET"])
 def dashas():
     """
-    Minimal Vimshottari-style dasha calculator (approximate).
+    Lightweight Vimshottari dasha endpoint - delegates to DashaService for consistency.
     Query:
       - birth_date: YYYY-MM-DD (required)
-      - birth_time: HH:MM (optional)
+      - birth_time: HH:MM (optional, defaults to 12:00)
       - timezone: IANA tz (optional, defaults UTC)
+      - lat, lon: coordinates (optional)
       - target_date: YYYY-MM-DD (required)
+      - include_boundaries: include full antardasha list (optional)
+      - debug: include calculation debug info (optional)
     """
-    birth_date = request.args.get('birth_date')
-    birth_time = request.args.get('birth_time')  # optional HH:MM
-    timezone = request.args.get('timezone', 'UTC')
-    lat = request.args.get('lat', type=float)
-    lon = request.args.get('lon', type=float)
-    target_date = request.args.get('target_date')
-    granularity = (request.args.get('granularity') or 'year').lower()
-    include_boundaries = request.args.get('include_boundaries') in ('1', 'true', 'yes')
-    if not birth_date or not target_date:
-        return jsonify({'error': 'birth_date and target_date required'}), 400
+    birth_date = request.args.get("birth_date")
+    birth_time = request.args.get("birth_time", "12:00")
+    timezone = request.args.get("timezone", "UTC")
+    lat = request.args.get("lat", type=float)
+    lon = request.args.get("lon", type=float)
+    target_date_str = request.args.get("target_date")
+    include_boundaries = request.args.get("include_boundaries") in ("1", "true", "yes")
+    debug = request.args.get("debug") in ("1", "true", "yes")
 
+    if not birth_date or not target_date_str:
+        return jsonify({"error": "birth_date and target_date required"}), 400
+
+    # Parse dates
     try:
-        bd_local = datetime.strptime(birth_date + 'T' + (birth_time or '12:00'), '%Y-%m-%dT%H:%M')
-        bd = bd_local.replace(tzinfo=ZoneInfo(timezone)).astimezone(ZoneInfo('UTC')).replace(tzinfo=None)
-        td = datetime.strptime(target_date, '%Y-%m-%d')
-    except Exception:
-        return jsonify({'error': 'Invalid date/time/timezone'}), 400
+        bd_local = datetime.strptime(f"{birth_date}T{birth_time}", "%Y-%m-%dT%H:%M")
+        bd = bd_local.replace(tzinfo=ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        target_date = datetime.strptime(target_date_str, "%Y-%m-%d")
+    except Exception as e:
+        return jsonify({"error": f"Invalid date/time/timezone: {str(e)}"}), 400
 
-    # Helpers for calendar-accurate additions (match common Vimshottari outputs)
-    def _month_days(year: int, month: int) -> int:
-        import calendar
-        return calendar.monthrange(year, month)[1]
-
-    def _add_years_months(dt: datetime, years: int = 0, months: int = 0) -> datetime:
-        y = dt.year + years
-        m0 = dt.month - 1 + months
-        y += m0 // 12
-        m = (m0 % 12) + 1
-        d = min(dt.day, _month_days(y, m))
-        return dt.replace(year=y, month=m, day=d)
-
-    # Determine starting mahadasha
-    seq = _vimshottari_sequence()
-    lord_order = [x[0] for x in seq]
-    dur_map = {lord: float(years) for lord, years in seq}
-
-    # Optional overrides for calibration/testing
-    override_start = (request.args.get('start_lord') or '').strip().title() or None
-    override_balance_years = request.args.get('balance_years', type=float)
-    override_balance_months = request.args.get('balance_months', type=float)
-
-    if override_start and override_start not in lord_order:
-        return jsonify({'error': f'Invalid start_lord {override_start}'}), 400
-
-    if override_start is not None and (override_balance_years is not None or override_balance_months is not None):
-        # Use explicit overrides
-        start_lord = override_start
-        years = override_balance_years or 0.0
-        months = override_balance_months or 0.0
-        start_balance_years = years + (months / 12.0)
+    # Get sidereal Moon position for dasha calculation
+    moon_longitude = 0.0
+    if SWE_AVAILABLE and _swe is not None:
+        try:
+            _swe.set_sid_mode(_swe.SIDM_LAHIRI, 0, 0)
+            jd = _swe.julday(bd.year, bd.month, bd.day, bd.hour + bd.minute / 60 + bd.second / 3600)
+            xx, _ = _swe.calc_ut(jd, _swe.MOON, _swe.FLG_SIDEREAL)
+            moon_longitude = float(xx[0])
+        except Exception:
+            positions = _svc.get_positions_for_date(bd, lat, lon, system="vedic")
+            moon = positions.get("planets", {}).get("moon", {})
+            moon_longitude = float(moon.get("longitude", 0.0))
     else:
-        # Compute from Moon nakshatra at birth
-        if SWE_AVAILABLE and _swe is not None:
-            # Use sidereal longitude (Lahiri) for nakshatra correctness
-            try:
-                _swe.set_sid_mode(_swe.SIDM_LAHIRI, 0, 0)
-                jd = _swe.julday(bd.year, bd.month, bd.day, bd.hour + bd.minute / 60 + bd.second / 3600)
-                xx, _ = _swe.calc_ut(jd, _swe.MOON, _swe.FLG_SIDEREAL)
-                moon_lon = float(xx[0])
-            except Exception:
-                positions = _svc.get_positions_for_date(bd, lat, lon)
-                moon = positions.get('planets', {}).get('moon', {})
-                moon_lon = float(moon.get('longitude', 0.0))
-        else:
-            positions = _svc.get_positions_for_date(bd, lat, lon)
-            moon = positions.get('planets', {}).get('moon', {})
-            moon_lon = float(moon.get('longitude', 0.0))
-        # Each nakshatra spans 13°20' = 13.333... degrees
-        nak_deg = 13.3333333333
-        # Normalize longitude to [0, 360)
-        norm_lon = moon_lon % 360.0
-        # Identify birth nakshatra index (0..26)
-        nak_index = int(norm_lon / nak_deg)
-        start_lord = lord_order[nak_index % len(lord_order)] if not override_start else override_start
-        # Balance remaining of first mahadasha at birth based on fraction of current nakshatra left
-        deg_into_nak = norm_lon - (nak_deg * nak_index)
-        fraction_elapsed = max(0.0, min(1.0, deg_into_nak / nak_deg))
-        start_balance_years = dur_map[start_lord] * (1.0 - fraction_elapsed)
+        positions = _svc.get_positions_for_date(bd, lat, lon, system="vedic")
+        moon = positions.get("planets", {}).get("moon", {})
+        moon_longitude = float(moon.get("longitude", 0.0))
 
-    # Build timeline across lords starting from start_lord (use calendar-year/month steps)
-    def timeline(start_dt: datetime, first_lord: str):
-        idx = lord_order.index(first_lord)
-        cur = start_dt
-        first = True
-        while True:
-            lord = lord_order[idx % len(lord_order)]
-            years = dur_map[lord]
-            # For first lord, use balance; then full durations
-            span_years = start_balance_years if first else years
-            whole_years = int(span_years)
-            months = int(round((span_years - whole_years) * 12))
-            end = _add_years_months(cur, whole_years, months)
-            yield lord, cur, end, span_years
-            cur = end
-            idx += 1
-            first = False
+    # Use canonical DashaService for calculation
+    dasha_info = _dasha_svc.calculate_complete_dasha(
+        bd, moon_longitude, target_date, include_future=False, num_future_periods=0
+    )
 
-    # Find current Mahadasha at target_date
-    maha_lord = start_lord
-    maha_start = bd
-    maha_end = bd
-    maha_length_years = start_balance_years
-    for lord, s, e, y in timeline(bd, start_lord):
-        if s <= td < e:
-            maha_lord, maha_start, maha_end, maha_length_years = lord, s, e, y
-            break
+    if not dasha_info:
+        return jsonify({"error": "Failed to calculate dasha"}), 500
 
-    # Compute Antardasha within current Mahadasha
-    # Use proportional months to keep calendar boundaries neat
-    total_months = (maha_end.year - maha_start.year) * 12 + (maha_end.month - maha_start.month)
-    if maha_end.day < maha_start.day:
-        # If end day is earlier in the month than start, treat as one less full month
-        total_months -= 1
-    total_months = max(total_months, 1)
-    antars = []
-    accum = maha_start
-    start_idx = lord_order.index(maha_lord)
-    antar_order = lord_order[start_idx:] + lord_order[:start_idx]
-    # Compute raw shares then round while preserving total via largest remainder method
-    shares = [dur_map[l] / 120.0 for l in antar_order]
-    raw_months = [s * total_months for s in shares]
-    floor_months = [int(m) for m in raw_months]
-    allocated = sum(floor_months)
-    remainder = total_months - allocated
-    # Distribute remaining months to largest fractional parts
-    order_by_frac = sorted(range(len(raw_months)), key=lambda i: (raw_months[i] - floor_months[i]), reverse=True)
-    months_alloc = floor_months[:]
-    for i in range(remainder):
-        months_alloc[order_by_frac[i]] += 1
-    # Build antardasha segments
-    for i, sub_lord in enumerate(antar_order):
-        months = months_alloc[i]
-        next_accum = _add_years_months(accum, 0, months)
-        antars.append((sub_lord, accum, next_accum))
-        accum = next_accum
-    # Ensure last ends at maha_end
-    if antars:
-        antars[-1] = (antars[-1][0], antars[-1][1], maha_end)
-    antar_lord = antars[0][0] if antars else maha_lord
-    antar_start = maha_start
-    antar_end = maha_end
-    for lord, s, e in antars:
-        if s <= td < e:
-            antar_lord = lord
-            antar_start = s
-            antar_end = e
-            break
+    # Build lightweight response
+    maha = dasha_info["mahadasha"]
+    antar = dasha_info.get("antardasha", {})
 
     resp = {
-        'mahadasha': {
-            'lord': maha_lord,
-            'start': maha_start.date().isoformat(),
-            'end': maha_end.date().isoformat(),
-            'annotation': _lord_annotation(maha_lord)
+        "mahadasha": {
+            "lord": maha["lord"],
+            "start": maha["start"],
+            "end": maha["end"],
+            "annotation": _lord_annotation(maha["lord"]),
         },
-        'antardasha': {
-            'lord': antar_lord,
-            'start': antar_start.date().isoformat(),
-            'end': antar_end.date().isoformat(),
-            'annotation': _lord_annotation(antar_lord)
-        }
+        "antardasha": {
+            "lord": antar.get("lord", maha["lord"]),
+            "start": antar.get("start", maha["start"]),
+            "end": antar.get("end", maha["end"]),
+            "annotation": _lord_annotation(antar.get("lord", maha["lord"])),
+        },
     }
 
-    # Optionally include boundaries for snapping / month-level UI
-    if include_boundaries or granularity == 'month':
-        antar_list = [
-            {
-                'lord': lord,
-                'start': s.date().isoformat(),
-                'end': e.date().isoformat(),
-                'annotation': _lord_annotation(lord)
-            }
-            for (lord, s, e) in antars
-        ]
-        resp['boundaries'] = {
-            'mahadasha': {
-                'lord': maha_lord,
-                'start': maha_start.date().isoformat(),
-                'end': maha_end.date().isoformat()
-            },
-            'antardasha': antar_list,
-            'breakpoints': [item['start'] for item in antar_list]
+    # Optional: include full antardasha boundaries
+    if include_boundaries and dasha_info.get("all_antardashas"):
+        resp["boundaries"] = {
+            "mahadasha": {"lord": maha["lord"], "start": maha["start"], "end": maha["end"]},
+            "antardasha": [
+                {"lord": a["lord"], "start": a["start"], "end": a["end"], "annotation": _lord_annotation(a["lord"])}
+                for a in dasha_info["all_antardashas"]
+            ],
+            "breakpoints": [a["start"] for a in dasha_info["all_antardashas"]],
         }
 
-    # Optional debug details to aid verification
-    if request.args.get('debug') in ('1', 'true', 'yes'):
-        resp['debug'] = {
-            'start_lord': start_lord,
-            'start_balance_years': round(start_balance_years, 6),
-            'start_balance_years_int': int(start_balance_years),
-            'start_balance_months_approx': int(round((start_balance_years - int(start_balance_years)) * 12)),
-            'mahadasha_order': lord_order,
+    # Optional: debug info
+    if debug:
+        starting = dasha_info.get("starting_dasha", {})
+        resp["debug"] = {
+            "start_lord": starting.get("lord"),
+            "start_balance_years": starting.get("balance_years"),
+            "start_balance_years_int": int(starting.get("balance_years", 0)),
+            "start_balance_months_approx": int(
+                round((starting.get("balance_years", 0) - int(starting.get("balance_years", 0))) * 12)
+            ),
+            "mahadasha_order": [lord for lord, _ in _vimshottari_sequence()],
         }
 
+    resp["disclaimer"] = "For entertainment purposes only. Not professional advice."
     return jsonify(resp)
+
+
+@astrology_bp.route("/dashas/complete", methods=["POST"])
+def dashas_complete():
+    """
+    Comprehensive dasha endpoint with all features:
+    - Mahadasha, Antardasha, Pratyantardasha calculations
+    - Planetary strength analysis
+    - Impact scoring (career, relationships, health, spiritual)
+    - Qualitative interpretations and narratives
+    - Transition information
+    - Educational content
+
+    POST body:
+    {
+        "birthData": {
+            "date": "YYYY-MM-DD",
+            "time": "HH:MM",
+            "timezone": "IANA timezone",
+            "latitude": float,
+            "longitude": float
+        },
+        "targetDate": "YYYY-MM-DD",  // optional, defaults to today
+        "includeTransitions": true,  // optional
+        "includeEducation": true     // optional
+    }
+    """
+    payload = request.get_json(silent=True) or {}
+
+    # Parse birth data
+    birth_data = payload.get("birthData", {})
+    birth_date = birth_data.get("date")
+    birth_time = birth_data.get("time", "12:00")
+    timezone = birth_data.get("timezone", "UTC")
+    lat = birth_data.get("latitude")
+    lon = birth_data.get("longitude")
+
+    if not birth_date or lat is None or lon is None:
+        return jsonify({"error": "birthData with date, latitude, and longitude required"}), 400
+
+    # Parse target date (defaults to today)
+    target_date_str = payload.get("targetDate")
+    if target_date_str:
+        try:
+            target_date = datetime.strptime(target_date_str, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"error": "Invalid targetDate format, use YYYY-MM-DD"}), 400
+    else:
+        target_date = datetime.now()
+
+    # Parse birth datetime
+    try:
+        bd_local = datetime.strptime(f"{birth_date}T{birth_time}", "%Y-%m-%dT%H:%M")
+        bd = bd_local.replace(tzinfo=ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+    except Exception as e:
+        return jsonify({"error": f"Invalid date/time/timezone: {str(e)}"}), 400
+
+    # Validate target_date is not before birth_date
+    if target_date < bd:
+        return jsonify({
+            "error": "target_date cannot be before birth_date",
+            "detail": f"Birth date is {bd.date().isoformat()}, but target date is {target_date.date().isoformat()}. Dasha periods start from birth."
+        }), 400
+
+    # Get sidereal Moon position for dasha calculation
+    moon_longitude = 0.0
+    if SWE_AVAILABLE and _swe is not None:
+        try:
+            _swe.set_sid_mode(_swe.SIDM_LAHIRI, 0, 0)
+            jd = _swe.julday(bd.year, bd.month, bd.day, bd.hour + bd.minute / 60 + bd.second / 3600)
+            xx, _ = _swe.calc_ut(jd, _swe.MOON, _swe.FLG_SIDEREAL)
+            moon_longitude = float(xx[0])
+        except Exception:
+            positions = _svc.get_positions_for_date(bd, lat, lon, system="vedic")
+            moon = positions.get("planets", {}).get("moon", {})
+            moon_longitude = float(moon.get("longitude", 0.0))
+    else:
+        positions = _svc.get_positions_for_date(bd, lat, lon, system="vedic")
+        moon = positions.get("planets", {}).get("moon", {})
+        moon_longitude = float(moon.get("longitude", 0.0))
+
+    # Calculate complete dasha information
+    dasha_info = _dasha_svc.calculate_complete_dasha(
+        bd, moon_longitude, target_date, include_future=True, num_future_periods=3
+    )
+
+    if not dasha_info or dasha_info.get("error"):
+        error_msg = dasha_info.get("message", "Failed to calculate dasha") if dasha_info else "Failed to calculate dasha"
+        return jsonify({"error": error_msg}), 400
+
+    # Get planet positions for strength analysis (default to sidereal/Vedic for Time Travel consistency)
+    zodiac_system = (payload.get("system") or payload.get("zodiacSystem") or "vedic")
+    zodiac_system = str(zodiac_system).lower()
+    if zodiac_system in ("tropical", "western"):
+        zodiac_system = "western"
+    elif zodiac_system in ("sidereal", "kundali", "vedic"):
+        zodiac_system = "vedic"
+    else:
+        zodiac_system = "vedic"
+
+    current_positions = _svc.get_positions_for_date(target_date, lat, lon, system=zodiac_system)
+    planet_data = {}
+    sign_names = (
+        list(EphemerisService.VEDIC_SIGNS) if zodiac_system == "vedic" else list(EphemerisService.ZODIAC_SIGNS)
+    )
+    asc_sign = str(current_positions.get("planets", {}).get("ascendant", {}).get("sign", sign_names[0]))
+    try:
+        asc_index = sign_names.index(asc_sign)
+    except ValueError:
+        asc_index = 0
+
+    def house_for_sign(sign: str) -> int | None:
+        try:
+            idx = sign_names.index(sign)
+        except ValueError:
+            return None
+        return ((idx - asc_index) % 12) + 1
+
+    for name, info in current_positions.get("planets", {}).items():
+        sign = info.get("sign")
+        house = 1 if name == "ascendant" else house_for_sign(str(sign))  # type: ignore[arg-type]
+        planet_data[name.title()] = {
+            "sign": sign,
+            "degree": info.get("degree"),
+            "house": house,
+            "retrograde": info.get("retrograde", False),
+        }
+
+    # Calculate impact for current periods
+    maha_lord = dasha_info["mahadasha"]["lord"]
+    antar_lord = dasha_info["antardasha"]["lord"] if dasha_info.get("antardasha") else maha_lord
+    pratyantar_lord = dasha_info["pratyantardasha"]["lord"] if dasha_info.get("pratyantardasha") else None
+
+    # Impact analysis
+    maha_impact = _strength_svc.calculate_dasha_impact(maha_lord, planet_data)
+    antar_impact = _strength_svc.calculate_dasha_impact(antar_lord, planet_data)
+
+    # Combined impact (weighted: Mahadasha 60%, Antardasha 40%)
+    combined_impact = {
+        "career": round(maha_impact["impact_scores"]["career"] * 0.6 + antar_impact["impact_scores"]["career"] * 0.4, 1),
+        "relationships": round(
+            maha_impact["impact_scores"]["relationships"] * 0.6 + antar_impact["impact_scores"]["relationships"] * 0.4, 1
+        ),
+        "health": round(maha_impact["impact_scores"]["health"] * 0.6 + antar_impact["impact_scores"]["health"] * 0.4, 1),
+        "spiritual": round(
+            maha_impact["impact_scores"]["spiritual"] * 0.6 + antar_impact["impact_scores"]["spiritual"] * 0.4, 1
+        ),
+    }
+
+    # Generate narrative
+    narrative = _interp_svc.generate_period_narrative(
+        maha_lord, antar_lord, pratyantar_lord, maha_impact.get("strength"), combined_impact
+    )
+
+    # Build response
+    response = {
+        "dasha": dasha_info,
+        "current_period": {
+            "mahadasha": dasha_info["mahadasha"],
+            "antardasha": dasha_info["antardasha"],
+            "pratyantardasha": dasha_info["pratyantardasha"],
+            "narrative": narrative,
+        },
+        "impact_analysis": {
+            "mahadasha_impact": {
+                "lord": maha_lord,
+                "scores": maha_impact["impact_scores"],
+                "tone": maha_impact["tone"],
+                "tone_description": maha_impact["tone_description"],
+                "strength": maha_impact["strength"],
+            },
+            "antardasha_impact": {
+                "lord": antar_lord,
+                "scores": antar_impact["impact_scores"],
+                "tone": antar_impact["tone"],
+                "tone_description": antar_impact["tone_description"],
+                "strength": antar_impact["strength"],
+            },
+            "combined_scores": combined_impact,
+        },
+        "planetary_keywords": {
+            "mahadasha": maha_impact.get("keywords", []),
+            "antardasha": antar_impact.get("keywords", []),
+        },
+    }
+
+    # Add transition information if requested
+    if payload.get("includeTransitions", False):
+        transition_info = _dasha_svc.get_dasha_transition_info(bd, moon_longitude, target_date)
+
+        # Get next Mahadasha for comparison
+        if transition_info.get("mahadasha") and dasha_info.get("upcoming_mahadashas"):
+            next_maha_lord = dasha_info["upcoming_mahadashas"][0]["lord"]
+            comparison = _strength_svc.compare_dasha_impacts(maha_lord, next_maha_lord, planet_data)
+
+            transition_insights = _interp_svc.get_transition_insights(
+                maha_lord, next_maha_lord, transition_info["mahadasha"]["days_remaining"], comparison
+            )
+
+            response["transitions"] = {
+                "timing": transition_info,
+                "insights": transition_insights,
+                "impact_comparison": comparison,
+            }
+
+    # Add educational content if requested
+    if payload.get("includeEducation", False):
+        starting_lord = dasha_info["starting_dasha"]["lord"]
+        balance_years = dasha_info["starting_dasha"]["balance_years"]
+
+        response["education"] = {
+            "calculation_explanation": _interp_svc.explain_dasha_calculation(moon_longitude, starting_lord, balance_years),
+            "mahadasha_guide": _interp_svc.get_dasha_explanation(maha_lord, "mahadasha"),
+            "antardasha_guide": _interp_svc.get_dasha_explanation(antar_lord, "antardasha"),
+        }
+
+    response["disclaimer"] = "For entertainment purposes only. Not professional advice."
+    return jsonify(response)

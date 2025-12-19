@@ -1,106 +1,149 @@
 # Astronova
 
-iOS SwiftUI app + Flask backend for horoscopes, charts, compatibility, and an animated Time Travel view. This README captures the current codebase accurately and concisely.
+[![Test Suite](https://github.com/yourusername/astronova/actions/workflows/test.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/test.yml)
+[![iOS Build](https://github.com/yourusername/astronova/actions/workflows/ios.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/ios.yml)
+[![codecov](https://codecov.io/gh/yourusername/astronova/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/astronova)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Swift 5.9](https://img.shields.io/badge/swift-5.9-orange.svg)](https://swift.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## What’s In This Repo
+iOS SwiftUI app + Flask backend for Vedic and Western astrology: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and an animated Time Travel visualization.
 
-- client/ — SwiftUI app (Xcode project `client/astronova.xcodeproj`)
-  - `AuthState.swift` — authentication, JWT lifecycle, feature gates
-  - `UserProfile.swift` — profile model, persistence, chart caching
-  - `NetworkClient.swift` — typed async HTTP client, error mapping
-  - `APIServices.swift` — higher‑level API surface (charts, horoscope, ephemeris, dashas, chat)
-  - `APIModels.swift` — request/response types shared across the app
-  - `TimeTravelView.swift` — animated planetary view (Local simulation or API data)
-  - `RootView.swift` — app shell, tabs (Today, Connect, Time Travel, Ask, Manage)
-  - `Config/AppConfig.swift` — API base URL resolution
-- server/ — Flask API (entry `server/app.py`)
-  - `routes/` — endpoints (horoscope, ephemeris, chart, astrology, compatibility, chat, content, auth, locations, reports)
-  - `services/ephemeris_service.py` — Swiss Ephemeris if available; numeric fallbacks otherwise
+## Features
 
-## Requirements
+- **Daily Horoscopes** — Personalized daily, weekly, and monthly horoscopes for all 12 zodiac signs
+- **Birth Charts** — Generate Western (tropical) and Vedic (sidereal) natal charts with house placements
+- **Vimshottari Dasha** — Complete 120-year Vedic timeline with Mahadasha, Antardasha, and Pratyantardasha
+- **Time Travel** — Interactive visualization of planetary positions and dasha periods across time
+- **Compatibility** — Synastry analysis with relationship pulse, aspect activation, and journey forecasts
+- **AI Chat** — Personalized astrological guidance powered by OpenAI
+- **Reports** — Comprehensive PDF reports for birth charts, love, career, and more
 
-- Xcode 15+ (iOS 17 SDK) — the app uses iOS 17’s `.onChange` two‑parameter closure
-- Python 3.10+ for the backend
+## Quick Start
 
-## Running Locally
+### Backend
+```bash
+cd server
+pip install -r requirements.txt
+python app.py                    # Runs on http://0.0.0.0:8080
+```
 
-Backend (Flask)
-- `cd server && pip install -r requirements.txt`
-- `python app.py` (defaults to 0.0.0.0:8080; health at `/api/v1/health`)
-- Optional env: `FLASK_DEBUG=true` or `PORT=8080`
+### iOS Client
+1. Open `client/astronova.xcodeproj` in Xcode 15+
+2. Select scheme `AstronovaApp` targeting iOS 17+ simulator
+3. Build and run (the app connects to `http://127.0.0.1:8080` automatically)
 
-Client (iOS)
-- Open `client/astronova.xcodeproj` in Xcode
-- Scheme: AstronovaApp (iOS 17+ simulator or device)
-- API base URL is resolved by `AppConfig`:
-  - Debug + Simulator: `http://127.0.0.1:8080`
-  - Otherwise: `https://astronova.onrender.com`
-  - To override, set `API_BASE_URL` in the app’s Info.plist
+### One-Command Setup
+```bash
+./scripts/run-local.sh           # Creates venv, installs deps, boots Flask, opens Xcode
+```
 
-## Architecture (Client)
+## Project Structure
 
-- `NetworkClient` handles request execution, status mapping, decode strategy, and common errors (offline, timeout, token expired, server errors). JWT (if present) is attached as `Authorization: Bearer ...`.
-- `APIServices` provides a typed facade over endpoints. Key flows:
-  - Planetary positions (basic dict): tries `/api/v1/astrology/positions`, then maps from `/api/v1/ephemeris/current`; no device fallback.
-  - Detailed positions: prefers `/api/v1/ephemeris/current` (array), else maps from basic dict.
-  - Dashas: `/api/v1/astrology/dashas` (requires complete birth time + location + timezone).
-  - Horoscopes: `/api/v1/horoscope` (daily/weekly/monthly).
-  - Aspects (by date): `/api/v1/chart/aspects`.
-  - Auth: `/api/v1/auth/*` (validate/refresh/logout).
-- `AuthState` owns: API health check, token storage in Keychain, sign‑in flow stubs, feature gating (e.g., hasFullFunctionality depends on API connectivity + complete profile).
-- `UserProfileManager` persists profile in UserDefaults, generates and caches charts via `APIServices`, and updates derived fields (e.g., sun sign) from responses.
-- `TimeTravelView` has a Source toggle:
-  - Local: runs an on‑device mean‑motion simulation (approximate, for visualization). It animates ephemerides continuously (no network).
-  - API: fetches ephemeris for a given date; optionally fetches dashas (if profile has required fields) and aspects.
+```
+astronova/
+├── client/                      # iOS SwiftUI app
+│   ├── AstronovaApp/           # Main app source
+│   │   ├── Features/           # Feature modules (Home, Discover, TimeTravel, etc.)
+│   │   ├── Services/           # iOS services (Haptics, Store, etc.)
+│   │   ├── CosmicColors.swift  # Design system colors
+│   │   ├── NetworkClient.swift # HTTP client
+│   │   └── APIServices.swift   # API facade
+│   └── astronova.xcodeproj     # Xcode project
+├── server/                      # Flask API
+│   ├── routes/                 # API blueprints (12 modules)
+│   ├── services/               # Business logic
+│   │   ├── ephemeris_service.py
+│   │   ├── dasha/              # Vimshottari calculations
+│   │   └── pdf/                # Report rendering
+│   ├── tests/                  # Pytest test suite (499+ tests)
+│   ├── app.py                  # Flask app factory
+│   └── db.py                   # SQLite schema
+├── docs/                        # Documentation
+└── tools/                       # Utilities (branding, scripts)
+```
 
-Notes
-- A legacy `PlanetaryDataService.swift` exists but main flows now call `APIServices` directly. Keep it in the target only if you need custom static datasets.
-- The local Time Travel simulation is intentionally approximate; it provides engaging motion, not scientific precision.
+## API Overview
 
-## Architecture (Server)
+All endpoints use the `/api/v1/` prefix.
 
-- Flask app in `server/app.py` mounts blueprints under `/api/v1/*`.
-- `services/ephemeris_service.py` uses Swiss Ephemeris if installed; otherwise falls back to simplified math.
-- Endpoints used by the client: `ephemeris` (current/at), `astrology/dashas`, `chart/aspects`, `horoscope`, `auth/*`, `location/search`, `compatibility`, `content`.
+| Category | Key Endpoints |
+|----------|---------------|
+| **Ephemeris** | `GET /ephemeris/current`, `GET /ephemeris/at?date=YYYY-MM-DD` |
+| **Dasha** | `POST /astrology/dashas/complete` |
+| **Charts** | `POST /chart/generate`, `POST /chart/aspects` |
+| **Horoscopes** | `GET /horoscope?sign=aries&type=daily` |
+| **Compatibility** | `POST /compatibility`, `GET /compatibility/relationships/{id}/snapshot` |
+| **Reports** | `POST /reports`, `GET /reports/{id}/pdf` |
+| **Chat** | `POST /chat` |
+| **Auth** | `POST /auth/apple`, `GET /auth/validate` |
+
+See [CLAUDE.md](./CLAUDE.md) for complete API documentation.
+
+## Testing
+
+### Backend (Python)
+```bash
+cd server
+pip install -r tests/requirements-test.txt
+pytest tests/ -v                              # Run all tests
+pytest tests/ -v --cov=. --cov-report=html    # With coverage (80% minimum)
+```
+
+### iOS (Swift)
+```bash
+cd client
+xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp \
+  -destination 'platform=iOS Simulator,name=iPhone 15'
+```
 
 ## Configuration
 
-- API base URL: set `API_BASE_URL` in the app’s Info.plist to override environment defaults.
-- Auth: `AuthState` stores JWT in the Keychain (key `com.sankalp.AstronovaApp.jwtToken`). `APIServices.jwtToken` propagates to `NetworkClient`.
-- CORS: Flask enables CORS by default in `create_app()`.
+### Environment Variables (Backend)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `8080` | Server port |
+| `FLASK_DEBUG` | `false` | Enable debug mode |
+| `DB_PATH` | `./astronova.db` | SQLite database path |
+| `OPENAI_API_KEY` | — | Required for AI chat |
 
-## Troubleshooting
+### iOS API URL
+- **Debug + Simulator**: `http://127.0.0.1:8080`
+- **Production**: `https://astronova.onrender.com`
+- Override via `API_BASE_URL` in Info.plist
 
-- Build errors about SwiftUI `.onChange`: ensure iOS 17+ SDK and Xcode 15+.
-- “Cannot find type in scope”: confirm files are in the AstronovaApp target (Xcode > Target Membership).
-- API decode errors: `NetworkClient` logs the raw response body and throws `NetworkError.decodingError`.
-- Time Travel shows no Dashas: verify profile has birth time, place, latitude, longitude, and timezone; otherwise switch Source to Local.
-- Simulator to Flask connectivity: use `http://127.0.0.1:8080` (already default in Debug/Simulator). On device, use a reachable host or set `API_BASE_URL`.
+## Technology Stack
 
-## Tests
+**Backend:**
+- Python 3.9+ with Flask
+- Swiss Ephemeris (pyswisseph) for planetary calculations
+- SQLite database
+- OpenAI GPT-4o-mini for chat
 
-- iOS unit tests in `client/AstronovaAppTests`.
-- Backend lightweight tests in `server/tests` (extend as needed).
+**iOS:**
+- SwiftUI (iOS 17+)
+- Async/await networking
+- Keychain for JWT storage
+- StoreKit 2 for in-app purchases
 
-## Security & Limits
+## Documentation
 
-- JWT is stored in the iOS Keychain; treat the token as sensitive.
-- The backend may enforce rate limits; handle `429` upstream or adjust server configuration.
+- [CLAUDE.md](./CLAUDE.md) — Development guide for AI assistants and contributors
+- [docs/](./docs/) — Feature specifications and technical documentation
 
-## Known Limitations
+## CI/CD
 
-- Local Time Travel simulation is not ephemeris‑grade. Use API mode for accurate values.
-- Some legacy or experimental files may exist; only the files listed in “What’s In This Repo” are considered core to current flows.
+GitHub Actions workflows:
+- **test.yml** — Python tests across 3.9-3.12, coverage enforcement (80%)
+- **ios.yml** — Xcode build and tests
+- **deploy.yml** — Staging/production deployment to Render
 
-## Quick API Map (Client ↔ Server)
+## Contributing
 
-- GET `/api/v1/ephemeris/current` → `{ planets: [DetailedPlanetaryPosition] }`
-- GET `/api/v1/ephemeris/at?date=YYYY-MM-DD[&system=vedic]` → `{ planets: [...] }`
-- GET `/api/v1/astrology/positions` → `{ Sun: {degree, sign}, ... }`
-- GET `/api/v1/chart/aspects?date=YYYY-MM-DD` → `[Aspect]`
-- GET `/api/v1/horoscope?sign=aries&type=daily` → `HoroscopeResponse`
-- GET `/api/v1/location/search?q=...&limit=10` → `LocationSearchResponse`
-- POST `/api/v1/auth/apple` → `AuthResponse`; GET `/api/v1/auth/validate`; POST `/api/v1/auth/refresh`
+1. Install pre-commit hooks: `pip install pre-commit && pre-commit install`
+2. Run tests before committing: `pytest tests/ -v`
+3. Follow [Conventional Commits](https://www.conventionalcommits.org/)
 
-This README is intentionally compact and strictly reflects the current implementation and flows.
+## License
 
+MIT License — see [LICENSE](LICENSE) for details.

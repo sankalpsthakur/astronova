@@ -6,21 +6,27 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python app.py
     healthCheckPath: /health
+    disk:
+      name: astronova-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: GEMINI_API_KEY
-        value: AIzaSyDK1UcAyU0e-8WpdooG-6-p10p1UuYmZD8
+        sync: false  # Set via Render dashboard
+      - key: DB_PATH
+        value: /data/astronova.db
       - key: FLASK_ENV
         value: production
       - key: FLASK_DEBUG
-        value: false
+        value: "false"
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: PORT
-        value: 8080
+        value: "8080"
     autoDeploy: true
     branch: main
     rootDir: server

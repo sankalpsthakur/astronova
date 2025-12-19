@@ -57,7 +57,9 @@ class StoreKitManager: ObservableObject {
                 self.products = newProducts
             }
         } catch {
-            print("Failed to load StoreKit products: \(error)")
+            #if DEBUG
+            debugPrint("[StoreKit] Failed to load products: \(error.localizedDescription)")
+            #endif
             // Fallback to hardcoded prices
             await MainActor.run {
                 self.products = [
@@ -80,7 +82,9 @@ class StoreKitManager: ObservableObject {
     
     func purchaseProduct(productId: String) async -> Bool {
         guard let product = storeKitProducts.first(where: { $0.id == productId }) else {
-            print("Product not found: \(productId)")
+            #if DEBUG
+            debugPrint("[StoreKit] Product not found: \(productId)")
+            #endif
             return false
         }
         
@@ -100,19 +104,27 @@ class StoreKitManager: ObservableObject {
                 return true
                 
             case .userCancelled:
-                print("User cancelled purchase")
+                #if DEBUG
+                debugPrint("[StoreKit] User cancelled purchase")
+                #endif
                 return false
-                
+
             case .pending:
-                print("Purchase is pending")
+                #if DEBUG
+                debugPrint("[StoreKit] Purchase is pending")
+                #endif
                 return false
-                
+
             @unknown default:
-                print("Unknown purchase result")
+                #if DEBUG
+                debugPrint("[StoreKit] Unknown purchase result")
+                #endif
                 return false
             }
         } catch {
-            print("Purchase failed: \(error)")
+            #if DEBUG
+            debugPrint("[StoreKit] Purchase failed: \(error.localizedDescription)")
+            #endif
             return false
         }
     }
@@ -130,8 +142,12 @@ class StoreKitManager: ObservableObject {
     }
     
     /// Restore purchases (useful for family sharing and device transfers)
-    func restorePurchases() async {
+    /// Returns true if any purchases were restored
+    @discardableResult
+    func restorePurchases() async -> Bool {
+        let hadProBefore = hasProSubscription
         await checkCurrentEntitlements()
+        return hasProSubscription && !hadProBefore
     }
     
     // MARK: - Private Methods
@@ -145,7 +161,9 @@ class StoreKitManager: ObservableObject {
                     await self.handleSuccessfulPurchase(transaction: transaction)
                     await transaction.finish()
                 } catch {
-                    print("Transaction verification failed: \(error)")
+                    #if DEBUG
+                    debugPrint("[StoreKit] Transaction verification failed: \(error.localizedDescription)")
+                    #endif
                 }
             }
         }
@@ -197,7 +215,9 @@ class StoreKitManager: ObservableObject {
                     UserDefaults.standard.set(true, forKey: purchaseKey)
                 }
             } catch {
-                print("Failed to verify current entitlement: \(error)")
+                #if DEBUG
+                debugPrint("[StoreKit] Failed to verify current entitlement: \(error.localizedDescription)")
+                #endif
             }
         }
     }

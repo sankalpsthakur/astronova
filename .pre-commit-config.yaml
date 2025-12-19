@@ -1,0 +1,127 @@
+# Pre-commit hooks for astronova project
+# Install with: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+      - id: black
+        language_version: python3.11
+        exclude: ^(\.venv|venv|__pycache__|\.pytest_cache)/
+
+  # Python import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+        exclude: ^(\.venv|venv|__pycache__|\.pytest_cache)/
+
+  # Python linting with ruff (fast, replaces flake8)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exit-non-zero-on-fix"]
+        types_or: [python, pyi]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # Security checks
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.7
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml", "-r", "server"]
+        exclude: ^(server/tests|\.venv|venv)/
+
+  # YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [yaml, markdown, json]
+        exclude: ^(\.venv|venv|__pycache__)/
+
+  # Generic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(\.venv|venv|__pycache__)/
+      - id: end-of-file-fixer
+        exclude: ^(\.venv|venv|__pycache__)/
+      - id: check-yaml
+        args: ['--unsafe']
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: debug-statements
+        exclude: ^(\.venv|venv|__pycache__)/
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Python security and dependency checks
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.3
+    hooks:
+      - id: python-safety-dependencies-check
+        files: requirements.*\.txt$
+
+  # Secrets detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: ^(\.venv|venv|__pycache__|\.pytest_cache|package-lock\.json)/
+
+  # Python type checking (optional - can be slow)
+  # Uncomment to enable mypy type checking
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       args: [--ignore-missing-imports]
+  #       additional_dependencies: [types-requests, types-pytz]
+  #       exclude: ^(\.venv|venv|__pycache__|\.pytest_cache|server/tests)/
+
+  # Swift formatting (requires SwiftFormat to be installed)
+  # Install with: brew install swiftformat
+  # - repo: local
+  #   hooks:
+  #     - id: swiftformat
+  #       name: SwiftFormat
+  #       entry: swiftformat
+  #       args: ["--swiftversion", "5.9"]
+  #       language: system
+  #       types: [swift]
+  #       files: ^client/
+
+  # Swift linting (requires SwiftLint to be installed)
+  # Install with: brew install swiftlint
+  # - repo: local
+  #   hooks:
+  #     - id: swiftlint
+  #       name: SwiftLint
+  #       entry: swiftlint
+  #       args: ["lint", "--strict"]
+  #       language: system
+  #       types: [swift]
+  #       files: ^client/
+
+# Custom hook for running tests before commit (optional)
+# Uncomment to enable automatic test running
+# - repo: local
+#   hooks:
+#     - id: pytest
+#       name: pytest
+#       entry: bash -c 'cd server && python -m pytest tests/ -x --tb=short'
+#       language: system
+#       pass_filenames: false
+#       always_run: false
+#       stages: [commit]

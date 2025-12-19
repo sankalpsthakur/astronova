@@ -38,7 +38,9 @@ protocol APIServicesProtocol: ObservableObject {
     func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse
     func searchLocations(query: String) async throws -> [LocationResult]
     func getCurrentTransits() async throws -> TransitsResponse
+    func getPlanetaryPositions(for date: Date, latitude: Double?, longitude: Double?, system: String) async throws -> [DetailedPlanetaryPosition]
     func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse
+    func fetchCompleteDasha(request: DashaCompleteRequest) async throws -> DashaCompleteResponse
 }
 
 /// Main API service class that handles all backend communication
@@ -160,9 +162,9 @@ class APIServices: ObservableObject, APIServicesProtocol {
         // Convert legacy method to return structured data
         let data = try await calculateCompatibility(person1: person1, person2: person2)
         let matchResponse = try JSONDecoder().decode(MatchResponse.self, from: data)
-        
+
         return CompatibilityResponse(
-            compatibility_score: Double(matchResponse.overallScore) / 100.0,
+            compatibility_score: matchResponse.overallIntensity.fillLevel,
             summary: "Compatibility analysis based on astrological factors",
             detailed_analysis: "Detailed analysis of planetary aspects and compatibility",
             strengths: ["Communication", "Emotional connection"],
@@ -199,6 +201,18 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
         
         return TransitsResponse(date: Date(), transits: transits)
+    }
+
+    // MARK: - Dashas
+
+    /// Fetches the comprehensive dasha response from the backend
+    func fetchCompleteDasha(request: DashaCompleteRequest) async throws -> DashaCompleteResponse {
+        try await networkClient.request(
+            endpoint: "/api/v1/astrology/dashas/complete",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: DashaCompleteResponse.self
+        )
     }
     
     /// Get chat response for protocol conformance
@@ -256,7 +270,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     /// Get monthly horoscope for a sign
     func getMonthlyHoroscope(for sign: String) async throws -> HoroscopeResponse {
         let queryString = "?sign=\(sign.lowercased())&type=monthly"
-        
+
         return try await networkClient.request(
             endpoint: "/api/v1/horoscope\(queryString)",
             method: HTTPMethod.GET,
@@ -264,7 +278,143 @@ class APIServices: ObservableObject, APIServicesProtocol {
             responseType: HoroscopeResponse.self
         )
     }
-    
+
+    // MARK: - Discover Snapshot
+
+    /// Get unified Discover snapshot for daily check-in (GET version)
+    func getDiscoverSnapshot(sign: String, date: Date? = nil) async throws -> DiscoverSnapshot {
+        var queryString = "?sign=\(sign.lowercased())"
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            queryString += "&date=\(formatter.string(from: date))"
+        }
+
+        return try await networkClient.request(
+            endpoint: "/api/v1/discover/snapshot\(queryString)",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: DiscoverSnapshot.self
+        )
+    }
+
+    /// Get personalized Discover snapshot with birth data (POST version)
+    func getPersonalizedDiscoverSnapshot(birthData: BirthData, targetDate: Date? = nil) async throws -> DiscoverSnapshot {
+        struct DiscoverRequest: Codable {
+            let birthData: BirthDataPayload
+            let targetDate: String?
+
+            struct BirthDataPayload: Codable {
+                let date: String
+                let time: String
+                let timezone: String
+                let latitude: Double
+                let longitude: Double
+            }
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        let request = DiscoverRequest(
+            birthData: DiscoverRequest.BirthDataPayload(
+                date: birthData.date,
+                time: birthData.time,
+                timezone: birthData.timezone,
+                latitude: birthData.latitude,
+                longitude: birthData.longitude
+            ),
+            targetDate: targetDate.map { formatter.string(from: $0) }
+        )
+
+        return try await networkClient.request(
+            endpoint: "/api/v1/discover/snapshot",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: DiscoverSnapshot.self
+        )
+    }
+
+    // MARK: - Domain Insights
+
+    /// Response structure for domain insights endpoint
+    struct DomainInsightsResponse: Codable {
+        let date: String
+        let domains: [DomainInsightResponse]
+        let cosmicWeather: CosmicWeatherResponse?
+        let dailyHoroscope: String?
+
+        struct DomainInsightResponse: Codable {
+            let id: String
+            let domain: String
+            let shortInsight: String
+            let fullInsight: String
+            let drivers: [PlanetaryDriverResponse]
+            let intensity: Double
+        }
+
+        struct PlanetaryDriverResponse: Codable {
+            let id: String
+            let planet: String
+            let aspect: String?
+            let sign: String?
+            let explanation: String
+        }
+
+        struct CosmicWeatherResponse: Codable {
+            let date: String
+            let summary: String
+            let mood: String
+            let dominantPlanet: String?
+            let moonPhase: String?
+        }
+    }
+
+    /// Get life domain insights with planetary drivers
+    func getDomainInsights(date: Date? = nil) async throws -> ([DomainInsight], String?) {
+        var queryString = ""
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            queryString = "?date=\(formatter.string(from: date))"
+        }
+
+        let response: DomainInsightsResponse = try await networkClient.request(
+            endpoint: "/api/v1/discover/domains\(queryString)",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: DomainInsightsResponse.self
+        )
+
+        // Convert response to app models
+        let insights = response.domains.compactMap { domainResp -> DomainInsight? in
+            guard let domain = LifeDomain(rawValue: domainResp.domain) else {
+                return nil
+            }
+
+            let drivers = domainResp.drivers.map { driverResp in
+                PlanetaryDriver(
+                    id: driverResp.id,
+                    planet: driverResp.planet,
+                    aspect: driverResp.aspect,
+                    sign: driverResp.sign,
+                    explanation: driverResp.explanation
+                )
+            }
+
+            return DomainInsight(
+                id: domainResp.id,
+                domain: domain,
+                shortInsight: domainResp.shortInsight,
+                fullInsight: domainResp.fullInsight,
+                drivers: drivers,
+                intensity: domainResp.intensity
+            )
+        }
+
+        return (insights, response.dailyHoroscope)
+    }
+
     /// Search locations with details
     func searchLocationsDetailed(query: String, limit: Int = 10) async throws -> LocationSearchResponse {
         var components = URLComponents()
@@ -315,6 +465,43 @@ class APIServices: ObservableObject, APIServicesProtocol {
             throw error
         }
     }
+
+    /// Get planetary positions for a specific date.
+    /// - Parameters:
+    ///   - date: Date to compute positions for (interpreted in UTC day).
+    ///   - latitude: Optional latitude (enables rising sign / houses if supported server-side).
+    ///   - longitude: Optional longitude (enables rising sign / houses if supported server-side).
+    ///   - system: "western" or "vedic".
+    func getPlanetaryPositions(
+        for date: Date,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        system: String = "western"
+    ) async throws -> [DetailedPlanetaryPosition] {
+        struct EphemerisResponse: Codable {
+            let planets: [DetailedPlanetaryPosition]
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+
+        var components = URLComponents()
+        components.path = "/api/v1/ephemeris/at"
+        var queryItems: [URLQueryItem] = [
+            .init(name: "date", value: formatter.string(from: date)),
+            .init(name: "system", value: system),
+        ]
+        if let latitude { queryItems.append(.init(name: "lat", value: String(latitude))) }
+        if let longitude { queryItems.append(.init(name: "lon", value: String(longitude))) }
+        components.queryItems = queryItems
+
+        let response: EphemerisResponse = try await networkClient.request(
+            endpoint: components.path + "?" + (components.query ?? ""),
+            responseType: EphemerisResponse.self
+        )
+        return response.planets
+    }
     
     /// Send chat message
     func sendChatMessage(_ message: String, context: String = "") async throws -> ChatResponse {
@@ -339,28 +526,38 @@ class APIServices: ObservableObject, APIServicesProtocol {
             let person1: BirthData
             let person2: BirthData
         }
-        
+
         let request = CompatibilityRequest(person1: person1, person2: person2)
-        
-        return try await networkClient.request(
+
+        // Get the actual CompatibilityResponse and convert to Data for backward compatibility
+        let response = try await networkClient.request(
             endpoint: "/api/v1/compatibility",
             method: HTTPMethod.POST,
             body: request,
-            responseType: Data.self
+            responseType: CompatibilityResponse.self
         )
+
+        // Encode back to Data for callers expecting Data
+        let encoder = JSONEncoder()
+        return try encoder.encode(response)
     }
     
     /// Generate detailed report
-    func generateDetailedReport(birthData: BirthData, type: String) async throws -> DetailedReportResponse {
+    /// - Parameters:
+    ///   - birthData: User's birth data for the report
+    ///   - type: Type of report to generate
+    ///   - userId: Optional user ID to associate the report with (for library storage)
+    func generateDetailedReport(birthData: BirthData, type: String, userId: String? = nil) async throws -> DetailedReportResponse {
         struct ReportRequest: Codable {
             let birthData: BirthData
             let reportType: String
+            let userId: String?
         }
-        
-        let request = ReportRequest(birthData: birthData, reportType: type)
-        
+
+        let request = ReportRequest(birthData: birthData, reportType: type, userId: userId)
+
         return try await networkClient.request(
-            endpoint: "/api/v1/report/generate",
+            endpoint: "/api/v1/reports/generate",
             method: HTTPMethod.POST,
             body: request,
             responseType: DetailedReportResponse.self
@@ -394,7 +591,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         )
         
         return try await networkClient.request(
-            endpoint: "/api/v1/report/generate",
+            endpoint: "/api/v1/reports/generate",
             method: HTTPMethod.POST,
             body: request,
             responseType: DetailedReportResponse.self
@@ -498,11 +695,10 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     /// Generate PDF for report
     func generateReportPDF(reportId: String) async throws -> Data {
-        return try await networkClient.request(
+        return try await networkClient.requestData(
             endpoint: "/api/v1/reports/\(reportId)/pdf",
             method: HTTPMethod.GET,
-            body: nil,
-            responseType: Data.self
+            body: nil
         )
     }
     
@@ -512,15 +708,19 @@ class APIServices: ObservableObject, APIServicesProtocol {
             endpoint: "/api/v1/subscription/status",
             method: HTTPMethod.GET,
             body: nil,
-            responseType: [String: Bool].self
+            responseType: SubscriptionStatusResponse.self
         )
-        
-        return response["isActive"] ?? false
+
+        return response.isActive
     }
     
     /// Generate report (alias for generateDetailedReport)
-    func generateReport(birthData: BirthData, type: String) async throws -> DetailedReportResponse {
-        return try await generateDetailedReport(birthData: birthData, type: type)
+    /// - Parameters:
+    ///   - birthData: User's birth data for the report
+    ///   - type: Type of report to generate
+    ///   - userId: Optional user ID to associate the report with (for library storage)
+    func generateReport(birthData: BirthData, type: String, userId: String? = nil) async throws -> DetailedReportResponse {
+        return try await generateDetailedReport(birthData: birthData, type: type, userId: userId)
     }
     
     /// Get detailed planetary positions
@@ -591,6 +791,265 @@ class APIServices: ObservableObject, APIServicesProtocol {
             method: HTTPMethod.GET,
             body: nil,
             responseType: responseType
+        )
+    }
+
+    // MARK: - Birth Data Sync
+
+    /// Sync birth data to server for personalized features
+    func syncBirthData(userId: String, profile: UserProfile) async throws {
+        guard let latitude = profile.birthLatitude,
+              let longitude = profile.birthLongitude,
+              let timezone = profile.timezone else {
+            // Location data not complete, skip sync
+            return
+        }
+
+        struct BirthDataRequest: Codable {
+            let userId: String
+            let birthData: BirthDataPayload
+
+            struct BirthDataPayload: Codable {
+                let date: String
+                let time: String?
+                let timezone: String
+                let latitude: Double
+                let longitude: Double
+                let locationName: String?
+            }
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateString = dateFormatter.string(from: profile.birthDate)
+
+        var timeString: String? = nil
+        if let birthTime = profile.birthTime {
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm"
+            timeString = timeFormatter.string(from: birthTime)
+        }
+
+        let request = BirthDataRequest(
+            userId: userId,
+            birthData: BirthDataRequest.BirthDataPayload(
+                date: dateString,
+                time: timeString,
+                timezone: timezone,
+                latitude: latitude,
+                longitude: longitude,
+                locationName: profile.birthPlace
+            )
+        )
+
+        let _: [String: String] = try await networkClient.request(
+            endpoint: "/api/v1/chat/birth-data",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: [String: String].self
+        )
+    }
+
+    /// Fetch birth data from server
+    func fetchBirthData(userId: String) async throws -> [String: Any]? {
+        struct BirthDataResponse: Codable {
+            let hasBirthData: Bool
+            let birthData: BirthData?
+
+            struct BirthData: Codable {
+                let birth_date: String?
+                let birth_time: String?
+                let timezone: String?
+                let latitude: Double?
+                let longitude: Double?
+                let location_name: String?
+            }
+        }
+
+        let response: BirthDataResponse = try await networkClient.request(
+            endpoint: "/api/v1/chat/birth-data?userId=\(userId)",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: BirthDataResponse.self
+        )
+
+        guard response.hasBirthData, let data = response.birthData else {
+            return nil
+        }
+
+        return [
+            "birth_date": data.birth_date as Any,
+            "birth_time": data.birth_time as Any,
+            "timezone": data.timezone as Any,
+            "latitude": data.latitude as Any,
+            "longitude": data.longitude as Any,
+            "location_name": data.location_name as Any
+        ]
+    }
+
+    // MARK: - Relationships (Compatibility)
+
+    /// List all relationships for the current user
+    /// Note: X-User-Id header is automatically set by NetworkClient
+    func listRelationships() async throws -> [RelationshipProfile] {
+        struct RelationshipsResponse: Codable {
+            let relationships: [RelationshipAPIProfile]
+        }
+
+        struct RelationshipAPIProfile: Codable {
+            let id: String
+            let name: String
+            let avatarUrl: String?
+            let sunSign: String
+            let moonSign: String
+            let risingSign: String?
+            let birthDate: String
+            let sharedSignature: String?
+            let lastPulse: RelationshipPulse?
+            let lastViewed: String?
+            let isFavorite: Bool?
+        }
+
+        let response: RelationshipsResponse = try await networkClient.request(
+            endpoint: "/api/v1/compatibility/relationships",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: RelationshipsResponse.self
+        )
+
+        // Convert API response to RelationshipProfile models
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        return response.relationships.compactMap { apiProfile -> RelationshipProfile? in
+            guard let birthDate = dateFormatter.date(from: apiProfile.birthDate) else {
+                return nil
+            }
+
+            var lastViewed: Date? = nil
+            if let lastViewedStr = apiProfile.lastViewed {
+                let isoFormatter = ISO8601DateFormatter()
+                lastViewed = isoFormatter.date(from: lastViewedStr)
+            }
+
+            return RelationshipProfile(
+                id: apiProfile.id,
+                name: apiProfile.name,
+                avatarUrl: apiProfile.avatarUrl,
+                sunSign: apiProfile.sunSign,
+                moonSign: apiProfile.moonSign,
+                risingSign: apiProfile.risingSign,
+                birthDate: birthDate,
+                sharedSignature: apiProfile.sharedSignature,
+                lastPulse: apiProfile.lastPulse,
+                lastViewed: lastViewed
+            )
+        }
+    }
+
+    /// Create a new relationship
+    /// Note: X-User-Id header is automatically set by NetworkClient
+    func createRelationship(
+        name: String,
+        birthDate: Date,
+        birthTime: Date? = nil,
+        timezone: String? = nil,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        locationName: String? = nil
+    ) async throws -> RelationshipProfile {
+        struct CreateRelationshipRequest: Codable {
+            let partnerName: String
+            let partnerBirthDate: String
+            let partnerBirthTime: String?
+            let partnerTimezone: String?
+            let partnerLatitude: Double?
+            let partnerLongitude: Double?
+            let partnerLocationName: String?
+        }
+
+        struct CreateRelationshipResponse: Codable {
+            let id: String
+            let name: String
+            let avatarUrl: String?
+            let sunSign: String
+            let moonSign: String
+            let risingSign: String?
+            let birthDate: String
+            let sharedSignature: String?
+            let lastPulse: RelationshipPulse?
+            let lastViewed: String?
+            let isFavorite: Bool?
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let birthDateString = dateFormatter.string(from: birthDate)
+
+        var birthTimeString: String? = nil
+        if let birthTime = birthTime {
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm"
+            birthTimeString = timeFormatter.string(from: birthTime)
+        }
+
+        let request = CreateRelationshipRequest(
+            partnerName: name,
+            partnerBirthDate: birthDateString,
+            partnerBirthTime: birthTimeString,
+            partnerTimezone: timezone,
+            partnerLatitude: latitude,
+            partnerLongitude: longitude,
+            partnerLocationName: locationName
+        )
+
+        let response: CreateRelationshipResponse = try await networkClient.request(
+            endpoint: "/api/v1/compatibility/relationships",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: CreateRelationshipResponse.self
+        )
+
+        return RelationshipProfile(
+            id: response.id,
+            name: response.name,
+            avatarUrl: response.avatarUrl,
+            sunSign: response.sunSign,
+            moonSign: response.moonSign,
+            risingSign: response.risingSign,
+            birthDate: birthDate,
+            sharedSignature: response.sharedSignature,
+            lastPulse: response.lastPulse,
+            lastViewed: nil
+        )
+    }
+
+    /// Delete a relationship
+    /// Note: X-User-Id header is automatically set by NetworkClient
+    func deleteRelationship(relationshipId: String) async throws {
+        let _: [String: Bool] = try await networkClient.request(
+            endpoint: "/api/v1/compatibility/relationships/\(relationshipId)",
+            method: HTTPMethod.DELETE,
+            body: nil,
+            responseType: [String: Bool].self
+        )
+    }
+
+    /// Get full compatibility snapshot for a relationship
+    /// Note: X-User-Id header is automatically set by NetworkClient
+    func getCompatibilitySnapshot(relationshipId: String, date: Date? = nil) async throws -> CompatibilitySnapshot {
+        var endpoint = "/api/v1/compatibility/relationships/\(relationshipId)/snapshot"
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            endpoint += "?date=\(formatter.string(from: date))"
+        }
+
+        return try await networkClient.request(
+            endpoint: endpoint,
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: CompatibilitySnapshot.self
         )
     }
 }

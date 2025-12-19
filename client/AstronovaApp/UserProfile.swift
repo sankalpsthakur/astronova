@@ -23,9 +23,14 @@ struct UserProfile: Codable {
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
     
-    init(fullName: String = "", birthDate: Date = Date(), birthTime: Date? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
+    /// Default birth date is 25 years ago to make it obvious user should set their actual date
+    private static var defaultBirthDate: Date {
+        Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
+    }
+
+    init(fullName: String = "", birthDate: Date? = nil, birthTime: Date? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
         self.fullName = fullName
-        self.birthDate = birthDate
+        self.birthDate = birthDate ?? Self.defaultBirthDate
         self.birthTime = birthTime
         self.birthPlace = birthPlace
         self.birthLatitude = birthLatitude
@@ -39,20 +44,48 @@ class UserProfileManager: ObservableObject {
     @Published var isLoading = false
     @Published var lastChart: ChartResponse?
     @Published var errorMessage: String?
-    
+    @Published var isSyncing = false
+
     private let userDefaults = UserDefaults.standard
     private let profileKey = "user_profile"
     private let chartKey = "last_chart"
+    private let deviceIdKey = "device_user_id"
     private let apiServices = APIServices.shared
-    
+
+    /// Device-based user ID for anonymous users
+    var deviceUserId: String {
+        if let existingId = userDefaults.string(forKey: deviceIdKey) {
+            return existingId
+        }
+        let newId = "device-\(UUID().uuidString.lowercased())"
+        userDefaults.set(newId, forKey: deviceIdKey)
+        return newId
+    }
+
     init() {
-        if let data = userDefaults.data(forKey: profileKey),
-           let profile = try? JSONDecoder().decode(UserProfile.self, from: data) {
-            self.profile = profile
+        if let data = userDefaults.data(forKey: profileKey) {
+            do {
+                let decodedProfile = try JSONDecoder().decode(UserProfile.self, from: data)
+                self.profile = decodedProfile
+                #if DEBUG
+                debugPrint("[Profile] Loaded profile from UserDefaults - birthTime: \(String(describing: decodedProfile.birthTime))")
+                #endif
+            } catch {
+                #if DEBUG
+                debugPrint("[Profile] Failed to decode profile from UserDefaults: \(error)")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    debugPrint("[Profile] Raw JSON: \(jsonString)")
+                }
+                #endif
+                self.profile = UserProfile()
+            }
         } else {
+            #if DEBUG
+            debugPrint("[Profile] No saved profile found, creating new UserProfile")
+            #endif
             self.profile = UserProfile()
         }
-        
+
         // Load last cached chart
         if let chartData = userDefaults.data(forKey: chartKey),
            let chart = try? JSONDecoder().decode(ChartResponse.self, from: chartData) {
@@ -62,17 +95,79 @@ class UserProfileManager: ObservableObject {
     
     func saveProfile() throws {
         do {
+            #if DEBUG
+            debugPrint("[Profile] Saving profile - birthTime: \(String(describing: profile.birthTime))")
+            #endif
+
             let data = try JSONEncoder().encode(profile)
             userDefaults.set(data, forKey: profileKey)
+
+            #if DEBUG
+            // Verify the save by reading it back
+            if let savedData = userDefaults.data(forKey: profileKey),
+               let verifyProfile = try? JSONDecoder().decode(UserProfile.self, from: savedData) {
+                debugPrint("[Profile] Verified save - birthTime: \(String(describing: verifyProfile.birthTime))")
+            } else {
+                debugPrint("[Profile] WARNING: Failed to verify saved profile!")
+            }
+            #endif
+
+            // Trigger server sync in background (fire and forget)
+            Task {
+                await syncBirthDataToServer()
+            }
         } catch {
-            print("Error saving user profile: \(error)")
+            #if DEBUG
+            debugPrint("[Profile] Error saving user profile: \(error.localizedDescription)")
+            #endif
             throw error
+        }
+    }
+
+    /// Sync birth data to server for features that require server-side data (Time Travel, Oracle, etc.)
+    func syncBirthDataToServer(userId: String? = nil) async {
+        // Only sync if we have complete location data
+        guard hasCompleteLocationData else {
+            #if DEBUG
+            debugPrint("[Profile] Skipping server sync - incomplete location data")
+            #endif
+            return
+        }
+
+        await MainActor.run {
+            isSyncing = true
+        }
+
+        let effectiveUserId = userId ?? deviceUserId
+
+        do {
+            try await apiServices.syncBirthData(userId: effectiveUserId, profile: profile)
+            #if DEBUG
+            debugPrint("[Profile] Birth data synced to server successfully for user: \(effectiveUserId)")
+            #endif
+        } catch {
+            #if DEBUG
+            debugPrint("[Profile] Failed to sync birth data to server: \(error.localizedDescription)")
+            #endif
+        }
+
+        await MainActor.run {
+            isSyncing = false
         }
     }
     
     func updateProfile(_ newProfile: UserProfile) {
+        #if DEBUG
+        debugPrint("[Profile] updateProfile called - incoming birthTime: \(String(describing: newProfile.birthTime))")
+        #endif
+
         let oldProfile = profile
         profile = newProfile
+
+        #if DEBUG
+        debugPrint("[Profile] Profile updated in memory - current birthTime: \(String(describing: profile.birthTime))")
+        #endif
+
         do {
             try saveProfile()
             // Clear cached chart when profile changes significantly
@@ -81,7 +176,9 @@ class UserProfileManager: ObservableObject {
                 userDefaults.removeObject(forKey: chartKey)
             }
         } catch {
-            print("Failed to save updated profile: \(error)")
+            #if DEBUG
+            debugPrint("[Profile] Failed to save updated profile: \(error.localizedDescription)")
+            #endif
         }
     }
     
@@ -120,54 +217,70 @@ class UserProfileManager: ObservableObject {
                 self.errorMessage = error.localizedDescription
                 self.isLoading = false
             }
-            print("Failed to generate chart: \(error)")
+            #if DEBUG
+            debugPrint("[Profile] Failed to generate chart: \(error.localizedDescription)")
+            #endif
         }
     }
-    
+
     /// Search for locations using real API
     func searchLocations(query: String) async -> [LocationResult] {
         do {
             let locations = try await apiServices.searchLocations(query: query)
             return locations
         } catch {
-            print("Failed to search locations: \(error)")
+            #if DEBUG
+            debugPrint("[Profile] Failed to search locations: \(error.localizedDescription)")
+            #endif
             return []
         }
     }
-    
+
     /// Set birth location from location result
     func setBirthLocation(_ location: LocationResult) {
         profile.birthPlace = location.fullName
         profile.birthLatitude = location.coordinate.latitude
         profile.birthLongitude = location.coordinate.longitude
         profile.timezone = location.timezone
-        
+
         do {
             try saveProfile()
+            // saveProfile() now triggers server sync automatically
         } catch {
-            print("Failed to save profile after setting location: \(error)")
+            #if DEBUG
+            debugPrint("[Profile] Failed to save profile after setting location: \(error.localizedDescription)")
+            #endif
         }
     }
-    
+
+    /// Manually trigger a sync to server (useful for ensuring data is synced before using server-dependent features)
+    func ensureServerSync() async {
+        await syncBirthDataToServer()
+    }
+
     /// Get daily horoscope for user's sun sign
     func getDailyHoroscope() async -> HoroscopeResponse? {
         guard let sunSign = profile.sunSign else { return nil }
-        
+
         do {
             return try await apiServices.getDailyHoroscope(for: sunSign)
         } catch {
-            print("Failed to get daily horoscope: \(error)")
+            #if DEBUG
+            debugPrint("[Profile] Failed to get daily horoscope: \(error.localizedDescription)")
+            #endif
             return nil
         }
     }
-    
+
     /// Check API connectivity
     func checkAPIConnectivity() async -> Bool {
         do {
             let health = try await apiServices.healthCheck()
             return health.status == "ok"
         } catch {
-            print("API connectivity check failed: \(error)")
+            #if DEBUG
+            debugPrint("[Profile] API connectivity check failed: \(error.localizedDescription)")
+            #endif
             return false
         }
     }
