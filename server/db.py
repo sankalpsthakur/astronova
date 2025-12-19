@@ -6,8 +6,45 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DB_PATH = os.path.join(os.path.dirname(__file__), "astronova.db")
-DB_PATH = os.environ.get("DB_PATH", DEFAULT_DB_PATH)
+
+def _resolve_db_path() -> str:
+    """Resolve database path, ensuring directory exists and is writable."""
+    # Check environment variable first
+    env_path = os.environ.get("DB_PATH")
+    if env_path:
+        db_dir = os.path.dirname(env_path) or "."
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+            # Test write permission
+            test_file = os.path.join(db_dir, ".write_test")
+            with open(test_file, "w") as f:
+                f.write("test")
+            os.remove(test_file)
+            logger.info(f"Using DB_PATH from environment: {env_path}")
+            return env_path
+        except (OSError, IOError) as e:
+            logger.warning(f"Cannot use DB_PATH={env_path}: {e}")
+
+    # Try app directory
+    app_dir_path = os.path.join(os.path.dirname(__file__), "astronova.db")
+    app_dir = os.path.dirname(app_dir_path)
+    try:
+        os.makedirs(app_dir, exist_ok=True)
+        test_file = os.path.join(app_dir, ".write_test")
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+        return app_dir_path
+    except (OSError, IOError) as e:
+        logger.warning(f"Cannot use app directory for DB: {e}")
+
+    # Fallback to /tmp (always writable on Linux)
+    tmp_path = "/tmp/astronova.db"
+    logger.info(f"Using fallback DB path: {tmp_path}")
+    return tmp_path
+
+
+DB_PATH = _resolve_db_path()
 
 
 def get_connection():
