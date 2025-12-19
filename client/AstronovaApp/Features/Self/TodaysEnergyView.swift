@@ -134,7 +134,7 @@ private struct EnergyBar: View {
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .frame(width: 55, alignment: .leading)
 
-            // Progress bar
+            // Progress bar (visual-only, no numeric percentage)
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     // Background
@@ -158,13 +158,6 @@ private struct EnergyBar: View {
                 }
             }
             .frame(height: 6)
-
-            // Percentage
-            Text("\(Int(strength.value * 100))%")
-                .font(.cosmicMicro)
-                .foregroundStyle(Color.cosmicTextTertiary)
-                .frame(width: 32, alignment: .trailing)
-                .monospacedDigit()
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.8).delay(0.1)) {

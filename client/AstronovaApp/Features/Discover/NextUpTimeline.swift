@@ -13,7 +13,7 @@ struct NextUpTimeline: View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
             // Header
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Next 14 Days")
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
@@ -29,10 +29,10 @@ struct NextUpTimeline: View {
                     CosmicHaptics.light()
                     onTimeTravelTap?()
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Cosmic.Spacing.xxs) {
                         Text("Time Travel")
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 10))
+                            .font(.cosmicMicro)
                     }
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicGold)
@@ -63,11 +63,11 @@ struct NextUpTimeline: View {
 
                 // Legend
                 HStack(spacing: Cosmic.Spacing.m) {
-                    legendItem(label: "Ease", color: .green)
-                    legendItem(label: "Effort", color: .orange)
-                    legendItem(label: "Intensity", color: .red)
+                    legendItem(label: "Ease", color: .cosmicSuccess)
+                    legendItem(label: "Effort", color: .cosmicWarning)
+                    legendItem(label: "Intensity", color: .cosmicError)
                 }
-                .font(.system(size: 9))
+                .font(.cosmicMicro)
                 .foregroundStyle(Color.cosmicTextSecondary)
             }
 
@@ -84,7 +84,7 @@ struct NextUpTimeline: View {
     // MARK: - Legend Item
 
     private func legendItem(label: String, color: Color) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Cosmic.Spacing.xxs) {
             Circle()
                 .fill(color)
                 .frame(width: 6, height: 6)
@@ -96,10 +96,9 @@ struct NextUpTimeline: View {
 
     private func selectedMarkerDetail(_ marker: TimelineMarker) -> some View {
         HStack(spacing: Cosmic.Spacing.m) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                 Text(formatDate(marker.date))
-                    .font(.cosmicCallout)
-                    .fontWeight(.medium)
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Text(descriptionFor(marker))
@@ -110,12 +109,12 @@ struct NextUpTimeline: View {
             Spacer()
 
             // Intensity visualization
-            VStack(spacing: 2) {
+            VStack(spacing: Cosmic.Spacing.xxs) {
                 Text("Frequency")
-                    .font(.system(size: 9))
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextSecondary)
 
-                HStack(spacing: 2) {
+                HStack(spacing: Cosmic.Spacing.xxs) {
                     ForEach(0..<5) { i in
                         RoundedRectangle(cornerRadius: 1)
                             .fill(i < intensityLevel(marker.intensity) ? colorFor(marker.label) : Color.cosmicTextSecondary.opacity(0.2))
@@ -129,11 +128,10 @@ struct NextUpTimeline: View {
                 onTimeTravelTap?()
             } label: {
                 Text("Explore")
-                    .font(.cosmicCaption)
-                    .fontWeight(.medium)
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicGold)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, Cosmic.Spacing.sm)
+                    .padding(.vertical, Cosmic.Spacing.xxs)
                     .background(Color.cosmicGold.opacity(0.15))
                     .clipShape(Capsule())
             }
@@ -155,15 +153,14 @@ struct NextUpTimeline: View {
                 .font(.system(size: 20))
                 .foregroundStyle(Color.cosmicGold)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                 Text("Upcoming Shift")
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextSecondary)
 
                 if let from = shift.from, let to = shift.to {
                     Text("\(from) → \(to)")
-                        .font(.cosmicCallout)
-                        .fontWeight(.medium)
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 } else if let summary = shift.summary {
                     Text(summary)
@@ -174,13 +171,13 @@ struct NextUpTimeline: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: Cosmic.Spacing.xxs) {
                 Text("\(shift.daysUntil)")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.cosmicTitle1)
                     .foregroundStyle(Color.cosmicGold)
 
                 Text("days")
-                    .font(.system(size: 10))
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
@@ -222,9 +219,9 @@ struct NextUpTimeline: View {
 
     private func colorFor(_ label: String) -> Color {
         switch label.lowercased() {
-        case "ease": return .green
-        case "effort": return .orange
-        case "intensity": return .red
+        case "ease": return .cosmicSuccess
+        case "effort": return .cosmicWarning
+        case "intensity": return .cosmicError
         default: return .cosmicGold
         }
     }
@@ -244,10 +241,10 @@ private struct TimelineMarkerView: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 4) {
+            VStack(spacing: Cosmic.Spacing.xxs) {
                 // Day label
                 Text(marker.dayOfWeek.prefix(1))
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.cosmicMicro)
                     .foregroundStyle(isToday ? Color.cosmicGold : Color.cosmicTextSecondary)
 
                 // Intensity dot
@@ -272,7 +269,7 @@ private struct TimelineMarkerView: View {
 
                 // Date number
                 Text(dayNumber)
-                    .font(.system(size: 10, weight: isToday ? .bold : .regular))
+                    .font(isToday ? .cosmicMicro.weight(.bold) : .cosmicMicro)
                     .foregroundStyle(isToday ? Color.cosmicTextPrimary : Color.cosmicTextSecondary)
             }
         }
@@ -281,9 +278,9 @@ private struct TimelineMarkerView: View {
 
     private var dotColor: Color {
         switch marker.label.lowercased() {
-        case "ease": return .green
-        case "effort": return .orange
-        case "intensity": return .red
+        case "ease": return .cosmicSuccess
+        case "effort": return .cosmicWarning
+        case "intensity": return .cosmicError
         default: return .cosmicGold
         }
     }

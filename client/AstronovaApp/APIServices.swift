@@ -162,9 +162,9 @@ class APIServices: ObservableObject, APIServicesProtocol {
         // Convert legacy method to return structured data
         let data = try await calculateCompatibility(person1: person1, person2: person2)
         let matchResponse = try JSONDecoder().decode(MatchResponse.self, from: data)
-        
+
         return CompatibilityResponse(
-            compatibility_score: Double(matchResponse.overallScore) / 100.0,
+            compatibility_score: matchResponse.overallIntensity.fillLevel,
             summary: "Compatibility analysis based on astrological factors",
             detailed_analysis: "Detailed analysis of planetary aspects and compatibility",
             strengths: ["Communication", "Emotional connection"],

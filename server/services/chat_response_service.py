@@ -20,10 +20,15 @@ except Exception:  # pragma: no cover
 from services.ephemeris_service import EphemerisService
 
 
+class ChatServiceError(RuntimeError):
+    """Raised when the chat pipeline cannot reach the OpenAI provider."""
+
+
 class ChatResponseService:
     def __init__(self):
         self.ephem = EphemerisService()
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) if OpenAI else None
+        api_key = os.getenv("OPENAI_API_KEY")
+        self.client = OpenAI(api_key=api_key) if OpenAI and api_key else None
         self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
     def _get_current_transits(self) -> Dict[str, Any]:
@@ -214,9 +219,7 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
         system_prompt = self._build_system_prompt(transits, natal, category)
 
         if not self.client:
-            reply = self._fallback_response(transits, category)
-            follow_ups = self._generate_follow_ups(category, has_birth_data)
-            return reply, follow_ups
+            raise ChatServiceError("OpenAI client not configured")
 
         try:
             # Call OpenAI
@@ -233,28 +236,9 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
             reply = response.choices[0].message.content.strip()
 
         except Exception as e:
-            # Fallback to template-based response if OpenAI fails
-            reply = self._fallback_response(transits, category)
-            print(f"[ChatService] OpenAI error, using fallback: {e}")
+            raise ChatServiceError("OpenAI request failed") from e
 
         # Generate follow-ups
         follow_ups = self._generate_follow_ups(category, has_birth_data)
 
         return reply, follow_ups
-
-    def _fallback_response(self, transits: Dict[str, Any], category: str) -> str:
-        """Fallback template response if OpenAI is unavailable."""
-        sun_sign = transits.get("sun", {}).get("sign", "the cosmos")
-        moon_sign = transits.get("moon", {}).get("sign", "the stars")
-
-        fallbacks = {
-            "love": f"With the Moon in {moon_sign}, emotional connections are highlighted. Trust your heart's wisdom today.",
-            "career": f"The Sun in {sun_sign} illuminates your professional path. Focus on what truly matters to you.",
-            "health": f"Current planetary energies support mindful self-care. Listen to what your body needs.",
-            "spiritual": f"The cosmos invites deeper reflection. Take time for stillness and inner listening.",
-            "current": f"With the Moon in {moon_sign}, today favors intuitive action and emotional awareness.",
-            "future": f"The planetary alignments suggest positive momentum ahead. Stay open to opportunities.",
-            "general": f"The Sun in {sun_sign} and Moon in {moon_sign} create a unique blend of energies. Trust your journey.",
-        }
-
-        return fallbacks.get(category, fallbacks["general"])

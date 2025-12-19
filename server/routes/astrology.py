@@ -166,6 +166,7 @@ def dashas():
             "mahadasha_order": [lord for lord, _ in _vimshottari_sequence()],
         }
 
+    resp["disclaimer"] = "For entertainment purposes only. Not professional advice."
     return jsonify(resp)
 
 
@@ -383,4 +384,5 @@ def dashas_complete():
             "antardasha_guide": _interp_svc.get_dasha_explanation(antar_lord, "antardasha"),
         }
 
+    response["disclaimer"] = "For entertainment purposes only. Not professional advice."
     return jsonify(response)

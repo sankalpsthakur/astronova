@@ -37,28 +37,28 @@ struct TimeSeeker: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Cosmic.Spacing.sm) {
             // Main date display
             HStack {
                 Button { adjustMonth(by: -1) } label: {
                     Image(systemName: "chevron.left")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicTitle2)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Previous month")
 
                 Spacer()
 
-                VStack(spacing: 2) {
+                VStack(spacing: Cosmic.Spacing.xxs) {
                     Text(monthYearString)
-                        .font(.title2.weight(.bold))
+                        .font(.cosmicTitle2)
                         .monospacedDigit()
                         .contentTransition(.numericText())
 
                     Text(relativeDescription)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 .scaleEffect(isDragging ? 1.05 : 1.0)
                 .animation(.cosmicSpring, value: isDragging)
@@ -67,8 +67,8 @@ struct TimeSeeker: View {
 
                 Button { adjustMonth(by: 1) } label: {
                     Image(systemName: "chevron.right")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicTitle2)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Next month")
@@ -78,12 +78,12 @@ struct TimeSeeker: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.secondary.opacity(0.2))
+                        .fill(Color.cosmicTextSecondary.opacity(0.2))
                         .frame(height: 8)
 
                     // “Now” marker at center
                     RoundedRectangle(cornerRadius: 1)
-                        .fill(Color.white.opacity(0.35))
+                        .fill(Color.cosmicTextPrimary.opacity(0.35))
                         .frame(width: 2, height: 14)
                         .offset(x: geometry.size.width * 0.5 - 1)
 
@@ -106,7 +106,7 @@ struct TimeSeeker: View {
 
                     // Thumb
                     Circle()
-                        .fill(Color.white)
+                        .fill(Color.cosmicTextPrimary)
                         .frame(width: 20, height: 20)
                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                         .offset(x: geometry.size.width * progress - 10)
@@ -126,15 +126,15 @@ struct TimeSeeker: View {
             .frame(height: 24)
 
             // Quick actions
-            HStack(spacing: 16) {
+            HStack(spacing: Cosmic.Spacing.md) {
                 ForEach([-1, 0, 1], id: \.self) { yearOffset in
                     let year = calendar.component(.year, from: Date()) + yearOffset
                     let isSelected = calendar.component(.year, from: selectedDate) == year
 
                     Button { jumpToYear(year) } label: {
                         Text(String(year))
-                            .font(.caption.weight(isSelected ? .bold : .medium))
-                            .foregroundStyle(isSelected ? .primary : .secondary)
+                            .font(isSelected ? .cosmicCaptionEmphasis : .cosmicCaption)
+                            .foregroundStyle(isSelected ? Color.cosmicTextPrimary : Color.cosmicTextSecondary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
@@ -148,11 +148,11 @@ struct TimeSeeker: View {
                 Spacer()
 
                 Button { snapToNow() } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Cosmic.Spacing.xxs) {
                         Image(systemName: "clock.fill")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                         Text("Now")
-                            .font(.caption.weight(.semibold))
+                            .font(.cosmicCaptionEmphasis)
                     }
                     .foregroundStyle(Color.cosmicGold)
                     .padding(.horizontal, 12)
@@ -166,9 +166,9 @@ struct TimeSeeker: View {
 
             // Per-scrub feedback
             if !insights.isEmpty || summary != nil {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: Cosmic.Spacing.xs) {
                             ForEach(insights.prefix(4)) { insight in
                                 Button {
                                     guard insight.element != nil else { return }
@@ -176,7 +176,7 @@ struct TimeSeeker: View {
                                     onInsightTapped(insight)
                                 } label: {
                                     Text(insight.text)
-                                        .font(.caption.weight(.semibold))
+                                        .font(.cosmicCaptionEmphasis)
                                         .foregroundStyle(feedbackForeground(for: insight.tone))
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 6)
@@ -195,8 +195,8 @@ struct TimeSeeker: View {
 
                     if let summary {
                         Text(summary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                             .transition(.opacity)
                     }
                 }
@@ -204,7 +204,7 @@ struct TimeSeeker: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
         .onAppear {
             lastHapticMonth = calendar.component(.month, from: selectedDate)
             lastHapticYear = calendar.component(.year, from: selectedDate)
@@ -325,19 +325,19 @@ struct TimeSeeker: View {
 
     private func feedbackForeground(for tone: ScrubInsight.Tone) -> Color {
         switch tone {
-        case .supportive: return .green
-        case .challenging: return .red
-        case .review: return .orange
-        case .neutral: return .secondary
+        case .supportive: return .cosmicSuccess
+        case .challenging: return .cosmicError
+        case .review: return .cosmicWarning
+        case .neutral: return .cosmicTextSecondary
         }
     }
 
     private func feedbackBackground(for tone: ScrubInsight.Tone) -> Color {
         switch tone {
-        case .supportive: return Color.green.opacity(0.12)
-        case .challenging: return Color.red.opacity(0.12)
-        case .review: return Color.orange.opacity(0.12)
-        case .neutral: return Color.secondary.opacity(0.12)
+        case .supportive: return Color.cosmicSuccess.opacity(0.12)
+        case .challenging: return Color.cosmicError.opacity(0.12)
+        case .review: return Color.cosmicWarning.opacity(0.12)
+        case .neutral: return Color.cosmicTextSecondary.opacity(0.12)
         }
     }
 }

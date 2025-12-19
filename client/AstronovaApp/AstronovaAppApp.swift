@@ -15,9 +15,12 @@ struct AstronovaAppApp: App {
         // Apply UI test configuration if running in test mode
         TestEnvironment.shared.applyTestConfiguration()
 
-        // DEBUG: Bypass all paywalls for local testing
+        // Pro bypass only for explicit UI tests, not all Debug builds
+        // This prevents accidental free access in development builds
         #if DEBUG
-        UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
+        if TestEnvironment.shared.isUITest {
+            UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
+        }
         #endif
 
         _authState = StateObject(wrappedValue: AuthState())

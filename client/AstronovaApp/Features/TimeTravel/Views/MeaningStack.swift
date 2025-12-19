@@ -27,7 +27,7 @@ struct MeaningStack: View {
     // MARK: - Full Stack (3 cards)
 
     private var fullStack: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Cosmic.Spacing.sm) {
             nowCard
             nextCard
             actCard
@@ -38,59 +38,59 @@ struct MeaningStack: View {
 
     private var nowCard: some View {
         Button(action: onNowTapped) {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                 // Header
                 HStack {
                     Text("NOW")
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(Color.cosmicTextSecondary)
 
                     Spacer()
 
                     // Dasha lords with symbols
-                    HStack(spacing: 4) {
+                    HStack(spacing: Cosmic.Spacing.xxs) {
                         Text(snapshot.currentDasha.mahadasha.symbol)
-                            .font(.title3)
+                            .font(.cosmicTitle2)
                         Text("•")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                         Text(snapshot.currentDasha.antardasha.symbol)
-                            .font(.title3)
+                            .font(.cosmicTitle2)
                     }
                 }
 
                 // Theme
                 Text(snapshot.now.theme)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                    .font(.cosmicHeadline)
+                    .foregroundStyle(Color.cosmicTextPrimary)
                     .multilineTextAlignment(.leading)
 
                 // Risk & Opportunity
-                HStack(spacing: 16) {
+                HStack(spacing: Cosmic.Spacing.md) {
                     // Risk
-                    HStack(spacing: 6) {
+                    HStack(spacing: Cosmic.Spacing.xs) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicWarning)
                         Text(snapshot.now.risk)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
 
                     Spacer()
 
                     // Opportunity
-                    HStack(spacing: 6) {
+                    HStack(spacing: Cosmic.Spacing.xs) {
                         Image(systemName: "sparkles")
-                            .font(.caption)
-                            .foregroundStyle(.yellow)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicGold)
                         Text(snapshot.now.opportunity)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
             }
             .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(LinearGradient(
@@ -112,17 +112,17 @@ struct MeaningStack: View {
     private var nextCard: some View {
         if let soonest = nextTransition {
             Button(action: onNextTapped) {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                     // Header with countdown
                     HStack {
                         Text("NEXT")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaptionEmphasis)
+                            .foregroundStyle(Color.cosmicTextSecondary)
 
                         Spacer()
 
                         Text("\(soonest.transitionType.shortLabel) in \(soonest.countdownShort)")
-                            .font(.caption.weight(.semibold))
+                            .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicInfo)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -130,9 +130,9 @@ struct MeaningStack: View {
                     }
 
                     // High-density timeline: praty / antar / maha
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                         ForEach(snapshot.nextTransitions.prefix(3)) { transition in
-                            HStack(spacing: 10) {
+                            HStack(spacing: Cosmic.Spacing.sm) {
                                 Text(transition.transitionType.shortLabel)
                                     .font(.caption2.weight(.bold))
                                     .foregroundStyle(transitionColor(for: transition.transitionType))
@@ -141,24 +141,24 @@ struct MeaningStack: View {
                                     .background(transitionColor(for: transition.transitionType).opacity(0.14), in: Capsule())
 
                                 Text("\(transition.fromLord) → \(transition.toLord)")
-                                    .font(.subheadline.weight(.medium))
+                                    .font(.cosmicCalloutEmphasis)
 
                                 Spacer()
 
                                 Text(transition.countdownShort)
                                     .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                             }
                         }
 
                         Text(soonest.whatShifts)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                             .lineLimit(2)
                     }
                 }
                 .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
@@ -169,49 +169,49 @@ struct MeaningStack: View {
     // MARK: - ACT Card
 
     private var actCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             // Header
             HStack {
                 Text("ACT")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicTextSecondary)
 
                 Spacer()
 
                 Button(action: onActTapped) {
                     Image(systemName: "arrow.up.right.circle")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicTitle2)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
 
             // Do this
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.body)
-                    .foregroundStyle(.green)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicSuccess)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Do")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                     Text(snapshot.act.doThis)
-                        .font(.subheadline)
+                        .font(.cosmicCallout)
                 }
             }
 
             // Avoid this
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.body)
-                    .foregroundStyle(.red)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicError)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Avoid")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                     Text(snapshot.act.avoidThis)
-                        .font(.subheadline)
+                        .font(.cosmicCallout)
                 }
             }
 
@@ -224,22 +224,22 @@ struct MeaningStack: View {
             } label: {
                 HStack {
                     Image(systemName: "info.circle")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                     Text("Why")
-                        .font(.caption.weight(.medium))
+                        .font(.cosmicCaptionEmphasis)
                     Spacer()
                     Image(systemName: expandedWhySection ? "chevron.up" : "chevron.down")
-                        .font(.caption2)
+                        .font(.cosmicMicro)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.cosmicTextSecondary)
                 .padding(.top, 4)
             }
             .buttonStyle(.plain)
 
             if expandedWhySection {
                 Text(snapshot.act.whyExplanation)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .padding(.top, 4)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .move(edge: .top)),
@@ -248,7 +248,7 @@ struct MeaningStack: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Action guidance. Do: \(snapshot.act.doThis). Avoid: \(snapshot.act.avoidThis)")
     }
@@ -256,15 +256,15 @@ struct MeaningStack: View {
     // MARK: - Compact Bar (for sticky header)
 
     private var compactBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Cosmic.Spacing.sm) {
             // Dasha summary
-            HStack(spacing: 4) {
+            HStack(spacing: Cosmic.Spacing.xxs) {
                 Text(snapshot.currentDasha.mahadasha.symbol)
                 Text("•")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                 Text(snapshot.currentDasha.antardasha.symbol)
             }
-            .font(.subheadline.weight(.medium))
+            .font(.cosmicCalloutEmphasis)
 
             Divider()
                 .frame(height: 16)
@@ -272,8 +272,8 @@ struct MeaningStack: View {
             // Countdown
             if let soonest = nextTransition {
                 Text("\(soonest.countdownShort) to \(soonest.toLord)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
 
             Divider()
@@ -281,8 +281,8 @@ struct MeaningStack: View {
 
             // Quick action
             Text("Do: \(String(snapshot.act.doThis.prefix(20)))...")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
                 .lineLimit(1)
 
             Spacer()
@@ -292,13 +292,13 @@ struct MeaningStack: View {
                 // Handled by parent
             } label: {
                 Image(systemName: "chevron.down")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
+        .background(Color.cosmicSurface)
     }
 }
 

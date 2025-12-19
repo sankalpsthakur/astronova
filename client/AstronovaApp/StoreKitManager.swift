@@ -142,8 +142,12 @@ class StoreKitManager: ObservableObject {
     }
     
     /// Restore purchases (useful for family sharing and device transfers)
-    func restorePurchases() async {
+    /// Returns true if any purchases were restored
+    @discardableResult
+    func restorePurchases() async -> Bool {
+        let hadProBefore = hasProSubscription
         await checkCurrentEntitlements()
+        return hasProSubscription && !hadProBefore
     }
     
     // MARK: - Private Methods

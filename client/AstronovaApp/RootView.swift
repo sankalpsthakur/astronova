@@ -287,8 +287,13 @@ struct SimpleProfileSetupView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("profile_setup_step") private var currentStep = 0
     @AppStorage("profile_setup_name") private var fullName = ""
-    @AppStorage("profile_setup_birth_date") private var birthDateTimestamp: Double = Date().timeIntervalSince1970
+    @AppStorage("profile_setup_birth_date") private var birthDateTimestamp: Double = Self.defaultBirthDateTimestamp
     @AppStorage("profile_setup_birth_time") private var birthTimeTimestamp: Double = Date().timeIntervalSince1970
+
+    /// Default birth date is 25 years ago to make it obvious user should set their actual date
+    private static var defaultBirthDateTimestamp: Double {
+        (Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()).timeIntervalSince1970
+    }
     @AppStorage("profile_setup_birth_place") private var birthPlace = ""
     @State private var showingPersonalizedInsight = false
     @State private var showingConfetti = false
@@ -562,7 +567,7 @@ struct SimpleProfileSetupView: View {
     private func clearProfileSetupProgress() {
         currentStep = 0
         fullName = ""
-        birthDateTimestamp = Date().timeIntervalSince1970
+        birthDateTimestamp = Self.defaultBirthDateTimestamp
         birthTimeTimestamp = Date().timeIntervalSince1970
         birthPlace = ""
     }
@@ -657,7 +662,7 @@ struct EnhancedWelcomeStepView: View {
                     }
                     
                     Text("Discover what the stars reveal about your personality, relationships, and destiny through personalized cosmic insights.")
-                        .font(.body)
+                        .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
@@ -713,7 +718,7 @@ struct EnhancedNameStepView: View {
                         .multilineTextAlignment(.center)
                     
                     Text("Your name helps us create a personal connection with your cosmic journey.")
-                        .font(.body)
+                        .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -749,10 +754,10 @@ struct EnhancedNameStepView: View {
                     if let error = validationError {
                         HStack {
                             Image(systemName: "exclamationmark.diamond.fill")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.red)
                             Text(error)
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.red.opacity(0.9))
                             Spacer()
                         }
@@ -760,10 +765,10 @@ struct EnhancedNameStepView: View {
                     } else if !fullName.isEmpty && isValidName(fullName) {
                         HStack {
                             Image(systemName: "star.fill")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.yellow)
                             Text("Perfect! The cosmos recognizes you, \(fullName.components(separatedBy: " ").first ?? fullName).")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.8))
                             Spacer()
                         }
@@ -871,7 +876,7 @@ struct EnhancedBirthDateStepView: View {
                         .multilineTextAlignment(.center)
                     
                     Text("Your birth date reveals your sun sign and unlocks the cosmic blueprint of your personality.")
-                        .font(.body)
+                        .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -909,10 +914,10 @@ struct EnhancedBirthDateStepView: View {
                     if let error = validationError {
                         HStack {
                             Image(systemName: "exclamationmark.diamond.fill")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.red)
                             Text(error)
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.red.opacity(0.9))
                             Spacer()
                         }
@@ -943,7 +948,7 @@ struct EnhancedBirthDateStepView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "bolt.shield.fill")
-                                    .font(.title3)
+                                    .font(.cosmicHeadline)
                                 Text("Quick Start")
                                     .font(.title3.weight(.medium))
                                 Spacer()
@@ -951,7 +956,7 @@ struct EnhancedBirthDateStepView: View {
                                     .font(.caption.weight(.medium))
                                     .opacity(0.7)
                                 Image(systemName: "arrow.right")
-                                    .font(.caption)
+                                    .font(.cosmicCaption)
                             }
                             .foregroundStyle(.white)
                             .padding(.horizontal, 24)
@@ -968,7 +973,7 @@ struct EnhancedBirthDateStepView: View {
                         .padding(.horizontal, 24)
                         
                         Text("Start exploring with just your birth date. You can add birth time and location later for more precise readings.")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                             .foregroundStyle(.white.opacity(0.6))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
@@ -1067,7 +1072,7 @@ struct EnhancedBirthTimeStepView: View {
                         .multilineTextAlignment(.center)
 
                     Text("Birth time improves rising sign and house calculations. If unknown, we'll assume 12:00 noon and mark some insights as approximate.")
-                        .font(.body)
+                        .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -1181,7 +1186,7 @@ struct EnhancedBirthPlaceStepView: View {
                         .multilineTextAlignment(.center)
                     
                     Text("Your birth location helps us calculate precise celestial positions. You can add this later if you prefer to skip for now.")
-                        .font(.body)
+                        .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -1232,12 +1237,12 @@ struct EnhancedBirthPlaceStepView: View {
                                                 .font(.body.weight(.medium))
                                                 .foregroundStyle(.white)
                                             Text(location.fullName)
-                                                .font(.caption)
+                                                .font(.cosmicCaption)
                                                 .foregroundStyle(.white.opacity(0.7))
                                         }
                                         Spacer()
                                         Image(systemName: "mappin.and.ellipse")
-                                            .font(.caption)
+                                            .font(.cosmicCaption)
                                             .foregroundStyle(.white.opacity(0.6))
                                     }
                                     .padding(.horizontal, 16)
@@ -1266,17 +1271,17 @@ struct EnhancedBirthPlaceStepView: View {
                         HStack {
                             if auth.profileManager.profile.birthCoordinates != nil && auth.profileManager.profile.timezone != nil {
                                 Image(systemName: "checkmark.seal.fill")
-                                    .font(.caption)
+                                    .font(.cosmicCaption)
                                     .foregroundStyle(.green)
                                 Text("Perfect! Location validated with coordinates.")
-                                    .font(.caption)
+                                    .font(.cosmicCaption)
                                     .foregroundStyle(.white.opacity(0.8))
                             } else {
                                 Image(systemName: "exclamationmark.diamond.fill")
-                                    .font(.caption)
+                                    .font(.cosmicCaption)
                                     .foregroundStyle(.orange)
                                 Text("Select a location from the dropdown for best results, or skip to add later.")
-                                    .font(.caption)
+                                    .font(.cosmicCaption)
                                     .foregroundStyle(.orange.opacity(0.9))
                             }
                             Spacer()
@@ -1289,10 +1294,10 @@ struct EnhancedBirthPlaceStepView: View {
                     if birthPlace.isEmpty && !showDropdown {
                         HStack {
                             Image(systemName: "questionmark.bubble.fill")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.6))
                             Text("Birth location is optional - you can always add it later in your profile.")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.6))
                             Spacer()
                         }
@@ -1444,7 +1449,7 @@ struct PersonalizedInsightView: View {
                                 .multilineTextAlignment(.center)
                             
                             Text("Reading planetary positions and celestial influences...")
-                                .font(.subheadline)
+                                .font(.cosmicCallout)
                                 .foregroundStyle(.white.opacity(0.8))
                                 .multilineTextAlignment(.center)
                         }
@@ -1485,7 +1490,7 @@ struct PersonalizedInsightView: View {
                                 .opacity(showContent ? 1 : 0)
                             
                             Text(insight)
-                                .font(.body)
+                                .font(.cosmicBody)
                                 .foregroundStyle(.white.opacity(0.9))
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(6)
@@ -1501,7 +1506,7 @@ struct PersonalizedInsightView: View {
                                 Text("Start Your Journey")
                                     .font(.headline.weight(.semibold))
                                 Image(systemName: "arrow.forward.circle.fill")
-                                    .font(.title3)
+                                    .font(.cosmicHeadline)
                             }
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -2084,7 +2089,7 @@ struct FloatingTabBar: View {
                     RoundedRectangle(cornerRadius: Cosmic.Radius.modal, style: .continuous)
                         .fill(.ultraThinMaterial)
                 )
-                .shadow(color: Color.black.opacity(Cosmic.Opacity.subtle), radius: 16, x: 0, y: 6)
+                .shadow(color: Color.cosmicVoid.opacity(Cosmic.Opacity.subtle), radius: 16, x: 0, y: 6)
                 .shadow(color: Color.cosmicGold.opacity(0.05), radius: 8, x: 0, y: 0)
         )
         .overlay(
@@ -2131,7 +2136,7 @@ struct TodayTab: View {
                             .font(.title2.weight(.semibold))
                         Spacer()
                         Text(Date().formatted(date: .abbreviated, time: .omitted))
-                            .font(.caption)
+                            .font(.cosmicCaption)
                             .foregroundStyle(Color.secondary)
                     }
                     
@@ -2214,19 +2219,19 @@ struct TodayTab: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("🌟")
-                    .font(.largeTitle)
+                    .font(.cosmicDisplay)
                 VStack(alignment: .leading) {
                     Text("Daily Insight")
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                     Text("Cosmic Guidance")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.secondary)
                 }
                 Spacer()
             }
             
             Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
-                .font(.body)
+                .font(.cosmicBody)
                 .lineSpacing(4)
             
             Divider()
@@ -2245,38 +2250,38 @@ struct TodayTab: View {
     private var keyThemesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Key Themes")
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             HStack {
                 VStack {
                     Text("💼")
-                        .font(.title3)
+                        .font(.cosmicHeadline)
                     Text("Career")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                 }
                 .frame(maxWidth: .infinity)
                 
                 VStack {
                     Text("❤️")
-                        .font(.title3)
+                        .font(.cosmicHeadline)
                     Text("Love")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                 }
                 .frame(maxWidth: .infinity)
                 
                 VStack {
                     Text("🌱")
-                        .font(.title3)
+                        .font(.cosmicHeadline)
                     Text("Growth")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                 }
                 .frame(maxWidth: .infinity)
                 
                 VStack {
                     Text("⚖️")
-                        .font(.title3)
+                        .font(.cosmicHeadline)
                     Text("Balance")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -2288,28 +2293,28 @@ struct TodayTab: View {
     private var luckyElementsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Today's Lucky Elements")
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             HStack(spacing: 32) {
                 // Lucky Color
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Lucky Color")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .textCase(.uppercase)
                     
                     HStack(spacing: 12) {
                         Circle()
-                            .fill(Color.purple)
+                            .fill(Color.cosmicAmethyst)
                             .frame(width: 24, height: 24)
                             .overlay(
                                 Circle()
-                                    .stroke(Color.purple.opacity(0.3), lineWidth: 3)
+                                    .stroke(Color.cosmicAmethyst.opacity(0.3), lineWidth: 3)
                             )
                         
                         Text("Purple")
                             .font(.body.weight(.medium))
-                            .foregroundStyle(Color.purple)
+                            .foregroundStyle(Color.cosmicAmethyst)
                     }
                 }
                 
@@ -2319,7 +2324,7 @@ struct TodayTab: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Lucky Number")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .textCase(.uppercase)
                     
                     HStack(spacing: 12) {
@@ -2351,7 +2356,7 @@ struct TodayTab: View {
     private var planetaryPositionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Current Planetary Energies")
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             PlanetaryEnergiesView()
         }
@@ -2462,7 +2467,7 @@ struct PlanetaryEnergiesView: View {
                         .scaleEffect(0.8)
                     Text("Loading planetary energies...")
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
@@ -2472,13 +2477,13 @@ struct PlanetaryEnergiesView: View {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                     Text(errorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                     Button("Retry") {
                         loadPlanetaryData()
                     }
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(.blue)
                 }
                 .padding()
@@ -2489,22 +2494,22 @@ struct PlanetaryEnergiesView: View {
                     ForEach(planetaryPositions.prefix(5), id: \.id) { planet in
                         HStack {
                             Text(planet.symbol)
-                                .font(.title2)
+                                .font(.cosmicTitle2)
                                 .frame(width: 30)
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(planet.name)
                                     .font(.subheadline.weight(.medium))
                                 Text("\(planet.sign) \(String(format: "%.1f", planet.degree))°")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                             }
                             
                             Spacer()
                             
                             if planet.retrograde {
                                 Text("℞")
-                                    .font(.caption)
+                                    .font(.cosmicCaption)
                                     .foregroundStyle(.orange)
                             }
                         }
@@ -2550,17 +2555,17 @@ struct PlanetCard: View {
     var body: some View {
         VStack(spacing: 4) {
             Text(symbol)
-                .font(.title2)
+                .font(.cosmicTitle2)
             Text(name)
-                .font(.caption2)
+                .font(.cosmicMicro)
                 .fontWeight(.medium)
             Text(sign)
-                .font(.caption2)
+                .font(.cosmicMicro)
                 .foregroundStyle(Color.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(Color.gray.opacity(0.1))
+        .background(Color.cosmicNebula.opacity(0.1))
         .cornerRadius(8)
     }
 }
@@ -2575,7 +2580,7 @@ struct WelcomeToTodayCard: View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "sparkles")
-                    .font(.title2)
+                    .font(.cosmicTitle2)
                     .foregroundStyle(.blue)
                     .scaleEffect(animateIcon ? 1.2 : 1.0)
                     .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
@@ -2585,34 +2590,34 @@ struct WelcomeToTodayCard: View {
                         .font(.headline.weight(.semibold))
                     Text("Your personalized daily guidance awaits")
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 Spacer()
                 
                 Button(action: onDismiss) {
                     Image(systemName: "xmark.seal.fill")
-                        .font(.title3)
+                        .font(.cosmicHeadline)
                         .foregroundStyle(.gray.opacity(0.6))
                 }
             }
             
             HStack(spacing: 12) {
                 Text("💫")
-                    .font(.title)
+                    .font(.cosmicTitle1)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Time Travel")
                         .font(.callout.weight(.medium))
                     Text("• Check daily insights below")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                     Text("• Find compatibility matches")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                     Text("• Ask anything")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 Spacer()
@@ -2637,7 +2642,7 @@ struct PrimaryCTASection: View {
         VStack(spacing: 12) {
             HStack {
                 Text("Quick Actions")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                 Spacer()
             }
             
@@ -2685,7 +2690,7 @@ struct CTACard: View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(.cosmicTitle2)
                     .foregroundStyle(color)
                 
                 VStack(spacing: 2) {
@@ -2693,8 +2698,8 @@ struct CTACard: View {
                         .font(.callout.weight(.medium))
                         .foregroundStyle(.primary)
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -2721,7 +2726,7 @@ struct DiscoveryCTASection: View {
         VStack(spacing: 16) {
             HStack {
                 Text("Discover More")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                 Spacer()
             }
             
@@ -2792,7 +2797,7 @@ struct DiscoveryCard: View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .font(.cosmicTitle2)
                     .foregroundStyle(color)
                     .frame(width: 24)
                 
@@ -2803,8 +2808,8 @@ struct DiscoveryCard: View {
                         .multilineTextAlignment(.leading)
                     
                     Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.leading)
                         .lineSpacing(2)
                 }
@@ -2812,8 +2817,8 @@ struct DiscoveryCard: View {
                 Spacer()
                 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
             .padding(16)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -2843,7 +2848,7 @@ struct FriendsTab: View {
                     VStack(spacing: 12) {
                         HStack {
                             Image(systemName: "heart.text.square.fill")
-                                .font(.title2)
+                                .font(.cosmicTitle2)
                                 .foregroundStyle(.pink)
                                 .scaleEffect(animateHearts ? 1.1 : 1.0)
                                 .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: animateHearts)
@@ -2855,8 +2860,8 @@ struct FriendsTab: View {
                         }
                         
                         Text("Discover your cosmic connection")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCallout)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.horizontal)
@@ -2866,7 +2871,7 @@ struct FriendsTab: View {
                     VStack(spacing: 16) {
                         HStack {
                             Text("Or enter details manually")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
                             Spacer()
                         }
                         .padding(.horizontal)
@@ -2876,10 +2881,10 @@ struct FriendsTab: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Name")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                 
                                 TextField("Friend, family member, partner...", text: $partnerName)
-                                    .font(.body)
+                                    .font(.cosmicBody)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 12)
                                     .background(
@@ -2893,7 +2898,7 @@ struct FriendsTab: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Birth Date")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                 
                                 DatePicker("", selection: $partnerBirthDate, in: ...Date(), displayedComponents: .date)
                                     .datePickerStyle(.compact)
@@ -2949,15 +2954,15 @@ struct FriendsTab: View {
                             VStack(spacing: 12) {
                                 HStack {
                                     Image(systemName: "heart.rectangle.fill")
-                                        .font(.title2)
+                                        .font(.cosmicTitle2)
                                         .foregroundStyle(.pink)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Compatibility Score")
                                             .font(.subheadline.weight(.semibold))
                                         Text("Based on cosmic alignment")
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
+                                            .font(.cosmicMicro)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
                                     }
                                     
                                     Spacer()
@@ -2974,8 +2979,8 @@ struct FriendsTab: View {
                                 )
                                 
                                 Text("Great cosmic connection! You and \(partnerName.isEmpty ? "this person" : partnerName) share harmonious energy patterns.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .multilineTextAlignment(.center)
                                     .lineSpacing(2)
                                     .padding(.horizontal, 4)
@@ -3002,7 +3007,7 @@ struct FriendsTab: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Recent Checks")
-                                    .font(.headline)
+                                    .font(.cosmicHeadline)
                                 Spacer()
                             }
                             .padding(.horizontal)
@@ -3026,8 +3031,8 @@ struct FriendsTab: View {
                                             Text("☽ \(match.moon)")
                                             Text("⬆️ \(match.rising)")
                                         }
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
                                     }
                                     
                                     Spacer()
@@ -3131,7 +3136,7 @@ struct CompatibilityCard: View {
         VStack(spacing: 6) {
             Text(title)
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.cosmicTextSecondary)
             
             Text("\(displayedScore)%")
                 .font(.title3.weight(.bold))
@@ -3515,7 +3520,7 @@ private struct OracleNavTitle: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "sparkles")
-                .font(.subheadline)
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicGold)
             Text("Oracle")
                 .font(.cosmicHeadline)
@@ -3538,7 +3543,7 @@ struct OracleMessageCard: View {
                         .fill(Color.cosmicGold.opacity(0.15))
                         .frame(width: 32, height: 32)
                     Image(systemName: message.type.icon)
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicGold)
                 }
             }
@@ -3604,7 +3609,7 @@ struct OracleInputArea: View {
                 // Send button
                 Button(action: onSend) {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
+                        .font(.cosmicTitle2)
                         .foregroundStyle(
                             text.isEmpty || isDisabled
                                 ? Color.cosmicTextTertiary
@@ -3646,8 +3651,8 @@ struct DepthToggle: View {
                         VStack(alignment: .leading) {
                             Text(option.rawValue)
                             Text(option.description)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     } icon: {
                         Image(systemName: option.icon)
@@ -3657,7 +3662,7 @@ struct DepthToggle: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: depth.icon)
-                    .font(.caption)
+                    .font(.cosmicCaption)
                 Text(depth.rawValue)
                     .font(.cosmicCaption)
             }
@@ -3758,7 +3763,7 @@ struct OracleTypingIndicator: View {
                     .fill(Color.cosmicGold.opacity(0.15))
                     .frame(width: 32, height: 32)
                 Image(systemName: "sparkles")
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicGold)
             }
 
@@ -3823,8 +3828,8 @@ struct ErrorMessageView: View {
                 .foregroundStyle(.orange)
             
             Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
             
             Spacer()
             
@@ -3858,8 +3863,8 @@ struct SubscriptionSheet: View {
                         .font(.largeTitle.weight(.bold))
                     
                     Text("Unlock unlimited cosmic wisdom")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicHeadline)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 // Features
@@ -3892,7 +3897,7 @@ struct SubscriptionSheet: View {
                     } label: {
                         VStack(spacing: 8) {
                             Text("Start Your Cosmic Journey")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
                                 .foregroundStyle(.white)
                             
                             Text("$9.99/month")
@@ -3906,8 +3911,8 @@ struct SubscriptionSheet: View {
                     }
                     
                     Text("Cancel anytime in Settings")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
             .padding()
@@ -3935,17 +3940,17 @@ struct FeatureRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(.cosmicTitle2)
                 .foregroundStyle(.orange)
                 .frame(width: 30)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                 
                 Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
             
             Spacer()
@@ -4112,8 +4117,8 @@ struct CosmicMessageView: View {
             
             if showTimestamp {
                 Text(formatTimestamp(message.timestamp))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicMicro)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .transition(.scale.combined(with: .opacity))
             }
         }
@@ -4141,7 +4146,7 @@ struct CosmicMessageView: View {
                         )
                     
                     Image(systemName: message.messageType.icon)
-                        .font(.title3)
+                        .font(.cosmicHeadline)
                         .foregroundStyle(message.messageType.accentColor)
                 }
                 
@@ -4165,12 +4170,12 @@ struct CosmicMessageView: View {
                     // Message type indicator
                     HStack(spacing: 4) {
                         Image(systemName: message.messageType.icon)
-                            .font(.caption2)
+                            .font(.cosmicMicro)
                             .foregroundStyle(message.messageType.accentColor)
                         
                         Text(message.messageType.displayName)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicMicro)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                     .padding(.horizontal, 8)
                 }
@@ -4178,8 +4183,8 @@ struct CosmicMessageView: View {
             
             if showTimestamp {
                 Text(formatTimestamp(message.timestamp))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicMicro)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .padding(.leading, 52)
                     .transition(.scale.combined(with: .opacity))
             }
@@ -4221,7 +4226,7 @@ struct CosmicTypingIndicator: View {
                     )
                 
                 Image(systemName: "brain.head.profile")
-                    .font(.title3)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(.purple)
                     .symbolEffect(.variableColor, options: .repeating)
             }
@@ -4230,8 +4235,8 @@ struct CosmicTypingIndicator: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Text("✨ The cosmos is aligning your answer")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                     
                     HStack(spacing: 2) {
                         ForEach(0..<3, id: \.self) { index in
@@ -4346,11 +4351,11 @@ struct CosmicInputArea: View {
                     .foregroundColor(isDeepDiveEnabled ? .white : .blue)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(isDeepDiveEnabled ? Color.blue : Color.blue.opacity(0.1))
+                    .background(isDeepDiveEnabled ? Color.cosmicInfo : Color.cosmicInfo.opacity(0.1))
                     .clipShape(Capsule())
                     .overlay(
                         Capsule()
-                            .stroke(isDeepDiveEnabled ? Color.blue : Color.blue.opacity(0.3), lineWidth: 1)
+                            .stroke(isDeepDiveEnabled ? Color.cosmicInfo : Color.cosmicInfo.opacity(0.3), lineWidth: 1)
                     )
                 }
                 .padding(.leading, 16)
@@ -4391,7 +4396,7 @@ struct CosmicInputArea: View {
                             .font(.system(size: 16))
                             .foregroundColor(.gray)
                             .frame(width: 32, height: 32)
-                            .background(Color.gray.opacity(0.1))
+                            .background(Color.cosmicNebula.opacity(0.1))
                             .clipShape(Circle())
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
@@ -4408,7 +4413,7 @@ struct CosmicInputArea: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(messageText.isEmpty ? .gray : .white)
                             .frame(width: 32, height: 32)
-                            .background(messageText.isEmpty ? Color.gray.opacity(0.3) : Color.blue)
+                            .background(messageText.isEmpty ? Color.cosmicNebula.opacity(0.3) : Color.cosmicInfo)
                             .clipShape(Circle())
                             .frame(width: 44, height: 44) // Expand tap target
                             .contentShape(Rectangle()) // Full tap area
@@ -4420,7 +4425,7 @@ struct CosmicInputArea: View {
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.cosmicNebula.opacity(0.3), lineWidth: 1)
                 )
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -4485,10 +4490,10 @@ struct ProfileTab: View {
         .sheet(isPresented: $showingAPITests) {
             VStack {
                 Text("API Testing")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                 Text("API testing interface will be implemented")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
             .padding()
         }
@@ -4520,8 +4525,8 @@ struct ManageDashboardView: View {
                         Label("Edit Birth Information", systemImage: "person.text.rectangle")
                         Spacer()
                         Text(summaryBirthInfo(profile: auth.profileManager.profile))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
                 .buttonStyle(.plain)
@@ -4541,8 +4546,8 @@ struct ManageDashboardView: View {
                         #endif
                     }()
                     Text(isPro ? "Active" : "Free")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                     Button(isPro ? "Manage" : "Start Pro") {
                         showingPaywall = true
                     }
@@ -4560,8 +4565,8 @@ struct ManageDashboardView: View {
                         Spacer()
                         if !bookmarks.isEmpty {
                             Text("\(bookmarks.count)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
                 }
@@ -4677,8 +4682,8 @@ struct ProfileOverviewView: View {
                         
                         if let sunSign = auth.profileManager.profile.sunSign {
                             Text(sunSign)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCallout)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         
                         Button("Edit Profile") {
@@ -4747,13 +4752,13 @@ struct QuickInsightCard: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(.cosmicTitle2)
                 .foregroundStyle(color)
             
             VStack(spacing: 4) {
                 Text(title)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                 
                 Text(value)
                     .font(.subheadline.weight(.semibold))
@@ -4783,7 +4788,7 @@ struct NavigationRowView: View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: icon)
-                    .font(.title3)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(.blue)
                     .frame(width: 24)
                 
@@ -4793,15 +4798,15 @@ struct NavigationRowView: View {
                         .foregroundStyle(.primary)
                     
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
         .buttonStyle(.plain)
@@ -4814,10 +4819,14 @@ struct ProfileEditView: View {
     @ObservedObject var profileManager: UserProfileManager
     @State private var isEditing = false
     @State private var editedProfile: UserProfile
-    
+    @State private var hasBirthTime: Bool
+    @State private var birthTimeValue: Date
+
     init(profileManager: UserProfileManager) {
         self.profileManager = profileManager
         _editedProfile = State(initialValue: profileManager.profile)
+        _hasBirthTime = State(initialValue: profileManager.profile.birthTime != nil)
+        _birthTimeValue = State(initialValue: profileManager.profile.birthTime ?? Date())
     }
     
     var body: some View {
@@ -4837,81 +4846,109 @@ struct ProfileEditView: View {
                         
                         Text(profileManager.profile.fullName.prefix(2).uppercased())
                             .font(.system(size: 40, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.cosmicTextPrimary)
                     }
-                    
-                    VStack(spacing: 4) {
+
+                    VStack(spacing: Cosmic.Spacing.xxs) {
                         Text(profileManager.profile.fullName.isEmpty ? "Your Name" : profileManager.profile.fullName)
-                            .font(.title2.weight(.semibold))
-                        
+                            .font(.cosmicTitle2)
+                            .foregroundStyle(Color.cosmicTextPrimary)
+
                         if let sunSign = profileManager.profile.sunSign {
                             Text(sunSign)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCallout)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
                 }
                 .padding(.top)
-                
+
                 // Birth Information Card
                 VStack(spacing: 0) {
                     HStack {
                         Text("Birth Information")
-                            .font(.headline.weight(.semibold))
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
                         Spacer()
                         Button(isEditing ? "Save" : "Edit") {
                             if isEditing {
+                                // Set birthTime based on toggle state before saving
+                                editedProfile.birthTime = hasBirthTime ? birthTimeValue : nil
                                 profileManager.updateProfile(editedProfile)
                             } else {
                                 editedProfile = profileManager.profile
+                                hasBirthTime = profileManager.profile.birthTime != nil
+                                birthTimeValue = profileManager.profile.birthTime ?? Date()
                             }
                             isEditing.toggle()
                         }
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.blue)
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicGold)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, Cosmic.Spacing.lg)
+                    .padding(.top, Cosmic.Spacing.lg)
+                    .padding(.bottom, Cosmic.Spacing.md)
                     
                     if isEditing {
-                        VStack(spacing: 16) {
+                        VStack(spacing: Cosmic.Spacing.md) {
                             // Full Name
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                                 Text("Full Name")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
                                 TextField("Enter your full name", text: $editedProfile.fullName)
-                                    .textFieldStyle(.roundedBorder)
+                                    .font(.cosmicBody)
+                                    .foregroundStyle(Color.cosmicTextPrimary)
+                                    .padding(Cosmic.Spacing.md)
+                                    .background(Color.cosmicStardust.opacity(0.5), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                             }
-                            
+
                             // Birth Date
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                                 Text("Birth Date")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
                                 DatePicker("Birth Date", selection: $editedProfile.birthDate, displayedComponents: .date)
                                     .datePickerStyle(.compact)
+                                    .tint(Color.cosmicGold)
                             }
-                            
+
                             // Birth Time
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Birth Time")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-                                DatePicker("Birth Time", selection: Binding(
-                                    get: { editedProfile.birthTime ?? Date() },
-                                    set: { editedProfile.birthTime = $0 }
-                                ), displayedComponents: .hourAndMinute)
-                                .datePickerStyle(.compact)
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                                HStack {
+                                    Text("Birth Time")
+                                        .font(.cosmicCaptionEmphasis)
+                                        .foregroundStyle(Color.cosmicTextTertiary)
+                                    Spacer()
+                                    Toggle("", isOn: $hasBirthTime)
+                                        .labelsHidden()
+                                        .tint(Color.cosmicGold)
+                                }
+
+                                if hasBirthTime {
+                                    DatePicker("Birth Time", selection: $birthTimeValue, displayedComponents: .hourAndMinute)
+                                        .datePickerStyle(.compact)
+                                        .tint(Color.cosmicGold)
+                                } else {
+                                    HStack {
+                                        Image(systemName: "clock.badge.questionmark")
+                                            .foregroundStyle(Color.cosmicWarning)
+                                        Text("Birth time improves dasha timing accuracy")
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
+                                    }
+                                    .padding(Cosmic.Spacing.sm)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color.cosmicWarning.opacity(0.1), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                                }
                             }
-                            
+
                             // Birth Place with MapKit Autocomplete
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                                 Text("Birth Place")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-                                
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
                                 MapKitAutocompleteView(
                                     selectedLocation: .constant(nil),
                                     placeholder: editedProfile.birthPlace ?? "City, State/Country"
@@ -4924,74 +4961,75 @@ struct ProfileEditView: View {
                                 }
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
+                        .padding(.horizontal, Cosmic.Spacing.lg)
+                        .padding(.bottom, Cosmic.Spacing.lg)
                     } else {
-                        VStack(spacing: 12) {
+                        VStack(spacing: Cosmic.Spacing.sm) {
                             ProfileInfoRow(
                                 title: "Birth Date",
                                 value: formatDate(profileManager.profile.birthDate)
                             )
-                            
+
                             ProfileInfoRow(
                                 title: "Birth Time",
                                 value: profileManager.profile.birthTime.map(formatTime) ?? "Not set"
                             )
-                            
+
                             ProfileInfoRow(
                                 title: "Birth Place",
                                 value: profileManager.profile.birthPlace ?? "Not set"
                             )
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
+                        .padding(.horizontal, Cosmic.Spacing.lg)
+                        .padding(.bottom, Cosmic.Spacing.lg)
                     }
                 }
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                        .fill(Color.cosmicSurface)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(.secondary.opacity(0.3), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                                .stroke(Color.cosmicTextTertiary.opacity(0.2), lineWidth: 1)
                         )
                 )
-                
+
                 // Astrological Signs Card
                 VStack(spacing: 0) {
                     HStack {
                         Text("Astrological Signs")
-                            .font(.headline.weight(.semibold))
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
                         Spacer()
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 16)
-                    
-                    VStack(spacing: 12) {
+                    .padding(.horizontal, Cosmic.Spacing.lg)
+                    .padding(.top, Cosmic.Spacing.lg)
+                    .padding(.bottom, Cosmic.Spacing.md)
+
+                    VStack(spacing: Cosmic.Spacing.sm) {
                         ProfileInfoRow(
                             title: "Sun Sign",
                             value: profileManager.profile.sunSign ?? "Calculate from birth info"
                         )
-                        
+
                         ProfileInfoRow(
                             title: "Moon Sign",
                             value: profileManager.profile.moonSign ?? "Requires birth time & place"
                         )
-                        
+
                         ProfileInfoRow(
                             title: "Rising Sign",
                             value: profileManager.profile.risingSign ?? "Requires birth time & place"
                         )
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
+                    .padding(.horizontal, Cosmic.Spacing.lg)
+                    .padding(.bottom, Cosmic.Spacing.lg)
                 }
                 .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                        .fill(Color.cosmicSurface)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(.secondary.opacity(0.3), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                                .stroke(Color.cosmicTextTertiary.opacity(0.2), lineWidth: 1)
                         )
                 )
                 
@@ -5022,10 +5060,10 @@ struct ProfileInfoRow: View {
         HStack {
             Text(title)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.cosmicTextSecondary)
             Spacer()
             Text(value)
-                .font(.subheadline)
+                .font(.cosmicCallout)
                 .foregroundStyle(.primary)
         }
     }
@@ -5225,19 +5263,19 @@ struct ProfileSettingsRow: View {
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(auth.profileManager.profile.fullName.isEmpty ? "Set up profile" : auth.profileManager.profile.fullName)
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                         .foregroundStyle(.primary)
                     
                     Text(auth.profileManager.profile.birthPlace ?? "Add birth details")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCallout)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 Spacer()
                 
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
         .buttonStyle(.plain)
@@ -5255,6 +5293,7 @@ struct PrivacyPolicyView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 header
+                disclaimerSection
                 overviewSection
                 dataWeCollectSection
                 howWeUseDataSection
@@ -5275,9 +5314,39 @@ struct PrivacyPolicyView: View {
             Text("Astronova Privacy Policy")
                 .font(.title2.weight(.semibold))
             Text("Last updated \(lastUpdated)")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
         }
+    }
+
+    // MARK: - Entertainment & Legal Disclaimer (App Store Compliance)
+    private var disclaimerSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            PolicySection(
+                title: "Important Disclaimer",
+                content: "Astronova is an entertainment application. All astrological content, including horoscopes, birth charts, compatibility analyses, forecasts, and insights, is provided for entertainment and informational purposes only."
+            )
+
+            PolicySection(
+                title: "Not Professional Advice",
+                bulletPoints: [
+                    "Health Forecasts: Astrological health insights are not medical advice. Always consult a qualified healthcare provider for medical concerns.",
+                    "Career & Wealth Forecasts: Career and financial insights are not professional financial, investment, or career counseling. Consult appropriate professionals for important decisions.",
+                    "Relationship Insights: Compatibility readings are for entertainment and should not replace professional relationship counseling.",
+                    "Life Decisions: Astronova should not be used as the sole basis for making important life decisions."
+                ]
+            )
+
+            Text("By using Astronova, you acknowledge that astrological interpretations are subjective and based on traditional systems, not scientific evidence.")
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextTertiary)
+                .italic()
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.cosmicWarning.opacity(0.1))
+        )
     }
 
     private var overviewSection: some View {
@@ -5343,13 +5412,13 @@ private struct PolicySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.headline)
+                .font(.cosmicHeadline)
                 .foregroundStyle(.primary)
 
             if let content {
                 Text(content)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
 
             if !bulletPoints.isEmpty {
@@ -5357,11 +5426,11 @@ private struct PolicySection: View {
                     ForEach(bulletPoints, id: \.self) { point in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "smallcircle.fill.circle")
-                                .font(.caption2)
+                                .font(.cosmicMicro)
                                 .foregroundStyle(.tertiary)
                             Text(point)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -5382,7 +5451,7 @@ struct DataPrivacyView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("We take your privacy seriously. Here's how we handle your data:")
-                    .font(.body)
+                    .font(.cosmicBody)
                 
                 PrivacySection(
                     title: "What We Collect",
@@ -5413,11 +5482,11 @@ struct PrivacySection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             Text(content)
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(.cosmicBody)
+                .foregroundStyle(Color.cosmicTextSecondary)
         }
     }
 }
@@ -5438,8 +5507,8 @@ struct ExportDataView: View {
                     .font(.title2.weight(.semibold))
                 
                 Text("Download all your astrological data including birth information, preferences, and saved readings.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .multilineTextAlignment(.center)
             }
             
@@ -5447,7 +5516,7 @@ struct ExportDataView: View {
                 generateExportData()
                 showingShareSheet = true
             }
-            .font(.headline)
+            .font(.cosmicHeadline)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(height: 50)
@@ -5525,21 +5594,20 @@ struct AboutView: View {
                         .font(.title.weight(.bold))
                     
                     Text("Version 1.0.0")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCallout)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 Text("Discover what the stars reveal about your personality, relationships, and destiny through personalized cosmic insights.")
-                    .font(.body)
+                    .font(.cosmicBody)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                 
                 VStack(spacing: 16) {
-                    Link("Privacy Policy", destination: URL(string: "https://astronova.app/privacy")!)
-                    Link("Terms of Service", destination: URL(string: "https://astronova.app/terms")!)
-                    Link("Acknowledgments", destination: URL(string: "https://astronova.app/acknowledgments")!)
+                    Link("Privacy Policy", destination: URL(string: "https://astronova.onrender.com/privacy")!)
+                    Link("Terms of Service", destination: URL(string: "https://astronova.onrender.com/terms")!)
                 }
-                .font(.subheadline)
+                .font(.cosmicCallout)
                 
                 Spacer()
             }
@@ -5712,7 +5780,7 @@ struct CalendarHeaderView: View {
                 selectedDate = Calendar.current.date(byAdding: .month, value: -1, to: selectedDate) ?? selectedDate
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.title2)
+                    .font(.cosmicTitle2)
                     .foregroundStyle(.blue)
             }
             
@@ -5725,8 +5793,8 @@ struct CalendarHeaderView: View {
                     Text(DateFormatter.monthYear.string(from: selectedDate))
                         .font(.title2.weight(.semibold))
                     Text("Tap to change")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
             .foregroundStyle(.primary)
@@ -5737,7 +5805,7 @@ struct CalendarHeaderView: View {
                 selectedDate = Calendar.current.date(byAdding: .month, value: 1, to: selectedDate) ?? selectedDate
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.title2)
+                    .font(.cosmicTitle2)
                     .foregroundStyle(.blue)
             }
         }
@@ -5757,7 +5825,7 @@ struct CalendarGridView: View {
             ForEach(calendar.shortWeekdaySymbols, id: \.self) { weekday in
                 Text(weekday)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .frame(height: 30)
             }
             
@@ -5862,10 +5930,10 @@ struct DailySynopsisCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Daily Synopsis")
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                     Text("General cosmic overview • \(DateFormatter.fullDate.string(from: date))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 Spacer()
@@ -5890,8 +5958,8 @@ struct DailySynopsisCard: View {
                         Image(systemName: "sparkles")
                             .foregroundStyle(.orange)
                         Text("Free daily insight")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                         Spacer()
                     }
                     
@@ -5905,8 +5973,8 @@ struct DailySynopsisCard: View {
                                     .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.primary)
                                 Text("Get personalized reports starting from $4.99")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                             }
                             Spacer()
                             Image(systemName: "arrow.forward.circle.fill")
@@ -5924,7 +5992,7 @@ struct DailySynopsisCard: View {
                         .scaleEffect(0.8)
                     Text("Loading daily synopsis...")
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
         }
@@ -6123,7 +6191,7 @@ struct BentoInsightCard: View {
                         
                         if isGenerated {
                             Image(systemName: "checkmark.seal.fill")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.green)
                         }
                     }
@@ -6138,8 +6206,8 @@ struct BentoInsightCard: View {
                         
                         if showDescription {
                             Text(insight.description)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                                 .multilineTextAlignment(.leading)
                                 .lineLimit(2)
                         }
@@ -6150,12 +6218,12 @@ struct BentoInsightCard: View {
 
                         HStack {
                             Text("Tap to time travel")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicMicro)
+                                .foregroundStyle(Color.cosmicTextSecondary)
 
                             Image(systemName: "arrow.right")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicMicro)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
                 }
@@ -6196,27 +6264,27 @@ struct InsightCard: View {
             VStack(spacing: 12) {
                 HStack {
                     Image(systemName: insight.icon)
-                        .font(.title2)
+                        .font(.cosmicTitle2)
                         .foregroundStyle(insight.color)
                     
                     Spacer()
                     
                     if isGenerated {
                         Image(systemName: "checkmark.seal.fill")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                             .foregroundStyle(.green)
                     }
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(insight.title)
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
                     
                     Text(insight.description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -6277,8 +6345,8 @@ struct ReportGenerationSheet: View {
                             .font(.title2.weight(.bold))
                         
                         Text("See what your personalised report will contain")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCallout)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                     .padding(.top)
                     
@@ -6354,7 +6422,7 @@ struct ReportGenerationSheet: View {
                                 }
                                 
                                 Text(isGenerating ? "Generating..." : "Dive Deeper")
-                                    .font(.headline)
+                                    .font(.cosmicHeadline)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -6386,13 +6454,13 @@ struct ReportGenerationSheet: View {
                                             
                                             Text("$9.99/month")
                                                 .font(.title3.weight(.medium))
-                                                .foregroundStyle(.secondary)
+                                                .foregroundStyle(Color.cosmicTextSecondary)
                                         }
                                         
                                         Spacer()
                                         
                                         Image(systemName: "crown.fill")
-                                            .font(.largeTitle)
+                                            .font(.cosmicDisplay)
                                             .foregroundStyle(.yellow)
                                     }
                                     
@@ -6403,19 +6471,19 @@ struct ReportGenerationSheet: View {
                                             Image(systemName: "checkmark.circle.fill")
                                                 .foregroundStyle(.green)
                                             Text("All 7 detailed reports included")
-                                                .font(.subheadline)
+                                                .font(.cosmicCallout)
                                         }
                                         HStack {
                                             Image(systemName: "checkmark.circle.fill")
                                                 .foregroundStyle(.green)
                                             Text("Unlimited AI chat conversations")
-                                                .font(.subheadline)
+                                                .font(.cosmicCallout)
                                         }
                                         HStack {
                                             Image(systemName: "checkmark.circle.fill")
                                                 .foregroundStyle(.green)
                                             Text("Priority support & new features")
-                                                .font(.subheadline)
+                                                .font(.cosmicCallout)
                                         }
                                     }
                                 }
@@ -6444,8 +6512,8 @@ struct ReportGenerationSheet: View {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text("Single Report Only")
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                                                .font(.cosmicCaption)
+                                                .foregroundStyle(Color.cosmicTextSecondary)
                                             Text("Purchase \(reportInfo.title)")
                                                 .font(.subheadline.weight(.medium))
                                             Text("from $12.99")
@@ -6453,7 +6521,7 @@ struct ReportGenerationSheet: View {
                                         }
                                         Spacer()
                                         Image(systemName: "apple.logo")
-                                            .font(.title3)
+                                            .font(.cosmicHeadline)
                                     }
                                     .frame(maxWidth: .infinity)
                                     .padding()
@@ -6466,8 +6534,8 @@ struct ReportGenerationSheet: View {
                     }
                     
                     Text("All reports are saved to your profile for future reference")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding()
@@ -6557,14 +6625,14 @@ struct ReportSectionPreview: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(title)
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                 
                 Spacer()
                 
                 if isLocked {
                     HStack(spacing: 4) {
                         Image(systemName: "lock.fill")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                         Text("LOCKED")
                             .font(.caption.weight(.semibold))
                     }
@@ -6578,14 +6646,14 @@ struct ReportSectionPreview: View {
                     onLockedTap?()
                 }) {
                     Text(content)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicBody)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .lineSpacing(4)
                         .blur(radius: 6)
                         .overlay(
                             VStack(spacing: 8) {
                                 Image(systemName: "lock.circle.fill")
-                                    .font(.largeTitle)
+                                    .font(.cosmicDisplay)
                                     .foregroundStyle(.orange)
                                 Text("Tap to Unlock")
                                     .font(.caption.weight(.medium))
@@ -6601,7 +6669,7 @@ struct ReportSectionPreview: View {
             } else {
                 // Unlocked content
                 Text(content)
-                    .font(.body)
+                    .font(.cosmicBody)
                     .lineSpacing(4)
             }
         }
@@ -6632,8 +6700,8 @@ struct PaymentOptionsSheet: View {
                         .font(.title2.weight(.bold))
                     
                     Text("Choose how you'd like to access your \(reportInfo.title)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCallout)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top)
@@ -6659,20 +6727,20 @@ struct PaymentOptionsSheet: View {
                                         .font(.title3.weight(.bold))
                                     
                                     Text("$9.99/month")
-                                        .font(.headline)
-                                        .foregroundStyle(.secondary)
+                                        .font(.cosmicHeadline)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
                                 }
                                 
                                 Spacer()
                                 
                                 Image(systemName: "crown.fill")
-                                    .font(.title)
+                                    .font(.cosmicTitle1)
                                     .foregroundStyle(.yellow)
                             }
                             
                             Text("Unlock all reports + unlimited features")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCallout)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -6695,10 +6763,10 @@ struct PaymentOptionsSheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Single Report")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
+                                        .font(.cosmicCallout)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
                                     Text(reportInfo.title)
-                                        .font(.headline)
+                                        .font(.cosmicHeadline)
                                     Text("from $12.99")
                                         .font(.title3.weight(.bold))
                                 }
@@ -6706,7 +6774,7 @@ struct PaymentOptionsSheet: View {
                                 Spacer()
                                 
                                 Image(systemName: "doc.badge.plus")
-                                    .font(.title2)
+                                    .font(.cosmicTitle2)
                                     .foregroundStyle(reportInfo.color)
                             }
                             .frame(maxWidth: .infinity)
@@ -6738,10 +6806,16 @@ struct PaymentOptionsSheet: View {
 struct InlineReportsStoreSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var auth: AuthState
+    @ObservedObject private var storeKitManager = StoreKitManager.shared
     @State private var isPurchasing: String? = nil
-    
+    @State private var showRestoreSuccess = false
+
     private let offers: [ShopCatalog.Report] = ShopCatalog.reports
-    
+
+    // App Store compliance URLs
+    private let termsURL = URL(string: "https://astronova.onrender.com/terms")!
+    private let privacyURL = URL(string: "https://astronova.onrender.com/privacy")!
+
     var body: some View {
         NavigationStack {
             List {
@@ -6750,8 +6824,8 @@ struct InlineReportsStoreSheet: View {
                         HStack(spacing: 12) {
                             Circle().fill(offer.color.opacity(0.15)).frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(offer.title).font(.headline)
-                                Text(offer.subtitle).font(.caption).foregroundStyle(.secondary)
+                                Text(offer.title).font(.cosmicHeadline)
+                                Text(offer.subtitle).font(.cosmicCaption).foregroundStyle(Color.cosmicTextSecondary)
                             }
                             Spacer()
                             Button {
@@ -6759,7 +6833,7 @@ struct InlineReportsStoreSheet: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     if isPurchasing == offer.productId { ProgressView().tint(.white) }
-                                    Text(isPurchasing == offer.productId ? "Processing…" : ShopCatalog.price(for: offer.productId))
+                                    Text(isPurchasing == offer.productId ? "Processing…" : (storeKitManager.products[offer.productId] ?? ShopCatalog.price(for: offer.productId)))
                                 }
                             }
                             .buttonStyle(.borderedProminent)
@@ -6767,6 +6841,43 @@ struct InlineReportsStoreSheet: View {
                             .accessibilityIdentifier(AccessibilityID.reportBuyButton(offer.productId))
                         }
                     }
+                }
+
+                // App Store compliance: Restore Purchases
+                Section {
+                    Button {
+                        Task {
+                            await storeKitManager.restorePurchases()
+                            showRestoreSuccess = true
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Restore Purchases")
+                        }
+                    }
+                    .foregroundStyle(Color.cosmicGold)
+                }
+
+                // App Store compliance: Terms and Privacy links
+                Section {
+                    VStack(spacing: Cosmic.Spacing.xs) {
+                        Text("One-time purchase. Reports available immediately.")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextTertiary)
+                            .multilineTextAlignment(.center)
+
+                        HStack(spacing: Cosmic.Spacing.md) {
+                            Link("Terms of Use", destination: termsURL)
+                            Text("•")
+                                .foregroundStyle(Color.cosmicTextTertiary)
+                            Link("Privacy Policy", destination: privacyURL)
+                        }
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicGold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
                 }
             }
             .navigationTitle("Reports Shop")
@@ -6777,16 +6888,38 @@ struct InlineReportsStoreSheet: View {
                         .accessibilityIdentifier(AccessibilityID.doneButton)
                 }
             }
+            .alert("Purchases Restored", isPresented: $showRestoreSuccess) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Your previous purchases have been restored.")
+            }
         }
     }
-    
+
     private func buy(_ offer: ShopCatalog.Report) async {
         guard isPurchasing == nil else { return }
         isPurchasing = offer.productId
         defer { isPurchasing = nil }
-        let ok = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
+
+        #if DEBUG
+        // UI tests only: use mock store
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+            let ok = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
+            if ok {
+                await generateReportAfterPurchase(offer)
+            }
+            return
+        }
+        #endif
+
+        // Production: Use StoreKit
+        let ok = await storeKitManager.purchaseProduct(productId: offer.productId)
         guard ok else { return }
 
+        await generateReportAfterPurchase(offer)
+    }
+
+    private func generateReportAfterPurchase(_ offer: ShopCatalog.Report) async {
         // Kick off report generation immediately so it lands in the user's library.
         do {
             let birthData = try BirthData(from: auth.profileManager.profile)
@@ -6834,12 +6967,12 @@ struct SimpleFeatureRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(.cosmicHeadline)
                 .foregroundStyle(.blue)
                 .frame(width: 24)
             
             Text(text)
-                .font(.body)
+                .font(.cosmicBody)
                 .foregroundStyle(.primary)
             
             Spacer()
@@ -6863,14 +6996,14 @@ struct ReportsLibraryView: View {
                         VStack(spacing: 16) {
                             Image(systemName: "doc.text")
                                 .font(.system(size: 60))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                             
                             Text("No Reports Yet")
                                 .font(.title2.weight(.semibold))
                             
                             Text("Generate your first detailed insight to see it here")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.top, 100)
@@ -6947,31 +7080,31 @@ struct ReportLibraryCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: reportInfo.icon)
-                        .font(.title2)
+                        .font(.cosmicTitle2)
                         .foregroundStyle(reportInfo.color)
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text(report.title)
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.leading)
                         
                         Text("Generated \(formattedDate)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                     
                     Spacer()
                     
                     Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 if let summary = report.summary {
                     Text(summary)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCallout)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
@@ -6980,7 +7113,7 @@ struct ReportLibraryCard: View {
                 if let keyInsights = report.keyInsights, !keyInsights.isEmpty {
                     HStack {
                         Image(systemName: "lightbulb.fill")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                             .foregroundStyle(.orange)
 
                         Text("\(keyInsights.count) key insights")
@@ -7050,7 +7183,7 @@ struct BirthChartView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Birth Chart")
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             ZStack {
                 Circle()
@@ -7061,8 +7194,8 @@ struct BirthChartView: View {
                     .font(.system(size: 60))
                 
                 Text("Interactive Birth Chart")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .offset(y: 60)
             }
             .frame(maxWidth: .infinity)
@@ -7078,7 +7211,7 @@ struct TransitChartView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Transit Chart - \(DateFormatter.shortDate.string(from: date))")
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             ZStack {
                 Circle()
@@ -7089,8 +7222,8 @@ struct TransitChartView: View {
                     .font(.system(size: 60))
                 
                 Text("Current Transits")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .offset(y: 60)
             }
             .frame(maxWidth: .infinity)
@@ -7106,7 +7239,7 @@ struct ProgressionChartView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Progressions - \(DateFormatter.shortDate.string(from: date))")
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             ZStack {
                 Circle()
@@ -7117,8 +7250,8 @@ struct ProgressionChartView: View {
                     .font(.system(size: 60))
                 
                 Text("Secondary Progressions")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .offset(y: 60)
             }
             .frame(maxWidth: .infinity)
@@ -7132,7 +7265,7 @@ struct ChartLegendView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Chart Legend")
-                .font(.headline)
+                .font(.cosmicHeadline)
             
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 LegendItem(symbol: "☉", name: "Sun", color: .orange)
@@ -7156,7 +7289,7 @@ struct LegendItem: View {
     var body: some View {
         HStack {
             Text(symbol)
-                .font(.title3)
+                .font(.cosmicHeadline)
                 .foregroundStyle(color)
             Text(name)
                 .font(.callout)
@@ -7178,14 +7311,14 @@ struct BookmarkedReadingsView: View {
                     VStack(spacing: 16) {
                         Image(systemName: "bookmark")
                             .font(.system(size: 60))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                         
                         Text("No Bookmarked Readings")
-                            .font(.title2)
+                            .font(.cosmicTitle2)
                         
                         Text("Bookmark your favorite horoscope readings to find them here.")
                             .font(.callout)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -7212,10 +7345,10 @@ struct BookmarkCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(bookmark.title)
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                     Text(DateFormatter.fullDate.string(from: bookmark.date))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 
                 Spacer()
@@ -7232,7 +7365,7 @@ struct BookmarkCard: View {
             
             HStack {
                 Text(bookmark.type.displayName)
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
                     .background(.blue.opacity(0.2), in: Capsule())
@@ -7241,8 +7374,8 @@ struct BookmarkCard: View {
                 Spacer()
                 
                 Text("Saved \(DateFormatter.relative.string(from: bookmark.createdAt))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
         .padding()
@@ -7294,7 +7427,7 @@ struct SettingsView: View {
                 
                 Section("About") {
                     Text("Astronova v1.0.0")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
             .navigationTitle("Settings")
@@ -7437,7 +7570,7 @@ struct TabGuideOverlay: View {
                             
                             Text(guides[safeStep].description)
                                 .font(.callout)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(4)
                         }
@@ -7460,12 +7593,12 @@ struct TabGuideOverlay: View {
                                     Text("Start Your Journey")
                                         .font(.headline.weight(.semibold))
                                     Image(systemName: "arrow.forward.circle.fill")
-                                        .font(.title3)
+                                        .font(.cosmicHeadline)
                                 } else {
                                     Text("Next")
                                         .font(.headline.weight(.semibold))
                                     Image(systemName: "arrow.right")
-                                        .font(.title3)
+                                        .font(.cosmicHeadline)
                                 }
                             }
                             .foregroundStyle(.white)
@@ -7477,7 +7610,7 @@ struct TabGuideOverlay: View {
                         
                         Button("Skip Tour", action: onSkip)
                             .font(.callout)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
                 .padding(32)
@@ -7659,7 +7792,7 @@ struct CompellingLandingView: View {
                             .multilineTextAlignment(.center)
                         
                         Text("Discover your astrological blueprint and unlock the wisdom of the stars")
-                            .font(.body)
+                            .font(.cosmicBody)
                             .foregroundStyle(.white.opacity(0.8))
                             .multilineTextAlignment(.center)
                             .lineSpacing(4)
@@ -7669,26 +7802,26 @@ struct CompellingLandingView: View {
                     HStack(spacing: 20) {
                         VStack(spacing: 4) {
                             Text(currentMoonPhase)
-                                .font(.title2)
+                                .font(.cosmicTitle2)
                             Text("Moon")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.7))
                         }
                         
                         VStack(spacing: 4) {
                             Text("⚡")
-                                .font(.title2)
+                                .font(.cosmicTitle2)
                                 .foregroundStyle(.yellow)
                             Text("Energy")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.7))
                         }
                         
                         VStack(spacing: 4) {
                             Text("🌟")
-                                .font(.title2)
+                                .font(.cosmicTitle2)
                             Text("Insight")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.7))
                         }
                     }
@@ -7721,7 +7854,7 @@ struct CompellingLandingView: View {
                     Text(currentMoonPhase)
                         .font(.system(size: 40))
                     Text("Moon Phase")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 
@@ -7730,7 +7863,7 @@ struct CompellingLandingView: View {
                         .font(.system(size: 40))
                         .foregroundStyle(.yellow)
                     Text("Energy: \(currentEnergy)")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(.white.opacity(0.7))
                 }
                 
@@ -7738,7 +7871,7 @@ struct CompellingLandingView: View {
                     Text("🌟")
                         .font(.system(size: 40))
                     Text("Manifestation")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(.white.opacity(0.7))
                 }
             }
@@ -7765,7 +7898,7 @@ struct CompellingLandingView: View {
                         .foregroundStyle(.cyan)
                     
                     Text("Planetary alignment detected")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 .padding()
@@ -7798,7 +7931,7 @@ struct CompellingLandingView: View {
                     .foregroundStyle(.white)
                 
                 Text("Get personalized insights and your complete birth chart")
-                    .font(.subheadline)
+                    .font(.cosmicCallout)
                     .foregroundStyle(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
             }
@@ -7833,7 +7966,7 @@ struct CompellingLandingView: View {
                 Group {
                     if inProgress {
                         ProgressView()
-                            .foregroundStyle(Color.black)
+                            .foregroundStyle(Color.cosmicVoid)
                     }
                 }
             )
@@ -7972,9 +8105,9 @@ struct VoiceModeView: View {
                 // Background
                 LinearGradient(
                     colors: [
-                        Color.purple.opacity(0.3),
+                        Color.cosmicAmethyst.opacity(0.3),
                         Color.indigo.opacity(0.2),
-                        Color.black
+                        Color.cosmicVoid
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -7983,7 +8116,7 @@ struct VoiceModeView: View {
                 
                 VStack(spacing: 40) {
                     Text("Tap to speak")
-                        .font(.title2)
+                        .font(.cosmicTitle2)
                         .foregroundColor(.white.opacity(0.8))
                     
                     // Recording button
@@ -7992,7 +8125,7 @@ struct VoiceModeView: View {
                     } label: {
                         ZStack {
                             Circle()
-                                .fill(isRecording ? Color.red : Color.white.opacity(0.2))
+                                .fill(isRecording ? Color.cosmicError : Color.white.opacity(0.2))
                                 .frame(width: 120, height: 120)
                             
                             Image(systemName: isRecording ? "mic.fill" : "mic")
@@ -8005,7 +8138,7 @@ struct VoiceModeView: View {
                     
                     if !transcript.isEmpty {
                         Text(transcript)
-                            .font(.body)
+                            .font(.cosmicBody)
                             .foregroundColor(.white.opacity(0.8))
                             .padding()
                             .background(Color.white.opacity(0.1))

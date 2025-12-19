@@ -52,23 +52,23 @@ struct ContactPickerView: View {
     // MARK: - Request Access View
 
     private var requestAccessView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: Cosmic.Spacing.lg) {
             Spacer()
 
             Image(systemName: "person.2.circle")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.cosmicGold)
 
-            VStack(spacing: 12) {
+            VStack(spacing: Cosmic.Spacing.sm) {
                 Text("Access Your Contacts")
-                    .font(.title2.weight(.bold))
+                    .font(.cosmicTitle2)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Text("See compatibility with friends and loved ones based on their birth dates.")
-                    .font(.body)
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, Cosmic.Spacing.xl)
             }
 
             Button {
@@ -80,13 +80,13 @@ struct ContactPickerView: View {
                 }
             } label: {
                 Text("Allow Access")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicBackground)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.cosmicGold, in: RoundedRectangle(cornerRadius: 16))
+                    .background(Color.cosmicGold, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, Cosmic.Spacing.xl)
 
             Spacer()
         }
@@ -95,23 +95,23 @@ struct ContactPickerView: View {
     // MARK: - Access Denied View
 
     private var accessDeniedView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: Cosmic.Spacing.lg) {
             Spacer()
 
             Image(systemName: "lock.circle")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.cosmicTextTertiary)
 
-            VStack(spacing: 12) {
+            VStack(spacing: Cosmic.Spacing.sm) {
                 Text("Contacts Access Denied")
-                    .font(.title2.weight(.bold))
+                    .font(.cosmicTitle2)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Text("Enable contacts access in Settings to explore compatibility with your contacts.")
-                    .font(.body)
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, Cosmic.Spacing.xl)
             }
 
             Button {
@@ -120,16 +120,16 @@ struct ContactPickerView: View {
                 }
             } label: {
                 Text("Open Settings")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicGold)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.card)
                             .stroke(Color.cosmicGold, lineWidth: 1)
                     )
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, Cosmic.Spacing.xl)
 
             Spacer()
         }
@@ -140,9 +140,9 @@ struct ContactPickerView: View {
     private var contactListView: some View {
         VStack(spacing: 0) {
             // Search and filter header
-            VStack(spacing: 12) {
+            VStack(spacing: Cosmic.Spacing.sm) {
                 // Search bar
-                HStack(spacing: 12) {
+                HStack(spacing: Cosmic.Spacing.sm) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(Color.cosmicTextTertiary)
 
@@ -158,17 +158,17 @@ struct ContactPickerView: View {
                         }
                     }
                 }
-                .padding(12)
-                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: 12))
+                .padding(Cosmic.Spacing.sm)
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
 
                 // Filter toggle
                 HStack {
                     Toggle(isOn: $showOnlyWithBirthday) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: Cosmic.Spacing.xs) {
                             Image(systemName: "gift")
                                 .foregroundStyle(Color.cosmicGold)
                             Text("Only show contacts with birthdays")
-                                .font(.subheadline)
+                                .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
@@ -178,14 +178,14 @@ struct ContactPickerView: View {
                 // Stats
                 HStack {
                     Text("\(filteredContacts.count) contacts")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextTertiary)
 
                     Spacer()
 
                     if contactsWithBirthdays.count > 0 {
                         Text("\(contactsWithBirthdays.count) with birthdays")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicGold)
                     }
                 }
@@ -202,9 +202,9 @@ struct ContactPickerView: View {
                     ProgressView()
                         .tint(Color.cosmicGold)
                     Text("Loading contacts...")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextTertiary)
-                        .padding(.top, 8)
+                        .padding(.top, Cosmic.Spacing.xs)
                     Spacer()
                 }
             } else if filteredContacts.isEmpty {
@@ -232,7 +232,7 @@ struct ContactPickerView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Cosmic.Spacing.md) {
             Spacer()
 
             Image(systemName: showOnlyWithBirthday ? "gift.circle" : "person.crop.circle.badge.questionmark")
@@ -241,29 +241,29 @@ struct ContactPickerView: View {
 
             if showOnlyWithBirthday {
                 Text("No contacts with birthdays")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Text("Add birthdays to your contacts to see them here, or turn off the filter.")
-                    .font(.subheadline)
+                    .font(.cosmicCallout)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, Cosmic.Spacing.xl)
 
                 Button {
                     showOnlyWithBirthday = false
                 } label: {
                     Text("Show all contacts")
-                        .font(.subheadline.weight(.medium))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicGold)
                 }
             } else {
                 Text("No contacts found")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Text("Try a different search term.")
-                    .font(.subheadline)
+                    .font(.cosmicCallout)
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
 
@@ -280,35 +280,35 @@ struct ContactRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 14) {
+            HStack(spacing: Cosmic.Spacing.sm) {
                 // Avatar
                 contactAvatar
 
                 // Info
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                    HStack(spacing: Cosmic.Spacing.xxs) {
                         Text(contact.fullName)
-                            .font(.body.weight(.medium))
+                            .font(.cosmicBodyEmphasis)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         if contact.isPlatformUser {
                             Image(systemName: "star.fill")
-                                .font(.caption2)
+                                .font(.cosmicMicro)
                                 .foregroundStyle(Color.cosmicGold)
                         }
                     }
 
                     if let birthday = contact.birthdayString {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Cosmic.Spacing.xxs) {
                             Image(systemName: "gift")
-                                .font(.caption2)
+                                .font(.cosmicMicro)
                             Text(birthday)
                         }
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     } else {
                         Text("No birthday set")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicTextTertiary.opacity(0.6))
                     }
                 }
@@ -317,11 +317,11 @@ struct ContactRow: View {
 
                 // Chevron
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Cosmic.Spacing.md)
+            .padding(.vertical, Cosmic.Spacing.sm)
             .background(Color.clear)
         }
         .buttonStyle(.plain)
@@ -345,8 +345,8 @@ struct ContactRow: View {
                     .frame(width: 44, height: 44)
 
                 Text(contact.initials)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.cosmicCalloutEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
             }
         }
     }

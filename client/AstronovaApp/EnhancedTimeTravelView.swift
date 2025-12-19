@@ -40,7 +40,7 @@ struct EnhancedTimeTravelView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Planetary Motion")
-                                .font(.title3.weight(.bold))
+                                .font(.cosmicHeadline)
                             Spacer()
                             Button {
                                 showEducation = true
@@ -49,7 +49,7 @@ struct EnhancedTimeTravelView: View {
                                     Image(systemName: "questionmark.circle")
                                     Text("Learn")
                                 }
-                                .font(.subheadline.weight(.medium))
+                                .font(.cosmicCalloutEmphasis)
                                 .foregroundStyle(Color.cosmicGold)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
@@ -77,7 +77,7 @@ struct EnhancedTimeTravelView: View {
                                 ProgressView()
                                     .scaleEffect(0.9)
                                 Text("Loading planetary positions…")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                             }
                             .padding(.vertical, 12)
                         }
@@ -100,7 +100,7 @@ struct EnhancedTimeTravelView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Dasha Chakra")
-                                    .font(.title2.weight(.bold))
+                                    .font(.cosmicTitle2)
 
                                 Spacer()
 
@@ -114,7 +114,7 @@ struct EnhancedTimeTravelView: View {
                                         Image(systemName: "clock.fill")
                                         Text("Now")
                                     }
-                                    .font(.subheadline.weight(.medium))
+                                    .font(.cosmicCalloutEmphasis)
                                     .foregroundStyle(Color.cosmicGold)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -133,10 +133,10 @@ struct EnhancedTimeTravelView: View {
 
                             // Narrative
                             Text(dashaData.currentPeriod.narrative)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                                 .padding()
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                         }
                         .padding(.horizontal)
 
@@ -144,7 +144,7 @@ struct EnhancedTimeTravelView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Life Impact")
-                                    .font(.title3.weight(.bold))
+                                    .font(.cosmicHeadline)
 
                                 Spacer()
 
@@ -155,7 +155,7 @@ struct EnhancedTimeTravelView: View {
                                         Image(systemName: "arrow.left.arrow.right")
                                         Text("Compare")
                                     }
-                                    .font(.subheadline.weight(.medium))
+                                    .font(.cosmicCalloutEmphasis)
                                     .foregroundStyle(showComparison ? Color.cosmicVoid : Color.cosmicGold)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -215,16 +215,16 @@ struct EnhancedTimeTravelView: View {
                         ScrollView {
                             VStack(spacing: 24) {
                                 Image(systemName: "sparkles")
-                                    .font(.system(size: 48))
+                                    .font(.cosmicDisplay)
                                     .foregroundStyle(Color.cosmicGold)
 
                                 Text("Learn About Time Travel")
-                                    .font(.title2.weight(.bold))
+                                    .font(.cosmicTitle2)
 
                                 Text("Time Travel uses Vedic astrology's Vimshottari Dasha system to show you the planetary periods influencing your life.")
-                                    .font(.body)
+                                    .font(.cosmicBody)
                                     .multilineTextAlignment(.center)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
 
                                 VStack(alignment: .leading, spacing: 16) {
                                     EducationRow(icon: "circle.hexagongrid.fill", title: "Dashas", description: "Planetary periods that shape life themes over years")
@@ -232,11 +232,11 @@ struct EnhancedTimeTravelView: View {
                                     EducationRow(icon: "arrow.triangle.2.circlepath", title: "Transits", description: "Current planetary positions affecting your chart")
                                 }
                                 .padding()
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
 
                                 Text("Add your birth time and location in your profile to unlock personalized dasha calculations.")
-                                    .font(.callout)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCallout)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .multilineTextAlignment(.center)
                             }
                             .padding()
@@ -272,6 +272,21 @@ struct EnhancedTimeTravelView: View {
             }
             .task {
                 await viewModel.loadAll(for: selectedDate, zodiacSystem: zodiacSystem, profileManager: auth.profileManager)
+            }
+            .onChange(of: auth.profileManager.profile.birthTime) { _, _ in
+                Task {
+                    await viewModel.loadAll(for: selectedDate, zodiacSystem: zodiacSystem, profileManager: auth.profileManager)
+                }
+            }
+            .onChange(of: auth.profileManager.profile.birthLatitude) { _, _ in
+                Task {
+                    await viewModel.loadAll(for: selectedDate, zodiacSystem: zodiacSystem, profileManager: auth.profileManager)
+                }
+            }
+            .onChange(of: auth.profileManager.profile.timezone) { _, _ in
+                Task {
+                    await viewModel.loadAll(for: selectedDate, zodiacSystem: zodiacSystem, profileManager: auth.profileManager)
+                }
             }
         }
         .accessibilityIdentifier(AccessibilityID.timeTravelView)
@@ -325,10 +340,10 @@ struct DateSelectorView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Time Seeker")
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                     Text(selectedDate.formatted(date: .long, time: .omitted))
                         .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
 
                 Spacer()
@@ -341,7 +356,7 @@ struct DateSelectorView: View {
                         Image(systemName: "clock.fill")
                         Text("Now")
                     }
-                    .font(.subheadline.weight(.medium))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicGold)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
@@ -382,12 +397,12 @@ struct DateSelectorView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Year")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                     Spacer()
                     Text("\(calendar.component(.year, from: selectedDate))")
                         .font(.caption.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 Slider(
                     value: Binding(
@@ -410,7 +425,7 @@ struct DateSelectorView: View {
                             updateDate(month: month, calendar: calendar)
                         } label: {
                             Text(monthSymbols.indices.contains(month - 1) ? monthSymbols[month - 1] : "\(month)")
-                                .font(.caption.weight(.semibold))
+                                .font(.cosmicCaptionEmphasis)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(isSelected ? Color.primary.opacity(0.12) : Color.clear)
@@ -423,7 +438,7 @@ struct DateSelectorView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
         .padding(.horizontal)
     }
 
@@ -456,7 +471,7 @@ struct CurrentPeriodsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Active Periods")
-                .font(.title3.weight(.bold))
+                .font(.cosmicHeadline)
 
             VStack(spacing: 8) {
                 PeriodRow(
@@ -498,11 +513,11 @@ struct PeriodRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(level)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicTextSecondary)
 
                 Text(lord)
-                    .font(.headline)
+                    .font(.cosmicHeadline)
             }
 
             Spacer()
@@ -510,11 +525,11 @@ struct PeriodRow: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text("\(formatDate(start)) – \(formatDate(end))")
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
     }
 
     private func formatDate(_ isoString: String) -> String {
@@ -536,20 +551,21 @@ struct TransitionsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("What Changes Next")
-                    .font(.title3.weight(.bold))
+                    .font(.cosmicHeadline)
+                    .foregroundStyle(Color.cosmicTextPrimary)
 
                 Spacer()
 
                 Image(systemName: "arrow.right.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(.blue)
+                    .font(.cosmicHeadline)
+                    .foregroundStyle(Color.cosmicInfo)
             }
 
             Text("Transition insights and upcoming shifts")
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(.cosmicBody)
+                .foregroundStyle(Color.cosmicTextSecondary)
                 .padding()
-                .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color.cosmicInfo.opacity(0.1), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
         }
     }
 }
@@ -562,7 +578,7 @@ struct KeywordsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Key Themes")
-                .font(.title3.weight(.bold))
+                .font(.cosmicHeadline)
 
             VStack(alignment: .leading, spacing: 8) {
                 KeywordSection(title: "Mahadasha", keywords: keywords.mahadasha)
@@ -579,13 +595,13 @@ struct KeywordSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .font(.cosmicCaptionEmphasis)
+                .foregroundStyle(Color.cosmicTextSecondary)
 
             FlowLayout(spacing: 6) {
                 ForEach(keywords, id: \.self) { keyword in
                     Text(keyword)
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(.blue.opacity(0.12), in: Capsule())
@@ -610,11 +626,11 @@ struct EducationalDrawerView: View {
                         // Calculation explanation
                         VStack(alignment: .leading, spacing: 12) {
                             Label("How Your Dasha Was Calculated", systemImage: "function")
-                                .font(.title3.weight(.bold))
+                                .font(.cosmicHeadline)
 
                             Text("Vimshottari Dasha is based on your Moon's nakshatra at birth. The calculation uses exact astronomical positions to determine planetary periods.")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
 
                         Divider()
@@ -622,11 +638,11 @@ struct EducationalDrawerView: View {
                         // Mahadasha guide
                         VStack(alignment: .leading, spacing: 12) {
                             Label("Understanding Mahadasha", systemImage: "circle.hexagongrid.fill")
-                                .font(.title3.weight(.bold))
+                                .font(.cosmicHeadline)
 
                             Text("The Mahadasha is the major planetary period lasting several years. It sets the overall theme and direction of life during that time.")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
 
                         Divider()
@@ -634,11 +650,11 @@ struct EducationalDrawerView: View {
                         // Antardasha guide
                         VStack(alignment: .leading, spacing: 12) {
                             Label("Understanding Antardasha", systemImage: "circle.hexagongrid")
-                                .font(.title3.weight(.bold))
+                                .font(.cosmicHeadline)
 
                             Text("The Antardasha is a sub-period within the Mahadasha, lasting months. It modulates the main period's influence with its own planetary themes.")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
 
@@ -647,11 +663,11 @@ struct EducationalDrawerView: View {
                     // General info
                     VStack(alignment: .leading, spacing: 12) {
                         Label("The 9 Planetary Periods", systemImage: "sparkles")
-                            .font(.title3.weight(.bold))
+                            .font(.cosmicHeadline)
 
                         Text("Dashas cycle through 9 planets: Ketu (7y) → Venus (20y) → Sun (6y) → Moon (10y) → Mars (7y) → Rahu (18y) → Jupiter (16y) → Saturn (19y) → Mercury (17y), totaling 120 years.")
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicBody)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
                 .padding()
@@ -675,17 +691,18 @@ struct ErrorView: View {
     let message: String
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Cosmic.Spacing.md) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.orange)
+                .font(.cosmicDisplay)
+                .foregroundStyle(Color.cosmicWarning)
 
             Text("Unable to Load Data")
-                .font(.headline)
+                .font(.cosmicHeadline)
+                .foregroundStyle(Color.cosmicTextPrimary)
 
             Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(.cosmicCallout)
+                .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center)
         }
         .padding()
@@ -699,17 +716,18 @@ struct IncompleteProfilePromptView: View {
     @EnvironmentObject private var auth: AuthState
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Cosmic.Spacing.screen) {
             Image(systemName: "person.crop.circle.badge.exclamationmark")
-                .font(.system(size: 56))
-                .foregroundStyle(.orange)
+                .font(.cosmicDisplay)
+                .foregroundStyle(Color.cosmicWarning)
 
             Text("Complete Your Birth Data")
-                .font(.title2.weight(.bold))
+                .font(.cosmicTitle2)
+                .foregroundStyle(Color.cosmicTextPrimary)
 
             Text(message)
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(.cosmicBody)
+                .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
@@ -717,15 +735,15 @@ struct IncompleteProfilePromptView: View {
                 ProfileEditView(profileManager: auth.profileManager)
             } label: {
                 Label("Complete Birth Data", systemImage: "arrow.right.circle.fill")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(.blue)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .background(LinearGradient.cosmicAntiqueGold)
+                    .foregroundStyle(Color.cosmicVoid)
+                    .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                     .accessibilityIdentifier(AccessibilityID.completeBirthDataButton)
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, Cosmic.Spacing.xl)
         }
         .padding()
         .padding(.bottom, 80) // Extra padding for tab bar
@@ -895,8 +913,8 @@ private struct PlanetPositionsListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Planets")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+                .font(.cosmicHeadline)
+                .foregroundStyle(Color.cosmicTextSecondary)
 
             VStack(spacing: 10) {
                 ForEach(sorted) { planet in
@@ -905,7 +923,7 @@ private struct PlanetPositionsListView: View {
                     } label: {
                         HStack(spacing: 12) {
                             Text(planet.symbol)
-                                .font(.title3)
+                                .font(.cosmicHeadline)
                                 .frame(width: 28, alignment: .center)
 
                             VStack(alignment: .leading, spacing: 4) {
@@ -914,22 +932,22 @@ private struct PlanetPositionsListView: View {
                                         .font(.subheadline.weight(.semibold))
                                     if planet.retrograde {
                                         Text("Rx")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundStyle(.orange)
-                                            .padding(.horizontal, 6)
+                                            .font(.cosmicCaptionEmphasis)
+                                            .foregroundStyle(Color.cosmicWarning)
+                                            .padding(.horizontal, Cosmic.Spacing.xxs)
                                             .padding(.vertical, 2)
-                                            .background(.orange.opacity(0.15), in: Capsule())
+                                            .background(Color.cosmicWarning.opacity(0.15), in: Capsule())
                                     }
                                 }
 
                                 Text("\(planet.sign) • \(String(format: "%.1f", planet.degree))°")
                                     .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
 
                                 if let significance = planet.significance, !significance.isEmpty {
                                     Text(significance)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
                                         .lineLimit(2)
                                 }
                             }
@@ -937,11 +955,11 @@ private struct PlanetPositionsListView: View {
                             Spacer()
 
                             Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
+                                .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(.secondary.opacity(0.7))
                         }
                         .padding(12)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                     }
                     .buttonStyle(.plain)
                 }
@@ -960,16 +978,16 @@ private struct EducationRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.title3)
+                .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicGold)
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                 Text(description)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCallout)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
     }
@@ -988,51 +1006,51 @@ private struct PlanetDetailSheet: View {
                         Text(planet.symbol)
                             .font(.system(size: 44))
                             .frame(width: 56, height: 56)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                         VStack(alignment: .leading, spacing: 4) {
                             Text(planet.name)
-                                .font(.title2.weight(.bold))
+                                .font(.cosmicTitle2)
                             Text("\(planet.sign) • \(String(format: "%.1f", planet.degree))°")
                                 .font(.subheadline.monospacedDigit())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         Spacer()
                         if planet.retrograde {
                             Text("Retrograde")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.orange)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(.orange.opacity(0.15), in: Capsule())
+                                .font(.cosmicCaptionEmphasis)
+                                .foregroundStyle(Color.cosmicWarning)
+                                .padding(.horizontal, Cosmic.Spacing.xs)
+                                .padding(.vertical, Cosmic.Spacing.xxs)
+                                .background(Color.cosmicWarning.opacity(0.15), in: Capsule())
                         }
                     }
 
                     if let significance = planet.significance, !significance.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Meaning")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
                             Text(significance)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
                     }
 
                     if let currentPeriod {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Context (Dashas)")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
 
                             Text("Mahadasha: \(currentPeriod.mahadasha.lord) • Antardasha: \(currentPeriod.antardasha?.lord ?? "—")")
                                 .font(.subheadline.weight(.semibold))
 
                             Text("Use this planet’s transit meaning alongside your current dasha themes to decide what to lean into now.")
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicBody)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
                     }
                 }
                 .padding()

@@ -26,8 +26,6 @@
 			</dict>
 		</dict>
 	</dict>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>We use analytics to improve app performance and user experience. No personal data is shared with third parties.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

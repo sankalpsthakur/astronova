@@ -193,8 +193,8 @@ struct DiscoverView: View {
                     Text(keyword.capitalized)
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextPrimary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, Cosmic.Spacing.sm)
+                        .padding(.vertical, Cosmic.Spacing.xxs)
                         .background(Color.cosmicSurface)
                         .clipShape(Capsule())
                         .overlay(
@@ -294,11 +294,10 @@ struct DiscoverView: View {
                 }
             } label: {
                 Text("Try Again")
-                    .font(.cosmicCallout)
-                    .fontWeight(.medium)
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicGold)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, Cosmic.Spacing.lg)
+                    .padding(.vertical, Cosmic.Spacing.sm)
                     .background(Color.cosmicGold.opacity(0.15))
                     .clipShape(Capsule())
             }

@@ -1,7 +1,10 @@
+import logging
 import os
 import sqlite3
 from datetime import datetime
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_DB_PATH = os.path.join(os.path.dirname(__file__), "astronova.db")
 DB_PATH = os.environ.get("DB_PATH", DEFAULT_DB_PATH)
@@ -15,165 +18,63 @@ def get_connection():
 
 
 def init_db():
+    """
+    Initialize the database by running all pending migrations.
+
+    This function:
+    1. Runs all pending migrations (which create tables if needed)
+    2. Seeds content tables with defaults if empty
+    """
+    from migrations import run_migrations, MigrationError
+
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("PRAGMA journal_mode=WAL")
-    # Users table (very minimal)
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            email TEXT,
-            first_name TEXT,
-            last_name TEXT,
-            full_name TEXT,
-            created_at TEXT,
-            updated_at TEXT
-        )
-        """
-    )
-    # Reports table (minimal)
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS reports (
-            report_id TEXT PRIMARY KEY,
-            user_id TEXT,
-            type TEXT,
-            title TEXT,
-            content TEXT,
-            generated_at TEXT,
-            status TEXT
-        )
-        """
-    )
-    # Content: quick questions
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS content_quick_questions (
-            id TEXT PRIMARY KEY,
-            text TEXT NOT NULL,
-            category TEXT,
-            order_index INTEGER DEFAULT 0,
-            is_active INTEGER DEFAULT 1
-        )
-        """
-    )
-    # Content: insights
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS content_insights (
-            id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            category TEXT,
-            priority INTEGER DEFAULT 0,
-            is_active INTEGER DEFAULT 1
-        )
-        """
-    )
-    # Chat: conversations and messages
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS chat_conversations (
-            id TEXT PRIMARY KEY,
-            user_id TEXT,
-            created_at TEXT,
-            updated_at TEXT
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS chat_messages (
-            id TEXT PRIMARY KEY,
-            conversation_id TEXT,
-            user_id TEXT,
-            role TEXT,
-            content TEXT,
-            created_at TEXT
-        )
-        """
-    )
-    # Subscription status (very minimal)
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS subscription_status (
-            user_id TEXT PRIMARY KEY,
-            is_active INTEGER DEFAULT 0,
-            product_id TEXT,
-            updated_at TEXT
-        )
-        """
-    )
-    # User birth data for personalized astrology
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS user_birth_data (
-            user_id TEXT PRIMARY KEY,
-            birth_date TEXT,
-            birth_time TEXT,
-            timezone TEXT,
-            latitude REAL,
-            longitude REAL,
-            location_name TEXT,
-            created_at TEXT,
-            updated_at TEXT
-        )
-        """
-    )
-    # Relationships for compatibility feature
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS relationships (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            partner_name TEXT NOT NULL,
-            partner_birth_date TEXT NOT NULL,
-            partner_birth_time TEXT,
-            partner_timezone TEXT,
-            partner_latitude REAL,
-            partner_longitude REAL,
-            partner_location_name TEXT,
-            partner_avatar_url TEXT,
-            is_favorite INTEGER DEFAULT 0,
-            last_viewed_at TEXT,
-            created_at TEXT,
-            updated_at TEXT
-        )
-        """
-    )
-    conn.commit()
+
+    try:
+        # Run all pending migrations
+        applied = run_migrations(conn)
+        if applied > 0:
+            logger.info(f"Applied {applied} database migration(s)")
+    except MigrationError as e:
+        logger.error(f"Database migration failed: {e}")
+        conn.close()
+        raise
 
     # Seed content tables with defaults if empty
-    def _seed_content():
-        cur.execute("SELECT COUNT(*) AS c FROM content_quick_questions")
-        if (cur.fetchone()[0] or 0) == 0:
-            defaults_q = [
-                ("q1", "What's my love forecast? 💖", "love", 1, 1),
-                ("q2", "Career guidance? ⭐", "career", 2, 1),
-                ("q3", "Today's energy? ☀️", "daily", 3, 1),
-                ("q4", "What should I focus on? 🎯", "guidance", 4, 1),
-                ("q5", "Lucky numbers today? 🍀", "daily", 5, 1),
-            ]
-            cur.executemany(
-                "INSERT INTO content_quick_questions (id, text, category, order_index, is_active) VALUES (?,?,?,?,?)",
-                defaults_q,
-            )
-        cur.execute("SELECT COUNT(*) AS c FROM content_insights")
-        if (cur.fetchone()[0] or 0) == 0:
-            defaults_i = [
-                ("i1", "Daily Energy", "Your cosmic energy forecast", "daily", 1, 1),
-                ("i2", "Love & Relationships", "Insights into your romantic journey", "love", 2, 1),
-                ("i3", "Career Path", "Professional guidance from the stars", "career", 3, 1),
-            ]
-            cur.executemany(
-                "INSERT INTO content_insights (id, title, content, category, priority, is_active) VALUES (?,?,?,?,?,?)",
-                defaults_i,
-            )
-
-    _seed_content()
-    conn.commit()
+    _seed_content(conn)
     conn.close()
+
+
+def _seed_content(conn: sqlite3.Connection) -> None:
+    """Seed content tables with default data if empty."""
+    cur = conn.cursor()
+
+    cur.execute("SELECT COUNT(*) AS c FROM content_quick_questions")
+    if (cur.fetchone()[0] or 0) == 0:
+        defaults_q = [
+            ("q1", "What's my love forecast?", "love", 1, 1),
+            ("q2", "Career guidance?", "career", 2, 1),
+            ("q3", "Today's energy?", "daily", 3, 1),
+            ("q4", "What should I focus on?", "guidance", 4, 1),
+            ("q5", "Lucky numbers today?", "daily", 5, 1),
+        ]
+        cur.executemany(
+            "INSERT INTO content_quick_questions (id, text, category, order_index, is_active) VALUES (?,?,?,?,?)",
+            defaults_q,
+        )
+
+    cur.execute("SELECT COUNT(*) AS c FROM content_insights")
+    if (cur.fetchone()[0] or 0) == 0:
+        defaults_i = [
+            ("i1", "Daily Energy", "Your cosmic energy forecast", "daily", 1, 1),
+            ("i2", "Love & Relationships", "Insights into your romantic journey", "love", 2, 1),
+            ("i3", "Career Path", "Professional guidance from the stars", "career", 3, 1),
+        ]
+        cur.executemany(
+            "INSERT INTO content_insights (id, title, content, category, priority, is_active) VALUES (?,?,?,?,?,?)",
+            defaults_i,
+        )
+
+    conn.commit()
 
 
 def upsert_user(user_id: str, email: Optional[str], first_name: Optional[str], last_name: Optional[str], full_name: str):
@@ -594,3 +495,41 @@ def update_relationship_last_viewed(relationship_id: str) -> None:
     )
     conn.commit()
     conn.close()
+
+
+def delete_user_data(user_id: str) -> dict:
+    """
+    Delete all user data from all tables.
+    Required for App Store compliance (Guideline 5.1.1).
+    Returns a summary of deleted records.
+    """
+    if not user_id:
+        return {"error": "user_id required", "deleted": False}
+
+    conn = get_connection()
+    cur = conn.cursor()
+    deleted_counts = {}
+
+    # Delete from all tables that reference user_id
+    tables_to_clean = [
+        ("relationships", "user_id"),
+        ("chat_messages", "user_id"),
+        ("chat_conversations", "user_id"),
+        ("reports", "user_id"),
+        ("subscription_status", "user_id"),
+        ("user_birth_data", "user_id"),
+        ("users", "id"),
+    ]
+
+    for table, id_column in tables_to_clean:
+        cur.execute(f"DELETE FROM {table} WHERE {id_column}=?", (user_id,))
+        deleted_counts[table] = cur.rowcount
+
+    conn.commit()
+    conn.close()
+
+    return {
+        "deleted": True,
+        "userId": user_id,
+        "deletedRecords": deleted_counts,
+    }

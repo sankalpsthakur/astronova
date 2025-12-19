@@ -37,10 +37,14 @@ class ReportGenerationService:
         report_type = (report_type or "birth_chart").strip()
 
         title = {
-            "birth_chart": "Complete Birth Chart Reading",
-            "love_forecast": "Love Forecast",
-            "career_forecast": "Career Forecast",
-            "year_ahead": "Year Ahead Overview",
+            "birth_chart": "Your Complete Birth Chart",
+            "love_forecast": "Your Love & Relationship Blueprint",
+            "career_forecast": "Your Career & Professional Blueprint",
+            "wealth_forecast": "Your Wealth & Abundance Blueprint",
+            "health_forecast": "Your Health & Vitality Blueprint",
+            "family_forecast": "Your Family & Home Blueprint",
+            "spiritual_forecast": "Your Spiritual & Soul Purpose Blueprint",
+            "year_ahead": "Your Year Ahead Overview",
         }.get(report_type, "Astrological Report")
 
         dt, lat, lon = self._parse_birth_data(birth_data)
@@ -137,12 +141,27 @@ class ReportGenerationService:
                 f"Current Mahadasha: {(dashas or {}).get('mahadasha', {}).get('lord', 'Unknown')}",
             ]
 
+        # Build birth info for cover page
+        birth_info: dict[str, Any] = {}
+        if birth_data:
+            if birth_data.get("date"):
+                birth_info["date"] = birth_data["date"]
+            if birth_data.get("time"):
+                birth_info["time"] = birth_data["time"]
+            if birth_data.get("location_name") or birth_data.get("locationName"):
+                birth_info["location"] = birth_data.get("location_name") or birth_data.get("locationName")
+            elif lat is not None and lon is not None:
+                birth_info["coordinates"] = f"{lat:.2f}, {lon:.2f}"
+            if birth_data.get("timezone"):
+                birth_info["timezone"] = birth_data["timezone"]
+
         payload = {
             "reportType": report_type,
             "title": title,
             "generatedAt": datetime.utcnow().isoformat() + "Z",
             "summary": summary,
             "keyInsights": key_insights,
+            "birth": birth_info if birth_info else None,
             "zodiac": zodiac,
             "kundali": kundali,
             "dashas": dashas,

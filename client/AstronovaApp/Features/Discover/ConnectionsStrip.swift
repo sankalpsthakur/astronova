@@ -10,7 +10,7 @@ struct ConnectionsStrip: View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
             // Header
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Connections")
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
@@ -27,10 +27,10 @@ struct ConnectionsStrip: View {
                         CosmicHaptics.light()
                         onSeeAllTap?()
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Cosmic.Spacing.xxs) {
                             Text("See all")
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 10))
+                                .font(.cosmicMicro)
                         }
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicGold)
@@ -72,10 +72,9 @@ struct ConnectionsStrip: View {
                         .foregroundStyle(Color.cosmicGold)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Add your first connection")
-                        .font(.cosmicCallout)
-                        .fontWeight(.medium)
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
 
                     Text("See cosmic compatibility with friends & partners")
@@ -158,14 +157,13 @@ private struct ConnectionCardView: View {
                             )
                     }
 
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                         Text(connection.name)
-                            .font(.cosmicCallout)
-                            .fontWeight(.medium)
+                            .font(.cosmicCalloutEmphasis)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         Text(connection.relationship.capitalized)
-                            .font(.system(size: 10))
+                            .font(.cosmicMicro)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
@@ -179,13 +177,13 @@ private struct ConnectionCardView: View {
 
                 // Next marker
                 if let marker = connection.nextMarker {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Cosmic.Spacing.xxs) {
                         Circle()
                             .fill(markerColor(for: marker.label))
                             .frame(width: 6, height: 6)
 
                         Text("\(marker.label.capitalized) in \(marker.daysUntil)d")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.cosmicMicro)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
@@ -208,18 +206,18 @@ private struct ConnectionCardView: View {
 
     private var pulseColor: Color {
         if connection.pulseIntensity > 0.7 {
-            return .orange
+            return .cosmicWarning
         } else if connection.pulseIntensity > 0.4 {
             return .cosmicGold
         } else {
-            return .green
+            return .cosmicSuccess
         }
     }
 
     private func markerColor(for label: String) -> Color {
         switch label.lowercased() {
-        case "peak": return .green
-        case "challenge": return .orange
+        case "peak": return .cosmicSuccess
+        case "challenge": return .cosmicWarning
         case "flow": return .cosmicGold
         default: return .cosmicTextSecondary
         }

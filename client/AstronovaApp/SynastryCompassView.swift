@@ -22,7 +22,7 @@ struct SynastryCompassView: View {
     @State private var starPhase: Double = 0
 
     private let personAColor = Color.cosmicGold
-    private let personBColor = Color(red: 0.9, green: 0.6, blue: 0.7) // Rose
+    private let personBColor = Color.planetVenus
 
     var body: some View {
         TimelineView(.animation(minimumInterval: reduceMotion ? 1.0 : 1/30)) { timeline in
@@ -453,11 +453,11 @@ struct SynastryCompassView: View {
     private func aspectLineColor(for aspect: SynastryAspect) -> Color {
         switch aspect.aspectType {
         case .conjunction:
-            return Color.white
+            return Color.cosmicTextPrimary
         case .trine, .sextile:
             return Color.cosmicGold
         case .square, .opposition:
-            return Color(red: 0.95, green: 0.5, blue: 0.5)
+            return Color.cosmicCopper
         }
     }
 
@@ -490,43 +490,44 @@ struct AspectTooltip: View {
     let aspect: SynastryAspect
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+            HStack(spacing: Cosmic.Spacing.xxs) {
                 Text(aspect.planetAGlyph)
                     .foregroundStyle(Color.cosmicGold)
                 Text(aspect.aspectGlyph)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(Color.cosmicTextSecondary)
                 Text(aspect.planetBGlyph)
-                    .foregroundStyle(Color(red: 0.9, green: 0.6, blue: 0.7))
+                    .foregroundStyle(Color.planetVenus)
             }
-            .font(.system(size: 16, weight: .bold))
+            .font(.cosmicBodyEmphasis)
 
             Text(aspect.interpretation.title)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.white)
+                .font(.cosmicCaptionEmphasis)
+                .foregroundStyle(Color.cosmicTextPrimary)
 
             Text(aspect.interpretation.oneLiner)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.7))
+                .font(.cosmicMicro)
+                .foregroundStyle(Color.cosmicTextSecondary)
                 .lineLimit(2)
 
             if aspect.isActivatedNow {
-                HStack(spacing: 4) {
+                HStack(spacing: Cosmic.Spacing.xxs) {
                     Image(systemName: "sparkles")
                     Text("Active now")
                 }
-                .font(.caption2.weight(.medium))
+                .font(.cosmicMicro)
+                .fontWeight(.medium)
                 .foregroundStyle(Color.cosmicGold)
             }
         }
-        .padding(12)
+        .padding(Cosmic.Spacing.sm)
         .frame(maxWidth: 180)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(aspect.isHarmonious ? Color.cosmicGold.opacity(0.3) : Color.red.opacity(0.3), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                        .stroke(aspect.isHarmonious ? Color.cosmicGold.opacity(0.3) : Color.cosmicCopper.opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -544,36 +545,36 @@ struct PlanetTooltip: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
             HStack {
                 Text(Planet(rawValue: planetName)?.glyph ?? "?")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(person == .a ? Color.cosmicGold : Color(red: 0.9, green: 0.6, blue: 0.7))
+                    .font(.cosmicHeadline)
+                    .foregroundStyle(person == .a ? Color.cosmicGold : Color.planetVenus)
 
                 Text(planetName)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
             }
 
             if let p = placement {
                 Text("\(p.signGlyph) \(p.sign) \(p.formattedDegree)")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
 
                 if let house = p.house {
                     Text("House \(house)")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.5))
+                        .font(.cosmicMicro)
+                        .foregroundStyle(Color.cosmicTextTertiary)
                 }
             }
         }
-        .padding(12)
+        .padding(Cosmic.Spacing.sm)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                        .stroke(Color.cosmicNebula, lineWidth: 1)
                 )
         )
     }
@@ -618,21 +619,21 @@ struct FilterChip: View {
             CosmicHaptics.light()
             action()
         }) {
-            HStack(spacing: 4) {
+            HStack(spacing: Cosmic.Spacing.xxs) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.caption2)
+                        .font(.cosmicMicro)
                 }
                 Text(title)
-                    .font(.caption.weight(.medium))
+                    .font(.cosmicCaptionEmphasis)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, Cosmic.Spacing.sm)
+            .padding(.vertical, Cosmic.Spacing.xxs)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.cosmicGold : Color(red: 0.3, green: 0.25, blue: 0.2).opacity(0.15))
+                    .fill(isSelected ? Color.cosmicGold : Color.cosmicBrass.opacity(0.15))
             )
-            .foregroundStyle(isSelected ? .black : Color(red: 0.3, green: 0.25, blue: 0.2))
+            .foregroundStyle(isSelected ? Color.cosmicVoid : Color.cosmicBrass)
         }
         .buttonStyle(.plain)
     }

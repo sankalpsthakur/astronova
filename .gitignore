@@ -130,3 +130,9 @@ CI_CD_*.txt
 # Branding / local build outputs
 tools/branding/output/
 client/.derivedData/
+
+# UX journey screenshots (local testing artifacts)
+docs/ux-journey-e2e/screenshots/
+
+# Temporary files
+tmp/

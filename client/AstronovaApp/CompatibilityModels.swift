@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Compatibility Snapshot
 // The atomic data unit - one API call powers the entire compatibility experience.
@@ -74,12 +75,83 @@ struct Placement: Codable, Equatable {
     }
 }
 
+// MARK: - Intensity Levels
+
+/// Qualitative intensity levels for visual gradient representation
+enum Intensity: String, Codable, CaseIterable {
+    case gentle
+    case moderate
+    case strong
+    case intense
+    case peak
+
+    /// Fill level for gradient display (0.0 to 1.0)
+    var fillLevel: CGFloat {
+        switch self {
+        case .gentle: return 0.2
+        case .moderate: return 0.4
+        case .strong: return 0.6
+        case .intense: return 0.8
+        case .peak: return 1.0
+        }
+    }
+
+    /// Human-readable description
+    var displayLabel: String {
+        switch self {
+        case .gentle: return "Gentle"
+        case .moderate: return "Moderate"
+        case .strong: return "Strong"
+        case .intense: return "Intense"
+        case .peak: return "Peak"
+        }
+    }
+
+    /// Gradient colors for visual representation (legacy string array)
+    var gradientColors: [String] {
+        switch self {
+        case .gentle: return ["cosmicNebula", "cosmicStardust"]
+        case .moderate: return ["cosmicStardust", "cosmicTwilight"]
+        case .strong: return ["cosmicAmethyst", "cosmicTeal"]
+        case .intense: return ["cosmicGold", "cosmicCopper"]
+        case .peak: return ["cosmicGold", "cosmicBrass"]
+        }
+    }
+
+    /// Linear gradient for visual representation
+    var gradient: LinearGradient {
+        switch self {
+        case .gentle:
+            return LinearGradient(colors: [.cosmicNebula, .cosmicStardust], startPoint: .leading, endPoint: .trailing)
+        case .moderate:
+            return LinearGradient(colors: [.cosmicStardust, .cosmicTwilight], startPoint: .leading, endPoint: .trailing)
+        case .strong:
+            return LinearGradient(colors: [.cosmicTeal, .cosmicAmethyst], startPoint: .leading, endPoint: .trailing)
+        case .intense:
+            return LinearGradient(colors: [.cosmicCopper, .cosmicGold], startPoint: .leading, endPoint: .trailing)
+        case .peak:
+            return LinearGradient.cosmicAntiqueGold
+        }
+    }
+
+    /// Color for text/icons
+    var color: Color {
+        switch self {
+        case .peak: return .cosmicGold
+        case .intense: return .cosmicCopper
+        case .strong: return .cosmicTeal
+        case .moderate: return .cosmicTextSecondary
+        case .gentle: return .cosmicTextTertiary
+        }
+    }
+}
+
 // MARK: - Synastry Data
 
 struct SynastryData: Codable, Equatable {
     let topAspects: [SynastryAspect]
     let domainBreakdown: [DomainScore]
-    let overallScore: Int
+    let overallIntensity: Intensity
 
     var harmonousAspects: [SynastryAspect] {
         topAspects.filter { $0.isHarmonious }
@@ -207,7 +279,7 @@ enum Domain: String, Codable, CaseIterable {
 
 struct DomainScore: Codable, Equatable, Identifiable {
     let domain: Domain
-    let score: Int
+    let intensity: Intensity
     let signA: String
     let signB: String
     let aspectsInDomain: [String]
@@ -224,7 +296,7 @@ struct RelationshipNowInsight: Codable, Equatable {
 
 struct RelationshipPulse: Codable, Equatable, Hashable {
     let state: PulseState
-    let score: Int
+    let intensity: Intensity
     let label: String
     let topActivations: [String]
 }
@@ -647,15 +719,15 @@ extension SynastryData {
                 )
             ],
             domainBreakdown: [
-                DomainScore(domain: .identity, score: 72, signA: "Taurus", signB: "Capricorn", aspectsInDomain: ["Sun-trine-Moon"]),
-                DomainScore(domain: .emotion, score: 88, signA: "Cancer", signB: "Cancer", aspectsInDomain: ["Moon-conjunction-Moon"]),
-                DomainScore(domain: .communication, score: 58, signA: "Aries", signB: "Sagittarius", aspectsInDomain: ["Mercury-square-Mercury"]),
-                DomainScore(domain: .love, score: 85, signA: "Gemini", signB: "Scorpio", aspectsInDomain: ["Venus-conjunction-Mars"]),
-                DomainScore(domain: .desire, score: 91, signA: "Virgo", signB: "Leo", aspectsInDomain: ["Venus-conjunction-Mars"]),
-                DomainScore(domain: .growth, score: 76, signA: "Aquarius", signB: "Aries", aspectsInDomain: []),
-                DomainScore(domain: .commitment, score: 65, signA: "Aries", signB: "Capricorn", aspectsInDomain: ["Saturn-opposition-Sun"])
+                DomainScore(domain: .identity, intensity: .strong, signA: "Taurus", signB: "Capricorn", aspectsInDomain: ["Sun-trine-Moon"]),
+                DomainScore(domain: .emotion, intensity: .peak, signA: "Cancer", signB: "Cancer", aspectsInDomain: ["Moon-conjunction-Moon"]),
+                DomainScore(domain: .communication, intensity: .moderate, signA: "Aries", signB: "Sagittarius", aspectsInDomain: ["Mercury-square-Mercury"]),
+                DomainScore(domain: .love, intensity: .intense, signA: "Gemini", signB: "Scorpio", aspectsInDomain: ["Venus-conjunction-Mars"]),
+                DomainScore(domain: .desire, intensity: .peak, signA: "Virgo", signB: "Leo", aspectsInDomain: ["Venus-conjunction-Mars"]),
+                DomainScore(domain: .growth, intensity: .strong, signA: "Aquarius", signB: "Aries", aspectsInDomain: []),
+                DomainScore(domain: .commitment, intensity: .moderate, signA: "Aries", signB: "Capricorn", aspectsInDomain: ["Saturn-opposition-Sun"])
             ],
-            overallScore: 78
+            overallIntensity: .strong
         )
     }
 }
@@ -677,7 +749,7 @@ extension RelationshipNowInsight {
         RelationshipNowInsight(
             pulse: RelationshipPulse(
                 state: .flowing,
-                score: 78,
+                intensity: .strong,
                 label: "Flowing",
                 topActivations: ["Venus trine Moon activated", "Mercury enters harmony"]
             ),

@@ -187,7 +187,7 @@ struct ReportDetailView: View {
                         ForEach(insights, id: \.self) { insight in
                             HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
                                 Image(systemName: "sparkle")
-                                    .font(.caption)
+                                    .font(.cosmicCaption)
                                     .foregroundStyle(Color.cosmicGold)
                                     .padding(.top, 2)
 
@@ -226,7 +226,7 @@ struct ReportDetailView: View {
     private var reportTypeBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: reportIcon)
-                .font(.caption)
+                .font(.cosmicCaption)
             Text(formatReportType(report.type))
                 .font(.cosmicCaption)
         }
@@ -245,7 +245,7 @@ struct ReportDetailView: View {
                 .frame(width: 6, height: 6)
 
             Text(status.capitalized)
-                .font(.system(size: 10, weight: .medium))
+                .font(.cosmicMicro)
                 .foregroundStyle(statusColor(for: status))
         }
         .padding(.horizontal, 8)
@@ -303,9 +303,9 @@ struct ReportDetailView: View {
 
     private func statusColor(for status: String) -> Color {
         switch status {
-        case "completed": return .green
-        case "processing", "generating": return .orange
-        case "failed": return .red
+        case "completed": return .cosmicSuccess
+        case "processing", "generating": return .cosmicWarning
+        case "failed": return .cosmicError
         default: return .cosmicTextSecondary
         }
     }

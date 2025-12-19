@@ -4,16 +4,19 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
 import db
+from middleware import require_auth
 from services.ephemeris_service import EphemerisService
+from services.transit_service import TransitService
 from utils.birth_data import parse_birth_data, BirthDataError
 
 compat_bp = Blueprint("compatibility", __name__)
 logger = logging.getLogger(__name__)
 
 _ephem = EphemerisService()
+_transit = TransitService(_ephem)
 
 
 def _get_user_id() -> Optional[str]:
@@ -498,12 +501,13 @@ def compatibility():
 
         return jsonify(
             {
-                "overallScore": int(round(overall_score)),
-                "vedicScore": int(round(vedic_score)),
-                "chineseScore": int(round(chinese_score)),
+                "overallIntensity": _score_to_intensity(int(round(overall_score))),
+                "vedicIntensity": _score_to_intensity(int(round(vedic_score))),
+                "chineseIntensity": _score_to_intensity(int(round(chinese_score))),
                 "synastryAspects": aspect_strings,
                 "userChart": user_chart_formatted,
                 "partnerChart": partner_chart_formatted,
+                "disclaimer": "For entertainment purposes only. Not professional advice.",
             }
         )
 
@@ -518,11 +522,10 @@ def compatibility():
 
 
 @compat_bp.route("/relationships", methods=["GET"])
+@require_auth
 def list_relationships():
     """List all relationships for the current user."""
-    user_id = _get_user_id()
-    if not user_id:
-        return jsonify({"error": "User ID required", "code": "UNAUTHORIZED"}), 401
+    user_id = g.user_id
 
     relationships = db.get_user_relationships(user_id)
 
@@ -563,11 +566,10 @@ def list_relationships():
 
 
 @compat_bp.route("/relationships", methods=["POST"])
+@require_auth
 def create_relationship():
     """Create a new relationship."""
-    user_id = _get_user_id()
-    if not user_id:
-        return jsonify({"error": "User ID required", "code": "UNAUTHORIZED"}), 401
+    user_id = g.user_id
 
     data = request.get_json(silent=True)
     if not data:
@@ -630,11 +632,10 @@ def create_relationship():
 
 
 @compat_bp.route("/relationships/<relationship_id>", methods=["GET"])
+@require_auth
 def get_relationship(relationship_id: str):
     """Get a single relationship."""
-    user_id = _get_user_id()
-    if not user_id:
-        return jsonify({"error": "User ID required", "code": "UNAUTHORIZED"}), 401
+    user_id = g.user_id
 
     relationship = db.get_relationship(relationship_id)
     if not relationship:
@@ -647,11 +648,10 @@ def get_relationship(relationship_id: str):
 
 
 @compat_bp.route("/relationships/<relationship_id>", methods=["DELETE"])
+@require_auth
 def delete_relationship(relationship_id: str):
     """Delete a relationship."""
-    user_id = _get_user_id()
-    if not user_id:
-        return jsonify({"error": "User ID required", "code": "UNAUTHORIZED"}), 401
+    user_id = g.user_id
 
     deleted = db.delete_relationship(relationship_id, user_id)
     if not deleted:
@@ -661,11 +661,10 @@ def delete_relationship(relationship_id: str):
 
 
 @compat_bp.route("/relationships/<relationship_id>/snapshot", methods=["GET"])
+@require_auth
 def get_compatibility_snapshot(relationship_id: str):
     """Get full compatibility snapshot for a relationship."""
-    user_id = _get_user_id()
-    if not user_id:
-        return jsonify({"error": "User ID required", "code": "UNAUTHORIZED"}), 401
+    user_id = g.user_id
 
     # Get relationship
     relationship = db.get_relationship(relationship_id)
@@ -727,10 +726,13 @@ def get_compatibility_snapshot(relationship_id: str):
         # Build domain breakdown
         domain_breakdown = _build_domain_breakdown(user_chart, partner_chart, synastry_aspects)
 
-        # Build synastry aspect objects for client
-        synastry_data = _build_synastry_data(synastry_aspects, overall_score, domain_breakdown)
+        # Build synastry aspect objects for client (with transit activation check)
+        synastry_data = _build_synastry_data(
+            synastry_aspects, overall_score, domain_breakdown,
+            target_date=target_date, natal_a=user_positions, natal_b=partner_positions
+        )
 
-        # Build natal placements for both
+        # Build natal placements for both (display format)
         natal_a = _build_natal_placements(user_chart)
         natal_b = _build_natal_placements(partner_chart)
 
@@ -738,16 +740,22 @@ def get_compatibility_snapshot(relationship_id: str):
         composite = _build_composite_chart(user_chart, partner_chart)
 
         # Build relationship pulse (based on current transits)
-        pulse = _calculate_relationship_pulse(synastry_aspects, target_date)
+        pulse = _calculate_relationship_pulse(
+            synastry_aspects, target_date, natal_a=user_positions, natal_b=partner_positions
+        )
 
         # Build shared insight
         shared_insight = _select_shared_insight(synastry_aspects, pulse)
 
-        # Build next shift
-        next_shift = _calculate_next_shift(synastry_aspects, target_date)
+        # Build next shift (based on real transit predictions)
+        next_shift = _calculate_next_shift(
+            synastry_aspects, target_date, natal_a=user_positions, natal_b=partner_positions
+        )
 
-        # Build journey forecast
-        journey = _build_journey_forecast(synastry_aspects, target_date)
+        # Build journey forecast (based on real transit calculations)
+        journey = _build_journey_forecast(
+            synastry_aspects, target_date, natal_a=user_positions, natal_b=partner_positions
+        )
 
         # Build share model
         share_model = _build_share_model(shared_insight, relationship)
@@ -776,6 +784,7 @@ def get_compatibility_snapshot(relationship_id: str):
             "next": next_shift,
             "journey": journey,
             "share": share_model,
+            "disclaimer": "For entertainment purposes only. Not professional advice.",
         }
 
         return jsonify(snapshot)
@@ -859,7 +868,7 @@ def _build_composite_chart(user_chart: dict, partner_chart: dict) -> dict:
 
 
 def _build_domain_breakdown(user_chart: dict, partner_chart: dict, aspects: list) -> list:
-    """Build domain breakdown scores."""
+    """Build domain breakdown with intensity levels."""
     # Map planets to domains
     domain_planets = {
         "Identity": "Sun",
@@ -880,27 +889,57 @@ def _build_domain_breakdown(user_chart: dict, partner_chart: dict, aspects: list
         domain_aspects = [a for a in aspects if a["planet1"] == planet or a["planet2"] == planet]
         aspect_ids = [a["description"] for a in domain_aspects]
 
-        # Calculate domain score
-        score = _calculate_sun_sign_compatibility(user_sign, partner_sign)
-        for a in domain_aspects:
-            score += a["compatibility"] * 5
-        score = max(0, min(100, score))
+        # Calculate domain intensity from aspect quality
+        harmonious_count = sum(1 for a in domain_aspects if a["compatibility"] > 0)
+        challenging_count = sum(1 for a in domain_aspects if a["compatibility"] < 0)
+        base_compat = _calculate_sun_sign_compatibility(user_sign, partner_sign)
+
+        # Determine intensity based on aspect balance and sign compatibility
+        if harmonious_count >= 2 and base_compat >= 70:
+            intensity = "peak"
+        elif harmonious_count > challenging_count and base_compat >= 50:
+            intensity = "intense" if harmonious_count >= 2 else "strong"
+        elif challenging_count > harmonious_count:
+            intensity = "moderate" if base_compat >= 50 else "gentle"
+        elif base_compat >= 70:
+            intensity = "strong"
+        elif base_compat >= 50:
+            intensity = "moderate"
+        else:
+            intensity = "gentle"
 
         result.append(
-            {"domain": domain, "score": int(score), "signA": user_sign, "signB": partner_sign, "aspectsInDomain": aspect_ids}
+            {"domain": domain, "intensity": intensity, "signA": user_sign, "signB": partner_sign, "aspectsInDomain": aspect_ids}
         )
 
     return result
 
 
-def _build_synastry_data(aspects: list, overall_score: int, domain_breakdown: list) -> dict:
-    """Build synastry data in client format."""
+def _build_synastry_data(
+    aspects: list,
+    overall_score: int,
+    domain_breakdown: list,
+    target_date: datetime = None,
+    natal_a: dict = None,
+    natal_b: dict = None,
+) -> dict:
+    """Build synastry data in client format.
+
+    If natal positions and target_date are provided, computes real transit activations.
+    """
     # Determine if aspects are harmonious
     aspect_harmonies = {"conjunction": True, "sextile": True, "trine": True, "square": False, "opposition": False}
 
     top_aspects = []
     for a in sorted(aspects, key=lambda x: abs(x["compatibility"]), reverse=True)[:10]:
         is_harmonious = aspect_harmonies.get(a["aspect"], True)
+
+        # Compute isActivatedNow from transits if natal data available
+        is_activated_now = False
+        if target_date and natal_a and natal_b:
+            is_activated, _strength = _transit.is_aspect_activated_now(a, target_date, natal_a, natal_b)
+            is_activated_now = is_activated
+
         top_aspects.append(
             {
                 "planetA": a["planet1"],
@@ -909,7 +948,7 @@ def _build_synastry_data(aspects: list, overall_score: int, domain_breakdown: li
                 "orb": a["orb"],
                 "strength": min(1.0, (8 - a["orb"]) / 8),  # Tighter orb = stronger
                 "isHarmonious": is_harmonious,
-                "isActivatedNow": False,  # Would compute from transits
+                "isActivatedNow": is_activated_now,
                 "interpretation": {
                     "title": f"{a['planet1']}-{a['planet2']} {a['aspect'].title()}",
                     "oneLiner": _get_aspect_interpretation(a["planet1"], a["planet2"], a["aspect"]),
@@ -920,7 +959,10 @@ def _build_synastry_data(aspects: list, overall_score: int, domain_breakdown: li
             }
         )
 
-    return {"topAspects": top_aspects, "domainBreakdown": domain_breakdown, "overallScore": int(overall_score)}
+    # Convert overall score to intensity
+    overall_intensity = _score_to_intensity(overall_score)
+
+    return {"topAspects": top_aspects, "domainBreakdown": domain_breakdown, "overallIntensity": overall_intensity}
 
 
 def _get_aspect_interpretation(planet1: str, planet2: str, aspect: str) -> str:
@@ -968,34 +1010,66 @@ def _get_aspect_action(aspect: str, is_do: bool) -> str:
     return actions.get(aspect, "Be mindful" if is_do else "Avoid assumptions")
 
 
-def _calculate_relationship_pulse(aspects: list, target_date: datetime) -> dict:
-    """Calculate relationship pulse based on aspects and current energy."""
-    # Simple pulse calculation based on aspect balance
+def _score_to_intensity(score: int) -> str:
+    """Convert a 0-100 score to a qualitative intensity level.
+
+    Returns one of: gentle, moderate, strong, intense, peak
+    These map to gradient fill levels in the UI (0.2, 0.4, 0.6, 0.8, 1.0)
+    """
+    if score >= 85:
+        return "peak"
+    elif score >= 70:
+        return "intense"
+    elif score >= 55:
+        return "strong"
+    elif score >= 40:
+        return "moderate"
+    else:
+        return "gentle"
+
+
+def _calculate_relationship_pulse(
+    aspects: list, target_date: datetime, natal_a: dict = None, natal_b: dict = None
+) -> dict:
+    """Calculate relationship pulse based on current transit activations.
+
+    If natal positions are provided, uses real transit calculations.
+    Otherwise falls back to static aspect-based calculation.
+    """
+    # Use transit-based calculation if natal positions available
+    if natal_a and natal_b:
+        result = _transit.calculate_pulse_from_transits(aspects, target_date, natal_a, natal_b)
+        # Convert score to intensity
+        result["intensity"] = _score_to_intensity(result.get("score", 50))
+        del result["score"]  # Remove numeric score
+        return result
+
+    # Fallback: Static calculation based on natal aspects only
     harmonious = sum(1 for a in aspects if a["compatibility"] > 0)
     challenging = sum(1 for a in aspects if a["compatibility"] < 0)
 
     total = harmonious + challenging
     if total == 0:
         state = "grounded"
-        score = 50
+        intensity = "moderate"
     elif harmonious > challenging * 1.5:
         state = "flowing"
-        score = min(100, 60 + harmonious * 5)
+        intensity = "intense" if harmonious >= 3 else "strong"
     elif challenging > harmonious:
         state = "friction"
-        score = max(20, 50 - challenging * 5)
+        intensity = "gentle" if challenging >= 3 else "moderate"
     elif harmonious > challenging:
         state = "electric"
-        score = min(90, 55 + harmonious * 3)
+        intensity = "strong"
     else:
         state = "magnetic"
-        score = 65
+        intensity = "strong"
 
     top_activations = []
     for a in sorted(aspects, key=lambda x: abs(x["compatibility"]), reverse=True)[:2]:
         top_activations.append(f"{a['planet1']} {a['aspect']} {a['planet2']}")
 
-    return {"state": state, "score": score, "label": state.title(), "topActivations": top_activations}
+    return {"state": state, "intensity": intensity, "label": state.title(), "topActivations": top_activations}
 
 
 def _select_shared_insight(aspects: list, pulse: dict) -> dict:
@@ -1024,12 +1098,29 @@ def _select_shared_insight(aspects: list, pulse: dict) -> dict:
     }
 
 
-def _calculate_next_shift(aspects: list, target_date: datetime) -> dict:
-    """Calculate the next significant shift in relationship energy."""
-    # Simplified: next shift in 7-14 days
-    days_until = 7 + (hash(str(target_date)) % 7)
-    next_date = target_date + timedelta(days=days_until)
+def _calculate_next_shift(
+    aspects: list, target_date: datetime, natal_a: dict = None, natal_b: dict = None
+) -> dict:
+    """Calculate the next significant shift in relationship energy.
 
+    If natal positions are provided, uses real transit predictions.
+    Otherwise falls back to a gentle estimate.
+    """
+    if natal_a and natal_b:
+        result = _transit.find_next_significant_transit(
+            aspects, target_date, natal_a, natal_b
+        )
+        return {
+            "date": result["date"],
+            "daysUntil": result["days_away"],
+            "whatChanges": result["description"],
+            "newState": result["predicted_state"],
+            "planForIt": result["suggestion"],
+        }
+
+    # Fallback: estimate 7-10 days
+    days_until = 7
+    next_date = target_date + timedelta(days=days_until)
     return {
         "date": next_date.isoformat(),
         "daysUntil": days_until,
@@ -1039,33 +1130,50 @@ def _calculate_next_shift(aspects: list, target_date: datetime) -> dict:
     }
 
 
-def _build_journey_forecast(aspects: list, target_date: datetime) -> dict:
-    """Build 30-day journey forecast."""
+def _build_journey_forecast(
+    aspects: list, target_date: datetime, natal_a: dict = None, natal_b: dict = None
+) -> dict:
+    """Build 30-day journey forecast based on real transit calculations.
+
+    If natal positions are provided, uses real transit-based calculations.
+    Otherwise falls back to a simplified pattern.
+    """
+    if natal_a and natal_b:
+        return _transit.build_journey_forecast(aspects, target_date, natal_a, natal_b)
+
+    # Fallback: Simplified pattern when natal data unavailable
     daily_markers = []
     peak_windows = []
 
     for i in range(30):
         day = target_date + timedelta(days=i)
-        # Simple pattern based on day
-        day_hash = hash(day.isoformat()) % 5
-        intensities = ["peak", "elevated", "neutral", "challenging", "quiet"]
-        intensity = intensities[day_hash]
+        # Use aspect balance as baseline (more stable than hash)
+        harmonious = sum(1 for a in aspects if a.get("compatibility", 0) > 0)
+        challenging = len(aspects) - harmonious
+
+        # Simple pattern with some variation
+        if i % 7 in [0, 1]:
+            intensity = "elevated" if harmonious > challenging else "neutral"
+        elif i % 7 == 6:
+            intensity = "quiet"
+        elif i % 10 == 5:
+            intensity = "peak" if harmonious > challenging else "challenging"
+        else:
+            intensity = "neutral"
 
         daily_markers.append({"date": day.isoformat(), "intensity": intensity, "reason": None})
 
-        # Mark peak windows
-        if i in [3, 4, 5] or i in [18, 19, 20]:
-            if not peak_windows or peak_windows[-1]["endDate"] != (day - timedelta(days=1)).isoformat():
-                peak_windows.append(
-                    {
-                        "startDate": day.isoformat(),
-                        "endDate": (day + timedelta(days=2)).isoformat(),
-                        "label": "Harmony window" if i < 10 else "Connection peak",
-                        "suggestion": "Great time for meaningful conversations",
-                    }
-                )
+    # Mark generic peak windows
+    peak_windows = [
+        {
+            "startDate": (target_date + timedelta(days=3)).isoformat(),
+            "endDate": (target_date + timedelta(days=5)).isoformat(),
+            "label": "Harmony window",
+            "suggestion": "Great time for meaningful conversations",
+        }
+    ]
 
-    return {"dailyMarkers": daily_markers, "peakWindows": peak_windows[:2]}
+    return {"dailyMarkers": daily_markers, "peakWindows": peak_windows}
 
 
 def _build_share_model(insight: dict, relationship: dict) -> dict:

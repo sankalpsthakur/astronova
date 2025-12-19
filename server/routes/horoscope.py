@@ -340,6 +340,7 @@ def horoscope():
             "content": content,
             "luckyElements": lucky_elements,
             "personalized": natal_planets is not None,  # Indicate if this is personalized
+            "disclaimer": "For entertainment purposes only. Not professional advice.",
             "legacy": {"sign": sign, "date": dt.strftime("%Y-%m-%d"), "type": period, "horoscope": content},
         }
     )
@@ -429,6 +430,7 @@ def personalized_horoscope():
             "content": content,
             "luckyElements": lucky_elements,
             "personalized": True,
+            "disclaimer": "For entertainment purposes only. Not professional advice.",
             "legacy": {"sign": sign, "date": dt.strftime("%Y-%m-%d"), "type": period, "horoscope": content},
         }
     )
@@ -485,6 +487,7 @@ def daily_horoscope():
             "content": content,
             "luckyElements": lucky_elements,
             "personalized": natal_planets is not None,  # Indicate if this is personalized
+            "disclaimer": "For entertainment purposes only. Not professional advice.",
             "legacy": {"sign": sign, "date": dt.strftime("%Y-%m-%d"), "type": "daily", "horoscope": content},
         }
     )

@@ -331,6 +331,7 @@ def generate_chart():
         "westernChart": western_chart_payload,
         "vedicChart": vedic_chart_payload,
         "chineseChart": None,
+        "disclaimer": "For entertainment purposes only. Not professional advice.",
     }
     return jsonify(resp)
 

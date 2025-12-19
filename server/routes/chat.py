@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
 from db import add_chat_message, ensure_conversation, get_user_birth_data, init_db, upsert_user_birth_data
-from services.chat_response_service import ChatResponseService
+from middleware import get_authenticated_user_id, require_auth
+from services.chat_response_service import ChatResponseService, ChatServiceError
 
 chat_bp = Blueprint("chat", __name__)
 _chat_service = ChatResponseService()
@@ -26,11 +27,12 @@ def chat_info():
 
 
 @chat_bp.route("", methods=["POST"])
+@require_auth
 def chat():
     data = request.get_json(silent=True) or {}
     init_db()
     message = data.get("message", "")
-    user_id = data.get("userId") or request.headers.get("X-User-Id")
+    user_id = g.user_id  # Use authenticated user ID from decorator
     conversation_id = data.get("conversationId")
 
     # Support optional birth data in request for immediate personalization
@@ -46,7 +48,12 @@ def chat():
     _ = add_chat_message(conversation_id, "user", message, user_id)
 
     # Generate personalized response using chat service
-    reply, suggested_follow_ups = _chat_service.generate_response(message=message, user_id=user_id, birth_data=birth_data)
+    try:
+        reply, suggested_follow_ups = _chat_service.generate_response(
+            message=message, user_id=user_id, birth_data=birth_data
+        )
+    except ChatServiceError as exc:
+        return jsonify({"error": "oracle_unavailable", "detail": str(exc)}), 503
 
     # Persist assistant reply
     message_id = add_chat_message(conversation_id, "assistant", reply, user_id)
@@ -67,9 +74,13 @@ def chat_send():
 
 
 @chat_bp.route("/birth-data", methods=["POST"])
+@require_auth
 def save_birth_data():
     """
     Save user's birth data for personalized chat responses.
+
+    SECURITY: Requires Bearer token authentication.
+
     POST body:
     {
         "userId": "user-id",
@@ -86,9 +97,7 @@ def save_birth_data():
     data = request.get_json(silent=True) or {}
     init_db()
 
-    user_id = data.get("userId") or request.headers.get("X-User-Id")
-    if not user_id:
-        return jsonify({"error": "userId required"}), 400
+    user_id = g.user_id  # Use authenticated user ID from decorator
 
     birth_data = data.get("birthData")
     if not birth_data:
@@ -115,13 +124,15 @@ def save_birth_data():
 
 
 @chat_bp.route("/birth-data", methods=["GET"])
+@require_auth
 def get_birth_data():
-    """Get user's saved birth data."""
-    init_db()
-    user_id = request.args.get("userId") or request.headers.get("X-User-Id")
+    """
+    Get user's saved birth data.
 
-    if not user_id:
-        return jsonify({"error": "userId required"}), 400
+    SECURITY: Requires Bearer token authentication.
+    """
+    init_db()
+    user_id = g.user_id  # Use authenticated user ID from decorator
 
     birth_data = get_user_birth_data(user_id)
 

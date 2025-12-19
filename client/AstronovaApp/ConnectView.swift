@@ -88,7 +88,7 @@ struct ConnectView: View {
     private func errorView(_ error: Error) -> some View {
         VStack(spacing: Cosmic.Spacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.largeTitle)
+                .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicWarning)
 
             Text("Couldn't load connections")
@@ -184,14 +184,14 @@ struct ConnectView: View {
     // MARK: - Quick Add Section
 
     private var quickAddSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             Text("Quick add")
-                .font(.caption.weight(.semibold))
+                .font(.cosmicCaptionEmphasis)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(spacing: Cosmic.Spacing.sm) {
                     // Add custom chart
                     QuickAddCard(
                         icon: "lock.fill",
@@ -231,9 +231,9 @@ struct ConnectView: View {
     // MARK: - Relationships Section
 
     private var relationshipsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             Text("Your connections")
-                .font(.caption.weight(.semibold))
+                .font(.cosmicCaptionEmphasis)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .padding(.horizontal)
 
@@ -280,29 +280,30 @@ struct QuickAddCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: Cosmic.Spacing.xs) {
                 ZStack {
                     Circle()
                         .stroke(Color.cosmicTextTertiary.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
                         .frame(width: 56, height: 56)
 
                     Image(systemName: icon)
-                        .font(.title3)
+                        .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextTertiary)
                 }
 
                 Text(title)
-                    .font(.caption2)
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .frame(width: 80)
 
                 Text("ADD")
-                    .font(.caption2.weight(.bold))
+                    .font(.cosmicMicro)
+                    .fontWeight(.bold)
                     .foregroundStyle(Color.cosmicBackground)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, Cosmic.Spacing.md)
+                    .padding(.vertical, Cosmic.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color.cosmicTextPrimary)
@@ -323,7 +324,7 @@ struct SuggestedPersonCard: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Cosmic.Spacing.xs) {
             ZStack(alignment: .topTrailing) {
                 // Avatar placeholder
                 Circle()
@@ -331,14 +332,15 @@ struct SuggestedPersonCard: View {
                     .frame(width: 56, height: 56)
                     .overlay(
                         Text(String(name.prefix(1)))
-                            .font(.title2.weight(.medium))
+                            .font(.cosmicTitle2)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     )
 
                 // Dismiss button
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
-                        .font(.caption2.weight(.bold))
+                        .font(.cosmicMicro)
+                        .fontWeight(.bold)
                         .foregroundStyle(Color.cosmicTextTertiary)
                         .padding(4)
                         .background(Circle().fill(Color.cosmicStardust))
@@ -348,12 +350,12 @@ struct SuggestedPersonCard: View {
 
             VStack(spacing: 2) {
                 Text(name)
-                    .font(.caption.weight(.medium))
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .lineLimit(1)
 
                 Text(handle)
-                    .font(.caption2)
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .lineLimit(1)
             }
@@ -361,10 +363,11 @@ struct SuggestedPersonCard: View {
 
             Button(action: onAdd) {
                 Text("ADD")
-                    .font(.caption2.weight(.bold))
+                    .font(.cosmicMicro)
+                    .fontWeight(.bold)
                     .foregroundStyle(Color.cosmicBackground)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, Cosmic.Spacing.md)
+                    .padding(.vertical, Cosmic.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color.cosmicTextPrimary)
@@ -384,7 +387,7 @@ struct RelationshipRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
+            HStack(spacing: Cosmic.Spacing.sm) {
                 // Avatar
                 Circle()
                     .fill(
@@ -397,22 +400,22 @@ struct RelationshipRow: View {
                     .frame(width: 48, height: 48)
                     .overlay(
                         Text(String(profile.name.prefix(1)))
-                            .font(.title3.weight(.semibold))
+                            .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextPrimary)
                     )
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text(profile.name)
-                        .font(.body.weight(.medium))
+                        .font(.cosmicBodyEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
 
                     Text(profile.signSummary)
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
 
                     if let signature = profile.sharedSignature {
                         Text(signature)
-                            .font(.caption2)
+                            .font(.cosmicMicro)
                             .foregroundStyle(Color.cosmicTextTertiary)
                             .lineLimit(1)
                     }
@@ -426,11 +429,11 @@ struct RelationshipRow: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, Cosmic.Spacing.md)
+            .padding(.vertical, Cosmic.Spacing.sm)
         }
         .buttonStyle(.plain)
     }
@@ -471,7 +474,7 @@ struct AddRelationshipSheet: View {
                             .fill(Color.cosmicNebula)
                             .frame(height: 1)
                         Text("or enter manually")
-                            .font(.caption)
+                            .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicTextTertiary)
                         Rectangle()
                             .fill(Color.cosmicNebula)
@@ -482,9 +485,9 @@ struct AddRelationshipSheet: View {
                     // Manual entry form
                     VStack(spacing: 16) {
                         // Basic Info Section
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                             Text("Basic Info")
-                                .font(.caption.weight(.semibold))
+                                .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(Color.cosmicTextTertiary)
 
                             TextField("Name", text: $name)
@@ -492,30 +495,30 @@ struct AddRelationshipSheet: View {
 
                             DatePicker("Birth Date", selection: $birthDate, in: ...Date(), displayedComponents: .date)
                                 .foregroundStyle(Color.cosmicTextPrimary)
-                                .accentColor(Color.cosmicGold)
+                                .tint(Color.cosmicGold)
                         }
 
                         // Birth Time Section
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                             Text("Birth Time (Optional)")
-                                .font(.caption.weight(.semibold))
+                                .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(Color.cosmicTextTertiary)
 
                             Toggle("Include birth time", isOn: $includeTime)
                                 .foregroundStyle(Color.cosmicTextPrimary)
-                                .toggleStyle(SwitchToggleStyle(tint: Color.cosmicGold))
+                                .tint(Color.cosmicGold)
 
                             if includeTime {
                                 DatePicker("Time", selection: $birthTime, displayedComponents: .hourAndMinute)
                                     .foregroundStyle(Color.cosmicTextPrimary)
-                                    .accentColor(Color.cosmicGold)
+                                    .tint(Color.cosmicGold)
                             }
                         }
 
                         // Birth Place Section
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                             Text("Birth Place (Optional)")
-                                .font(.caption.weight(.semibold))
+                                .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(Color.cosmicTextTertiary)
 
                             TextField("City, Country", text: $birthPlace)
@@ -528,11 +531,12 @@ struct AddRelationshipSheet: View {
                                 HStack {
                                     ProgressView()
                                         .scaleEffect(0.8)
+                                        .tint(Color.cosmicGold)
                                     Text("Searching...")
-                                        .font(.caption)
+                                        .font(.cosmicCaption)
                                         .foregroundStyle(Color.cosmicTextTertiary)
                                 }
-                                .padding(.leading, 4)
+                                .padding(.leading, Cosmic.Spacing.xxs)
                             }
 
                             if !locationSuggestions.isEmpty {
@@ -543,9 +547,9 @@ struct AddRelationshipSheet: View {
                         // Error message
                         if let error = saveError {
                             Text(error)
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(Color.cosmicError)
-                                .padding(.top, 4)
+                                .padding(.top, Cosmic.Spacing.xxs)
                         }
                     }
                     .padding()
@@ -675,20 +679,20 @@ struct AddRelationshipSheet: View {
                         .foregroundStyle(Color.cosmicGold)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Import from Contacts")
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
 
                     Text("Quick-add from your phone contacts")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.body)
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             .padding(16)
@@ -728,7 +732,7 @@ struct AddRelationshipSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(location.name)
-                        .font(.body)
+                        .font(.cosmicBody)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     locationSubtitle(for: location)
                 }
@@ -738,8 +742,8 @@ struct AddRelationshipSheet: View {
                         .foregroundStyle(Color.cosmicGold)
                 }
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
+            .padding(.vertical, Cosmic.Spacing.xs)
+            .padding(.horizontal, Cosmic.Spacing.sm)
         }
         .buttonStyle(.plain)
     }
@@ -748,11 +752,11 @@ struct AddRelationshipSheet: View {
     private func locationSubtitle(for location: LocationResult) -> some View {
         if let state = location.state {
             Text("\(state), \(location.country)")
-                .font(.caption)
+                .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextSecondary)
         } else {
             Text(location.country)
-                .font(.caption)
+                .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextSecondary)
         }
     }
@@ -783,7 +787,7 @@ extension RelationshipProfile {
                 risingSign: "Gemini",
                 birthDate: Date(),
                 sharedSignature: "Warmth + honesty, watch power dynamics",
-                lastPulse: RelationshipPulse(state: .flowing, score: 78, label: "Flowing", topActivations: []),
+                lastPulse: RelationshipPulse(state: .flowing, intensity: .strong, label: "Flowing", topActivations: []),
                 lastViewed: Date()
             ),
             RelationshipProfile(
@@ -795,7 +799,7 @@ extension RelationshipProfile {
                 risingSign: "Scorpio",
                 birthDate: Date(),
                 sharedSignature: "Fire meets intensity",
-                lastPulse: RelationshipPulse(state: .electric, score: 85, label: "Electric", topActivations: []),
+                lastPulse: RelationshipPulse(state: .electric, intensity: .intense, label: "Electric", topActivations: []),
                 lastViewed: Date()
             ),
             RelationshipProfile(
@@ -807,7 +811,7 @@ extension RelationshipProfile {
                 risingSign: nil,
                 birthDate: Date(),
                 sharedSignature: nil,
-                lastPulse: RelationshipPulse(state: .grounded, score: 65, label: "Grounded", topActivations: []),
+                lastPulse: RelationshipPulse(state: .grounded, intensity: .moderate, label: "Grounded", topActivations: []),
                 lastViewed: nil
             )
         ]

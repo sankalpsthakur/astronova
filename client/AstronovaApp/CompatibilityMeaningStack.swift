@@ -34,12 +34,14 @@ struct CompatibilityMeaningStack: View {
                 .background(Color.cosmicNebula)
 
             // Next countdown
-            HStack(spacing: 4) {
+            HStack(spacing: Cosmic.Spacing.xxs) {
                 Text("\(next.daysUntil)d")
-                    .font(.caption.weight(.bold).monospacedDigit())
+                    .font(.cosmicCaption)
+                    .fontWeight(.bold)
+                    .monospacedDigit()
                 Text("→")
                 Text(next.newState.rawValue.prefix(4))
-                    .font(.caption2)
+                    .font(.cosmicMicro)
             }
             .foregroundStyle(Color.cosmicTextSecondary)
 
@@ -49,7 +51,7 @@ struct CompatibilityMeaningStack: View {
 
             // Quick action
             Text(now.sharedInsight.suggestedAction.prefix(20) + "...")
-                .font(.caption2)
+                .font(.cosmicMicro)
                 .foregroundStyle(Color.cosmicGold)
                 .lineLimit(1)
 
@@ -82,10 +84,11 @@ struct CompatibilityMeaningStack: View {
 
     private var nowCard: some View {
         Button(action: onNowTapped) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                 HStack {
                     Label("VIBRATION", systemImage: "waveform.path")
-                        .font(.caption.weight(.bold))
+                        .font(.cosmicCaption)
+                        .fontWeight(.bold)
                         .foregroundStyle(Color.cosmicGold)
 
                     Spacer()
@@ -94,23 +97,23 @@ struct CompatibilityMeaningStack: View {
                 }
 
                 Text(now.sharedInsight.title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .multilineTextAlignment(.leading)
 
                 Text(now.sharedInsight.sentence)
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
 
                 // Linked aspects indicator
                 if !now.sharedInsight.linkedAspectIds.isEmpty {
-                    HStack(spacing: 4) {
+                    HStack(spacing: Cosmic.Spacing.xxs) {
                         Image(systemName: "link")
-                            .font(.caption2)
+                            .font(.cosmicMicro)
                         Text("\(now.sharedInsight.linkedAspectIds.count) aspects contributing")
-                            .font(.caption2)
+                            .font(.cosmicMicro)
                     }
                     .foregroundStyle(Color.cosmicTextTertiary)
                 }
@@ -129,51 +132,55 @@ struct CompatibilityMeaningStack: View {
 
     private var nextCard: some View {
         Button(action: onNextTapped) {
-            HStack(alignment: .top, spacing: 16) {
+            HStack(alignment: .top, spacing: Cosmic.Spacing.md) {
                 // Countdown
                 VStack(spacing: 2) {
                     Text("\(next.daysUntil)")
-                        .font(.title.weight(.bold).monospacedDigit())
+                        .font(.cosmicTitle1)
+                        .fontWeight(.bold)
+                        .monospacedDigit()
                         .foregroundStyle(nextColor)
                     Text("days")
-                        .font(.caption2)
+                        .font(.cosmicMicro)
                         .foregroundStyle(Color.cosmicTextTertiary)
                 }
                 .frame(width: 50)
 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                     HStack {
                         Label("FREQUENCY SHIFT", systemImage: "waveform.badge.plus")
-                            .font(.caption.weight(.bold))
+                            .font(.cosmicCaption)
+                            .fontWeight(.bold)
                             .foregroundStyle(nextColor)
 
                         Spacer()
 
                         // New state indicator
-                        HStack(spacing: 4) {
+                        HStack(spacing: Cosmic.Spacing.xxs) {
                             Circle()
                                 .fill(nextStateColor)
                                 .frame(width: 8, height: 8)
                             Text(next.newState.rawValue.capitalized)
-                                .font(.caption2.weight(.medium))
+                                .font(.cosmicMicro)
+                                .fontWeight(.medium)
                                 .foregroundStyle(nextStateColor)
                         }
                     }
 
                     Text(next.whatChanges)
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.leading)
 
                     Text(next.planForIt)
-                        .font(.caption2)
+                        .font(.cosmicMicro)
                         .foregroundStyle(Color.cosmicTextTertiary)
                         .italic()
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
             }
-            .padding(16)
+            .padding(Cosmic.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardBackground(accent: nextColor))
         }
@@ -187,7 +194,7 @@ struct CompatibilityMeaningStack: View {
         switch next.newState {
         case .flowing, .grounded: return Color.cosmicTeal
         case .electric, .magnetic: return Color.cosmicGold
-        case .friction: return Color(red: 0.95, green: 0.6, blue: 0.5)
+        case .friction: return Color.cosmicCopper
         }
     }
 
@@ -195,48 +202,49 @@ struct CompatibilityMeaningStack: View {
         switch next.newState {
         case .flowing: return Color.cosmicTeal
         case .electric: return Color.cosmicGold
-        case .grounded: return Color(red: 0.6, green: 0.5, blue: 0.4)
-        case .friction: return Color(red: 0.95, green: 0.5, blue: 0.5)
-        case .magnetic: return Color(red: 0.7, green: 0.5, blue: 0.9)
+        case .grounded: return Color.cosmicBrass
+        case .friction: return Color.cosmicCopper
+        case .magnetic: return Color.cosmicAmethyst
         }
     }
 
     // MARK: - Act Card
 
     private var actCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             Label("ALIGN", systemImage: "dot.radiowaves.right")
-                .font(.caption.weight(.bold))
+                .font(.cosmicCaption)
+                .fontWeight(.bold)
                 .foregroundStyle(Color.cosmicGold)
 
             // Do
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.body)
+                    .foregroundStyle(Color.cosmicSuccess)
+                    .font(.cosmicBody)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Do")
-                        .font(.caption.weight(.semibold))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     Text(now.sharedInsight.suggestedAction)
-                        .font(.subheadline)
+                        .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 }
             }
 
             // Avoid
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.red.opacity(0.8))
-                    .font(.body)
+                    .foregroundStyle(Color.cosmicError.opacity(0.8))
+                    .font(.cosmicBody)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Avoid")
-                        .font(.caption.weight(.semibold))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     Text(now.sharedInsight.avoidAction)
-                        .font(.subheadline)
+                        .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 }
             }
@@ -252,11 +260,11 @@ struct CompatibilityMeaningStack: View {
                     Image(systemName: "info.circle")
                         .foregroundStyle(Color.cosmicGold.opacity(0.7))
                     Text("Why?")
-                        .font(.caption.weight(.medium))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(Color.cosmicGold.opacity(0.7))
                     Spacer()
                     Image(systemName: isWhyExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextTertiary)
                 }
             }
@@ -264,13 +272,13 @@ struct CompatibilityMeaningStack: View {
 
             if isWhyExpanded {
                 Text(now.sharedInsight.whyExpanded)
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
-                    .padding(.leading, 24)
+                    .padding(.leading, Cosmic.Spacing.lg)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding(16)
+        .padding(Cosmic.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardBackground(accent: Color.cosmicGold.opacity(0.5)))
         .accessibilityElement(children: .combine)
@@ -306,15 +314,16 @@ struct SharedInsightDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                     // Main insight
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                         Text(insight.title)
-                            .font(.title2.weight(.bold))
+                            .font(.cosmicTitle2)
+                            .fontWeight(.bold)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         Text(insight.sentence)
-                            .font(.body)
+                            .font(.cosmicBody)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
 
@@ -322,9 +331,9 @@ struct SharedInsightDetailSheet: View {
                         .background(Color.cosmicNebula)
 
                     // Actions
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
                         Text("Alignment Actions")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         ActionRow(
@@ -346,13 +355,13 @@ struct SharedInsightDetailSheet: View {
                         .background(Color.cosmicNebula)
 
                     // Why
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                         Text("Vibrational Source")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         Text(insight.whyExpanded)
-                            .font(.body)
+                            .font(.cosmicBody)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
 
@@ -361,9 +370,9 @@ struct SharedInsightDetailSheet: View {
                         Divider()
                             .background(Color.cosmicNebula)
 
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                             Text("Frequency Activators")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
                                 .foregroundStyle(Color.cosmicTextPrimary)
 
                             ForEach(linkedAspects) { aspect in
@@ -394,25 +403,25 @@ struct ActionRow: View {
     let text: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
             Image(systemName: icon)
                 .foregroundStyle(iconColor)
-                .font(.title3)
+                .font(.cosmicHeadline)
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                 Text(label)
-                    .font(.caption.weight(.semibold))
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextTertiary)
                 Text(text)
-                    .font(.body)
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextPrimary)
             }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
                 .fill(iconColor.opacity(0.1))
         )
     }
@@ -422,23 +431,23 @@ struct LinkedAspectRow: View {
     let aspect: SynastryAspect
 
     var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 4) {
+        HStack(spacing: Cosmic.Spacing.sm) {
+            HStack(spacing: Cosmic.Spacing.xxs) {
                 Text(aspect.planetAGlyph)
                     .foregroundStyle(Color.cosmicGold)
                 Text(aspect.aspectGlyph)
                     .foregroundStyle(Color.cosmicTextTertiary)
                 Text(aspect.planetBGlyph)
-                    .foregroundStyle(Color(red: 0.9, green: 0.6, blue: 0.7))
+                    .foregroundStyle(Color.planetVenus)
             }
-            .font(.body.weight(.medium))
+            .font(.cosmicBodyEmphasis)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(aspect.interpretation.title)
-                    .font(.caption.weight(.semibold))
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Text(aspect.interpretation.oneLiner)
-                    .font(.caption2)
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .lineLimit(1)
             }
@@ -447,17 +456,18 @@ struct LinkedAspectRow: View {
 
             if aspect.isActivatedNow {
                 Text("Active")
-                    .font(.caption2.weight(.medium))
+                    .font(.cosmicMicro)
+                    .fontWeight(.medium)
                     .foregroundStyle(Color.cosmicGold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, Cosmic.Spacing.xs)
+                    .padding(.vertical, Cosmic.Spacing.xxs)
                     .background(Color.cosmicGold.opacity(0.2))
-                    .cornerRadius(8)
+                    .cornerRadius(Cosmic.Radius.subtle)
             }
         }
-        .padding(12)
+        .padding(Cosmic.Spacing.sm)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
                 .fill(Color.cosmicSurface)
         )
     }

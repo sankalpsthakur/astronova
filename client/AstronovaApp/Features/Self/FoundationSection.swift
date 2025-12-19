@@ -200,15 +200,15 @@ struct AccountFooter: View {
 
     var body: some View {
         HStack(spacing: Cosmic.Spacing.md) {
-            // Subscription status
+            // Subscription status - more prominent indicator
             Button(action: onUpgrade) {
                 HStack(spacing: Cosmic.Spacing.xs) {
                     Image(systemName: isPro ? "crown.fill" : "sparkles")
-                        .font(.system(size: 14))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(isPro ? Color.cosmicGold : Color.cosmicTextSecondary)
 
-                    Text(isPro ? "Cosmic Access" : "Free")
-                        .font(.cosmicCaption)
+                    Text(isPro ? "Pro" : "Free")
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(isPro ? Color.cosmicGold : Color.cosmicTextSecondary)
 
                     if !isPro {
@@ -220,8 +220,20 @@ struct AccountFooter: View {
                             .background(Capsule().fill(Color.cosmicGold))
                     }
                 }
+                .padding(.horizontal, Cosmic.Spacing.sm)
+                .padding(.vertical, Cosmic.Spacing.xs)
+                .background(
+                    Capsule()
+                        .fill(isPro ? Color.cosmicGold.opacity(0.15) : Color.clear)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(isPro ? Color.cosmicGold.opacity(0.3) : Color.clear, lineWidth: 1)
+                )
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(isPro ? "subscriptionStatusPro" : "subscriptionStatusFree")
+            .accessibilityLabel(isPro ? "Pro subscription active" : "Free plan, tap to upgrade")
 
             Spacer()
 
@@ -232,6 +244,7 @@ struct AccountFooter: View {
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("settingsButton")
 
             // Help
             Link(destination: URL(string: "https://astronova.app/help")!) {
@@ -239,6 +252,7 @@ struct AccountFooter: View {
                     .font(.system(size: 18))
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
+            .accessibilityIdentifier("helpButton")
         }
         .padding(.horizontal, Cosmic.Spacing.md)
         .padding(.vertical, Cosmic.Spacing.sm)

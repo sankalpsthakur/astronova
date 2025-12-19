@@ -3,8 +3,10 @@ from __future__ import annotations
 import logging
 import os
 
-from flask import Flask, Response, jsonify, redirect
+from flask import Flask, Response, jsonify, redirect, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from db import init_db
 from middleware import add_request_id, log_request_response, setup_logging
@@ -29,7 +31,56 @@ logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+
+    # CORS configuration - restrict to known origins
+    # iOS native apps don't send Origin headers, so this mainly protects against browser-based attacks
+    allowed_origins = [
+        "https://astronova.onrender.com",
+        "https://astronova.app",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+    ]
+    CORS(app, origins=allowed_origins, supports_credentials=True)
+
+    # Rate limiting to prevent abuse
+    # Uses IP address as key; applies sensible defaults per endpoint type
+    def get_key():
+        # Prefer X-User-Id for authenticated requests, fall back to IP
+        user_id = request.headers.get("X-User-Id")
+        if user_id:
+            return f"user:{user_id}"
+        return get_remote_address()
+
+    limiter = Limiter(
+        key_func=get_key,
+        app=app,
+        default_limits=["200 per day", "60 per hour"],
+        storage_uri="memory://",
+    )
+
+    # Apply stricter limits to expensive endpoints
+    @limiter.limit("20 per minute")
+    @app.before_request
+    def limit_expensive_endpoints():
+        # Stricter rate limits for computationally expensive endpoints
+        expensive_prefixes = [
+            "/api/v1/reports",
+            "/api/v1/chart/generate",
+            "/api/v1/compatibility",
+            "/api/v1/astrology/dashas",
+        ]
+        for prefix in expensive_prefixes:
+            if request.path.startswith(prefix) and request.method == "POST":
+                return  # Rate limit applied
+
+    # Rate limit handler
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        return jsonify({
+            "error": "Rate limit exceeded",
+            "message": str(e.description),
+            "code": "RATE_LIMIT_EXCEEDED"
+        }), 429
 
     # Add request logging middleware
     app.before_request(add_request_id)
@@ -134,6 +185,127 @@ def create_app():
         from routes.compatibility import compatibility as compatibility_handler
 
         return compatibility_handler()
+
+    # Legal pages (App Store compliance - required for subscription apps)
+    @app.route("/terms", methods=["GET"])
+    def terms_of_service():
+        html = """<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Terms of Service - Astronova</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0E0E14; color: #F5F0E6; }
+        h1 { color: #D4A853; border-bottom: 1px solid #2A2A36; padding-bottom: 10px; }
+        h2 { color: #B08D57; margin-top: 30px; }
+        a { color: #9B7ED9; }
+        .updated { color: #706860; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>Terms of Service</h1>
+    <p class="updated">Last updated: December 2024</p>
+
+    <h2>1. Acceptance of Terms</h2>
+    <p>By downloading, installing, or using Astronova ("the App"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the App.</p>
+
+    <h2>2. Entertainment Purposes Only</h2>
+    <p><strong>Astronova is an entertainment application.</strong> All astrological content, including horoscopes, birth charts, compatibility analyses, forecasts, and insights, is provided solely for entertainment and informational purposes. The App does not provide medical, financial, legal, or professional advice of any kind.</p>
+
+    <h2>3. Subscription Terms</h2>
+    <p>Astronova Pro is a monthly auto-renewing subscription. Payment will be charged to your Apple ID account at confirmation of purchase. Your subscription automatically renews unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscription in your Apple ID account settings.</p>
+
+    <h2>4. No Refunds</h2>
+    <p>All purchases are final. Refund requests must be directed to Apple through their standard refund process.</p>
+
+    <h2>5. User Content</h2>
+    <p>You retain ownership of any personal data you provide (birth date, time, location). By using the App, you grant us permission to use this data to provide astrological services.</p>
+
+    <h2>6. Disclaimer of Warranties</h2>
+    <p>The App is provided "as is" without warranties of any kind. We do not guarantee the accuracy of astrological calculations or interpretations.</p>
+
+    <h2>7. Limitation of Liability</h2>
+    <p>We shall not be liable for any decisions you make based on astrological content provided by the App.</p>
+
+    <h2>8. Changes to Terms</h2>
+    <p>We reserve the right to modify these terms at any time. Continued use of the App constitutes acceptance of updated terms.</p>
+
+    <h2>9. Contact</h2>
+    <p>For questions about these Terms, contact us at <a href="mailto:support@astronova.app">support@astronova.app</a></p>
+</body>
+</html>"""
+        return Response(html, mimetype="text/html")
+
+    @app.route("/privacy", methods=["GET"])
+    def privacy_policy():
+        html = """<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy - Astronova</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0E0E14; color: #F5F0E6; }
+        h1 { color: #D4A853; border-bottom: 1px solid #2A2A36; padding-bottom: 10px; }
+        h2 { color: #B08D57; margin-top: 30px; }
+        a { color: #9B7ED9; }
+        .updated { color: #706860; font-size: 14px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: December 2024</p>
+
+    <h2>1. Information We Collect</h2>
+    <p>Astronova collects the following information to provide our services:</p>
+    <ul>
+        <li><strong>Account Information:</strong> Name and email address (via Sign in with Apple)</li>
+        <li><strong>Birth Data:</strong> Date, time, and location of birth for astrological calculations</li>
+        <li><strong>Location Data:</strong> Birth location for chart calculations (not your current location)</li>
+        <li><strong>Purchase History:</strong> In-app purchases and subscription status</li>
+        <li><strong>Device Identifier:</strong> Anonymous user ID for account management</li>
+    </ul>
+
+    <h2>2. How We Use Your Information</h2>
+    <p>We use your information solely to:</p>
+    <ul>
+        <li>Generate personalized astrological charts and readings</li>
+        <li>Provide compatibility analyses</li>
+        <li>Deliver horoscope content</li>
+        <li>Manage your subscription</li>
+    </ul>
+
+    <h2>3. Data Sharing</h2>
+    <p>We do not sell, trade, or share your personal information with third parties. Your birth data is stored securely and used only for astrological calculations.</p>
+
+    <h2>4. Data Retention</h2>
+    <p>We retain your data while your account is active. You can delete your account and all associated data at any time through the app settings.</p>
+
+    <h2>5. Data Security</h2>
+    <p>We implement appropriate security measures to protect your personal information against unauthorized access.</p>
+
+    <h2>6. Your Rights</h2>
+    <p>You have the right to:</p>
+    <ul>
+        <li>Access your personal data</li>
+        <li>Request deletion of your account and data</li>
+        <li>Opt out of promotional communications</li>
+    </ul>
+
+    <h2>7. Children's Privacy</h2>
+    <p>Astronova is not intended for children under 13. We do not knowingly collect personal information from children.</p>
+
+    <h2>8. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. We will notify you of significant changes through the App.</p>
+
+    <h2>9. Contact Us</h2>
+    <p>For privacy-related questions, contact us at <a href="mailto:privacy@astronova.app">privacy@astronova.app</a></p>
+</body>
+</html>"""
+        return Response(html, mimetype="text/html")
 
     # Health endpoints
     @app.route("/health", methods=["GET"])

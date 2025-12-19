@@ -12,10 +12,10 @@ struct DashaImpactView: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
     private let impactAreas: [(key: String, label: String, icon: String, color: Color)] = [
-        ("career", "Career", "briefcase.fill", .blue),
-        ("relationships", "Relationships", "heart.fill", .pink),
-        ("health", "Health", "heart.circle.fill", .green),
-        ("spiritual", "Spiritual", "sparkles", .purple),
+        ("career", "Career", "briefcase.fill", .cosmicInfo),
+        ("relationships", "Relationships", "heart.fill", .planetVenus),
+        ("health", "Health", "heart.circle.fill", .cosmicSuccess),
+        ("spiritual", "Spiritual", "sparkles", .cosmicAmethyst),
     ]
 
     var body: some View {
@@ -26,19 +26,19 @@ struct DashaImpactView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(toneLabel(tone))
-                        .font(.headline)
+                        .font(.cosmicHeadline)
                         .foregroundStyle(toneColor(tone))
 
                     Text(toneDescription)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .lineLimit(2)
                 }
 
                 Spacer()
             }
             .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
 
             // Impact bars
             VStack(spacing: 12) {
@@ -98,11 +98,11 @@ struct DashaImpactView: View {
 
     private func toneColor(_ tone: String) -> Color {
         switch tone.lowercased() {
-        case "supportive", "positive": return .green
-        case "mixed": return .orange
-        case "challenging": return .red
-        case "transformative": return .purple
-        default: return .gray
+        case "supportive", "positive": return .cosmicSuccess
+        case "mixed": return .cosmicWarning
+        case "challenging": return .cosmicError
+        case "transformative": return .cosmicAmethyst
+        default: return .cosmicTextTertiary
         }
     }
 }
@@ -119,18 +119,18 @@ struct ToneIndicator: View {
                 .frame(width: 44, height: 44)
 
             Image(systemName: toneIcon)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.cosmicTitle2)
                 .foregroundStyle(toneColor)
         }
     }
 
     private var toneColor: Color {
         switch tone.lowercased() {
-        case "supportive", "positive": return .green
-        case "mixed": return .orange
-        case "challenging": return .red
-        case "transformative": return .purple
-        default: return .gray
+        case "supportive", "positive": return .cosmicSuccess
+        case "mixed": return .cosmicWarning
+        case "challenging": return .cosmicError
+        case "transformative": return .cosmicAmethyst
+        default: return .cosmicTextTertiary
         }
     }
 
@@ -157,17 +157,19 @@ struct ImpactBarRow: View {
     let comparisonValue: Double?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
             HStack {
                 Label(label, systemImage: icon)
-                    .font(.subheadline.weight(.medium))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(color)
 
                 Spacer()
 
                 Text(String(format: "%.1f", value))
-                    .font(.subheadline.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.primary)
+                    .font(.cosmicCallout)
+                    .fontWeight(.bold)
+                    .monospacedDigit()
+                    .foregroundStyle(Color.cosmicTextPrimary)
 
                 if let comparison = comparisonValue {
                     DeltaIndicator(delta: value - comparison)
@@ -179,7 +181,7 @@ struct ImpactBarRow: View {
                 ZStack(alignment: .leading) {
                     // Background track
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.secondary.opacity(0.15))
+                        .fill(Color.cosmicNebula)
 
                     // Filled portion
                     RoundedRectangle(cornerRadius: 6)
@@ -216,17 +218,20 @@ struct DeltaIndicator: View {
     var body: some View {
         HStack(spacing: 2) {
             Image(systemName: delta >= 0 ? "arrow.up" : "arrow.down")
-                .font(.caption2.weight(.bold))
+                .font(.cosmicMicro)
+                .fontWeight(.bold)
 
             Text(String(format: "%.1f", abs(delta)))
-                .font(.caption2.weight(.bold).monospacedDigit())
+                .font(.cosmicMicro)
+                .fontWeight(.bold)
+                .monospacedDigit()
         }
-        .foregroundStyle(delta >= 0 ? .green : .red)
-        .padding(.horizontal, 6)
+        .foregroundStyle(delta >= 0 ? Color.cosmicSuccess : Color.cosmicError)
+        .padding(.horizontal, Cosmic.Spacing.xxs)
         .padding(.vertical, 2)
         .background(
             Capsule()
-                .fill((delta >= 0 ? Color.green : Color.red).opacity(0.15))
+                .fill((delta >= 0 ? Color.cosmicSuccess : Color.cosmicError).opacity(0.15))
         )
     }
 }
@@ -240,7 +245,7 @@ struct ComparisonMarker: View {
     var body: some View {
         Rectangle()
             // Semantic colors: green when current is higher (improvement), red when lower
-            .fill(isHigher ? Color.green.opacity(0.6) : Color.red.opacity(0.6))
+            .fill(isHigher ? Color.cosmicSuccess.opacity(0.6) : Color.cosmicError.opacity(0.6))
             .frame(width: 2)
             .offset(x: position)
     }
@@ -259,76 +264,83 @@ struct DashaDetailCardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.screen) {
                 // Header
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                         Text(period.lord)
-                            .font(.largeTitle.weight(.bold))
+                            .font(.cosmicDisplay)
+                            .fontWeight(.bold)
+                            .foregroundStyle(Color.cosmicTextPrimary)
 
                         Text(level.capitalized)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCallout)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
 
                     Spacer()
 
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicTitle2)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
 
                 Divider()
 
                 // Duration
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                     Label("Duration", systemImage: "calendar")
-                        .font(.headline)
+                        .font(.cosmicHeadline)
+                        .foregroundStyle(Color.cosmicTextPrimary)
 
                     HStack {
                         VStack(alignment: .leading) {
                             Text("Start")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                             Text(formatDate(period.start))
-                                .font(.subheadline.weight(.medium))
+                                .font(.cosmicCalloutEmphasis)
+                                .foregroundStyle(Color.cosmicTextPrimary)
                         }
 
                         Spacer()
 
                         Image(systemName: "arrow.right")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.cosmicTextSecondary)
 
                         Spacer()
 
                         VStack(alignment: .trailing) {
                             Text("End")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                             Text(formatDate(period.end))
-                                .font(.subheadline.weight(.medium))
+                                .font(.cosmicCalloutEmphasis)
+                                .foregroundStyle(Color.cosmicTextPrimary)
                         }
                     }
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                 }
 
                 // Strength
                 if let strength = strength {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                         Label("Planetary Strength", systemImage: "star.fill")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
 
                         HStack {
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                                 Text(strength.strengthLabel.capitalized.replacingOccurrences(of: "_", with: " "))
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(.cosmicCalloutEmphasis)
+                                    .foregroundStyle(Color.cosmicTextPrimary)
 
                                 Text("Dignity: \(strength.dignity.capitalized)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                             }
 
                             Spacer()
@@ -341,27 +353,32 @@ struct DashaDetailCardView: View {
                                     .rotationEffect(.degrees(-90))
 
                                 Text(String(format: "%.0f", strength.overallScore))
-                                    .font(.title3.weight(.bold).monospacedDigit())
+                                    .font(.cosmicHeadline)
+                                    .fontWeight(.bold)
+                                    .monospacedDigit()
+                                    .foregroundStyle(Color.cosmicTextPrimary)
                             }
                         }
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                     }
                 }
 
                 // Keywords
                 if !keywords.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                         Label("Key Themes", systemImage: "tag.fill")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
 
-                        FlowLayout(spacing: 8) {
+                        FlowLayout(spacing: Cosmic.Spacing.xs) {
                             ForEach(keywords, id: \.self) { keyword in
                                 Text(keyword)
-                                    .font(.caption.weight(.medium))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(.blue.opacity(0.15), in: Capsule())
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextPrimary)
+                                    .padding(.horizontal, Cosmic.Spacing.sm)
+                                    .padding(.vertical, Cosmic.Spacing.xxs)
+                                    .background(Color.cosmicInfo.opacity(0.15), in: Capsule())
                             }
                         }
                     }
@@ -369,17 +386,18 @@ struct DashaDetailCardView: View {
 
                 // Explanation
                 if let explanation = explanation {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                         Label("Understanding This Period", systemImage: "book.fill")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
 
                         Text(explanation)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicBody)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                 }
             }
             .padding()
@@ -397,11 +415,11 @@ struct DashaDetailCardView: View {
 
     private func strengthColor(_ label: String) -> Color {
         switch label.lowercased() {
-        case "very_strong": return .green
-        case "strong": return .blue
-        case "moderate": return .orange
-        case "weak": return .red
-        default: return .gray
+        case "very_strong": return .cosmicSuccess
+        case "strong": return .cosmicInfo
+        case "moderate": return .cosmicWarning
+        case "weak": return .cosmicError
+        default: return .cosmicTextTertiary
         }
     }
 }

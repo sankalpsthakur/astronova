@@ -52,5 +52,9 @@ final class BasicStoreManager: ObservableObject {
         return UserDefaults.standard.bool(forKey: purchaseKey)
     }
 
-    func restorePurchases() async { /* no-op for basic manager */ }
+    @discardableResult
+    func restorePurchases() async -> Bool {
+        // In mock mode, simulate a successful restore if user has Pro
+        return await MainActor.run { hasProSubscription }
+    }
 }

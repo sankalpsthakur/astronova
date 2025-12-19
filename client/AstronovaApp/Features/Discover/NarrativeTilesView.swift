@@ -52,7 +52,7 @@ private struct NarrativeTileRow: View {
                     domainIndicator
 
                     // Text content
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                         Text(tile.text)
                             .font(.cosmicBody)
                             .foregroundStyle(Color.cosmicTextPrimary)
@@ -64,9 +64,9 @@ private struct NarrativeTileRow: View {
 
                     // Expand indicator
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.cosmicMicro)
                         .foregroundStyle(Color.cosmicTextSecondary)
-                        .padding(.top, 4)
+                        .padding(.top, Cosmic.Spacing.xxs)
                 }
                 .padding(Cosmic.Spacing.m)
                 .background(
@@ -94,14 +94,14 @@ private struct NarrativeTileRow: View {
     // MARK: - Domain Indicator
 
     private var domainIndicator: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Cosmic.Spacing.xxs) {
             ZStack {
                 Circle()
                     .fill(domainColor.opacity(0.15))
                     .frame(width: 32, height: 32)
 
                 Text(domainIcon)
-                    .font(.system(size: 14))
+                    .font(.cosmicCallout)
             }
 
             // Weight indicator bar
@@ -137,21 +137,20 @@ private struct NarrativeTileRow: View {
     private func driverInfo(_ driver: TileDriver) -> some View {
         HStack(spacing: Cosmic.Spacing.s) {
             Image(systemName: "sparkles")
-                .font(.system(size: 12))
+                .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicGold)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                 Text("Driven by")
-                    .font(.system(size: 10))
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextSecondary)
 
-                HStack(spacing: 4) {
+                HStack(spacing: Cosmic.Spacing.xxs) {
                     Text(planetSymbol(for: driver.planet))
-                        .font(.system(size: 14))
+                        .font(.cosmicCallout)
 
                     Text("\(driver.planet.capitalized)")
-                        .font(.cosmicCaption)
-                        .fontWeight(.medium)
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
 
                     if let sign = driver.sign, !sign.isEmpty {
@@ -165,12 +164,12 @@ private struct NarrativeTileRow: View {
             Spacer()
 
             // Frequency/vibration indicator
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: Cosmic.Spacing.xxs) {
                 Text("Frequency")
-                    .font(.system(size: 9))
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextSecondary)
 
-                HStack(spacing: 2) {
+                HStack(spacing: Cosmic.Spacing.xxs) {
                     ForEach(0..<5) { i in
                         RoundedRectangle(cornerRadius: 1)
                             .fill(i < frequencyLevel ? domainColor : Color.cosmicTextSecondary.opacity(0.3))
@@ -180,7 +179,7 @@ private struct NarrativeTileRow: View {
             }
         }
         .padding(Cosmic.Spacing.s)
-        .padding(.leading, 44) // Align with text
+        .padding(.leading, Cosmic.Spacing.xxl) // Align with text
         .background(Color.cosmicSurface.opacity(0.5))
     }
 

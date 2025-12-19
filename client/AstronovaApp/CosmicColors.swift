@@ -185,6 +185,12 @@ extension SwiftUI.Color {
     /// Pluto - Ash violet (#786878)
     static let planetPluto = SwiftUI.Color(hex: "786878")
 
+    /// Rahu - Smoky blue (#4A5A7A) - North lunar node
+    static let planetRahu = SwiftUI.Color(hex: "4A5A7A")
+
+    /// Ketu - Smoky brown (#8A6A5A) - South lunar node
+    static let planetKetu = SwiftUI.Color(hex: "8A6A5A")
+
     // MARK: - Zodiac Sign Colors
 
     static let zodiacAries = planetMars

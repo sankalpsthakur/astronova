@@ -35,7 +35,7 @@ struct UnifiedTimeTravelView: View {
                         .background(Color.cosmicBackground.ignoresSafeArea())
                 } else {
                     ScrollView {
-                        VStack(spacing: 20) {
+                        VStack(spacing: Cosmic.Spacing.lg) {
                             TimeSeeker(
                                 selectedDate: $state.targetDate,
                                 onDateChanged: { state.onDateScrubbing() },
@@ -53,12 +53,12 @@ struct UnifiedTimeTravelView: View {
 
                             if let error = state.errorMessage {
                                 Text(error)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .multilineTextAlignment(.center)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                                     .padding(.horizontal)
                             }
 
@@ -96,17 +96,17 @@ struct UnifiedTimeTravelView: View {
                                 )
                                 .padding(.horizontal)
                             } else {
-                                VStack(spacing: 12) {
+                                VStack(spacing: Cosmic.Spacing.sm) {
                                     ProgressView()
                                     if let error = state.errorMessage {
                                         Text(error)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
                                             .multilineTextAlignment(.center)
                                     } else {
                                         Text("Calculating your snapshot…")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
@@ -166,15 +166,15 @@ struct UnifiedTimeTravelView: View {
     // MARK: - Loading Overlay
 
     private var loadingOverlay: some View {
-        RoundedRectangle(cornerRadius: 20)
-            .fill(.ultraThinMaterial)
+        RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+            .fill(Color.cosmicSurface)
             .overlay(
-                HStack(spacing: 8) {
+                HStack(spacing: Cosmic.Spacing.xs) {
                     ProgressView()
                         .scaleEffect(0.8)
                     Text("Updating...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
             )
             .frame(height: 40)
@@ -205,51 +205,51 @@ struct UnifiedTimeTravelView: View {
         Button {
             showPlanetSheet = true
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Cosmic.Spacing.sm) {
                 Text(planet.symbol)
-                    .font(.title2)
+                    .font(.cosmicTitle2)
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
                         Text(planet.name)
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                         if planet.isRetrograde {
                             Text("Rx")
                                 .font(.caption.weight(.bold))
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(Color.cosmicWarning)
                         }
                     }
                     Text("\(planet.sign) \(String(format: "%.1f", planet.degree))°")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
 
                 Spacer()
 
                 // Role badges
-                VStack(spacing: 4) {
+                VStack(spacing: Cosmic.Spacing.xxs) {
                     if planet.isDashaLord {
                         Text("Mahadasha")
                             .font(.caption2.weight(.bold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(.purple.opacity(0.2), in: Capsule())
+                            .background(Color.cosmicAmethyst.opacity(0.2), in: Capsule())
                     }
                     if planet.isAntardashaLord {
                         Text("Antardasha")
                             .font(.caption2.weight(.bold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(.blue.opacity(0.2), in: Capsule())
+                            .background(Color.cosmicInfo.opacity(0.2), in: Capsule())
                     }
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
             .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
         }
         .buttonStyle(.plain)
     }
@@ -258,63 +258,63 @@ struct UnifiedTimeTravelView: View {
         Button {
             showDashaSheet = true
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Cosmic.Spacing.sm) {
                 // Find planet for symbol
                 let symbol = state.displaySnapshot?.planets.first { $0.name == lord }?.symbol ?? "☆"
                 Text(symbol)
-                    .font(.title2)
+                    .font(.cosmicTitle2)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(lord) Dasha")
-                        .font(.headline)
+                        .font(.cosmicHeadline)
 
                     if state.displaySnapshot?.currentDasha.mahadasha.lord == lord {
                         Text("Current Mahadasha • \(state.displaySnapshot?.currentDasha.mahadasha.theme ?? "")")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     } else if state.displaySnapshot?.currentDasha.antardasha.lord == lord {
                         Text("Current Antardasha • \(state.displaySnapshot?.currentDasha.antardasha.theme ?? "")")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
             .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
         }
         .buttonStyle(.plain)
     }
 
     private func aspectTooltip(_ aspect: ActiveAspect) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Cosmic.Spacing.sm) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(aspect.planet1.capitalized) \(aspect.type.rawValue) \(aspect.planet2.capitalized)")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
 
                 Text(aspect.significance)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text(String(format: "%.1f° orb", aspect.orb))
-                    .font(.caption.monospacedDigit())
+                    .font(.cosmicCaption.monospacedDigit())
 
                 Text(aspect.isApplying ? "Applying" : "Separating")
-                    .font(.caption2)
-                    .foregroundStyle(aspect.isApplying ? .green : .orange)
+                    .font(.cosmicMicro)
+                    .foregroundStyle(aspect.isApplying ? Color.cosmicSuccess : Color.cosmicWarning)
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
     }
 
     // MARK: - Actions
@@ -570,55 +570,55 @@ struct NowDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                     // Dasha header
-                    HStack(spacing: 16) {
+                    HStack(spacing: Cosmic.Spacing.md) {
                         VStack {
                             Text(snapshot.currentDasha.mahadasha.symbol)
-                                .font(.largeTitle)
+                                .font(.cosmicDisplay)
                             Text("Mahadasha")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
 
                         Image(systemName: "circle.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .font(.cosmicMicro)
+                            .foregroundStyle(Color.cosmicTextSecondary)
 
                         VStack {
                             Text(snapshot.currentDasha.antardasha.symbol)
-                                .font(.largeTitle)
+                                .font(.cosmicDisplay)
                             Text("Antardasha")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
 
                     // Theme
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                         Text("Current Energy")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                         Text(snapshot.now.theme)
-                            .font(.title3)
+                            .font(.cosmicTitle2)
                     }
 
                     // Extended detail
                     if let detail = snapshot.now.expandedDetail {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                             Text("Understanding This Phase")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
                             Text(detail)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
 
                     // Progress bars
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                         Text("Cycle Progress")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
 
                         ProgressRow(
                             label: "Mahadasha",
@@ -652,10 +652,10 @@ struct ProgressRow: View {
     let progress: Double
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
             HStack {
                 Text(label)
-                    .font(.subheadline)
+                    .font(.cosmicCallout)
                 Spacer()
                 Text(sublabel)
                     .font(.subheadline.weight(.medium))
@@ -664,7 +664,7 @@ struct ProgressRow: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.secondary.opacity(0.2))
+                        .fill(Color.cosmicTextSecondary.opacity(0.2))
 
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color.cosmicGold)
@@ -674,11 +674,11 @@ struct ProgressRow: View {
             .frame(height: 8)
 
             Text("\(Int(progress * 100))% complete")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
     }
 }
 
@@ -693,77 +693,77 @@ struct NextDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                     if let next = nextTransition {
                         // Countdown hero
-                        VStack(spacing: 8) {
+                        VStack(spacing: Cosmic.Spacing.xs) {
                             Text(next.countdownShort)
                                 .font(.system(size: 72, weight: .bold, design: .rounded))
                                 .monospacedDigit()
                             Text("until \(next.transitionType.rawValue.lowercased()) shift")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
 
                         // Transition details
-                        HStack(spacing: 20) {
+                        HStack(spacing: Cosmic.Spacing.lg) {
                             VStack {
                                 Text("From")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                 Text(next.fromLord)
                                     .font(.title2.weight(.bold))
                             }
 
                             Image(systemName: "arrow.right")
-                                .font(.title2)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicTitle2)
+                                .foregroundStyle(Color.cosmicTextSecondary)
 
                             VStack {
                                 Text("To")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                 Text(next.toLord)
                                     .font(.title2.weight(.bold))
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
 
                         // What shifts
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                             Text("What Changes")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
                             Text(next.whatShifts)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
 
                         // Timeline list
                         if snapshot.nextTransitions.count > 1 {
-                            VStack(alignment: .leading, spacing: 10) {
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                                 Text("Upcoming Shifts")
-                                    .font(.headline)
+                                    .font(.cosmicHeadline)
 
                                 ForEach(snapshot.nextTransitions) { transition in
                                     HStack {
                                         Text(transition.transitionType.rawValue)
                                             .font(.caption.weight(.bold))
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
                                         Spacer()
                                         Text("\(transition.fromLord) → \(transition.toLord)")
                                             .font(.subheadline.weight(.medium))
                                         Spacer()
                                         Text(transition.countdownShort)
-                                            .font(.caption.monospacedDigit())
-                                            .foregroundStyle(.secondary)
+                                            .font(.cosmicCaption.monospacedDigit())
+                                            .foregroundStyle(Color.cosmicTextSecondary)
                                     }
                                     .padding(.vertical, 6)
                                 }
                             }
                             .padding()
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
                         }
                     } else {
                         ContentUnavailableView("No upcoming transitions", systemImage: "calendar.badge.exclamationmark")
@@ -789,7 +789,7 @@ struct ActDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                     // Do
                     ActionCard(
                         type: .do,
@@ -803,14 +803,14 @@ struct ActDetailSheet: View {
                     )
 
                     // Why
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                         Text("Why This Guidance")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                         Text(snapshot.act.whyExplanation)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                     }
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
                 }
                 .padding()
             }
@@ -838,8 +838,8 @@ struct ActionCard: View {
 
         var color: Color {
             switch self {
-            case .do: return .green
-            case .avoid: return .red
+            case .do: return .cosmicSuccess
+            case .avoid: return .cosmicError
             }
         }
 
@@ -855,22 +855,22 @@ struct ActionCard: View {
     let content: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
             Image(systemName: type.icon)
                 .font(.title)
                 .foregroundStyle(type.color)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                 Text(type.label)
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.cosmicTextSecondary)
                 Text(content)
-                    .font(.body)
+                    .font(.cosmicBody)
             }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(type.color.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
+        .background(type.color.opacity(0.1), in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
     }
 }
 
@@ -882,59 +882,59 @@ struct PlanetDetailSheetV2: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                     // Planet header
-                    HStack(spacing: 16) {
+                    HStack(spacing: Cosmic.Spacing.md) {
                         Text(planet.symbol)
                             .font(.system(size: 56))
 
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                             HStack {
                                 Text(planet.name)
                                     .font(.largeTitle.weight(.bold))
                                 if planet.isRetrograde {
                                     Text("Retrograde")
                                         .font(.caption.weight(.bold))
-                                        .foregroundStyle(.orange)
+                                        .foregroundStyle(Color.cosmicWarning)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(.orange.opacity(0.2), in: Capsule())
+                                        .background(Color.cosmicWarning.opacity(0.2), in: Capsule())
                                 }
                             }
 
                             Text("\(planet.sign) • \(String(format: "%.2f", planet.degree))°")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicTitle2)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
 
                     // Dasha role
                     if planet.isDashaLord || planet.isAntardashaLord {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                             Text("Dasha Role")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
 
                             if planet.isDashaLord {
                                 Label("Current Mahadasha Lord", systemImage: "star.fill")
-                                    .foregroundStyle(.purple)
+                                    .foregroundStyle(Color.cosmicAmethyst)
                             }
                             if planet.isAntardashaLord {
                                 Label("Current Antardasha Lord", systemImage: "star.fill")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(Color.cosmicInfo)
                             }
                         }
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                     }
 
                     // Active aspects
                     let relevantAspects = snapshot.aspects.filter { $0.planet1 == planet.id || $0.planet2 == planet.id }
                     if !relevantAspects.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                             Text("Active Aspects")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
 
                             ForEach(relevantAspects) { aspect in
                                 let otherPlanet = aspect.planet1 == planet.id ? aspect.planet2 : aspect.planet1
@@ -942,16 +942,16 @@ struct PlanetDetailSheetV2: View {
                                     Text(aspect.type.rawValue.capitalized)
                                         .font(.subheadline.weight(.medium))
                                     Text("to \(otherPlanet.capitalized)")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
                                     Spacer()
                                     Text(String(format: "%.1f° orb", aspect.orb))
-                                        .font(.caption.monospacedDigit())
-                                        .foregroundStyle(.secondary)
+                                        .font(.cosmicCaption.monospacedDigit())
+                                        .foregroundStyle(Color.cosmicTextSecondary)
                                 }
                             }
                         }
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                     }
                 }
                 .padding()
@@ -975,44 +975,44 @@ struct DashaLordDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                     // Find planet for this lord
                     if let planet = snapshot.planets.first(where: { $0.name == lord }) {
-                        HStack(spacing: 16) {
+                        HStack(spacing: Cosmic.Spacing.md) {
                             Text(planet.symbol)
                                 .font(.system(size: 56))
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                                 Text("\(lord) Dasha")
                                     .font(.largeTitle.weight(.bold))
 
                                 if snapshot.currentDasha.mahadasha.lord == lord {
                                     Text("Current Mahadasha")
-                                        .foregroundStyle(.purple)
+                                        .foregroundStyle(Color.cosmicAmethyst)
                                 } else if snapshot.currentDasha.antardasha.lord == lord {
                                     Text("Current Antardasha")
-                                        .foregroundStyle(.blue)
+                                        .foregroundStyle(Color.cosmicInfo)
                                 }
                             }
                         }
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
 
                         // Where this planet is now
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                             Text("Where \(lord) Is Now")
-                                .font(.headline)
+                                .font(.cosmicHeadline)
 
                             Text("\(planet.sign) at \(String(format: "%.1f", planet.degree))°")
-                                .font(.title3)
+                                .font(.cosmicTitle2)
 
                             if planet.isRetrograde {
                                 Label("Currently retrograde", systemImage: "arrow.uturn.backward")
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(Color.cosmicWarning)
                             }
                         }
                         .padding()
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                     }
                 }
                 .padding()

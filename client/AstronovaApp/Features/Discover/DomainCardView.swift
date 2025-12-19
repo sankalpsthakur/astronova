@@ -130,7 +130,7 @@ struct DomainCardWideView: View {
 
                 // Chevron
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             .padding(Cosmic.Spacing.m)

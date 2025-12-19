@@ -36,7 +36,7 @@ struct RelationshipPulseView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(pulse.state.frequencyLabel) vibration, \(pulse.score) percent alignment")
+        .accessibilityLabel("\(pulse.state.frequencyLabel) vibration, \(pulse.intensity.displayLabel) alignment")
         .accessibilityHint("Tap to see what's contributing to this energy state")
     }
 
@@ -68,7 +68,7 @@ struct RelationshipPulseView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.cosmicTextPrimary)
 
-                    Text("\(pulse.score)% vibrational alignment")
+                    Text("\(pulse.intensity.displayLabel) vibrational alignment")
                         .font(.caption)
                         .foregroundStyle(Color.cosmicTextTertiary)
                 }
@@ -404,17 +404,17 @@ struct MiniPulseView: View {
 
         VStack(spacing: 20) {
             RelationshipPulseView(
-                pulse: RelationshipPulse(state: .flowing, score: 78, label: "Flowing", topActivations: ["Venus trine Moon"]),
+                pulse: RelationshipPulse(state: .flowing, intensity: .strong, label: "Flowing", topActivations: ["Venus trine Moon"]),
                 isCompact: false
             )
 
             RelationshipPulseView(
-                pulse: RelationshipPulse(state: .electric, score: 85, label: "Electric", topActivations: ["Mars conjunct Venus"]),
+                pulse: RelationshipPulse(state: .electric, intensity: .intense, label: "Electric", topActivations: ["Mars conjunct Venus"]),
                 isCompact: false
             )
 
             RelationshipPulseView(
-                pulse: RelationshipPulse(state: .friction, score: 45, label: "Friction", topActivations: ["Saturn square Sun"]),
+                pulse: RelationshipPulse(state: .friction, intensity: .moderate, label: "Friction", topActivations: ["Saturn square Sun"]),
                 isCompact: false
             )
         }
@@ -432,7 +432,7 @@ struct MiniPulseView: View {
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Spacer()
                 RelationshipPulseView(
-                    pulse: RelationshipPulse(state: .flowing, score: 78, label: "Flowing", topActivations: []),
+                    pulse: RelationshipPulse(state: .flowing, intensity: .strong, label: "Flowing", topActivations: []),
                     isCompact: true
                 )
             }
@@ -445,7 +445,7 @@ struct MiniPulseView: View {
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Spacer()
                 RelationshipPulseView(
-                    pulse: RelationshipPulse(state: .magnetic, score: 92, label: "Magnetic", topActivations: []),
+                    pulse: RelationshipPulse(state: .magnetic, intensity: .peak, label: "Magnetic", topActivations: []),
                     isCompact: true
                 )
             }

@@ -63,7 +63,8 @@ protocol StoreManagerProtocol: ObservableObject {
     func loadProducts()
     func purchaseProduct(productId: String) async -> Bool
     func hasProduct(_ productId: String) -> Bool
-    func restorePurchases() async
+    @discardableResult
+    func restorePurchases() async -> Bool
 }
 
 // MARK: - Location Service Protocol

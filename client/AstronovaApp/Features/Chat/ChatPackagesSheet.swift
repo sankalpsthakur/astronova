@@ -2,12 +2,18 @@ import SwiftUI
 
 struct ChatPackagesSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var storeKitManager = StoreKitManager.shared
     @AppStorage("chat_credits") private var chatCredits: Int = 0
     @State private var isPurchasing: String? = nil
     @State private var showPurchaseSuccess = false
+    @State private var showPurchaseError = false
     @State private var purchasedCredits: Int = 0
 
     private let packs: [ShopCatalog.ChatPack] = ShopCatalog.chatPacks
+
+    // App Store compliance URLs
+    private let termsURL = URL(string: "https://astronova.onrender.com/terms")!
+    private let privacyURL = URL(string: "https://astronova.onrender.com/privacy")!
 
     var body: some View {
         NavigationStack {
@@ -61,6 +67,24 @@ struct ChatPackagesSheet: View {
                             .disabled(isPurchasing != nil)
                         }
                     }
+
+                    // App Store compliance: Terms and Privacy links
+                    VStack(spacing: Cosmic.Spacing.xs) {
+                        Text("One-time purchase. Credits never expire.")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextTertiary)
+                            .multilineTextAlignment(.center)
+
+                        HStack(spacing: Cosmic.Spacing.md) {
+                            Link("Terms of Use", destination: termsURL)
+                            Text("•")
+                                .foregroundStyle(Color.cosmicTextTertiary)
+                            Link("Privacy Policy", destination: privacyURL)
+                        }
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicGold)
+                    }
+                    .padding(.top, Cosmic.Spacing.md)
                 }
                 .padding(.horizontal, Cosmic.Spacing.screen)
                 .padding(.bottom, Cosmic.Spacing.xl)
@@ -91,6 +115,11 @@ struct ChatPackagesSheet: View {
             }
         }
         .accessibilityIdentifier(AccessibilityID.chatPackagesSheet)
+        .alert("Purchase Failed", isPresented: $showPurchaseError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The purchase could not be completed. You were not charged.")
+        }
     }
 
     private func buy(_ pack: ShopCatalog.ChatPack) async {
@@ -98,18 +127,43 @@ struct ChatPackagesSheet: View {
         CosmicHaptics.medium()
         isPurchasing = pack.productId
         defer { isPurchasing = nil }
-        let ok = await BasicStoreManager.shared.purchaseProduct(productId: pack.productId)
-        if ok {
-            CosmicHaptics.success()
-            purchasedCredits = pack.credits
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                showPurchaseSuccess = true
+
+        #if DEBUG
+        // UI tests only: use mock store
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+            let ok = await BasicStoreManager.shared.purchaseProduct(productId: pack.productId)
+            if ok {
+                handlePurchaseSuccess(credits: pack.credits)
+            } else {
+                await MainActor.run { showPurchaseError = true }
             }
-            // Auto-dismiss after showing success
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                withAnimation {
-                    showPurchaseSuccess = false
-                }
+            return
+        }
+        #endif
+
+        // Production: Use StoreKit
+        let ok = await storeKitManager.purchaseProduct(productId: pack.productId)
+        if ok {
+            // Update credits after successful StoreKit purchase
+            await MainActor.run {
+                chatCredits += pack.credits
+            }
+            handlePurchaseSuccess(credits: pack.credits)
+        } else {
+            await MainActor.run { showPurchaseError = true }
+        }
+    }
+
+    private func handlePurchaseSuccess(credits: Int) {
+        CosmicHaptics.success()
+        purchasedCredits = credits
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            showPurchaseSuccess = true
+        }
+        // Auto-dismiss after showing success
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation {
+                showPurchaseSuccess = false
             }
         }
     }
@@ -124,7 +178,7 @@ private struct PurchaseSuccessOverlay: View {
         VStack(spacing: Cosmic.Spacing.md) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(Color.green)
+                .foregroundStyle(Color.cosmicSuccess)
                 .symbolEffect(.bounce, value: true)
 
             Text("Purchase Complete!")

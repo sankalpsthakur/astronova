@@ -11,17 +11,17 @@ struct DashaChakraWheelView: View {
     @State private var animationProgress: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
-    // Planet colors matching the design
+    // Planet colors matching the design system
     private let planetColors: [String: Color] = [
-        "Sun": .yellow,
-        "Moon": .cyan,
-        "Mars": .red,
-        "Mercury": .green,
-        "Jupiter": .orange,
-        "Venus": .pink,
-        "Saturn": .brown,
-        "Rahu": .purple,
-        "Ketu": .indigo,
+        "Sun": .planetSun,
+        "Moon": .planetMoon,
+        "Mars": .planetMars,
+        "Mercury": .planetMercury,
+        "Jupiter": .planetJupiter,
+        "Venus": .planetVenus,
+        "Saturn": .planetSaturn,
+        "Rahu": .planetRahu,
+        "Ketu": .planetKetu,
     ]
 
     private let lords = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
@@ -34,7 +34,7 @@ struct DashaChakraWheelView: View {
             ZStack {
                 // Background cosmic gradient
                 RadialGradient(
-                    colors: [Color.black.opacity(0.95), Color.purple.opacity(0.3), Color.blue.opacity(0.2)],
+                    colors: [Color.cosmicVoid.opacity(0.95), Color.cosmicAmethyst.opacity(0.3), Color.cosmicInfo.opacity(0.2)],
                     center: .center,
                     startRadius: 0,
                     endRadius: size / 2
@@ -92,24 +92,24 @@ struct DashaChakraWheelView: View {
                 )
 
                 // Center label - current dasha
-                VStack(spacing: 4) {
+                VStack(spacing: Cosmic.Spacing.xxs) {
                     Text(dashaData.currentPeriod.mahadasha.lord)
-                        .font(.system(size: size * 0.055, weight: .bold))
-                        .foregroundStyle(planetColors[dashaData.currentPeriod.mahadasha.lord] ?? .white)
+                        .font(.cosmicHeadline)
+                        .foregroundStyle(planetColors[dashaData.currentPeriod.mahadasha.lord] ?? Color.cosmicTextPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
 
                     if let antar = dashaData.currentPeriod.antardasha {
                         Text(antar.lord)
-                            .font(.system(size: size * 0.035, weight: .medium))
-                            .foregroundStyle(planetColors[antar.lord]?.opacity(0.8) ?? .white.opacity(0.8))
+                            .font(.cosmicCallout)
+                            .foregroundStyle(planetColors[antar.lord]?.opacity(0.8) ?? Color.cosmicTextPrimary.opacity(0.8))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
 
                     Text("Now")
-                        .font(.system(size: size * 0.025, weight: .light))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.cosmicMicro)
+                        .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 .frame(maxWidth: size * 0.22)
 

@@ -420,9 +420,9 @@ struct MatchRequest: Codable {
 
 /// Match/compatibility response
 struct MatchResponse: Codable {
-    let overallScore: Int
-    let vedicScore: Int
-    let chineseScore: Int
+    let overallIntensity: Intensity
+    let vedicIntensity: Intensity
+    let chineseIntensity: Intensity
     let synastryAspects: [String]
     let userChart: [String: [String: Double]]?
     let partnerChart: [String: [String: Double]]?

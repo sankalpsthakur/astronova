@@ -53,27 +53,27 @@ struct LoadingView: View {
     }
     
     private var standardLoadingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Cosmic.Spacing.md) {
             ProgressView()
                 .scaleEffect(1.2)
-                .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
-            
+                .tint(Color.cosmicGold)
+
             if let message = message {
                 Text(message)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCallout)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
     }
     
     private var cosmicLoadingView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Cosmic.Spacing.screen) {
             ZStack {
                 // Outer cosmic ring
                 Circle()
                     .stroke(
                         LinearGradient(
-                            colors: [.purple.opacity(0.3), .blue.opacity(0.3), .clear],
+                            colors: [Color.cosmicAmethyst.opacity(0.4), Color.cosmicGold.opacity(0.3), .clear],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -81,11 +81,11 @@ struct LoadingView: View {
                     )
                     .frame(width: 60, height: 60)
                     .rotationEffect(.degrees(animateRotation ? 360 : 0))
-                
+
                 // Inner pulsing stars
                 ForEach(0..<8, id: \.self) { i in
                     Circle()
-                        .fill(.white.opacity(0.8))
+                        .fill(Color.cosmicTextPrimary.opacity(0.8))
                         .frame(width: 3, height: 3)
                         .offset(x: 20)
                         .rotationEffect(.degrees(Double(i) * 45))
@@ -97,23 +97,17 @@ struct LoadingView: View {
                             value: animateStars
                         )
                 }
-                
+
                 // Central sparkle
                 Text("✨")
-                    .font(.title3)
+                    .font(.cosmicHeadline)
                     .scaleEffect(animateStars ? 1.3 : 0.8)
             }
-            
+
             if let message = message {
                 Text(message)
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.purple, .blue],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .font(.cosmicCalloutEmphasis)
+                    .foregroundStyle(LinearGradient.cosmicCoolGradient)
                     .multilineTextAlignment(.center)
             }
         }
@@ -121,38 +115,38 @@ struct LoadingView: View {
     }
     
     private var inlineLoadingView: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Cosmic.Spacing.xs) {
             ProgressView()
                 .scaleEffect(0.8)
-                .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
-            
+                .tint(Color.cosmicGold)
+
             if let message = message {
                 Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
     }
     
     private var overlayLoadingView: some View {
         ZStack {
-            Color.black.opacity(0.3)
+            Color.cosmicVoid.opacity(0.5)
                 .ignoresSafeArea()
-            
-            VStack(spacing: 16) {
+
+            VStack(spacing: Cosmic.Spacing.md) {
                 cosmicLoadingView
-                
+
                 if let message = message {
                     Text(message)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white)
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
             }
-            .padding(24)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-            .shadow(radius: 10)
+            .padding(Cosmic.Spacing.lg)
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+            .cosmicElevation(.medium)
         }
     }
     
@@ -175,41 +169,41 @@ struct LoadingView: View {
 
 struct HoroscopeSkeleton: View {
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Cosmic.Spacing.screen) {
             // Title skeleton
             HStack {
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.cosmicNebula)
                     .frame(width: 150, height: 24)
-                    .cornerRadius(6)
+                    .cornerRadius(Cosmic.Radius.subtle)
                 Spacer()
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.cosmicNebula)
                     .frame(width: 80, height: 20)
-                    .cornerRadius(4)
+                    .cornerRadius(Cosmic.Radius.subtle)
             }
-            
+
             // Content blocks
-            VStack(spacing: 16) {
+            VStack(spacing: Cosmic.Spacing.md) {
                 ForEach(0..<3, id: \.self) { _ in
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                         Rectangle()
-                            .fill(Color.gray.opacity(0.3))
+                            .fill(Color.cosmicNebula)
                             .frame(width: 100, height: 18)
-                            .cornerRadius(4)
-                        VStack(spacing: 6) {
+                            .cornerRadius(Cosmic.Radius.subtle)
+                        VStack(spacing: Cosmic.Spacing.xxs) {
                             ForEach(0..<4, id: \.self) { _ in
                                 Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
+                                    .fill(Color.cosmicNebula)
                                     .frame(height: 14)
                                     .cornerRadius(2)
                             }
                         }
                     }
-                    .padding(16)
+                    .padding(Cosmic.Spacing.md)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.gray.opacity(0.05))
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                            .fill(Color.cosmicStardust.opacity(0.3))
                     )
                 }
             }
@@ -219,41 +213,41 @@ struct HoroscopeSkeleton: View {
 
 struct PlanetaryChartSkeleton: View {
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Cosmic.Spacing.screen) {
             Circle()
-                .fill(Color.gray.opacity(0.3))
+                .fill(Color.cosmicNebula)
                 .frame(width: 200, height: 200)
             Rectangle()
-                .fill(Color.gray.opacity(0.3))
+                .fill(Color.cosmicNebula)
                 .frame(height: 100)
-                .cornerRadius(8)
+                .cornerRadius(Cosmic.Radius.subtle)
         }
     }
 }
 
 struct ProfileSetupSkeleton: View {
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Cosmic.Spacing.screen) {
             Rectangle()
-                .fill(Color.gray.opacity(0.3))
+                .fill(Color.cosmicNebula)
                 .frame(height: 40)
-                .cornerRadius(8)
+                .cornerRadius(Cosmic.Radius.subtle)
             Rectangle()
-                .fill(Color.gray.opacity(0.3))
+                .fill(Color.cosmicNebula)
                 .frame(height: 40)
-                .cornerRadius(8)
+                .cornerRadius(Cosmic.Radius.subtle)
         }
     }
 }
 
 struct LocationSearchSkeleton: View {
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Cosmic.Spacing.sm) {
             ForEach(0..<5, id: \.self) { _ in
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color.cosmicNebula)
                     .frame(height: 50)
-                    .cornerRadius(8)
+                    .cornerRadius(Cosmic.Radius.subtle)
             }
         }
     }

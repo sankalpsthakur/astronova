@@ -332,7 +332,7 @@ struct CosmicMapView: View {
                 return (a == aspect.planet1 && b == aspect.planet2) || (a == aspect.planet2 && b == aspect.planet1)
             }()
 
-            let baseColor: Color = aspect.type.isHarmonious ? .green : .red
+            let baseColor: Color = aspect.type.isHarmonious ? .cosmicSuccess : .cosmicError
             let opacity: Double = isSelected ? 0.85 : 0.35
             let width: CGFloat = isSelected ? 3 : (aspect.isApplying ? 2 : 1)
             let dash: [CGFloat] = isSelected ? [] : (aspect.isApplying ? [] : [4, 4])
@@ -384,7 +384,7 @@ struct CosmicMapView: View {
             if planet.isRetrograde {
                 let rxText = Text("Rx")
                     .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.cosmicWarning)
                 context.draw(rxText, at: CGPoint(x: pos.x + planetSize/2 + 4, y: pos.y), anchor: .leading)
             }
 

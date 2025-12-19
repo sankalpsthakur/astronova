@@ -12,10 +12,27 @@ struct PaywallView: View {
     @ObservedObject private var storeKitManager = StoreKitManager.shared
     @State private var isPurchasing = false
     @State private var isRestoring = false
+    @State private var purchaseResult: PurchaseResult?
     @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
     @AppStorage("trigger_show_chat_packages") private var triggerShowChatPackages: Bool = false
 
     private let context: PaywallContext
+
+    private enum PurchaseResult: Identifiable {
+        case success
+        case error(String)
+        case restored
+        case restoredNone
+
+        var id: String {
+            switch self {
+            case .success: return "success"
+            case .error(let msg): return "error-\(msg)"
+            case .restored: return "restored"
+            case .restoredNone: return "restoredNone"
+            }
+        }
+    }
     
     private let subscriptionProductId = "astronova_pro_monthly"
 
@@ -106,9 +123,15 @@ struct PaywallView: View {
     }
     
     private var purchaseButtonTitle: String {
-        isPurchasing ? "Purchasing..." : "Start Pro for \(subscriptionPrice) per month"
+        isPurchasing ? "Purchasing..." : "Start Pro for \(subscriptionPrice)/month"
     }
-    
+
+    // MARK: - App Store Compliance URLs
+
+    private let termsURL = URL(string: "https://astronova.onrender.com/terms")!
+    private let privacyURL = URL(string: "https://astronova.onrender.com/privacy")!
+    private let manageSubscriptionsURL = URL(string: "https://apps.apple.com/account/subscriptions")!
+
     var body: some View {
         ScrollView {
             VStack(spacing: Cosmic.Spacing.xl) {
@@ -177,6 +200,27 @@ struct PaywallView: View {
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .accessibilityIdentifier(AccessibilityID.restorePurchasesButton)
 
+                // MARK: - Subscription Disclosure (App Store Guideline 3.1.2)
+                VStack(spacing: Cosmic.Spacing.xs) {
+                    Text("Subscription auto-renews monthly at \(subscriptionPrice)/month until canceled. Cancel anytime in Settings → Apple ID → Subscriptions.")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .multilineTextAlignment(.center)
+
+                    HStack(spacing: Cosmic.Spacing.md) {
+                        Link("Terms of Use", destination: termsURL)
+                        Text("•")
+                            .foregroundStyle(Color.cosmicTextTertiary)
+                        Link("Privacy Policy", destination: privacyURL)
+                        Text("•")
+                            .foregroundStyle(Color.cosmicTextTertiary)
+                        Link("Manage", destination: manageSubscriptionsURL)
+                    }
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicGold)
+                }
+                .padding(.top, Cosmic.Spacing.sm)
+
                 // Divider
                 HStack {
                     Rectangle()
@@ -236,6 +280,18 @@ struct PaywallView: View {
             .padding(.bottom, Cosmic.Spacing.xl)
         }
         .background(Color.cosmicBackground)
+        .overlay(alignment: .topTrailing) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(Color.cosmicTextTertiary.opacity(0.7))
+                    .padding(Cosmic.Spacing.md)
+            }
+            .accessibilityLabel("Close")
+            .accessibilityIdentifier("paywallCloseButton")
+        }
         .accessibilityIdentifier(AccessibilityID.paywallView)
         .onAppear {
             Analytics.shared.track(
@@ -246,54 +302,102 @@ struct PaywallView: View {
         .task {
             await storeKitManager.loadProducts()
         }
+        .alert(item: $purchaseResult) { result in
+            switch result {
+            case .success:
+                return Alert(
+                    title: Text("Welcome to Pro!"),
+                    message: Text("Your subscription is now active. Enjoy unlimited access to all features."),
+                    dismissButton: .default(Text("Continue")) {
+                        dismiss()
+                    }
+                )
+            case .error(let message):
+                return Alert(
+                    title: Text("Purchase Failed"),
+                    message: Text(message),
+                    dismissButton: .default(Text("OK"))
+                )
+            case .restored:
+                return Alert(
+                    title: Text("Purchases Restored"),
+                    message: Text("Your Pro subscription has been restored. Welcome back!"),
+                    dismissButton: .default(Text("Continue")) {
+                        dismiss()
+                    }
+                )
+            case .restoredNone:
+                return Alert(
+                    title: Text("No Purchases Found"),
+                    message: Text("We couldn't find any previous purchases to restore."),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+        }
     }
     
     private func purchasePro() async {
         if await MainActor.run(body: { isPurchasing }) { return }
         await MainActor.run { isPurchasing = true }
-        
+
         defer {
             Task { @MainActor in isPurchasing = false }
         }
 
-        // UI tests / local debug: bypass StoreKit dialogs and use the in-app mock store.
+        #if DEBUG
+        // UI tests only: bypass StoreKit dialogs using mock store
         if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
             let success = await BasicStoreManager.shared.purchaseProduct(productId: subscriptionProductId)
             if success {
                 Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
-                await MainActor.run { dismiss() }
+                await MainActor.run {
+                    purchaseResult = .success
+                }
+            } else {
+                await MainActor.run {
+                    purchaseResult = .error("Purchase could not be completed. Please try again.")
+                }
             }
             return
         }
-        
-        if await storeKitManager.purchaseProduct(productId: subscriptionProductId) {
-            Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
-            await MainActor.run { dismiss() }
-            return
-        }
-        
-        let success = await BasicStoreManager.shared.purchaseProduct(productId: subscriptionProductId)
+        #endif
+
+        // Production: Use only StoreKit for purchases
+        let success = await storeKitManager.purchaseProduct(productId: subscriptionProductId)
         if success {
             Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
-            await MainActor.run { dismiss() }
+            await MainActor.run {
+                purchaseResult = .success
+            }
+        } else {
+            await MainActor.run {
+                purchaseResult = .error("Purchase could not be completed. You were not charged.")
+            }
         }
     }
-    
+
     private func restorePurchases() async {
         if await MainActor.run(body: { isRestoring }) { return }
         await MainActor.run { isRestoring = true }
-        
+
         defer {
             Task { @MainActor in isRestoring = false }
         }
 
+        #if DEBUG
         if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
-            await BasicStoreManager.shared.restorePurchases()
+            let restored = await BasicStoreManager.shared.restorePurchases()
+            await MainActor.run {
+                purchaseResult = restored ? .restored : .restoredNone
+            }
             return
         }
+        #endif
 
-        await storeKitManager.restorePurchases()
-        await BasicStoreManager.shared.restorePurchases()
+        let restored = await storeKitManager.restorePurchases()
+        await MainActor.run {
+            purchaseResult = restored ? .restored : .restoredNone
+        }
     }
 }
 

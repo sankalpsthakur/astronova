@@ -250,9 +250,11 @@ final class TestEnvironment {
     // MARK: - Logging
 
     private func log(_ message: String) {
+        #if DEBUG
         if hasArgument(.enableLogging) || isUITest {
             print("[TestEnvironment] \(message)")
         }
+        #endif
     }
 }
 

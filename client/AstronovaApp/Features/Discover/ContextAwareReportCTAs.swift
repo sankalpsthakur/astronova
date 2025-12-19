@@ -83,7 +83,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Love frequency elevated (\(Int(weight * 100))%)",
                 icon: "heart.fill",
                 color: .planetVenus,
-                price: "$12.99"
+                productId: "report_love"
             )
         case "work":
             return SuggestedReport(
@@ -93,7 +93,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Work frequency is strong (\(Int(weight * 100))%)",
                 icon: "briefcase.fill",
                 color: .planetSaturn,
-                price: "$12.99"
+                productId: "report_career"
             )
         case "mind":
             return SuggestedReport(
@@ -103,7 +103,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Mental frequency heightened (\(Int(weight * 100))%)",
                 icon: "brain.head.profile",
                 color: .planetMercury,
-                price: "$9.99"
+                productId: nil  // No matching product, uses fallback
             )
         case "self":
             return SuggestedReport(
@@ -113,7 +113,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Self-attunement in focus (\(Int(weight * 100))%)",
                 icon: "sparkles",
                 color: .cosmicGold,
-                price: "$19.99"
+                productId: "report_general"
             )
         default:
             return SuggestedReport(
@@ -123,7 +123,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Plan your journey",
                 icon: "calendar",
                 color: .cosmicGold,
-                price: "$24.99"
+                productId: nil  // No matching product, uses fallback
             )
         }
     }
@@ -137,7 +137,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Essential foundation",
                 icon: "sparkles",
                 color: .cosmicGold,
-                price: "$19.99"
+                productId: "report_general"
             ),
             SuggestedReport(
                 type: "year_ahead",
@@ -146,7 +146,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Plan your journey",
                 icon: "calendar",
                 color: .planetJupiter,
-                price: "$24.99"
+                productId: nil  // No matching product, uses fallback
             ),
             SuggestedReport(
                 type: "love_forecast",
@@ -155,7 +155,7 @@ struct ContextAwareReportCTAs: View {
                 reason: "Understand relationship patterns",
                 icon: "heart.fill",
                 color: .planetVenus,
-                price: "$12.99"
+                productId: "report_love"
             )
         ]
     }
@@ -171,7 +171,15 @@ struct SuggestedReport: Identifiable {
     let reason: String
     let icon: String
     let color: Color
-    let price: String
+    let productId: String?
+
+    /// Price from StoreKit (via ShopCatalog), falling back to estimate
+    var price: String {
+        if let productId = productId {
+            return ShopCatalog.price(for: productId)
+        }
+        return "$14.99"  // Fallback for unmapped reports
+    }
 }
 
 // MARK: - Suggested Report Card
@@ -216,7 +224,7 @@ private struct SuggestedReportCard: View {
                             .frame(width: 4, height: 4)
 
                         Text(report.reason)
-                            .font(.system(size: 10))
+                            .font(.cosmicMicro)
                             .foregroundStyle(report.color)
                     }
                 }
@@ -227,8 +235,8 @@ private struct SuggestedReportCard: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     if hasSubscription {
                         Text("Included")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundStyle(.green)
+                            .font(.cosmicMicro)
+                            .foregroundStyle(Color.cosmicSuccess)
                     } else {
                         Text(report.price)
                             .font(.cosmicCaption)

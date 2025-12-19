@@ -23,9 +23,14 @@ struct UserProfile: Codable {
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
     
-    init(fullName: String = "", birthDate: Date = Date(), birthTime: Date? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
+    /// Default birth date is 25 years ago to make it obvious user should set their actual date
+    private static var defaultBirthDate: Date {
+        Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
+    }
+
+    init(fullName: String = "", birthDate: Date? = nil, birthTime: Date? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
         self.fullName = fullName
-        self.birthDate = birthDate
+        self.birthDate = birthDate ?? Self.defaultBirthDate
         self.birthTime = birthTime
         self.birthPlace = birthPlace
         self.birthLatitude = birthLatitude
@@ -58,10 +63,26 @@ class UserProfileManager: ObservableObject {
     }
 
     init() {
-        if let data = userDefaults.data(forKey: profileKey),
-           let profile = try? JSONDecoder().decode(UserProfile.self, from: data) {
-            self.profile = profile
+        if let data = userDefaults.data(forKey: profileKey) {
+            do {
+                let decodedProfile = try JSONDecoder().decode(UserProfile.self, from: data)
+                self.profile = decodedProfile
+                #if DEBUG
+                debugPrint("[Profile] Loaded profile from UserDefaults - birthTime: \(String(describing: decodedProfile.birthTime))")
+                #endif
+            } catch {
+                #if DEBUG
+                debugPrint("[Profile] Failed to decode profile from UserDefaults: \(error)")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    debugPrint("[Profile] Raw JSON: \(jsonString)")
+                }
+                #endif
+                self.profile = UserProfile()
+            }
         } else {
+            #if DEBUG
+            debugPrint("[Profile] No saved profile found, creating new UserProfile")
+            #endif
             self.profile = UserProfile()
         }
 
@@ -74,8 +95,22 @@ class UserProfileManager: ObservableObject {
     
     func saveProfile() throws {
         do {
+            #if DEBUG
+            debugPrint("[Profile] Saving profile - birthTime: \(String(describing: profile.birthTime))")
+            #endif
+
             let data = try JSONEncoder().encode(profile)
             userDefaults.set(data, forKey: profileKey)
+
+            #if DEBUG
+            // Verify the save by reading it back
+            if let savedData = userDefaults.data(forKey: profileKey),
+               let verifyProfile = try? JSONDecoder().decode(UserProfile.self, from: savedData) {
+                debugPrint("[Profile] Verified save - birthTime: \(String(describing: verifyProfile.birthTime))")
+            } else {
+                debugPrint("[Profile] WARNING: Failed to verify saved profile!")
+            }
+            #endif
 
             // Trigger server sync in background (fire and forget)
             Task {
@@ -122,8 +157,17 @@ class UserProfileManager: ObservableObject {
     }
     
     func updateProfile(_ newProfile: UserProfile) {
+        #if DEBUG
+        debugPrint("[Profile] updateProfile called - incoming birthTime: \(String(describing: newProfile.birthTime))")
+        #endif
+
         let oldProfile = profile
         profile = newProfile
+
+        #if DEBUG
+        debugPrint("[Profile] Profile updated in memory - current birthTime: \(String(describing: profile.birthTime))")
+        #endif
+
         do {
             try saveProfile()
             // Clear cached chart when profile changes significantly

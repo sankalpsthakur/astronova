@@ -6,6 +6,7 @@ import SwiftUI
 struct OracleView: View {
     @StateObject private var viewModel = OracleViewModel()
     @EnvironmentObject private var auth: AuthState
+    @AppStorage("trigger_show_chat_packages") private var triggerShowChatPackages: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -86,6 +87,17 @@ struct OracleView: View {
         }
         .onAppear {
             viewModel.quotaManager.refresh()
+            // Check if we should show chat packages (triggered from PaywallView)
+            if triggerShowChatPackages {
+                triggerShowChatPackages = false
+                viewModel.showingCreditPacks = true
+            }
+        }
+        .onChange(of: triggerShowChatPackages) { _, newValue in
+            if newValue {
+                triggerShowChatPackages = false
+                viewModel.showingCreditPacks = true
+            }
         }
         .sheet(isPresented: $viewModel.showingPaywall) {
             PaywallView(context: .chatLimit)
@@ -107,9 +119,9 @@ struct OracleView: View {
 
 private struct OracleNavTitle: View {
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Cosmic.Spacing.xxs) {
             Image(systemName: "sparkles")
-                .font(.subheadline)
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicGold)
             Text("Oracle")
                 .font(.cosmicHeadline)
@@ -132,7 +144,7 @@ private struct OracleInsightCard: View {
                         .fill(Color.cosmicGold.opacity(0.15))
                         .frame(width: 32, height: 32)
                     Image(systemName: message.type.icon)
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicGold)
                 }
             }
@@ -211,7 +223,7 @@ struct OracleInputArea: View {
                 // Send button
                 Button(action: onSend) {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
+                        .font(.cosmicTitle2)
                         .foregroundStyle(
                             text.isEmpty || isDisabled
                                 ? Color.cosmicTextTertiary
@@ -253,8 +265,8 @@ struct DepthToggle: View {
                         VStack(alignment: .leading) {
                             Text(option.rawValue)
                             Text(option.description)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     } icon: {
                         Image(systemName: option.icon)
@@ -262,9 +274,9 @@ struct DepthToggle: View {
                 }
             }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: Cosmic.Spacing.xxs) {
                 Image(systemName: depth.icon)
-                    .font(.caption)
+                    .font(.cosmicCaption)
                 Text(depth.rawValue)
                     .font(.cosmicCaption)
             }
@@ -316,7 +328,7 @@ struct OracleQuotaBanner: View {
                 Image(systemName: "sparkles")
                     .foregroundStyle(Color.cosmicGold)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Daily reading complete")
                         .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
@@ -365,11 +377,11 @@ struct OracleTypingIndicator: View {
                     .fill(Color.cosmicGold.opacity(0.15))
                     .frame(width: 32, height: 32)
                 Image(systemName: "sparkles")
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicGold)
             }
 
-            HStack(spacing: 4) {
+            HStack(spacing: Cosmic.Spacing.xxs) {
                 ForEach(0..<3) { index in
                     Circle()
                         .fill(Color.cosmicGold.opacity(0.6))

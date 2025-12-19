@@ -438,10 +438,20 @@ struct QuickBirthEditView: View {
     private func saveChanges() {
         isSaving = true
 
+        #if DEBUG
+        print("[QuickBirthEdit] saveChanges called")
+        print("[QuickBirthEdit] hasBirthTime: \(hasBirthTime)")
+        print("[QuickBirthEdit] birthTime state: \(birthTime)")
+        #endif
+
         var updatedProfile = profile
         updatedProfile.fullName = fullName
         updatedProfile.birthDate = birthDate
         updatedProfile.birthTime = hasBirthTime ? birthTime : nil
+
+        #if DEBUG
+        print("[QuickBirthEdit] updatedProfile.birthTime: \(String(describing: updatedProfile.birthTime))")
+        #endif
 
         if let location = selectedLocation {
             updatedProfile.birthPlace = location.fullName

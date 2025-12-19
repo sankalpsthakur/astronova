@@ -85,7 +85,7 @@ struct RelationshipDetailView: View {
     private func errorView(_ error: Error) -> some View {
         VStack(spacing: Cosmic.Spacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.largeTitle)
+                .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicWarning)
 
             Text("Couldn't load compatibility")
@@ -196,7 +196,7 @@ struct RelationshipDetailView: View {
 
             // Shared signature
             Text(data.pair.sharedSignature)
-                .font(.subheadline)
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
@@ -231,7 +231,7 @@ struct RelationshipDetailView: View {
                 Rectangle()
                     .fill(
                         LinearGradient(
-                            colors: [Color.cosmicGold, Color(red: 0.9, green: 0.6, blue: 0.7)],
+                            colors: [Color.cosmicGold, Color.planetVenus],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -239,29 +239,30 @@ struct RelationshipDetailView: View {
                     .frame(height: 2)
                     .frame(width: 60)
 
-                // Score badge
-                Text("\(data.synastry.overallScore)%")
-                    .font(.caption.weight(.bold))
+                // Intensity badge
+                Text(data.synastry.overallIntensity.displayLabel)
+                    .font(.cosmicCaption)
+                    .fontWeight(.bold)
                     .foregroundStyle(Color.cosmicTextPrimary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, Cosmic.Spacing.xs)
+                    .padding(.vertical, Cosmic.Spacing.xxs)
                     .background(
                         Capsule()
                             .fill(Color.cosmicSurface)
                             .overlay(
                                 Capsule()
-                                    .stroke(Color.cosmicNebula, lineWidth: 1)
+                                    .stroke(data.synastry.overallIntensity.gradient, lineWidth: 1)
                             )
                     )
             }
 
             // Person B avatar
-            avatarView(name: data.pair.nameB, color: Color(red: 0.9, green: 0.6, blue: 0.7))
+            avatarView(name: data.pair.nameB, color: Color.planetVenus)
         }
     }
 
     private func avatarView(name: String, color: Color) -> some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Cosmic.Spacing.xxs) {
             Circle()
                 .fill(
                     RadialGradient(
@@ -274,12 +275,12 @@ struct RelationshipDetailView: View {
                 .frame(width: 56, height: 56)
                 .overlay(
                     Text(String(name.prefix(1)))
-                        .font(.title2.weight(.semibold))
+                        .font(.cosmicTitle2)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 )
 
             Text(name)
-                .font(.caption.weight(.medium))
+                .font(.cosmicCaptionEmphasis)
                 .foregroundStyle(Color.cosmicTextPrimary)
         }
     }
@@ -288,7 +289,7 @@ struct RelationshipDetailView: View {
 
     @ViewBuilder
     private func compactHeader(data: CompatibilitySnapshot) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Cosmic.Spacing.sm) {
             // Mini avatars
             HStack(spacing: -8) {
                 Circle()
@@ -296,22 +297,24 @@ struct RelationshipDetailView: View {
                     .frame(width: 28, height: 28)
                     .overlay(
                         Text(String(data.pair.nameA.prefix(1)))
-                            .font(.caption.weight(.bold))
+                            .font(.cosmicCaption)
+                            .fontWeight(.bold)
                             .foregroundStyle(Color.cosmicTextPrimary)
                     )
 
                 Circle()
-                    .fill(Color(red: 0.9, green: 0.6, blue: 0.7).opacity(0.5))
+                    .fill(Color.planetVenus.opacity(0.5))
                     .frame(width: 28, height: 28)
                     .overlay(
                         Text(String(data.pair.nameB.prefix(1)))
-                            .font(.caption.weight(.bold))
+                            .font(.cosmicCaption)
+                            .fontWeight(.bold)
                             .foregroundStyle(Color.cosmicTextPrimary)
                     )
             }
 
             Text("\(data.pair.nameA) & \(data.pair.nameB)")
-                .font(.subheadline.weight(.semibold))
+                .font(.cosmicCalloutEmphasis)
                 .foregroundStyle(Color.cosmicTextPrimary)
 
             Spacer()
@@ -319,8 +322,8 @@ struct RelationshipDetailView: View {
             MiniPulseView(pulse: data.now.pulse)
         }
         .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
+        .padding(.vertical, Cosmic.Spacing.xs)
+        .background(Color.cosmicSurface)
     }
 
     // MARK: - Tab Content
@@ -379,9 +382,9 @@ struct RelationshipDetailView: View {
 
     @ViewBuilder
     private func coreConnectionsSection(data: CompatibilitySnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             Text("Core Connections")
-                .font(.headline)
+                .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .padding(.horizontal)
 
@@ -449,34 +452,34 @@ struct CoreConnectionCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
+            HStack(spacing: Cosmic.Spacing.sm) {
                 // Aspect glyphs
-                HStack(spacing: 4) {
+                HStack(spacing: Cosmic.Spacing.xxs) {
                     Text(aspect.planetAGlyph)
                         .foregroundStyle(Color.cosmicGold)
                     Text(aspect.aspectGlyph)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     Text(aspect.planetBGlyph)
-                        .foregroundStyle(Color(red: 0.9, green: 0.6, blue: 0.7))
+                        .foregroundStyle(Color.planetVenus)
                 }
-                .font(.title3.weight(.medium))
+                .font(.cosmicHeadline)
                 .frame(width: 70)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     HStack {
                         Text(aspect.interpretation.title)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.cosmicCalloutEmphasis)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         if aspect.isActivatedNow {
                             Image(systemName: "sparkles")
-                                .font(.caption)
+                                .font(.cosmicCaption)
                                 .foregroundStyle(Color.cosmicGold)
                         }
                     }
 
                     Text(aspect.interpretation.oneLiner)
-                        .font(.caption)
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextTertiary)
                         .lineLimit(1)
                 }
@@ -486,12 +489,12 @@ struct CoreConnectionCard: View {
                 // Strength indicator
                 StrengthBar(strength: aspect.strength, isHarmonious: aspect.isHarmonious)
             }
-            .padding(12)
+            .padding(Cosmic.Spacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
                     .fill(isSelected ? Color.cosmicSurfaceSecondary : Color.cosmicSurface)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
                             .stroke(
                                 isSelected ? Color.cosmicGold.opacity(0.5) : Color.cosmicNebula,
                                 lineWidth: 1
@@ -515,12 +518,13 @@ struct StrengthBar: View {
                     .frame(width: 40, height: 4)
 
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(isHarmonious ? Color.cosmicGold : Color(red: 0.95, green: 0.5, blue: 0.5))
+                    .fill(isHarmonious ? Color.cosmicGold : Color.cosmicCopper)
                     .frame(width: CGFloat(strength) * 40, height: 4)
             }
 
             Text("\(Int(strength * 100))%")
-                .font(.system(size: 8).monospacedDigit())
+                .font(.cosmicMicro)
+                .monospacedDigit()
                 .foregroundStyle(Color.cosmicTextTertiary)
         }
     }
@@ -532,21 +536,21 @@ struct NextShiftCard: View {
     let next: NextShift
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             HStack {
                 Image(systemName: "arrow.right.circle.fill")
                     .foregroundStyle(Color.cosmicTeal)
                 Text("Next Shift")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Spacer()
                 Text("in \(next.daysUntil) days")
-                    .font(.caption.weight(.medium))
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
 
             Text(next.whatChanges)
-                .font(.body)
+                .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicTextSecondary)
 
             Divider()
@@ -556,16 +560,16 @@ struct NextShiftCard: View {
                 Image(systemName: "lightbulb.fill")
                     .foregroundStyle(Color.cosmicGold.opacity(0.7))
                 Text(next.planForIt)
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card)
                 .fill(Color.cosmicSurface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card)
                         .stroke(Color.cosmicTeal.opacity(0.2), lineWidth: 1)
                 )
         )
@@ -578,9 +582,9 @@ struct DomainBreakdownView: View {
     let domains: [DomainScore]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             Text("Domain Breakdown")
-                .font(.headline)
+                .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
 
             ForEach(domains) { domain in
@@ -599,35 +603,55 @@ struct DomainRow: View {
     let domain: DomainScore
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Cosmic.Spacing.sm) {
             Image(systemName: domain.domain.icon)
-                .font(.body)
+                .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicGold)
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(domain.domain.rawValue)
-                    .font(.subheadline.weight(.medium))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Text("\(domain.signA) ↔ \(domain.signB)")
-                    .font(.caption2)
+                    .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
 
             Spacer()
 
-            Text("\(domain.score)%")
-                .font(.subheadline.weight(.bold).monospacedDigit())
-                .foregroundStyle(scoreColor(domain.score))
+            // Intensity indicator with gradient bar
+            HStack(spacing: Cosmic.Spacing.xxs) {
+                IntensityBar(intensity: domain.intensity)
+                    .frame(width: 40, height: 6)
+
+                Text(domain.intensity.displayLabel)
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(domain.intensity.color)
+            }
         }
     }
+}
 
-    private func scoreColor(_ score: Int) -> Color {
-        if score >= 80 { return Color.cosmicGold }
-        if score >= 60 { return Color.cosmicTeal }
-        if score >= 40 { return Color.cosmicTextSecondary }
-        return Color(red: 0.95, green: 0.5, blue: 0.5)
+// MARK: - Intensity Bar
+
+struct IntensityBar: View {
+    let intensity: Intensity
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Background track
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.cosmicNebula.opacity(0.3))
+
+                // Fill based on intensity level
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(intensity.gradient)
+                    .frame(width: geometry.size.width * intensity.fillLevel)
+            }
+        }
     }
 }
 
@@ -644,10 +668,10 @@ struct SynastryAspectsTable: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             HStack {
                 Text("All Aspects")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Spacer()
@@ -688,15 +712,17 @@ struct AspectTableRow: View {
     let aspect: SynastryAspect
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Cosmic.Spacing.xs) {
             Text("\(aspect.planetA) \(aspect.aspectGlyph) \(aspect.planetB)")
-                .font(.caption.monospaced())
+                .font(.cosmicCaption)
+                .monospaced()
                 .foregroundStyle(Color.cosmicTextSecondary)
 
             Spacer()
 
             Text(String(format: "%.1f°", aspect.orb))
-                .font(.caption2.monospacedDigit())
+                .font(.cosmicMicro)
+                .monospacedDigit()
                 .foregroundStyle(Color.cosmicTextTertiary)
 
             if aspect.isActivatedNow {
@@ -705,7 +731,7 @@ struct AspectTableRow: View {
                     .frame(width: 6, height: 6)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, Cosmic.Spacing.xxs)
     }
 }
 
@@ -724,10 +750,10 @@ struct ChartsComparisonView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             HStack {
                 Text("Charts Comparison")
-                    .font(.headline)
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicTextPrimary)
 
                 Spacer()
@@ -745,14 +771,14 @@ struct ChartsComparisonView: View {
                 chartTable
             } else {
                 Text("Circle view coming soon")
-                    .font(.caption)
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .frame(maxWidth: .infinity, minHeight: 200)
             }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card)
                 .fill(Color.cosmicSurface)
         )
     }
@@ -768,9 +794,9 @@ struct ChartsComparisonView: View {
                 Text(pair.nameB)
                     .frame(maxWidth: .infinity)
             }
-            .font(.caption.weight(.semibold))
+            .font(.cosmicCaptionEmphasis)
             .foregroundStyle(Color.cosmicTextTertiary)
-            .padding(.bottom, 8)
+            .padding(.bottom, Cosmic.Spacing.xs)
 
             Divider().background(Color.cosmicNebula)
 
@@ -784,11 +810,11 @@ struct ChartsComparisonView: View {
                         .foregroundStyle(Color.cosmicGold)
                     Text("\(placementB.placement.signGlyph) \(placementB.placement.formattedDegree)")
                         .frame(maxWidth: .infinity)
-                        .foregroundStyle(Color(red: 0.9, green: 0.6, blue: 0.7))
+                        .foregroundStyle(Color.planetVenus)
                 }
-                .font(.caption)
+                .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextSecondary)
-                .padding(.vertical, 6)
+                .padding(.vertical, Cosmic.Spacing.xxs)
 
                 Divider().background(Color.cosmicNebula.opacity(0.5))
             }
@@ -806,23 +832,24 @@ struct AspectDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                     // Header
-                    VStack(spacing: 12) {
-                        HStack(spacing: 8) {
+                    VStack(spacing: Cosmic.Spacing.sm) {
+                        HStack(spacing: Cosmic.Spacing.xs) {
                             Text(aspect.planetAGlyph)
-                                .font(.largeTitle)
+                                .font(.cosmicDisplay)
                                 .foregroundStyle(Color.cosmicGold)
                             Text(aspect.aspectGlyph)
-                                .font(.title)
+                                .font(.cosmicTitle1)
                                 .foregroundStyle(Color.cosmicTextTertiary)
                             Text(aspect.planetBGlyph)
-                                .font(.largeTitle)
-                                .foregroundStyle(Color(red: 0.9, green: 0.6, blue: 0.7))
+                                .font(.cosmicDisplay)
+                                .foregroundStyle(Color.planetVenus)
                         }
 
                         Text(aspect.interpretation.title)
-                            .font(.title2.weight(.bold))
+                            .font(.cosmicTitle2)
+                            .fontWeight(.bold)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         if aspect.isActivatedNow {
@@ -830,10 +857,10 @@ struct AspectDetailSheet: View {
                                 Image(systemName: "sparkles")
                                 Text("Currently Active")
                             }
-                            .font(.caption.weight(.medium))
+                            .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicGold)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, Cosmic.Spacing.sm)
+                            .padding(.vertical, Cosmic.Spacing.xxs)
                             .background(Color.cosmicGold.opacity(0.2))
                             .cornerRadius(20)
                         }
@@ -844,47 +871,47 @@ struct AspectDetailSheet: View {
 
                     // One-liner
                     Text(aspect.interpretation.oneLiner)
-                        .font(.body)
+                        .font(.cosmicBody)
                         .foregroundStyle(Color.cosmicTextSecondary)
 
                     // Deep dive
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                         Text("Deep Dive")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         Text(aspect.interpretation.deepDive)
-                            .font(.body)
+                            .font(.cosmicBody)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
 
                     Divider().background(Color.cosmicNebula)
 
                     // Actions
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                         Text("Aligning With This Frequency")
-                            .font(.headline)
+                            .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextPrimary)
 
                         ActionRow(
                             icon: "checkmark.circle.fill",
-                            iconColor: .green,
+                            iconColor: .cosmicSuccess,
                             label: "Do",
                             text: aspect.interpretation.suggestedAction
                         )
 
                         ActionRow(
                             icon: "xmark.circle.fill",
-                            iconColor: .red.opacity(0.8),
+                            iconColor: .cosmicError.opacity(0.8),
                             label: "Avoid",
                             text: aspect.interpretation.avoidAction
                         )
                     }
 
                     // Technical details
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
                         Text("Technical")
-                            .font(.caption.weight(.semibold))
+                            .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicTextTertiary)
 
                         HStack {
@@ -895,7 +922,7 @@ struct AspectDetailSheet: View {
                     }
                     .padding()
                     .background(Color.cosmicSurface)
-                    .cornerRadius(12)
+                    .cornerRadius(Cosmic.Radius.soft)
                 }
                 .padding()
             }
@@ -919,10 +946,10 @@ struct TechDetail: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(label)
-                .font(.caption2)
+                .font(.cosmicMicro)
                 .foregroundStyle(Color.cosmicTextTertiary)
             Text(value)
-                .font(.caption.weight(.medium))
+                .font(.cosmicCaptionEmphasis)
                 .foregroundStyle(Color.cosmicTextPrimary)
         }
         .frame(maxWidth: .infinity)
@@ -969,39 +996,39 @@ struct RelationshipShareSheet: View {
     }
 
     private var shareCardPreview: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
             Text(share.cardTitle)
-                .font(.headline)
+                .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
 
             Text(share.cardSentence)
-                .font(.body)
+                .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicTextSecondary)
 
             Divider().background(Color.cosmicNebula)
 
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Label(share.cardAction, systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color.cosmicSuccess)
                     Label(share.cardAvoid, systemImage: "xmark.circle.fill")
-                        .foregroundStyle(.red.opacity(0.8))
+                        .foregroundStyle(Color.cosmicError.opacity(0.8))
                 }
-                .font(.caption)
+                .font(.cosmicCaption)
 
                 Spacer()
             }
 
             Text("Based on \(pairNames)'s charts")
-                .font(.caption2)
+                .font(.cosmicMicro)
                 .foregroundStyle(Color.cosmicTextTertiary)
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card)
                 .fill(Color.cosmicSurface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card)
                         .stroke(Color.cosmicGold.opacity(0.3), lineWidth: 1)
                 )
         )

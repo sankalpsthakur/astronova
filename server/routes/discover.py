@@ -709,6 +709,7 @@ def discover_domains():
             "domains": domain_insights,
             "cosmicWeather": cosmic_weather,
             "dailyHoroscope": horoscope_content,
+            "disclaimer": "For entertainment purposes only. Not professional advice.",
         }
     )
 

@@ -6,10 +6,11 @@ import threading
 import uuid
 from datetime import datetime
 
-from flask import Blueprint, Response, jsonify, request
+from flask import Blueprint, Response, g, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 import db
+from middleware import require_auth
 from services.pdf import render_report_pdf
 from services.report_generation_service import ReportGenerationService
 
@@ -62,6 +63,35 @@ def reports_info():
 
 @reports_bp.route("/user/<user_id>", methods=["GET"])
 def user_reports(user_id: str):
+    """
+    List reports for a user.
+
+    SECURITY: Requires Bearer token authentication AND user ID validation.
+    The requesting user must match the user_id in the path or provide valid auth.
+    """
+    # Require Bearer token authentication
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({
+            "error": "Authorization required",
+            "code": "AUTH_REQUIRED"
+        }), 401
+
+    token = auth_header.replace("Bearer ", "").strip()
+    if not token or token == "null" or token == "undefined":
+        return jsonify({
+            "error": "Valid authorization token required",
+            "code": "INVALID_TOKEN"
+        }), 401
+
+    # Validate that X-User-Id matches the path user_id (prevents cross-user access)
+    requesting_user = request.headers.get("X-User-Id")
+    if requesting_user and requesting_user != user_id:
+        return jsonify({
+            "error": "Access denied - cannot access other user's reports",
+            "code": "FORBIDDEN"
+        }), 403
+
     try:
         reports = db.get_user_reports(user_id)
     except Exception as exc:
@@ -116,6 +146,7 @@ def user_reports(user_id: str):
 @reports_bp.route("", methods=["POST"])
 @reports_bp.route("/full", methods=["POST"])
 @reports_bp.route("/generate", methods=["POST"])
+@require_auth
 def generate_report():
     try:
         payload = request.get_json(force=False, silent=False)
@@ -130,7 +161,7 @@ def generate_report():
     if birth_data_raw is not None and not isinstance(birth_data_raw, dict):
         return jsonify({"error": "birthData must be a JSON object when provided", "code": "INVALID_PAYLOAD"}), 400
     report_type = data.get("reportType", "birth_chart")
-    user_id = data.get("userId") or request.headers.get("X-User-Id")
+    user_id = g.user_id  # Use authenticated user ID from decorator
     # Default to synchronous so API callers get an immediate, stable response.
     # Async mode is opt-in via {"async": true}.
     async_mode = bool(data.get("async", False))
@@ -185,6 +216,7 @@ def generate_report():
             "downloadUrl": f"/api/v1/reports/{report_id}/pdf",
             "generatedAt": datetime.utcnow().isoformat() + "Z",
             "status": "processing",
+            "disclaimer": "For entertainment purposes only. Not professional advice.",
         }
     else:
         # Synchronous generation (for quick reports)
@@ -213,6 +245,7 @@ def generate_report():
             "downloadUrl": f"/api/v1/reports/{report_id}/pdf",
             "generatedAt": datetime.utcnow().isoformat() + "Z",
             "status": "completed",
+            "disclaimer": "For entertainment purposes only. Not professional advice.",
         }
 
     return jsonify(response)
