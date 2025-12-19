@@ -1,0 +1,17 @@
+# Test dependencies for comprehensive test suite
+
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.3.1  # Parallel test execution
+pytest-timeout>=2.1.0  # Test timeouts
+freezegun>=1.2.2  # Time mocking
+pytest-mock>=3.11.1  # Mocking utilities
+
+# Coverage reporting
+coverage>=7.2.0
+
+# Property-based testing (optional, for advanced scenarios)
+hypothesis>=6.82.0
+
+# HTTP client used by server/e2e_smoke.py
+requests>=2.31.0

@@ -21,15 +21,11 @@
 		3D01F8132C0A000000000007 /* APIServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8082C0A000000000007 /* APIServices.swift */; };
 		3D01F8142C0A000000000008 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D01F8072C0A000000000008 /* APIModels.swift */; };
 		5A811C062DF79DA000BD6D7F /* MapKitLocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */; };
-		5A811C072DF79DA000BD6D7F /* PlanetaryCalculationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C052DF79DA000BD6D7F /* PlanetaryCalculationsView.swift */; };
 		5A811C092DF79DA000BD6D7F /* MapKitAutocompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */; };
- 		7C7D7E802E00000000000001 /* TimeTravelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C7D7E7F2E00000000000001 /* TimeTravelView.swift */; };
 		AA0002000000000000000001 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000001 /* AppConfig.swift */; };
 		AA0002000000000000000002 /* RemoteConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000002 /* RemoteConfigService.swift */; };
 		AA0002000000000000000003 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000003 /* AnalyticsService.swift */; };
 		AA0002000000000000000004 /* BirthTimePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000004 /* BirthTimePicker.swift */; };
-		AA000200000000000000000E /* ShareCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000E /* ShareCards.swift */; };
-		AA0002000000000000000005 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000005 /* OnboardingView.swift */; };
 		AA0002000000000000000006 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000006 /* HomeView.swift */; };
 		AA0002000000000000000007 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000007 /* PaywallView.swift */; };
 		AA0002000000000000000008 /* remote_config.json in Resources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000008 /* remote_config.json */; };
@@ -38,9 +34,62 @@
 		AA000200000000000000000B /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000B /* NotificationService.swift */; };
 		AA000200000000000000000C /* ShareImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000C /* ShareImageService.swift */; };
 		AA000200000000000000000D /* Zodiac.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000D /* Zodiac.swift */; };
+		AA000200000000000000000F /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000F /* StoreKitManager.swift */; };
 		AA0002000000000000000011 /* BasicStoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000011 /* BasicStoreManager.swift */; };
 		AA0002000000000000000012 /* ShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000012 /* ShopCatalog.swift */; };
-		AA000200000000000000000F /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000F /* StoreKitManager.swift */; };
+		AA0002000000000000000013 /* CosmicDesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000013 /* CosmicDesignTokens.swift */; };
+		02BF82B08A9C4246B3BD0A51 /* DashaChakraWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */; };
+		3ABC5323337547CD8ACB46F0 /* DashaImpactView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39808353AF2C460DBA69DC37 /* DashaImpactView.swift */; };
+		65A997B5F7E04025AA6D5AAA /* EnhancedTimeTravelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */; };
+		4B9BCF87E80C41FF9DFA04FF /* DashaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDFF139DD6F247BDBF102B37 /* DashaModels.swift */; };
+		AA0002000000000000000014 /* CosmicColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000014 /* CosmicColors.swift */; };
+		E2E001000000000000000001 /* TestEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000001 /* TestEnvironment.swift */; };
+		E2E001000000000000000002 /* MonetizationJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000002 /* MonetizationJourneyTests.swift */; };
+		E2E001000000000000000003 /* HapticFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000003 /* HapticFeedbackService.swift */; };
+			E2E001000000000000000004 /* CosmicDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000004 /* CosmicDesignSystem.swift */; };
+			E2E001000000000000000005 /* CosmicTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000005 /* CosmicTypography.swift */; };
+			E2E001000000000000000006 /* CosmicMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000006 /* CosmicMotion.swift */; };
+			E2E001000000000000000007 /* ChatPackagesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000007 /* ChatPackagesSheet.swift */; };
+		CMP001000000000000000001 /* CompatibilityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000001 /* CompatibilityModels.swift */; };
+		CMP001000000000000000002 /* SynastryCompassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000002 /* SynastryCompassView.swift */; };
+		CMP001000000000000000003 /* RelationshipPulseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000003 /* RelationshipPulseView.swift */; };
+		CMP001000000000000000004 /* CompatibilityMeaningStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000004 /* CompatibilityMeaningStack.swift */; };
+		CMP001000000000000000005 /* CompatibilityJourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000005 /* CompatibilityJourneyView.swift */; };
+		CMP001000000000000000006 /* ConnectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000006 /* ConnectView.swift */; };
+		CMP001000000000000000007 /* RelationshipDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000007 /* RelationshipDetailView.swift */; };
+		CMP001000000000000000008 /* ContactsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000008 /* ContactsService.swift */; };
+		CMP001000000000000000009 /* ContactPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000009 /* ContactPickerView.swift */; };
+		DIS001000000000000000001 /* CosmicLensView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000001 /* CosmicLensView.swift */; };
+		DIS001000000000000000002 /* NowNextActBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000002 /* NowNextActBar.swift */; };
+		DIS001000000000000000003 /* NarrativeTilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000003 /* NarrativeTilesView.swift */; };
+		DIS001000000000000000004 /* ConnectionsStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000004 /* ConnectionsStrip.swift */; };
+		DIS001000000000000000005 /* NextUpTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000005 /* NextUpTimeline.swift */; };
+		DIS001000000000000000006 /* ContextAwareReportCTAs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000006 /* ContextAwareReportCTAs.swift */; };
+		DIS001000000000000000007 /* YourReportsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000007 /* YourReportsSection.swift */; };
+		DIS001000000000000000008 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000008 /* DiscoverView.swift */; };
+		DIS001000000000000000009 /* DiscoverShimmerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000009 /* DiscoverShimmerView.swift */; };
+		DIS001000000000000000010 /* DomainCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000010 /* DomainCardView.swift */; };
+		DIS001000000000000000011 /* DomainGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000011 /* DomainGridView.swift */; };
+		DIS001000000000000000012 /* DomainDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000012 /* DomainDetailView.swift */; };
+		TT001000000000000000001 /* TimeTravelSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000001 /* TimeTravelSnapshot.swift */; };
+		TT001000000000000000002 /* UnifiedTimeTravelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000002 /* UnifiedTimeTravelView.swift */; };
+		TT001000000000000000003 /* CosmicMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000003 /* CosmicMapView.swift */; };
+		TT001000000000000000004 /* MeaningStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000004 /* MeaningStack.swift */; };
+		TT001000000000000000005 /* TimeSeeker.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000005 /* TimeSeeker.swift */; };
+		ORACLE01000000000001 /* OracleQuotaManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ORACLE02000000000001 /* OracleQuotaManager.swift */; };
+		ORACLE01000000000002 /* OracleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ORACLE02000000000002 /* OracleViewModel.swift */; };
+		ORACLE01000000000003 /* OracleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ORACLE02000000000003 /* OracleView.swift */; };
+		SELFNEW01000000000001 /* SelfTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000001 /* SelfTabView.swift */; };
+		SELFNEW01000000000002 /* CosmicPulseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000002 /* CosmicPulseView.swift */; };
+		SELFNEW01000000000003 /* EssenceBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000003 /* EssenceBar.swift */; };
+		SELFNEW01000000000004 /* FoundationSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000004 /* FoundationSection.swift */; };
+		SELFNEW01000000000005 /* MiniChartWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000005 /* MiniChartWheelView.swift */; };
+		SELFNEW01000000000006 /* MoreOptionsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000006 /* MoreOptionsSheet.swift */; };
+		SELFNEW01000000000007 /* SelfDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000007 /* SelfDataService.swift */; };
+		SELFNEW01000000000008 /* TodaysEnergyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000008 /* TodaysEnergyView.swift */; };
+		SELFNEW01000000000009 /* ProfileCompleteness.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000009 /* ProfileCompleteness.swift */; };
+		SELFNEW0100000000000A /* QuickBirthEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW0200000000000A /* QuickBirthEditSheet.swift */; };
+		SELFNEW0100000000000B /* ReportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW0200000000000B /* ReportDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,27 +118,8 @@
 		3D01F7FE2C0A000000000001 /* AstronovaAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaAppUITests.swift; sourceTree = "<group>"; };
 		3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaAppUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		3D01F8072C0A000000000008 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
-		AA0001000000000000000001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
-		AA0001000000000000000002 /* RemoteConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigService.swift; sourceTree = "<group>"; };
-		AA0001000000000000000003 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
-		AA0001000000000000000004 /* BirthTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthTimePicker.swift; sourceTree = "<group>"; };
-		AA000100000000000000000E /* ShareCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCards.swift; sourceTree = "<group>"; };
-		AA0001000000000000000005 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		AA0001000000000000000006 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		AA0001000000000000000007 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
-		AA0001000000000000000008 /* remote_config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = remote_config.json; sourceTree = "<group>"; };
-		AA0001000000000000000009 /* HomeGuidanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeGuidanceService.swift; sourceTree = "<group>"; };
-		AA000100000000000000000A /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
-		AA000100000000000000000B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
-		AA000100000000000000000C /* ShareImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareImageService.swift; sourceTree = "<group>"; };
-		AA000100000000000000000D /* Zodiac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zodiac.swift; sourceTree = "<group>"; };
-		AA0001000000000000000010 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
-		AA0001000000000000000011 /* BasicStoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicStoreManager.swift; sourceTree = "<group>"; };
-		AA0001000000000000000012 /* ShopCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCatalog.swift; sourceTree = "<group>"; };
-		AA000100000000000000000F /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
 		3D01F8082C0A000000000007 /* APIServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIServices.swift; sourceTree = "<group>"; };
 		3D01F8092C0A000000000006 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
-		7C7D7E7F2E00000000000001 /* TimeTravelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeTravelView.swift; sourceTree = "<group>"; };
 		3D01F80A2C0A000000000005 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
 		3D01F80C2C0A000000000003 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		3D01F80D2C0A000000000002 /* AuthState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthState.swift; sourceTree = "<group>"; };
@@ -98,10 +128,79 @@
 		3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaAppDebug.entitlements; sourceTree = "<group>"; };
 		5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitAutocompleteView.swift; sourceTree = "<group>"; };
 		5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitLocationService.swift; sourceTree = "<group>"; };
-		5A811C052DF79DA000BD6D7F /* PlanetaryCalculationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanetaryCalculationsView.swift; sourceTree = "<group>"; };
 		5AD3E1402E147FA500333B75 /* AstronovaApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AstronovaApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5AD3E1412E147FA500333B75 /* AstronovaAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5AD3E1422E147FA500333B75 /* AstronovaAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AstronovaAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0001000000000000000001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		AA0001000000000000000002 /* RemoteConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigService.swift; sourceTree = "<group>"; };
+		AA0001000000000000000003 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		AA0001000000000000000004 /* BirthTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthTimePicker.swift; sourceTree = "<group>"; };
+		AA0001000000000000000006 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		AA0001000000000000000007 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		AA0001000000000000000008 /* remote_config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = remote_config.json; sourceTree = "<group>"; };
+		AA0001000000000000000009 /* HomeGuidanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeGuidanceService.swift; sourceTree = "<group>"; };
+		AA000100000000000000000A /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		AA000100000000000000000B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		AA000100000000000000000C /* ShareImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareImageService.swift; sourceTree = "<group>"; };
+		AA000100000000000000000D /* Zodiac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zodiac.swift; sourceTree = "<group>"; };
+		AA000100000000000000000F /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		AA0001000000000000000010 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
+		AA0001000000000000000011 /* BasicStoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicStoreManager.swift; sourceTree = "<group>"; };
+		AA0001000000000000000012 /* ShopCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCatalog.swift; sourceTree = "<group>"; };
+		AA0001000000000000000013 /* CosmicDesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicDesignTokens.swift; sourceTree = "<group>"; };
+		F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaChakraWheelView.swift; sourceTree = "<group>"; };
+		39808353AF2C460DBA69DC37 /* DashaImpactView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaImpactView.swift; sourceTree = "<group>"; };
+		DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedTimeTravelView.swift; sourceTree = "<group>"; };
+		CDFF139DD6F247BDBF102B37 /* DashaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaModels.swift; sourceTree = "<group>"; };
+		AA0001000000000000000014 /* CosmicColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicColors.swift; sourceTree = "<group>"; };
+		F63A72C22E86F9E8003419B4 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		E2E000000000000000000001 /* TestEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestEnvironment.swift; sourceTree = "<group>"; };
+		E2E000000000000000000002 /* MonetizationJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonetizationJourneyTests.swift; sourceTree = "<group>"; };
+		E2E000000000000000000003 /* HapticFeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackService.swift; sourceTree = "<group>"; };
+			E2E000000000000000000004 /* CosmicDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicDesignSystem.swift; sourceTree = "<group>"; };
+			E2E000000000000000000005 /* CosmicTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicTypography.swift; sourceTree = "<group>"; };
+			E2E000000000000000000006 /* CosmicMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicMotion.swift; sourceTree = "<group>"; };
+			E2E000000000000000000007 /* ChatPackagesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPackagesSheet.swift; sourceTree = "<group>"; };
+		CMP000000000000000000001 /* CompatibilityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompatibilityModels.swift; sourceTree = "<group>"; };
+		CMP000000000000000000002 /* SynastryCompassView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SynastryCompassView.swift; sourceTree = "<group>"; };
+		CMP000000000000000000003 /* RelationshipPulseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipPulseView.swift; sourceTree = "<group>"; };
+		CMP000000000000000000004 /* CompatibilityMeaningStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompatibilityMeaningStack.swift; sourceTree = "<group>"; };
+		CMP000000000000000000005 /* CompatibilityJourneyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompatibilityJourneyView.swift; sourceTree = "<group>"; };
+		CMP000000000000000000006 /* ConnectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectView.swift; sourceTree = "<group>"; };
+		CMP000000000000000000007 /* RelationshipDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipDetailView.swift; sourceTree = "<group>"; };
+		CMP000000000000000000008 /* ContactsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsService.swift; sourceTree = "<group>"; };
+		CMP000000000000000000009 /* ContactPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactPickerView.swift; sourceTree = "<group>"; };
+		DIS000000000000000000001 /* CosmicLensView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicLensView.swift; sourceTree = "<group>"; };
+		DIS000000000000000000002 /* NowNextActBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowNextActBar.swift; sourceTree = "<group>"; };
+		DIS000000000000000000003 /* NarrativeTilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrativeTilesView.swift; sourceTree = "<group>"; };
+		DIS000000000000000000004 /* ConnectionsStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionsStrip.swift; sourceTree = "<group>"; };
+		DIS000000000000000000005 /* NextUpTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextUpTimeline.swift; sourceTree = "<group>"; };
+		DIS000000000000000000006 /* ContextAwareReportCTAs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextAwareReportCTAs.swift; sourceTree = "<group>"; };
+		DIS000000000000000000007 /* YourReportsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourReportsSection.swift; sourceTree = "<group>"; };
+		DIS000000000000000000008 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		DIS000000000000000000009 /* DiscoverShimmerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverShimmerView.swift; sourceTree = "<group>"; };
+		DIS000000000000000000010 /* DomainCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainCardView.swift; sourceTree = "<group>"; };
+		DIS000000000000000000011 /* DomainGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainGridView.swift; sourceTree = "<group>"; };
+		DIS000000000000000000012 /* DomainDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainDetailView.swift; sourceTree = "<group>"; };
+		TT000000000000000000001 /* TimeTravelSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeTravelSnapshot.swift; sourceTree = "<group>"; };
+		TT000000000000000000002 /* UnifiedTimeTravelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/UnifiedTimeTravelView.swift; sourceTree = "<group>"; };
+		TT000000000000000000003 /* CosmicMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/CosmicMapView.swift; sourceTree = "<group>"; };
+		TT000000000000000000004 /* MeaningStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/MeaningStack.swift; sourceTree = "<group>"; };
+		TT000000000000000000005 /* TimeSeeker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/TimeSeeker.swift; sourceTree = "<group>"; };
+		ORACLE02000000000001 /* OracleQuotaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OracleQuotaManager.swift"; path = "AstronovaApp/Features/Oracle/OracleQuotaManager.swift"; sourceTree = "<group>"; };
+		ORACLE02000000000002 /* OracleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OracleViewModel.swift"; path = "AstronovaApp/Features/Oracle/OracleViewModel.swift"; sourceTree = "<group>"; };
+		ORACLE02000000000003 /* OracleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OracleView.swift"; path = "AstronovaApp/Features/Oracle/OracleView.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000001 /* SelfTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SelfTabView.swift"; path = "AstronovaApp/Features/Self/SelfTabView.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000002 /* CosmicPulseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CosmicPulseView.swift"; path = "AstronovaApp/Features/Self/CosmicPulseView.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000003 /* EssenceBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "EssenceBar.swift"; path = "AstronovaApp/Features/Self/EssenceBar.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000004 /* FoundationSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FoundationSection.swift"; path = "AstronovaApp/Features/Self/FoundationSection.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000005 /* MiniChartWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MiniChartWheelView.swift"; path = "AstronovaApp/Features/Self/MiniChartWheelView.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000006 /* MoreOptionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MoreOptionsSheet.swift"; path = "AstronovaApp/Features/Self/MoreOptionsSheet.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000007 /* SelfDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SelfDataService.swift"; path = "AstronovaApp/Features/Self/SelfDataService.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000008 /* TodaysEnergyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TodaysEnergyView.swift"; path = "AstronovaApp/Features/Self/TodaysEnergyView.swift"; sourceTree = "<group>"; };
+		SELFNEW02000000000009 /* ProfileCompleteness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProfileCompleteness.swift"; path = "AstronovaApp/Features/Self/ProfileCompleteness.swift"; sourceTree = "<group>"; };
+		SELFNEW0200000000000A /* QuickBirthEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "QuickBirthEditSheet.swift"; path = "AstronovaApp/Features/Self/QuickBirthEditSheet.swift"; sourceTree = "<group>"; };
+		SELFNEW0200000000000B /* ReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ReportDetailView.swift"; path = "AstronovaApp/Features/Self/ReportDetailView.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +237,7 @@
 				5AD3E1402E147FA500333B75 /* AstronovaApp.app */,
 				5AD3E1412E147FA500333B75 /* AstronovaAppTests.xctest */,
 				5AD3E1422E147FA500333B75 /* AstronovaAppUITests.xctest */,
+				F63A72C22E86F9E8003419B4 /* Package.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -147,15 +247,23 @@
 				AA0003000000000000000001 /* Config */,
 				AA0003000000000000000002 /* Analytics */,
 				AA0003000000000000000003 /* Components */,
+				AA000300000000000000000B /* DesignSystem */,
 				AA0003000000000000000004 /* Features */,
-				AA0003000000000000000008 /* Services2 */,
+				AA0003000000000000000008 /* Services */,
 				AA0003000000000000000009 /* Utils */,
 				AA000300000000000000000A /* Protocols */,
 				AA000100000000000000000F /* StoreKitManager.swift */,
 				5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */,
 				5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */,
-				5A811C052DF79DA000BD6D7F /* PlanetaryCalculationsView.swift */,
-				7C7D7E7F2E00000000000001 /* TimeTravelView.swift */,
+				TT000000000000000000001 /* TimeTravelSnapshot.swift */,
+				TT000000000000000000002 /* UnifiedTimeTravelView.swift */,
+				TT000000000000000000003 /* CosmicMapView.swift */,
+				TT000000000000000000004 /* MeaningStack.swift */,
+				TT000000000000000000005 /* TimeSeeker.swift */,
+				F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */,
+				39808353AF2C460DBA69DC37 /* DashaImpactView.swift */,
+				DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */,
+				CDFF139DD6F247BDBF102B37 /* DashaModels.swift */,
 				3D01F8152C0A000000000009 /* Info.plist */,
 				3D01F8162C0A00000000000A /* AstronovaApp.entitlements */,
 				3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */,
@@ -167,10 +275,45 @@
 				3D01F8092C0A000000000006 /* NetworkClient.swift */,
 				3D01F8082C0A000000000007 /* APIServices.swift */,
 				3D01F8072C0A000000000008 /* APIModels.swift */,
+				E2E000000000000000000001 /* TestEnvironment.swift */,
+				CMP000000000000000000001 /* CompatibilityModels.swift */,
+				CMP000000000000000000002 /* SynastryCompassView.swift */,
+				CMP000000000000000000003 /* RelationshipPulseView.swift */,
+				CMP000000000000000000004 /* CompatibilityMeaningStack.swift */,
+				CMP000000000000000000005 /* CompatibilityJourneyView.swift */,
+				CMP000000000000000000006 /* ConnectView.swift */,
+				CMP000000000000000000007 /* RelationshipDetailView.swift */,
+				CMP000000000000000000009 /* ContactPickerView.swift */,
 				3D01F7E72C0A000000000001 /* Assets.xcassets */,
 				3D01F7E92C0A000000000001 /* Preview Content */,
 			);
 			path = AstronovaApp;
+			sourceTree = "<group>";
+		};
+		3D01F7E92C0A000000000001 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				3D01F7EA2C0A000000000001 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		3D01F7F32C0A000000000001 /* AstronovaAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				3D01F7F42C0A000000000001 /* AstronovaAppTests.swift */,
+			);
+			path = AstronovaAppTests;
+			sourceTree = "<group>";
+		};
+		3D01F7FD2C0A000000000001 /* AstronovaAppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				3D01F7FE2C0A000000000001 /* AstronovaAppUITests.swift */,
+				3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */,
+				E2E000000000000000000002 /* MonetizationJourneyTests.swift */,
+			);
+			path = AstronovaAppUITests;
 			sourceTree = "<group>";
 		};
 		AA0003000000000000000001 /* Config */ = {
@@ -195,25 +338,37 @@
 			isa = PBXGroup;
 			children = (
 				AA0001000000000000000004 /* BirthTimePicker.swift */,
-				AA000100000000000000000E /* ShareCards.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
 		};
-		AA0003000000000000000004 /* Features */ = {
+		AA000300000000000000000B /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
-				AA0003000000000000000005 /* Onboarding */,
-				AA0003000000000000000006 /* Home */,
-				AA0003000000000000000007 /* Paywall */,
+				AA0001000000000000000013 /* CosmicDesignTokens.swift */,
+				AA0001000000000000000014 /* CosmicColors.swift */,
+				E2E000000000000000000004 /* CosmicDesignSystem.swift */,
+				E2E000000000000000000005 /* CosmicTypography.swift */,
+				E2E000000000000000000006 /* CosmicMotion.swift */,
 			);
-			path = Features;
+			name = DesignSystem;
 			sourceTree = "<group>";
 		};
+			AA0003000000000000000004 /* Features */ = {
+				isa = PBXGroup;
+				children = (
+					AA0003000000000000000005 /* Onboarding */,
+					AA0003000000000000000006 /* Home */,
+					AA0003000000000000000007 /* Paywall */,
+					E2E000300000000000000001 /* Chat */,
+					DIS003000000000000000001 /* Discover */,
+				);
+				path = Features;
+				sourceTree = "<group>";
+			};
 		AA0003000000000000000005 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				AA0001000000000000000005 /* OnboardingView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -228,13 +383,50 @@
 			path = Home;
 			sourceTree = "<group>";
 		};
-		AA0003000000000000000008 /* Services2 */ = {
+			AA0003000000000000000007 /* Paywall */ = {
+				isa = PBXGroup;
+				children = (
+					AA0001000000000000000007 /* PaywallView.swift */,
+				);
+				path = Paywall;
+				sourceTree = "<group>";
+			};
+			E2E000300000000000000001 /* Chat */ = {
+				isa = PBXGroup;
+				children = (
+					E2E000000000000000000007 /* ChatPackagesSheet.swift */,
+				);
+				path = Chat;
+				sourceTree = "<group>";
+			};
+			DIS003000000000000000001 /* Discover */ = {
+				isa = PBXGroup;
+				children = (
+					DIS000000000000000000001 /* CosmicLensView.swift */,
+					DIS000000000000000000002 /* NowNextActBar.swift */,
+					DIS000000000000000000003 /* NarrativeTilesView.swift */,
+					DIS000000000000000000004 /* ConnectionsStrip.swift */,
+					DIS000000000000000000005 /* NextUpTimeline.swift */,
+					DIS000000000000000000006 /* ContextAwareReportCTAs.swift */,
+					DIS000000000000000000007 /* YourReportsSection.swift */,
+					DIS000000000000000000008 /* DiscoverView.swift */,
+					DIS000000000000000000009 /* DiscoverShimmerView.swift */,
+					DIS000000000000000000010 /* DomainCardView.swift */,
+					DIS000000000000000000011 /* DomainGridView.swift */,
+					DIS000000000000000000012 /* DomainDetailView.swift */,
+				);
+				path = Discover;
+				sourceTree = "<group>";
+			};
+		AA0003000000000000000008 /* Services */ = {
 			isa = PBXGroup;
 			children = (
 				AA000100000000000000000B /* NotificationService.swift */,
 				AA000100000000000000000C /* ShareImageService.swift */,
 				AA0001000000000000000011 /* BasicStoreManager.swift */,
 				AA0001000000000000000012 /* ShopCatalog.swift */,
+				E2E000000000000000000003 /* HapticFeedbackService.swift */,
+				CMP000000000000000000008 /* ContactsService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -253,39 +445,6 @@
 				AA0001000000000000000010 /* ServiceProtocols.swift */,
 			);
 			path = Protocols;
-			sourceTree = "<group>";
-		};
-		AA0003000000000000000007 /* Paywall */ = {
-			isa = PBXGroup;
-			children = (
-				AA0001000000000000000007 /* PaywallView.swift */,
-			);
-			path = Paywall;
-			sourceTree = "<group>";
-		};
-		3D01F7E92C0A000000000001 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				3D01F7EA2C0A000000000001 /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
-		3D01F7F32C0A000000000001 /* AstronovaAppTests */ = {
-			isa = PBXGroup;
-			children = (
-				3D01F7F42C0A000000000001 /* AstronovaAppTests.swift */,
-			);
-			path = AstronovaAppTests;
-			sourceTree = "<group>";
-		};
-		3D01F7FD2C0A000000000001 /* AstronovaAppUITests */ = {
-			isa = PBXGroup;
-			children = (
-				3D01F7FE2C0A000000000001 /* AstronovaAppUITests.swift */,
-				3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */,
-			);
-			path = AstronovaAppUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -352,7 +511,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					3D01F7DF2C0A000000000001 = {
 						CreatedOnToolsVersion = 15.4;
@@ -415,17 +574,35 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		3D01F7DC2C0A000000000001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+			3D01F7DC2C0A000000000001 /* Sources */ = {
+				isa = PBXSourcesBuildPhase;
+				buildActionMask = 2147483647;
+				files = (
+				SELFNEW01000000000001 /* SelfTabView.swift in Sources */,
+				SELFNEW01000000000002 /* CosmicPulseView.swift in Sources */,
+				SELFNEW01000000000003 /* EssenceBar.swift in Sources */,
+				SELFNEW01000000000004 /* FoundationSection.swift in Sources */,
+				SELFNEW01000000000005 /* MiniChartWheelView.swift in Sources */,
+				SELFNEW01000000000006 /* MoreOptionsSheet.swift in Sources */,
+				SELFNEW01000000000007 /* SelfDataService.swift in Sources */,
+				SELFNEW01000000000008 /* TodaysEnergyView.swift in Sources */,
+				SELFNEW01000000000009 /* ProfileCompleteness.swift in Sources */,
+				SELFNEW0100000000000A /* QuickBirthEditSheet.swift in Sources */,
+				SELFNEW0100000000000B /* ReportDetailView.swift in Sources */,
 				3D01F7E62C0A000000000001 /* RootView.swift in Sources */,
 				3D01F8142C0A000000000008 /* APIModels.swift in Sources */,
 				3D01F8132C0A000000000007 /* APIServices.swift in Sources */,
 				5A811C062DF79DA000BD6D7F /* MapKitLocationService.swift in Sources */,
-				5A811C072DF79DA000BD6D7F /* PlanetaryCalculationsView.swift in Sources */,
 				5A811C092DF79DA000BD6D7F /* MapKitAutocompleteView.swift in Sources */,
-				7C7D7E802E00000000000001 /* TimeTravelView.swift in Sources */,
+				TT001000000000000000001 /* TimeTravelSnapshot.swift in Sources */,
+				TT001000000000000000002 /* UnifiedTimeTravelView.swift in Sources */,
+				TT001000000000000000003 /* CosmicMapView.swift in Sources */,
+				TT001000000000000000004 /* MeaningStack.swift in Sources */,
+				TT001000000000000000005 /* TimeSeeker.swift in Sources */,
+				02BF82B08A9C4246B3BD0A51 /* DashaChakraWheelView.swift in Sources */,
+				3ABC5323337547CD8ACB46F0 /* DashaImpactView.swift in Sources */,
+				65A997B5F7E04025AA6D5AAA /* EnhancedTimeTravelView.swift in Sources */,
+				4B9BCF87E80C41FF9DFA04FF /* DashaModels.swift in Sources */,
 				3D01F8122C0A000000000006 /* NetworkClient.swift in Sources */,
 				3D01F8112C0A000000000005 /* LoadingView.swift in Sources */,
 				3D01F80F2C0A000000000003 /* UserProfile.swift in Sources */,
@@ -435,19 +612,45 @@
 				AA0002000000000000000002 /* RemoteConfigService.swift in Sources */,
 				AA0002000000000000000003 /* AnalyticsService.swift in Sources */,
 				AA0002000000000000000004 /* BirthTimePicker.swift in Sources */,
-				AA000200000000000000000E /* ShareCards.swift in Sources */,
-				AA0002000000000000000005 /* OnboardingView.swift in Sources */,
-				AA0002000000000000000006 /* HomeView.swift in Sources */,
-				AA0002000000000000000007 /* PaywallView.swift in Sources */,
-				AA0002000000000000000009 /* HomeGuidanceService.swift in Sources */,
-				AA000200000000000000000A /* HomeViewModel.swift in Sources */,
-				AA000200000000000000000B /* NotificationService.swift in Sources */,
+				AA0002000000000000000013 /* CosmicDesignTokens.swift in Sources */,
+				AA0002000000000000000014 /* CosmicColors.swift in Sources */,
+					AA0002000000000000000006 /* HomeView.swift in Sources */,
+					AA0002000000000000000007 /* PaywallView.swift in Sources */,
+					E2E001000000000000000007 /* ChatPackagesSheet.swift in Sources */,
+					AA0002000000000000000009 /* HomeGuidanceService.swift in Sources */,
+					AA000200000000000000000A /* HomeViewModel.swift in Sources */,
+					AA000200000000000000000B /* NotificationService.swift in Sources */,
 				AA000200000000000000000C /* ShareImageService.swift in Sources */,
 				AA000200000000000000000D /* Zodiac.swift in Sources */,
-				AA0002000000000000000010 /* ServiceProtocols.swift in Sources */,
 				AA000200000000000000000F /* StoreKitManager.swift in Sources */,
 				AA0002000000000000000011 /* BasicStoreManager.swift in Sources */,
 				AA0002000000000000000012 /* ShopCatalog.swift in Sources */,
+				E2E001000000000000000001 /* TestEnvironment.swift in Sources */,
+				E2E001000000000000000003 /* HapticFeedbackService.swift in Sources */,
+				E2E001000000000000000004 /* CosmicDesignSystem.swift in Sources */,
+				E2E001000000000000000005 /* CosmicTypography.swift in Sources */,
+				E2E001000000000000000006 /* CosmicMotion.swift in Sources */,
+				CMP001000000000000000001 /* CompatibilityModels.swift in Sources */,
+				CMP001000000000000000002 /* SynastryCompassView.swift in Sources */,
+				CMP001000000000000000003 /* RelationshipPulseView.swift in Sources */,
+				CMP001000000000000000004 /* CompatibilityMeaningStack.swift in Sources */,
+				CMP001000000000000000005 /* CompatibilityJourneyView.swift in Sources */,
+				CMP001000000000000000006 /* ConnectView.swift in Sources */,
+				CMP001000000000000000007 /* RelationshipDetailView.swift in Sources */,
+				CMP001000000000000000008 /* ContactsService.swift in Sources */,
+				CMP001000000000000000009 /* ContactPickerView.swift in Sources */,
+				DIS001000000000000000001 /* CosmicLensView.swift in Sources */,
+				DIS001000000000000000002 /* NowNextActBar.swift in Sources */,
+				DIS001000000000000000003 /* NarrativeTilesView.swift in Sources */,
+				DIS001000000000000000004 /* ConnectionsStrip.swift in Sources */,
+				DIS001000000000000000005 /* NextUpTimeline.swift in Sources */,
+				DIS001000000000000000006 /* ContextAwareReportCTAs.swift in Sources */,
+				DIS001000000000000000007 /* YourReportsSection.swift in Sources */,
+				DIS001000000000000000008 /* DiscoverView.swift in Sources */,
+				DIS001000000000000000009 /* DiscoverShimmerView.swift in Sources */,
+				DIS001000000000000000010 /* DomainCardView.swift in Sources */,
+				DIS001000000000000000011 /* DomainGridView.swift in Sources */,
+				DIS001000000000000000012 /* DomainDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -455,6 +658,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ORACLE01000000000001 /* OracleQuotaManager.swift in Sources */,
+				ORACLE01000000000002 /* OracleViewModel.swift in Sources */,
+				ORACLE01000000000003 /* OracleView.swift in Sources */,
 				3D01F7F52C0A000000000001 /* AstronovaAppTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -465,6 +671,7 @@
 			files = (
 				3D01F8012C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift in Sources */,
 				3D01F7FF2C0A000000000001 /* AstronovaAppUITests.swift in Sources */,
+				E2E001000000000000000002 /* MonetizationJourneyTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -488,7 +695,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -542,6 +749,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -551,7 +759,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -598,6 +806,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -614,7 +823,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
@@ -647,7 +858,9 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";

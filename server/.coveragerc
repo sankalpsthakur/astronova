@@ -1,0 +1,84 @@
+[run]
+# Source code to measure coverage for
+source = .
+
+# Omit test files and generated files from coverage
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */venv/*
+    */env/*
+    */.venv/*
+    */site-packages/*
+    setup.py
+    conftest.py
+
+# Enable branch coverage (checks if/else branches)
+branch = True
+
+# Run coverage in parallel mode (useful for concurrent tests)
+parallel = False
+
+[report]
+# Show lines that weren't executed
+show_missing = True
+
+# Require minimum coverage percentage (80% target)
+fail_under = 80
+
+# Sort output by coverage percentage
+sort = Cover
+
+# Precision for percentages
+precision = 2
+
+# Skip files with no executable code
+skip_empty = True
+
+# Lines to exclude from coverage
+exclude_lines =
+    # Standard pragmas
+    pragma: no cover
+
+    # Don't complain about debug code
+    def __repr__
+
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+
+    # Don't complain about abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Don't complain about protocol methods
+    @protocol
+
+    # Don't complain about pass statements
+    pass
+
+    # Don't complain about ellipsis
+    \.\.\.
+
+[html]
+# Directory for HTML report
+directory = htmlcov
+
+# Title for HTML report
+title = AstroNova Coverage Report
+
+[xml]
+# Output file for XML coverage report (for CI/CD)
+output = coverage.xml
+
+[json]
+# Output file for JSON coverage report
+output = coverage.json
+
+# Show contexts (which tests hit which lines)
+show_contexts = True

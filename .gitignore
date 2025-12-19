@@ -1,34 +1,33 @@
+# macOS
 .DS_Store
+
+# Xcode / Swift
 /.build
 /Packages
 xcuserdata/
 DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
-.netrc
+*.xcworkspace/xcuserdata/
+*.pbxproj.backup
+*.moved-aside
 
-# Python
+# Python bytecode / cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
+
+# Python virtual environments
+.venv/
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
 
-# Logs
-*.log
-backend/*.log
-xcodebuild.log
-build_output.log
-.env
-.venv
-
 # Distribution / packaging
-.Python
 build/
 develop-eggs/
 dist/
@@ -45,8 +44,6 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
-# PyInstaller
 *.manifest
 *.spec
 
@@ -55,31 +52,39 @@ htmlcov/
 .tox/
 .coverage
 .coverage.*
-.cache
+.cache/
 nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
 
+# Local PDF artifacts
+*_report.pdf
+test_output.log
+test_results*.log
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+server/*.log
+xcodebuild*.log
+build_output.log
+
 # Flask
 instance/
 .webassets-cache
 
-# Environments
+# Environment files
 .env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Logs
-*.log
-backend/*.log
-xcodebuild.log
-build_output.log
+.env.*
+!.env.example
 
 # Node.js (if accidentally added)
 node_modules/
@@ -88,23 +93,40 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Backend test artifacts
-backend/test_reports/
-backend/test_*.py
-backend/venv/
+# Server test artifacts
+server/test_*.py
+!server/tests/test_*.py
 
 # Sensitive files
 AuthKey_*.p8
 *_private_key.pem
 cloudkit_private_key.pem
+.secrets.baseline
+.netrc
 
-# Documentation drafts (keep main docs)
+# Documentation drafts (keep main README.md and CONTRIBUTING.md)
 CLOUDKIT_*.md
 COMPELLING_*.md
 DEPLOYMENT_STRATEGY.md
 TESTING_STRATEGY.md
 agents.md
+AUDIT_REPORT.md
+*_SUMMARY.md
+*_REPORT.md
+*_FINDINGS.md
+*_PLAN.md
+*_COMPLETE.md
+*_SETUP.md
+*_IMPLEMENTATION*.md
+CI_CD_*.txt
 
-# Build artifacts
-build/
-*.pbxproj.backup
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Branding / local build outputs
+tools/branding/output/
+client/.derivedData/

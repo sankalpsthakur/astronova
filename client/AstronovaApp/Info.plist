@@ -2,15 +2,35 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSContactsUsageDescription</key>
+	<string>Astronova uses your contacts to help you explore compatibility with friends and loved ones based on their birth dates.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Astronova uses your location to suggest birth places and improve location-based astrology calculations.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>We use analytics to improve app performance and user experience. No personal data is shared with third parties.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 	</array>
-	<key>NSContactsUsageDescription</key>
-	<string>Astronova needs access to your contacts to help you share cosmic insights with friends and family.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Astronova uses your location to suggest birth places and improve location-based astrology calculations.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Your location helps refine place suggestions and time zones for accurate readings.</string>
 </dict>
 </plist>

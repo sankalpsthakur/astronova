@@ -1,21 +1,27 @@
-from .horoscope import horoscope_bp
-from .ephemeris import ephemeris_bp
-from .misc import misc_bp
-from .auth import auth_bp
-from .chat import chat_bp
-from .chart import chart_bp
-from .locations import locations_bp
-from .reports import reports_bp
 from .astrology import astrology_bp
+from .auth import auth_bp
+from .chart import chart_bp
+from .chat import chat_bp
+from .compatibility import compat_bp
+from .content import content_bp
+from .discover import discover_bp
+from .ephemeris import ephemeris_bp
+from .horoscope import horoscope_bp
+from .locations import locations_bp
+from .misc import misc_bp
+from .reports import reports_bp
 
 __all__ = [
-    'horoscope_bp',
-    'ephemeris_bp',
-    'misc_bp',
-    'auth_bp',
-    'chat_bp',
-    'chart_bp',
-    'locations_bp',
-    'reports_bp',
-    'astrology_bp',
+    "astrology_bp",
+    "auth_bp",
+    "chart_bp",
+    "chat_bp",
+    "compat_bp",
+    "content_bp",
+    "discover_bp",
+    "ephemeris_bp",
+    "horoscope_bp",
+    "locations_bp",
+    "misc_bp",
+    "reports_bp",
 ]

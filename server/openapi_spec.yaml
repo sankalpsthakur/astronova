@@ -113,6 +113,199 @@ components:
         orb:
           type: number
 
+    Relationship:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        partnerName:
+          type: string
+        partnerBirthDate:
+          type: string
+          format: date
+          example: "1992-08-20"
+        partnerBirthTime:
+          type: string
+          example: "09:15:00"
+        partnerTimezone:
+          type: string
+          example: "America/Los_Angeles"
+        partnerLatitude:
+          type: number
+          format: float
+          example: 34.0522
+        partnerLongitude:
+          type: number
+          format: float
+          example: -118.2437
+        partnerLocationName:
+          type: string
+          example: "Los Angeles, CA"
+        createdAt:
+          type: string
+          format: date-time
+
+    RelationshipCreateRequest:
+      type: object
+      required:
+        - partnerName
+        - partnerBirthDate
+      properties:
+        partnerName:
+          type: string
+          example: "Sarah"
+        partnerBirthDate:
+          type: string
+          format: date
+          example: "1992-08-20"
+        partnerBirthTime:
+          type: string
+          example: "09:15:00"
+        partnerTimezone:
+          type: string
+          example: "America/Los_Angeles"
+        partnerLatitude:
+          type: number
+          format: float
+          example: 34.0522
+        partnerLongitude:
+          type: number
+          format: float
+          example: -118.2437
+        partnerLocationName:
+          type: string
+          example: "Los Angeles, CA"
+
+    CompatibilityPair:
+      type: object
+      properties:
+        yourName:
+          type: string
+        theirName:
+          type: string
+        yourSign:
+          type: string
+        theirSign:
+          type: string
+        vibe:
+          type: string
+          description: "One-liner compatibility vibe description"
+          example: "Warmth + Emotional Depth, watch power dynamics"
+
+    SynastryResult:
+      type: object
+      properties:
+        overallScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 72
+        domains:
+          type: array
+          items:
+            $ref: '#/components/schemas/DomainScore'
+        aspects:
+          type: array
+          items:
+            $ref: '#/components/schemas/SynastryAspect'
+
+    DomainScore:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Emotion"
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 85
+        icon:
+          type: string
+          example: "heart.fill"
+
+    CompositeChart:
+      type: object
+      properties:
+        positions:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ChartPosition'
+          description: "Composite planet positions (midpoints)"
+
+    RelationshipPulse:
+      type: object
+      properties:
+        label:
+          type: string
+          example: "Harmonious Flow"
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 75
+
+    NextEvent:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2025-12-25"
+        title:
+          type: string
+          example: "Venus conjunct composite Sun"
+        impact:
+          type: string
+          enum: [positive, neutral, challenging]
+          example: "positive"
+
+    JourneyMarker:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    SharedInsight:
+      type: object
+      properties:
+        headline:
+          type: string
+          example: "Your Cosmic Connection"
+        body:
+          type: string
+          example: "A harmonious blend of fire and water..."
+
+    CompatibilitySnapshot:
+      type: object
+      description: "Complete compatibility snapshot for a relationship"
+      properties:
+        pair:
+          $ref: '#/components/schemas/CompatibilityPair'
+        synastry:
+          $ref: '#/components/schemas/SynastryResult'
+        composite:
+          $ref: '#/components/schemas/CompositeChart'
+        now:
+          $ref: '#/components/schemas/RelationshipPulse'
+        next:
+          $ref: '#/components/schemas/NextEvent'
+        journey:
+          type: array
+          items:
+            $ref: '#/components/schemas/JourneyMarker'
+          description: "Daily relationship energy markers"
+        share:
+          $ref: '#/components/schemas/SharedInsight'
+
 paths:
   /health:
     get:
@@ -241,6 +434,48 @@ paths:
                     type: boolean
                   endpoints:
                     type: object
+    post:
+      summary: Send a chat message to AI (alias)
+      tags:
+        - Chat
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  example: "What's my horoscope for today?"
+                userId:
+                  type: string
+                conversationId:
+                  type: string
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                  messageId:
+                    type: string
+                  conversationId:
+                    type: string
+                  suggestedFollowUps:
+                    type: array
+                    items:
+                      type: string
                     
   /api/v1/chat/send:
     post:
@@ -261,15 +496,12 @@ paths:
                 message:
                   type: string
                   example: "What's my horoscope for today?"
+                userId:
+                  type: string
                 conversationId:
                   type: string
-                context:
-                  type: object
-                  properties:
-                    birthChart:
-                      type: object
-                    transits:
-                      type: object
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
       responses:
         '200':
           description: AI response
@@ -296,31 +528,65 @@ paths:
                       
   /api/v1/horoscope:
     get:
-      summary: Get horoscope data
+      summary: Get horoscope (daily/weekly/monthly)
       tags:
         - Horoscope
+      parameters:
+        - in: query
+          name: sign
+          schema:
+            type: string
+            example: aries
+          description: Zodiac sign (lowercase)
+        - in: query
+          name: date
+          schema:
+            type: string
+            example: "2025-01-15"
+          description: Optional date (YYYY-MM-DD, UTC)
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: daily
+          description: Horoscope period
+        - in: query
+          name: user_id
+          schema:
+            type: string
+          description: Optional user id for natal personalization
       responses:
         '200':
-          description: Horoscope information
+          description: Horoscope response
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  service:
+                  id:
                     type: string
-                  status:
+                  sign:
                     type: string
-                  sample_data:
+                  date:
+                    type: string
+                    format: date-time
+                  type:
+                    type: string
+                  content:
+                    type: string
+                  luckyElements:
                     type: object
-                    properties:
-                      sign:
-                        type: string
-                      date:
-                        type: string
-                        format: date
-                      content:
-                        type: string
+                  personalized:
+                    type: boolean
+                  legacy:
+                    type: object
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
                         
   /api/v1/match:
     get:
@@ -511,6 +777,51 @@ paths:
                     type: string
                   endpoints:
                     type: object
+    post:
+      summary: Generate astrological report (alias)
+      tags:
+        - Reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reportType:
+                  type: string
+                  enum: [birth_chart, career_forecast, love_forecast, year_ahead]
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: Generated report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId:
+                    type: string
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  summary:
+                    type: string
+                  keyInsights:
+                    type: array
+                    items:
+                      type: string
+                  downloadUrl:
+                    type: string
+                  generatedAt:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
                     
   /api/v1/reports/full:
     post:
@@ -525,11 +836,10 @@ paths:
               type: object
               required:
                 - reportType
-                - birthData
               properties:
                 reportType:
                   type: string
-                  enum: [natal, career, love, yearly]
+                  enum: [birth_chart, career_forecast, love_forecast, year_ahead]
                 birthData:
                   $ref: '#/components/schemas/BirthData'
                 userId:
@@ -590,6 +900,13 @@ paths:
       tags:
         - Ephemeris
       parameters:
+        - in: query
+          name: system
+          schema:
+            type: string
+            enum: [western, vedic]
+            default: western
+          description: Zodiac system for calculations
         - in: query
           name: lat
           schema:
@@ -686,9 +1003,1088 @@ paths:
                         is_active:
                           type: boolean
 
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh JWT token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Refreshed token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jwtToken:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Authorization required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/auth/logout:
+    post:
+      summary: Logout (no-op)
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/auth/delete-account:
+    delete:
+      summary: Delete account (no-op)
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Delete account successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/chat/birth-data:
+    get:
+      summary: Get saved birth data
+      tags:
+        - Chat
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+          description: User id (or provide X-User-Id header)
+      responses:
+        '200':
+          description: Birth data payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasBirthData:
+                    type: boolean
+                  birthData:
+                    type: object
+        '400':
+          description: Missing userId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Save birth data for personalization
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - birthData
+              properties:
+                userId:
+                  type: string
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  /api/v1/horoscope/daily:
+    get:
+      summary: Get daily horoscope (alias)
+      tags:
+        - Horoscope
+      parameters:
+        - in: query
+          name: sign
+          schema:
+            type: string
+            example: aries
+        - in: query
+          name: date
+          schema:
+            type: string
+            example: "2025-01-15"
+        - in: query
+          name: user_id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Horoscope response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  sign:
+                    type: string
+                  date:
+                    type: string
+                    format: date-time
+                  type:
+                    type: string
+                  content:
+                    type: string
+                  luckyElements:
+                    type: object
+                  personalized:
+                    type: boolean
+                  legacy:
+                    type: object
+
+  /api/v1/horoscope/personalized:
+    post:
+      summary: Get personalized horoscope from birth data
+      tags:
+        - Horoscope
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - birthData
+              properties:
+                sign:
+                  type: string
+                  example: leo
+                date:
+                  type: string
+                  example: "2025-01-15"
+                type:
+                  type: string
+                  enum: [daily, weekly, monthly]
+                  default: daily
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+      responses:
+        '200':
+          description: Horoscope response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  sign:
+                    type: string
+                  date:
+                    type: string
+                    format: date-time
+                  type:
+                    type: string
+                  content:
+                    type: string
+                  luckyElements:
+                    type: object
+                  personalized:
+                    type: boolean
+                  legacy:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/compatibility:
+    post:
+      summary: Compatibility calculation (canonical)
+      tags:
+        - Compatibility
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [user, partner]
+                  properties:
+                    user:
+                      allOf:
+                        - $ref: '#/components/schemas/BirthData'
+                        - type: object
+                          properties:
+                            name:
+                              type: string
+                    partner:
+                      allOf:
+                        - $ref: '#/components/schemas/BirthData'
+                        - type: object
+                          properties:
+                            name:
+                              type: string
+                - type: object
+                  required: [person1, person2]
+                  properties:
+                    person1:
+                      $ref: '#/components/schemas/BirthData'
+                    person2:
+                      $ref: '#/components/schemas/BirthData'
+                - type: object
+                  required: [userBirthData, partnerBirthData]
+                  properties:
+                    userBirthData:
+                      $ref: '#/components/schemas/BirthData'
+                    partnerBirthData:
+                      $ref: '#/components/schemas/BirthData'
+      responses:
+        '200':
+          description: Compatibility results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  overallScore:
+                    type: integer
+                  vedicScore:
+                    type: integer
+                  chineseScore:
+                    type: integer
+                  synastryAspects:
+                    type: array
+                    items:
+                      type: string
+                  userChart:
+                    type: object
+                  partnerChart:
+                    type: object
+
+  /api/v1/compatibility/relationships:
+    get:
+      summary: List user's saved relationships
+      tags:
+        - Compatibility
+      parameters:
+        - in: header
+          name: X-User-Id
+          schema:
+            type: string
+          required: true
+          description: User identifier
+      responses:
+        '200':
+          description: List of relationships
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  relationships:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Relationship'
+        '400':
+          description: Missing X-User-Id header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a new relationship
+      tags:
+        - Compatibility
+      parameters:
+        - in: header
+          name: X-User-Id
+          schema:
+            type: string
+          required: true
+          description: User identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipCreateRequest'
+      responses:
+        '201':
+          description: Relationship created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/compatibility/relationships/{relationship_id}:
+    get:
+      summary: Get a specific relationship
+      tags:
+        - Compatibility
+      parameters:
+        - in: path
+          name: relationship_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-User-Id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Relationship details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        '404':
+          description: Relationship not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a relationship
+      tags:
+        - Compatibility
+      parameters:
+        - in: path
+          name: relationship_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-User-Id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Relationship deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Relationship deleted"
+        '404':
+          description: Relationship not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/compatibility/relationships/{relationship_id}/snapshot:
+    get:
+      summary: Get complete compatibility snapshot for a relationship
+      description: |
+        Returns a comprehensive compatibility analysis including:
+        - Pair info (names, signs, vibe)
+        - Synastry analysis (overall score, domain breakdown, aspects)
+        - Composite chart positions
+        - Current relationship pulse (Now)
+        - Next significant transit event (Next)
+        - 30-day journey markers for visualization
+        - Shareable insight summary
+      tags:
+        - Compatibility
+      parameters:
+        - in: path
+          name: relationship_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: X-User-Id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Complete compatibility snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompatibilitySnapshot'
+        '404':
+          description: Relationship not found or user birth data missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/astrology/positions:
+    get:
+      summary: Get current planetary positions (minimal)
+      tags:
+        - Astrology
+      responses:
+        '200':
+          description: Planet positions
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/ChartPosition'
+
+  /api/v1/astrology/dashas:
+    get:
+      summary: Get Vimshottari dasha (lightweight)
+      tags:
+        - Astrology
+      parameters:
+        - in: query
+          name: birth_date
+          schema:
+            type: string
+            example: "1990-05-15"
+          required: true
+        - in: query
+          name: birth_time
+          schema:
+            type: string
+            example: "14:30"
+        - in: query
+          name: timezone
+          schema:
+            type: string
+            example: "UTC"
+        - in: query
+          name: lat
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: lon
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: target_date
+          schema:
+            type: string
+            example: "2025-01-15"
+          required: true
+        - in: query
+          name: include_boundaries
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: debug
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Dasha response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mahadasha:
+                    type: object
+                  antardasha:
+                    type: object
+                  boundaries:
+                    type: object
+                  debug:
+                    type: object
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/astrology/dashas/complete:
+    post:
+      summary: Get Time Travel dashas (complete)
+      tags:
+        - Astrology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - birthData
+              properties:
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+                targetDate:
+                  type: string
+                  example: "2025-01-15"
+                includeTransitions:
+                  type: boolean
+                  default: false
+                includeEducation:
+                  type: boolean
+                  default: false
+                system:
+                  type: string
+                  enum: [vedic, western]
+                  default: vedic
+      responses:
+        '200':
+          description: Complete dasha timeline + impact analysis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dasha:
+                    type: object
+                  current_period:
+                    type: object
+                  impact_analysis:
+                    type: object
+                  transitions:
+                    type: object
+                  education:
+                    type: object
+
+  /api/v1/chart/aspects:
+    get:
+      summary: Get aspects by date (UTC)
+      tags:
+        - Charts
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            example: "2025-01-01"
+          required: true
+      responses:
+        '200':
+          description: Aspect list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SynastryAspect'
+    post:
+      summary: Compute aspects from birth data
+      tags:
+        - Charts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+      responses:
+        '200':
+          description: Aspect list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SynastryAspect'
+
+  /api/v1/reports/generate:
+    post:
+      summary: Generate report (alias)
+      tags:
+        - Reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reportType:
+                  type: string
+                  enum: [birth_chart, career_forecast, love_forecast, year_ahead]
+                birthData:
+                  $ref: '#/components/schemas/BirthData'
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: Generated report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId:
+                    type: string
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  summary:
+                    type: string
+                  keyInsights:
+                    type: array
+                    items:
+                      type: string
+                  downloadUrl:
+                    type: string
+                  generatedAt:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+
+  /api/v1/reports/user/{user_id}:
+    get:
+      summary: List reports for a user
+      tags:
+        - Reports
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Report list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    reportId:
+                      type: string
+                    type:
+                      type: string
+                    title:
+                      type: string
+                    summary:
+                      type: string
+                    keyInsights:
+                      type: array
+                      items:
+                        type: string
+                    downloadUrl:
+                      type: string
+                    generatedAt:
+                      type: string
+                      format: date-time
+                    userId:
+                      type: string
+                    status:
+                      type: string
+
+  /api/v1/reports/{report_id}/pdf:
+    get:
+      summary: Download report PDF
+      tags:
+        - Reports
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PDF bytes
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/ephemeris/at:
+    get:
+      summary: Get planetary positions at a date (UTC)
+      tags:
+        - Ephemeris
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            example: "2025-01-01"
+          required: true
+        - in: query
+          name: system
+          schema:
+            type: string
+            enum: [western, vedic]
+            default: western
+        - in: query
+          name: lat
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: lon
+          schema:
+            type: number
+            format: float
+      responses:
+        '200':
+          description: Planetary positions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  planets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Planet'
+                  timestamp:
+                    type: string
+                  has_rising_sign:
+                    type: boolean
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/location/search:
+    get:
+      summary: Search locations
+      tags:
+        - Locations
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+            example: London
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Location results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  locations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        displayName:
+                          type: string
+                        latitude:
+                          type: number
+                          format: float
+                        longitude:
+                          type: number
+                          format: float
+                        state:
+                          type: string
+                          nullable: true
+                        country:
+                          type: string
+                        timezone:
+                          type: string
+
+  /api/v1/subscription/status:
+    get:
+      summary: Get subscription status
+      tags:
+        - Subscription
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+          description: Optional user id
+      responses:
+        '200':
+          description: Subscription status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isActive:
+                    type: boolean
+                  productId:
+                    type: string
+                  updatedAt:
+                    type: string
+
+  /api/v1/system-status:
+    get:
+      summary: Get system status
+      tags:
+        - System
+      responses:
+        '200':
+          description: System status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  system:
+                    type: object
+                  endpoints:
+                    type: object
+
+  /api/v1/config:
+    get:
+      summary: Get remote configuration
+      tags:
+        - System
+      responses:
+        '200':
+          description: Config payload
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/v1/health:
+    get:
+      summary: API health check
+      tags:
+        - System
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  service:
+                    type: string
+                  version:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/v1/report:
+    get:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    post:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    put:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    delete:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    patch:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+
+  /api/v1/report/{path}:
+    get:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      parameters:
+        - in: path
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    post:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      parameters:
+        - in: path
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    put:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      parameters:
+        - in: path
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    delete:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      parameters:
+        - in: path
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+    patch:
+      summary: Legacy report endpoint (redirect)
+      tags:
+        - Reports
+      deprecated: true
+      parameters:
+        - in: path
+          name: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '307':
+          description: Redirect to /api/v1/reports
+
+  /api/v1/openapi.yaml:
+    get:
+      summary: Get OpenAPI spec (YAML)
+      tags:
+        - System
+      responses:
+        '200':
+          description: OpenAPI YAML
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  /docs:
+    get:
+      summary: Swagger UI
+      tags:
+        - System
+      responses:
+        '200':
+          description: Swagger UI HTML
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/v1/docs:
+    get:
+      summary: Swagger UI alias
+      tags:
+        - System
+      responses:
+        '302':
+          description: Redirect to /docs
+
 tags:
   - name: System
     description: System health and status endpoints
+  - name: Astrology
+    description: Kundali, transits, and Time Travel dashas
   - name: Authentication
     description: User authentication and authorization
   - name: Chat
@@ -705,3 +2101,7 @@ tags:
     description: Planetary position calculations
   - name: Content
     description: Content management system
+  - name: Locations
+    description: Location search and geocoding helpers
+  - name: Subscription
+    description: Subscription and paywall status

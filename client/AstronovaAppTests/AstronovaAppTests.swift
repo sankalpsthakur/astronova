@@ -7,16 +7,40 @@
 
 import XCTest
 import CoreLocation
+import Security
 @testable import AstronovaApp
 
 final class AstronovaAppTests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        continueAfterFailure = false
+        resetPersistentState()
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        resetPersistentState()
+    }
+
+    private func resetPersistentState() {
+        // UserDefaults state can leak between test runs and make AuthState/UserProfileManager nondeterministic.
+        let defaults = UserDefaults.standard
+        [
+            "is_anonymous_user",
+            "has_signed_in",
+            "is_quick_start_user",
+            "hasAstronovaPro",
+            "chat_credits",
+            "user_profile",
+            "last_chart",
+        ].forEach { defaults.removeObject(forKey: $0) }
+
+        // Keychain token can also leak between runs and flip AuthState into "signed in".
+        let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: jwtTokenKey,
+        ]
+        SecItemDelete(query as CFDictionary)
     }
 
     // MARK: - Model Tests

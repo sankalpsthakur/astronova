@@ -210,6 +210,87 @@ struct HoroscopeResponse: Codable {
     let keywords: [String]?
     let luckyNumbers: [Int]?
     let compatibility: [String]?
+
+    // Server response compatibility:
+    // - Legacy format includes top-level "horoscope" and may include "keywords"/"luckyNumbers".
+    // - Newer format includes top-level "content" and nests legacy fields under "legacy",
+    //   with lucky data under "luckyElements".
+    private enum CodingKeys: String, CodingKey {
+        case sign
+        case type
+        case date
+        case horoscope
+        case keywords
+        case luckyNumbers
+        case compatibility
+        case content
+        case legacy
+        case luckyElements
+    }
+
+    private struct Legacy: Codable {
+        let date: String?
+        let horoscope: String?
+        let sign: String?
+        let type: String?
+    }
+
+    private struct LuckyElements: Codable {
+        let color: String?
+        let day: String?
+        let element: String?
+        let number: Int?
+        let ruler: String?
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        self.sign = (try? container.decode(String.self, forKey: .sign)) ?? "unknown"
+        self.type = (try? container.decode(String.self, forKey: .type)) ?? "daily"
+        self.date = (try? container.decode(String.self, forKey: .date)) ?? ""
+
+        self.keywords = try container.decodeIfPresent([String].self, forKey: .keywords)
+        var decodedLuckyNumbers = try container.decodeIfPresent([Int].self, forKey: .luckyNumbers)
+        self.compatibility = try container.decodeIfPresent([String].self, forKey: .compatibility)
+
+        if let legacyHoroscope = try? container.decode(String.self, forKey: .horoscope) {
+            self.horoscope = legacyHoroscope
+            self.luckyNumbers = decodedLuckyNumbers
+            return
+        }
+
+        if let legacy = try? container.decode(Legacy.self, forKey: .legacy),
+           let legacyHoroscope = legacy.horoscope, !legacyHoroscope.isEmpty {
+            self.horoscope = legacyHoroscope
+        } else if let content = try? container.decode(String.self, forKey: .content) {
+            self.horoscope = content
+        } else {
+            throw DecodingError.keyNotFound(
+                CodingKeys.horoscope,
+                .init(codingPath: container.codingPath, debugDescription: "Missing horoscope/content")
+            )
+        }
+
+        if decodedLuckyNumbers == nil {
+            if let elements = try? container.decode(LuckyElements.self, forKey: .luckyElements),
+               let number = elements.number {
+                decodedLuckyNumbers = [number]
+            }
+        }
+        self.luckyNumbers = decodedLuckyNumbers
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(sign, forKey: .sign)
+        try container.encode(type, forKey: .type)
+        try container.encode(date, forKey: .date)
+        try container.encode(horoscope, forKey: .horoscope)
+        try container.encodeIfPresent(keywords, forKey: .keywords)
+        try container.encodeIfPresent(luckyNumbers, forKey: .luckyNumbers)
+        try container.encodeIfPresent(compatibility, forKey: .compatibility)
+    }
 }
 
 // MARK: - Chat Models
@@ -295,12 +376,12 @@ struct DetailedReport: Codable {
     let type: String
     let title: String
     let content: String
-    let summary: String
-    let keyInsights: [String]
-    let downloadUrl: String
-    let generatedAt: String
+    let summary: String?
+    let keyInsights: [String]?
+    let downloadUrl: String?
+    let generatedAt: String?
     let userId: String?
-    let status: String
+    let status: String?
 }
 
 /// User reports response
@@ -494,4 +575,363 @@ struct AuthResponse: Codable {
     let jwtToken: String
     let user: AuthenticatedUser
     let expiresAt: String
+}
+
+/// Subscription status response
+struct SubscriptionStatusResponse: Codable {
+    let isActive: Bool
+    let productId: String?
+    let updatedAt: String?
+}
+
+// MARK: - Discover Snapshot Models
+
+/// Unified Discover snapshot for daily check-in
+struct DiscoverSnapshot: Codable {
+    let date: String
+    let sign: String
+    let personalized: Bool
+    let now: DiscoverNow
+    let lens: CosmicLens
+    let next: DiscoverNext
+    let lucky: LuckyElements?
+    let keywords: [String]?
+    let cacheHints: CacheHints?
+}
+
+/// Now layer - current state and guidance
+struct DiscoverNow: Codable {
+    let theme: String
+    let narrativeTiles: [NarrativeTile]
+    let actions: [DiscoverAction]
+}
+
+/// Tappable narrative tile anchored to a driver
+struct NarrativeTile: Codable, Identifiable {
+    let id: String
+    let text: String
+    let domain: String
+    let weight: Double
+    let driver: TileDriver?
+}
+
+/// Driver info for a narrative tile
+struct TileDriver: Codable {
+    let type: String
+    let planet: String
+    let sign: String?
+    let longitude: Double?
+}
+
+/// Recommended action (do/avoid)
+struct DiscoverAction: Codable, Identifiable {
+    let id: String
+    let text: String
+    let type: String // "do" or "avoid"
+}
+
+/// Cosmic Lens visualization data
+struct CosmicLens: Codable {
+    let energyState: EnergyState
+    let domainWeights: DomainWeights
+    let activations: [PlanetActivation]?
+}
+
+/// Current energy/vibration state
+struct EnergyState: Codable {
+    let id: String
+    let label: String
+    let description: String
+    let icon: String
+}
+
+/// Domain weights for arc visualization
+struct DomainWeights: Codable {
+    let `self`: Double
+    let love: Double
+    let work: Double
+    let mind: Double
+
+    enum CodingKeys: String, CodingKey {
+        case `self` = "self"
+        case love
+        case work
+        case mind
+    }
+}
+
+/// Planetary activation for outer ring
+struct PlanetActivation: Codable {
+    let type: String
+    let planet: String
+    let sign: String?
+    let speed: Double?
+}
+
+/// Next layer - upcoming shifts and timeline
+struct DiscoverNext: Codable {
+    let shift: DiscoverNextShift?
+    let markers: [TimelineMarker]?
+}
+
+/// Next significant shift (dasha transition) for Discover feature
+struct DiscoverNextShift: Codable {
+    let date: String
+    let daysUntil: Int
+    let level: String?
+    let from: String?
+    let to: String?
+    let summary: String?
+}
+
+/// Timeline marker for 14-day forecast
+struct TimelineMarker: Codable, Identifiable {
+    var id: String { date }
+    let date: String
+    let dayOfWeek: String
+    let intensity: Double
+    let label: String // "ease", "effort", "intensity"
+}
+
+/// Lucky elements from horoscope
+struct LuckyElements: Codable {
+    let color: String?
+    let number: Int?
+    let day: String?
+    let element: String?
+    let ruler: String?
+}
+
+/// Cache hints for client
+struct CacheHints: Codable {
+    let ttlSeconds: Int?
+    let nextRefresh: String?
+}
+
+// MARK: - Zodiac System
+
+/// Zodiac system for planetary position calculations
+enum ZodiacSystem: String, CaseIterable, Codable {
+    case western
+    case vedic
+
+    var displayName: String {
+        switch self {
+        case .western: return "Western"
+        case .vedic: return "Vedic"
+        }
+    }
+
+    var apiValue: String {
+        rawValue
+    }
+}
+
+// MARK: - Dashas Response
+
+/// Response structure for dasha overlay display
+struct DashasResponse: Codable {
+    let mahadasha: Period
+    let antardasha: Period
+
+    struct Period: Codable {
+        let lord: String
+        let start: String?
+        let end: String?
+        let annotation: String
+    }
+}
+
+// MARK: - Life Domain Models
+
+/// Life domain types for daily insights
+enum LifeDomain: String, CaseIterable, Codable {
+    case personal
+    case love
+    case career
+    case wealth
+    case health
+    case family
+    case spiritual
+
+    var displayName: String {
+        switch self {
+        case .personal: return "Personal"
+        case .love: return "Love"
+        case .career: return "Career"
+        case .wealth: return "Wealth"
+        case .health: return "Health"
+        case .family: return "Family"
+        case .spiritual: return "Spiritual"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .personal: return "sparkles"
+        case .love: return "heart.fill"
+        case .career: return "briefcase.fill"
+        case .wealth: return "dollarsign.circle.fill"
+        case .health: return "heart.text.square.fill"
+        case .family: return "figure.2.and.child.holdinghands"
+        case .spiritual: return "sparkle.magnifyingglass"
+        }
+    }
+
+    var reportType: String {
+        switch self {
+        case .personal: return "birth_chart"
+        case .love: return "love_forecast"
+        case .career: return "career_forecast"
+        case .wealth: return "wealth_forecast"
+        case .health: return "health_forecast"
+        case .family: return "family_forecast"
+        case .spiritual: return "spiritual_forecast"
+        }
+    }
+
+    var accentColor: String {
+        switch self {
+        case .personal: return "cosmicGold"
+        case .love: return "planetVenus"
+        case .career: return "planetSaturn"
+        case .wealth: return "planetJupiter"
+        case .health: return "planetMars"
+        case .family: return "planetMoon"
+        case .spiritual: return "cosmicAmethyst"
+        }
+    }
+}
+
+/// Domain insight with planetary drivers
+struct DomainInsight: Codable, Identifiable {
+    let id: String
+    let domain: LifeDomain
+    let shortInsight: String
+    let fullInsight: String
+    let drivers: [PlanetaryDriver]
+    let intensity: Double // 0.0 to 1.0
+
+    init(id: String = UUID().uuidString, domain: LifeDomain, shortInsight: String, fullInsight: String, drivers: [PlanetaryDriver], intensity: Double = 0.5) {
+        self.id = id
+        self.domain = domain
+        self.shortInsight = shortInsight
+        self.fullInsight = fullInsight
+        self.drivers = drivers
+        self.intensity = intensity
+    }
+}
+
+/// Planetary driver explaining what's causing an insight
+struct PlanetaryDriver: Codable, Identifiable {
+    let id: String
+    let planet: String
+    let aspect: String?
+    let sign: String?
+    let explanation: String
+
+    init(id: String = UUID().uuidString, planet: String, aspect: String? = nil, sign: String? = nil, explanation: String) {
+        self.id = id
+        self.planet = planet
+        self.aspect = aspect
+        self.sign = sign
+        self.explanation = explanation
+    }
+
+    var formattedTitle: String {
+        var title = planet
+        if let sign = sign {
+            title += " in \(sign)"
+        }
+        if let aspect = aspect {
+            title += " \(aspect)"
+        }
+        return title
+    }
+}
+
+/// Cosmic weather summary for the day
+struct CosmicWeather: Codable {
+    let date: String
+    let summary: String
+    let mood: String // "harmonious", "intense", "transformative", etc.
+    let dominantPlanet: String?
+    let moonPhase: String?
+}
+
+// MARK: - Sample Data
+
+extension DomainInsight {
+    static let samples: [DomainInsight] = [
+        DomainInsight(
+            domain: .personal,
+            shortInsight: "Strong focus day awaits",
+            fullInsight: "Today's planetary alignments support deep self-reflection and personal growth. Your inner clarity is heightened, making this an excellent time for journaling, meditation, or setting intentions for the weeks ahead.",
+            drivers: [
+                PlanetaryDriver(planet: "Sun", sign: "Sagittarius", explanation: "Your core vitality is boosted, bringing confidence and clarity to personal matters."),
+                PlanetaryDriver(planet: "Mercury", aspect: "trine Saturn", explanation: "Mental discipline supports focused thinking and long-term planning.")
+            ],
+            intensity: 0.8
+        ),
+        DomainInsight(
+            domain: .love,
+            shortInsight: "Gentle day for bonding",
+            fullInsight: "Venus's harmonious aspect creates a warm atmosphere for romantic connections. Whether single or partnered, express your affection openly today. Small gestures of love carry extra weight.",
+            drivers: [
+                PlanetaryDriver(planet: "Venus", aspect: "trine Jupiter", explanation: "Harmonious energy for relationships. Good time for expressing affection."),
+                PlanetaryDriver(planet: "Moon", sign: "Cancer", explanation: "Emotional sensitivity heightened. Focus on nurturing close bonds.")
+            ],
+            intensity: 0.7
+        ),
+        DomainInsight(
+            domain: .career,
+            shortInsight: "Take bold initiatives",
+            fullInsight: "Mars energizes your professional sector, making this an ideal time to pitch ideas, negotiate deals, or take on challenging projects. Your assertiveness is well-received today.",
+            drivers: [
+                PlanetaryDriver(planet: "Mars", sign: "Leo", explanation: "Courage and initiative are amplified in professional matters."),
+                PlanetaryDriver(planet: "Jupiter", aspect: "sextile Sun", explanation: "Opportunities for expansion and recognition are present.")
+            ],
+            intensity: 0.85
+        ),
+        DomainInsight(
+            domain: .wealth,
+            shortInsight: "Avoid major decisions",
+            fullInsight: "Mercury's challenging aspect suggests caution with financial decisions today. Review contracts carefully and postpone major investments if possible. Focus on research rather than action.",
+            drivers: [
+                PlanetaryDriver(planet: "Mercury", aspect: "square Neptune", explanation: "Potential for confusion in financial matters. Double-check details."),
+                PlanetaryDriver(planet: "Saturn", sign: "Pisces", explanation: "Long-term financial restructuring continues in the background.")
+            ],
+            intensity: 0.4
+        ),
+        DomainInsight(
+            domain: .health,
+            shortInsight: "High energy for exercise",
+            fullInsight: "Your physical vitality peaks today. Channel this energy into movement, whether intense workouts or refreshing walks. Your body responds well to activity and craves motion.",
+            drivers: [
+                PlanetaryDriver(planet: "Mars", aspect: "trine Ascendant", explanation: "Physical energy and motivation are at a high point."),
+                PlanetaryDriver(planet: "Sun", sign: "Sagittarius", explanation: "Fire sign energy promotes active pursuits and outdoor activities.")
+            ],
+            intensity: 0.9
+        ),
+        DomainInsight(
+            domain: .family,
+            shortInsight: "Harmony at home today",
+            fullInsight: "The Moon's gentle aspects support domestic peace and family bonding. Plan a shared meal or simply enjoy quality time together. Conversations flow easily and understanding comes naturally.",
+            drivers: [
+                PlanetaryDriver(planet: "Moon", aspect: "trine Venus", explanation: "Emotional warmth flows easily in family interactions."),
+                PlanetaryDriver(planet: "Cancer", sign: "4th House", explanation: "Home and family matters receive cosmic support today.")
+            ],
+            intensity: 0.75
+        ),
+        DomainInsight(
+            domain: .spiritual,
+            shortInsight: "Deep meditation rewarding",
+            fullInsight: "Neptune's influence opens intuitive channels today. Meditation, contemplation, or spiritual practices yield profound insights. Trust your inner guidance and pay attention to dreams.",
+            drivers: [
+                PlanetaryDriver(planet: "Neptune", sign: "Pisces", explanation: "Spiritual sensitivity and intuition are heightened."),
+                PlanetaryDriver(planet: "Moon", aspect: "sextile Neptune", explanation: "Emotional and spiritual realms are harmoniously connected.")
+            ],
+            intensity: 0.8
+        )
+    ]
 }

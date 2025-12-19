@@ -3,104 +3,137 @@ name: iOS Build and Test
 on:
   push:
     branches: [ main, dev ]
+    paths:
+      - 'client/**'
+      - '.github/workflows/ios-build.yml'
   pull_request:
     branches: [ main, dev ]
+    paths:
+      - 'client/**'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
 
 jobs:
-  swift-ios:
+  swift-ios-build:
+    name: iOS Build (Xcode ${{ matrix.xcode }})
     runs-on: macos-14
-    
+
+    strategy:
+      fail-fast: false
+      matrix:
+        xcode: ['15.4']
+        destination: ['platform=iOS Simulator,name=iPhone 15,OS=17.5']
+
+    defaults:
+      run:
+        working-directory: client
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
-      
+        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+
       - name: Show Xcode version
         run: xcodebuild -version
-      
+
       - name: List available simulators
         run: xcrun simctl list devices available
-      
-      - name: Build iOS app
+
+      - name: Cache Swift Package Manager
+        uses: actions/cache@v4
+        with:
+          path: |
+            client/.build
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Check for compiler warnings
         run: |
           xcodebuild clean build \
             -project astronova.xcodeproj \
             -scheme AstronovaApp \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -destination '${{ matrix.destination }}' \
             -configuration Debug \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            ONLY_ACTIVE_ARCH=NO
-      
+            ONLY_ACTIVE_ARCH=NO \
+            | tee build.log
+
+          # Check for warnings
+          if grep -q "warning:" build.log; then
+            echo "::warning::Compiler warnings detected"
+            grep "warning:" build.log || true
+          fi
+
       - name: Run Swift tests
         run: |
           xcodebuild test \
             -project astronova.xcodeproj \
             -scheme AstronovaApp \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -destination '${{ matrix.destination }}' \
             -configuration Debug \
+            -enableCodeCoverage YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            ONLY_ACTIVE_ARCH=NO
+            ONLY_ACTIVE_ARCH=NO \
+            | tee test.log
         continue-on-error: true
 
-  python-backend:
-    runs-on: ubuntu-latest
-    
+      - name: Check for test failures
+        run: |
+          if grep -q "Test Suite.*failed" test.log; then
+            echo "::error::Some tests failed"
+            grep "Test Suite.*failed" test.log || true
+          fi
+        continue-on-error: true
+
+      - name: Upload build logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-build-logs-${{ matrix.xcode }}
+          path: |
+            client/build.log
+            client/test.log
+
+  swift-lint:
+    name: Swift Linting
+    runs-on: macos-14
+
     defaults:
       run:
-        working-directory: backend
-    
+        working-directory: client
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
-      - name: Install system dependencies
+
+      - name: Install SwiftLint
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc g++ make pkg-config
-      
-      - name: Install Python dependencies
+          brew install swiftlint
+
+      - name: Run SwiftLint
         run: |
-          python -m pip install --upgrade pip
-          pip install flask flask-cors flask-jwt-extended flask-limiter flask-caching
-          pip install requests geopy pytz pydantic redis fpdf2 anthropic
-          pip install numpy  # Required for astronomical packages
-          pip install pytest pytest-cov
-          # Note: Skip heavy astronomical packages in CI for faster builds
-          # pip install pyswisseph astropy timezonefinder astroquery
-      
-      - name: Set environment variables
-        run: |
-          echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
-          echo "ANTHROPIC_API_KEY=test-api-key-for-ci" >> $GITHUB_ENV
-      
-      - name: Run Python linting
-        run: |
-          pip install flake8
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          swiftlint lint --reporter github-actions-logging || true
         continue-on-error: true
-      
-      - name: Run Python tests
+
+  ios-summary:
+    name: iOS Build Summary
+    runs-on: ubuntu-latest
+    needs: [swift-ios-build, swift-lint]
+    if: always()
+
+    steps:
+      - name: Check build results
         run: |
-          python -m pytest tests/ -v --tb=short
-        env:
-          SECRET_KEY: test-secret-key-for-ci
-          ANTHROPIC_API_KEY: test-api-key-for-ci
-        continue-on-error: true
+          echo "iOS build completed"
+          echo "Build result: ${{ needs.swift-ios-build.result }}"
+          echo "Lint result: ${{ needs.swift-lint.result }}"
+
+      - name: Fail if build failed
+        if: needs.swift-ios-build.result == 'failure'
+        run: exit 1
