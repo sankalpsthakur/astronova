@@ -1677,15 +1677,17 @@ struct SimpleTabBarView: View {
                         DiscoverView()
                     }
                 case 1:
-                    ConnectView()
-                case 2:
                     TimeTravelTab()
+                case 2:
+                    TempleView()
                 case 3:
-                    OracleView()
+                    ConnectView()
                 case 4:
                     SelfTabView()
                 default:
-                    TodayTab()
+                    NavigationStack {
+                        DiscoverView()
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1905,21 +1907,21 @@ struct TimeTravelTab: View {
 
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
-    
+
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
         (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
-        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
         (title: "Time Travel", icon: "clock", customIcon: nil),
-        (title: "Oracle", icon: "sparkles", customIcon: nil),
+        (title: "Temple", icon: "building.columns.fill", customIcon: nil),
+        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
         (title: "Self", icon: "person.crop.circle.fill", customIcon: nil)
     ]
 
     private func tabIdentifier(for index: Int) -> String {
         switch index {
         case 0: return AccessibilityID.homeTab
-        case 1: return AccessibilityID.connectTab
-        case 2: return AccessibilityID.timeTravelTab
-        case 3: return AccessibilityID.oracleTab
+        case 1: return AccessibilityID.timeTravelTab
+        case 2: return AccessibilityID.templeTab
+        case 3: return AccessibilityID.connectTab
         case 4: return AccessibilityID.selfTab
         default: return "tab_\(index)"
         }
@@ -2003,18 +2005,18 @@ struct FloatingTabBar: View {
 
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
         (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
-        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
         (title: "Time Travel", icon: "clock", customIcon: nil),
-        (title: "Oracle", icon: "sparkles", customIcon: nil),
+        (title: "Temple", icon: "building.columns.fill", customIcon: nil),
+        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
         (title: "Self", icon: "person.crop.circle.fill", customIcon: nil)
     ]
 
     private func tabIdentifier(for index: Int) -> String {
         switch index {
         case 0: return AccessibilityID.homeTab
-        case 1: return AccessibilityID.connectTab
-        case 2: return AccessibilityID.timeTravelTab
-        case 3: return AccessibilityID.oracleTab
+        case 1: return AccessibilityID.timeTravelTab
+        case 2: return AccessibilityID.templeTab
+        case 3: return AccessibilityID.connectTab
         case 4: return AccessibilityID.selfTab
         default: return "tab_\(index)"
         }

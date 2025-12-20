@@ -265,6 +265,7 @@ enum AccessibilityID {
     // Navigation
     static let tabBar = "tabBar"
     static let homeTab = "homeTab"
+    static let templeTab = "templeTab"
     static let connectTab = "connectTab"
     static let askTab = "askTab"  // Legacy
     static let oracleTab = "oracleTab"
