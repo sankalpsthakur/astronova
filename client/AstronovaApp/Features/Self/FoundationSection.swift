@@ -40,7 +40,10 @@ struct FoundationSection: View {
 
     private var collapseHeader: some View {
         Button {
-            isExpanded.toggle()
+            CosmicHaptics.light()
+            withAnimation(.cosmicSpring) {
+                isExpanded.toggle()
+            }
         } label: {
             HStack {
                 Image(systemName: "person.text.rectangle")
@@ -69,8 +72,12 @@ struct FoundationSection: View {
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             .padding(Cosmic.Spacing.md)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("foundationToggle")
+        .accessibilityLabel("Foundation section, \(isExpanded ? "expanded" : "collapsed")")
+        .accessibilityHint("Double tap to \(isExpanded ? "collapse" : "expand")")
     }
 
     // MARK: - Expanded Content

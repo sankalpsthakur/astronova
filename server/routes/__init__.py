@@ -10,6 +10,7 @@ from .horoscope import horoscope_bp
 from .locations import locations_bp
 from .misc import misc_bp
 from .reports import reports_bp
+from .temple import temple_bp
 
 __all__ = [
     "astrology_bp",
@@ -24,4 +25,5 @@ __all__ = [
     "locations_bp",
     "misc_bp",
     "reports_bp",
+    "temple_bp",
 ]

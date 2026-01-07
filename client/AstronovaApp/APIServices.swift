@@ -1052,4 +1052,172 @@ class APIServices: ObservableObject, APIServicesProtocol {
             responseType: CompatibilitySnapshot.self
         )
     }
+
+    // MARK: - Temple & Pooja Services
+
+    /// List available pooja types
+    func listPoojaTypes() async throws -> [PoojaType] {
+        struct PoojaTypesResponse: Codable {
+            let poojas: [PoojaType]
+        }
+
+        let response: PoojaTypesResponse = try await networkClient.request(
+            endpoint: "/api/v1/temple/poojas",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: PoojaTypesResponse.self
+        )
+        return response.poojas
+    }
+
+    /// Get pooja type details
+    func getPoojaType(poojaId: String) async throws -> PoojaType {
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/poojas/\(poojaId)",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: PoojaType.self
+        )
+    }
+
+    /// List available pandits
+    func listPandits(specialization: String? = nil, language: String? = nil, availableOnly: Bool = true) async throws -> [PanditProfile] {
+        struct PanditsResponse: Codable {
+            let pandits: [PanditProfile]
+        }
+
+        var queryItems: [String] = []
+        if let spec = specialization { queryItems.append("specialization=\(spec)") }
+        if let lang = language { queryItems.append("language=\(lang)") }
+        queryItems.append("available=\(availableOnly)")
+
+        let queryString = queryItems.isEmpty ? "" : "?" + queryItems.joined(separator: "&")
+
+        let response: PanditsResponse = try await networkClient.request(
+            endpoint: "/api/v1/temple/pandits\(queryString)",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: PanditsResponse.self
+        )
+        return response.pandits
+    }
+
+    /// Get pandit availability slots
+    func getPanditAvailability(panditId: String, date: Date? = nil) async throws -> [AvailabilitySlot] {
+        struct AvailabilityResponse: Codable {
+            let slots: [AvailabilitySlot]
+        }
+
+        var endpoint = "/api/v1/temple/pandits/\(panditId)/availability"
+        if let date = date {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            endpoint += "?date=\(formatter.string(from: date))"
+        }
+
+        let response: AvailabilityResponse = try await networkClient.request(
+            endpoint: endpoint,
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: AvailabilityResponse.self
+        )
+        return response.slots
+    }
+
+    /// Create a pooja booking
+    func createPoojaBooking(
+        poojaTypeId: String,
+        panditId: String?,
+        scheduledDate: Date,
+        scheduledTime: String,
+        timezone: String = "Asia/Kolkata",
+        sankalpName: String?,
+        sankalpGotra: String?,
+        sankalpNakshatra: String?,
+        specialRequests: String?
+    ) async throws -> PoojaBookingResponse {
+        struct BookingRequest: Codable {
+            let poojaTypeId: String
+            let panditId: String?
+            let scheduledDate: String
+            let scheduledTime: String
+            let timezone: String
+            let sankalpName: String?
+            let sankalpGotra: String?
+            let sankalpNakshatra: String?
+            let specialRequests: String?
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let request = BookingRequest(
+            poojaTypeId: poojaTypeId,
+            panditId: panditId,
+            scheduledDate: dateFormatter.string(from: scheduledDate),
+            scheduledTime: scheduledTime,
+            timezone: timezone,
+            sankalpName: sankalpName,
+            sankalpGotra: sankalpGotra,
+            sankalpNakshatra: sankalpNakshatra,
+            specialRequests: specialRequests
+        )
+
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/bookings",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: PoojaBookingResponse.self
+        )
+    }
+
+    /// List user's pooja bookings
+    func listPoojaBookings(status: String? = nil) async throws -> [PoojaBooking] {
+        struct BookingsResponse: Codable {
+            let bookings: [PoojaBooking]
+        }
+
+        var endpoint = "/api/v1/temple/bookings"
+        if let status = status {
+            endpoint += "?status=\(status)"
+        }
+
+        let response: BookingsResponse = try await networkClient.request(
+            endpoint: endpoint,
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: BookingsResponse.self
+        )
+        return response.bookings
+    }
+
+    /// Get booking details
+    func getPoojaBooking(bookingId: String) async throws -> PoojaBookingDetail {
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/bookings/\(bookingId)",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: PoojaBookingDetail.self
+        )
+    }
+
+    /// Cancel a booking
+    func cancelPoojaBooking(bookingId: String) async throws -> CancelBookingResponse {
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/bookings/\(bookingId)/cancel",
+            method: HTTPMethod.POST,
+            body: nil,
+            responseType: CancelBookingResponse.self
+        )
+    }
+
+    /// Generate session link for confirmed booking
+    func generatePoojaSessionLink(bookingId: String) async throws -> SessionLinkResponse {
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/bookings/\(bookingId)/session",
+            method: HTTPMethod.POST,
+            body: nil,
+            responseType: SessionLinkResponse.self
+        )
+    }
 }

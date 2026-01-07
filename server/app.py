@@ -23,6 +23,7 @@ from routes import (
     locations_bp,
     misc_bp,
     reports_bp,
+    temple_bp,
 )
 
 setup_logging()
@@ -116,6 +117,7 @@ def create_app():
     app.register_blueprint(compat_bp, url_prefix="/api/v1/compatibility")
     app.register_blueprint(content_bp, url_prefix="/api/v1/content")
     app.register_blueprint(discover_bp, url_prefix="/api/v1/discover")
+    app.register_blueprint(temple_bp, url_prefix="/api/v1/temple")
 
     # OpenAPI + Swagger UI (no extra dependencies).
     @app.route("/api/v1/openapi.yaml", methods=["GET"])

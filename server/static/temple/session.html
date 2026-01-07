@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astronova Temple Session</title>
+    <script src="https://sdk.twilio.com/js/video/releases/2.28.1/twilio-video.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(212, 168, 83, 0.3);
+            margin-bottom: 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #D4A853;
+        }
+        .session-info {
+            font-size: 14px;
+            color: #888;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .video-container {
+            background: #0d0d1a;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .local-video {
+            border: 2px solid #D4A853;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+        }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s;
+        }
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        .control-btn.active {
+            background: #D4A853;
+            color: #1a1a2e;
+        }
+        .control-btn.inactive {
+            background: #444;
+            color: #fff;
+        }
+        .control-btn.end-call {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .join-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+        }
+        .join-screen h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #D4A853;
+        }
+        .join-screen p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .join-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .join-form input {
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #0d0d1a;
+            color: #fff;
+            font-size: 16px;
+        }
+        .join-form input:focus {
+            outline: none;
+            border-color: #D4A853;
+        }
+        .join-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #B08D57 0%, #D4A853 50%, #C67D4D 100%);
+            border: none;
+            border-radius: 8px;
+            color: #1a1a2e;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(212, 168, 83, 0.3);
+        }
+        .join-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .preview-video {
+            width: 300px;
+            height: 200px;
+            background: #0d0d1a;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .preview-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        .status {
+            padding: 10px 20px;
+            background: rgba(212, 168, 83, 0.1);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .status.error {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .participant-count {
+            background: rgba(212, 168, 83, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Astronova Temple</div>
+            <div class="session-info" id="sessionInfo"></div>
+        </header>
+
+        <!-- Join Screen -->
+        <div id="joinScreen" class="join-screen">
+            <h1>Join Pooja Session</h1>
+            <p>Enter your name to join the video session</p>
+
+            <div class="preview-video" id="previewContainer">
+                <video id="previewVideo" autoplay muted playsinline></video>
+            </div>
+
+            <div class="join-form">
+                <input type="text" id="nameInput" placeholder="Your name" required>
+                <button class="join-btn" id="joinBtn" onclick="joinRoom()">Join Session</button>
+            </div>
+
+            <div id="joinStatus" class="status hidden"></div>
+        </div>
+
+        <!-- Call Screen -->
+        <div id="callScreen" class="hidden">
+            <div class="status" id="callStatus">
+                <span class="participant-count" id="participantCount">1 participant</span>
+            </div>
+
+            <div class="video-grid" id="videoGrid">
+                <div class="video-container local-video" id="localVideoContainer">
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <div class="video-label" id="localLabel">You</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn active" id="micBtn" onclick="toggleMic()">
+                    <span id="micIcon">🎤</span>
+                </button>
+                <button class="control-btn active" id="videoBtn" onclick="toggleVideo()">
+                    <span id="videoIcon">📹</span>
+                </button>
+                <button class="control-btn end-call" onclick="leaveRoom()">
+                    <span>📞</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get session ID from URL
+        const pathParts = window.location.pathname.split('/');
+        const sessionId = pathParts[pathParts.length - 1] || 'default-session';
+
+        document.getElementById('sessionInfo').textContent = `Session: ${sessionId.substring(0, 8)}...`;
+
+        let room = null;
+        let localTracks = [];
+        let isMuted = false;
+        let isVideoOff = false;
+
+        // Start camera preview on load
+        async function startPreview() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const previewVideo = document.getElementById('previewVideo');
+                previewVideo.srcObject = stream;
+
+                // Store tracks for later use
+                localTracks = stream.getTracks();
+            } catch (err) {
+                console.error('Camera access error:', err);
+                showJoinStatus('Please allow camera and microphone access', true);
+            }
+        }
+
+        function showJoinStatus(message, isError = false) {
+            const status = document.getElementById('joinStatus');
+            status.textContent = message;
+            status.className = isError ? 'status error' : 'status';
+            status.classList.remove('hidden');
+        }
+
+        async function joinRoom() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (!name) {
+                showJoinStatus('Please enter your name', true);
+                return;
+            }
+
+            const joinBtn = document.getElementById('joinBtn');
+            joinBtn.disabled = true;
+            joinBtn.textContent = 'Connecting...';
+
+            try {
+                // Get Twilio token from backend
+                const response = await fetch(`/api/v1/temple/session/${sessionId}/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: name })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get access token');
+                }
+
+                const { token } = await response.json();
+
+                // Stop preview stream
+                localTracks.forEach(track => track.stop());
+
+                // Connect to Twilio room
+                room = await Twilio.Video.connect(token, {
+                    name: sessionId,
+                    audio: true,
+                    video: { width: 640 }
+                });
+
+                // Show call screen
+                document.getElementById('joinScreen').classList.add('hidden');
+                document.getElementById('callScreen').classList.remove('hidden');
+                document.getElementById('localLabel').textContent = name;
+
+                // Attach local video
+                room.localParticipant.videoTracks.forEach(publication => {
+                    if (publication.track) {
+                        document.getElementById('localVideo').srcObject = new MediaStream([publication.track.mediaStreamTrack]);
+                    }
+                });
+
+                // Handle existing participants
+                room.participants.forEach(participantConnected);
+
+                // Handle new participants
+                room.on('participantConnected', participantConnected);
+                room.on('participantDisconnected', participantDisconnected);
+
+                updateParticipantCount();
+
+            } catch (err) {
+                console.error('Join error:', err);
+                showJoinStatus('Failed to join session. Please try again.', true);
+                joinBtn.disabled = false;
+                joinBtn.textContent = 'Join Session';
+            }
+        }
+
+        function participantConnected(participant) {
+            console.log('Participant connected:', participant.identity);
+
+            const container = document.createElement('div');
+            container.className = 'video-container';
+            container.id = `participant-${participant.sid}`;
+
+            const video = document.createElement('video');
+            video.autoplay = true;
+            video.playsinline = true;
+
+            const label = document.createElement('div');
+            label.className = 'video-label';
+            label.textContent = participant.identity;
+
+            container.appendChild(video);
+            container.appendChild(label);
+            document.getElementById('videoGrid').appendChild(container);
+
+            participant.tracks.forEach(publication => {
+                if (publication.isSubscribed) {
+                    trackSubscribed(container, publication.track);
+                }
+            });
+
+            participant.on('trackSubscribed', track => trackSubscribed(container, track));
+            participant.on('trackUnsubscribed', trackUnsubscribed);
+
+            updateParticipantCount();
+        }
+
+        function participantDisconnected(participant) {
+            console.log('Participant disconnected:', participant.identity);
+            const container = document.getElementById(`participant-${participant.sid}`);
+            if (container) {
+                container.remove();
+            }
+            updateParticipantCount();
+        }
+
+        function trackSubscribed(container, track) {
+            if (track.kind === 'video') {
+                const video = container.querySelector('video');
+                video.srcObject = new MediaStream([track.mediaStreamTrack]);
+            } else if (track.kind === 'audio') {
+                const audio = document.createElement('audio');
+                audio.autoplay = true;
+                audio.srcObject = new MediaStream([track.mediaStreamTrack]);
+                container.appendChild(audio);
+            }
+        }
+
+        function trackUnsubscribed(track) {
+            track.detach().forEach(element => element.remove());
+        }
+
+        function toggleMic() {
+            if (!room) return;
+
+            room.localParticipant.audioTracks.forEach(publication => {
+                if (isMuted) {
+                    publication.track.enable();
+                } else {
+                    publication.track.disable();
+                }
+            });
+
+            isMuted = !isMuted;
+            document.getElementById('micBtn').className = `control-btn ${isMuted ? 'inactive' : 'active'}`;
+            document.getElementById('micIcon').textContent = isMuted ? '🔇' : '🎤';
+        }
+
+        function toggleVideo() {
+            if (!room) return;
+
+            room.localParticipant.videoTracks.forEach(publication => {
+                if (isVideoOff) {
+                    publication.track.enable();
+                } else {
+                    publication.track.disable();
+                }
+            });
+
+            isVideoOff = !isVideoOff;
+            document.getElementById('videoBtn').className = `control-btn ${isVideoOff ? 'inactive' : 'active'}`;
+            document.getElementById('videoIcon').textContent = isVideoOff ? '📵' : '📹';
+        }
+
+        function leaveRoom() {
+            if (room) {
+                room.disconnect();
+            }
+            window.location.href = '/';
+        }
+
+        function updateParticipantCount() {
+            if (!room) return;
+            const count = room.participants.size + 1;
+            document.getElementById('participantCount').textContent =
+                `${count} participant${count > 1 ? 's' : ''}`;
+        }
+
+        // Initialize preview on load
+        startPreview();
+    </script>
+</body>
+</html>

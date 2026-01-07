@@ -13,7 +13,6 @@ struct DiscoverView: View {
     @State private var showingPaywall = false
     @State private var showingReportDetail = false
     @State private var selectedReport: DetailedReport?
-    @State private var showingDomainDetail = false
     @State private var selectedDomainInsight: DomainInsight?
     @State private var showingShareSheet = false
     @State private var shareContent: String = ""
@@ -74,22 +73,20 @@ struct DiscoverView: View {
                 ReportDetailView(report: report)
             }
         }
-        .sheet(isPresented: $showingDomainDetail) {
-            if let insight = selectedDomainInsight {
-                DomainDetailView(
-                    insight: insight,
-                    hasSubscription: viewModel.hasSubscription,
-                    onGetReport: { reportType in
-                        showingDomainDetail = false
-                        selectedReportType = reportType
-                        showingReportSheet = true
-                    },
-                    onUpgrade: {
-                        showingDomainDetail = false
-                        showingPaywall = true
-                    }
-                )
-            }
+        .sheet(item: $selectedDomainInsight) { insight in
+            DomainDetailView(
+                insight: insight,
+                hasSubscription: viewModel.hasSubscription,
+                onGetReport: { reportType in
+                    selectedDomainInsight = nil
+                    selectedReportType = reportType
+                    showingReportSheet = true
+                },
+                onUpgrade: {
+                    selectedDomainInsight = nil
+                    showingPaywall = true
+                }
+            )
         }
     }
 
@@ -105,7 +102,6 @@ struct DiscoverView: View {
                     horoscope: viewModel.dailyHoroscope,
                     onDomainTap: { insight in
                         selectedDomainInsight = insight
-                        showingDomainDetail = true
                     }
                 )
                 .padding(.horizontal, Cosmic.Spacing.m)
@@ -142,8 +138,8 @@ struct DiscoverView: View {
                             #endif
                         },
                         onTimeTravelTap: {
-                            // Navigate to Time Travel tab
-                            NotificationCenter.default.post(name: .switchToTab, object: 2)
+                            // Navigate to Time Travel tab (index 1)
+                            NotificationCenter.default.post(name: .switchToTab, object: 1)
                         }
                     )
                     .padding(.horizontal, Cosmic.Spacing.m)
@@ -158,7 +154,8 @@ struct DiscoverView: View {
                         #endif
                     },
                     onSeeAllTap: {
-                        NotificationCenter.default.post(name: .switchToTab, object: 1)
+                        // Navigate to Connect tab (index 3)
+                        NotificationCenter.default.post(name: .switchToTab, object: 3)
                     }
                 )
                 .padding(.horizontal, Cosmic.Spacing.m)

@@ -2,12 +2,12 @@
 //  TempleModels.swift
 //  AstronovaApp
 //
-//  Models for the Temple tab - Astrologers, Muhurat, and Pooja
+//  Models for the Temple tab - Astrologers, Muhurat, Pooja, and Booking
 //
 
 import Foundation
 
-// MARK: - Astrologer Models
+// MARK: - Astrologer Models (Local/Sample)
 
 struct Astrologer: Identifiable {
     let id: String
@@ -76,6 +76,176 @@ struct Astrologer: Identifiable {
             expertise: ["Lal Kitab", "Vastu", "Remedies"]
         )
     ]
+}
+
+// MARK: - API Response Models
+
+/// Pooja type from API
+struct PoojaType: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String
+    let deity: String
+    let durationMinutes: Int
+    let basePrice: Int
+    let iconName: String
+    let benefits: [String]
+    let ingredients: [String]
+    let mantras: [String]?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decode(String.self, forKey: .description)
+        deity = try container.decode(String.self, forKey: .deity)
+        durationMinutes = try container.decode(Int.self, forKey: .durationMinutes)
+        basePrice = try container.decode(Int.self, forKey: .basePrice)
+        iconName = try container.decode(String.self, forKey: .iconName)
+        benefits = try container.decodeIfPresent([String].self, forKey: .benefits) ?? []
+        ingredients = try container.decodeIfPresent([String].self, forKey: .ingredients) ?? []
+        mantras = try container.decodeIfPresent([String].self, forKey: .mantras)
+    }
+}
+
+/// Pandit profile from API
+struct PanditProfile: Codable, Identifiable {
+    let id: String
+    let name: String
+    let specializations: [String]
+    let languages: [String]
+    let experienceYears: Int
+    let rating: Double
+    let reviewCount: Int
+    let pricePerSession: Int
+    let avatarUrl: String?
+    let bio: String?
+    let isVerified: Bool
+    let isAvailable: Bool
+
+    var experienceString: String {
+        return "\(experienceYears)+ years"
+    }
+
+    var primarySpecialization: String {
+        return specializations.first ?? "Vedic Astrology"
+    }
+}
+
+/// Availability slot
+struct AvailabilitySlot: Codable, Identifiable {
+    var id: String { "\(date)-\(time)" }
+    let date: String
+    let time: String
+    let available: Bool
+}
+
+/// Booking response from create
+struct PoojaBookingResponse: Codable {
+    let bookingId: String
+    let status: String
+    let scheduledDate: String
+    let scheduledTime: String
+    let amountDue: Int
+    let message: String
+}
+
+/// Booking list item
+struct PoojaBooking: Codable, Identifiable {
+    let id: String
+    let poojaTypeId: String
+    let poojaName: String
+    let poojaIcon: String
+    let durationMinutes: Int
+    let panditId: String?
+    let panditName: String?
+    let scheduledDate: String
+    let scheduledTime: String
+    let timezone: String
+    let status: String
+    let sankalpName: String?
+    let amountPaid: Int
+    let paymentStatus: String
+    let sessionLink: String?
+    let createdAt: String
+
+    var statusDisplay: BookingStatus {
+        BookingStatus(rawValue: status) ?? .pending
+    }
+}
+
+/// Detailed booking
+struct PoojaBookingDetail: Codable, Identifiable {
+    let id: String
+    let poojaTypeId: String
+    let poojaName: String
+    let poojaIcon: String
+    let durationMinutes: Int
+    let benefits: [String]
+    let ingredients: [String]
+    let panditId: String?
+    let panditName: String?
+    let panditAvatar: String?
+    let scheduledDate: String
+    let scheduledTime: String
+    let timezone: String
+    let status: String
+    let sankalpName: String?
+    let sankalpGotra: String?
+    let sankalpNakshatra: String?
+    let specialRequests: String?
+    let amountPaid: Int
+    let paymentStatus: String
+    let sessionLink: String?
+    let createdAt: String
+
+    var statusDisplay: BookingStatus {
+        BookingStatus(rawValue: status) ?? .pending
+    }
+}
+
+/// Cancel booking response
+struct CancelBookingResponse: Codable {
+    let bookingId: String
+    let status: String
+    let message: String
+}
+
+/// Session link response
+struct SessionLinkResponse: Codable {
+    let sessionId: String
+    let userLink: String
+    let status: String
+    let message: String
+}
+
+/// Booking status enum
+enum BookingStatus: String, CaseIterable {
+    case pending
+    case confirmed
+    case inProgress = "in_progress"
+    case completed
+    case cancelled
+
+    var displayName: String {
+        switch self {
+        case .pending: return "Pending"
+        case .confirmed: return "Confirmed"
+        case .inProgress: return "In Progress"
+        case .completed: return "Completed"
+        case .cancelled: return "Cancelled"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .pending: return "cosmicWarning"
+        case .confirmed: return "cosmicSuccess"
+        case .inProgress: return "cosmicGold"
+        case .completed: return "cosmicAmethyst"
+        case .cancelled: return "cosmicError"
+        }
+    }
 }
 
 // MARK: - Muhurat Models
