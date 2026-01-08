@@ -234,7 +234,7 @@ def create_app():
     <p>We reserve the right to modify these terms at any time. Continued use of the App constitutes acceptance of updated terms.</p>
 
     <h2>9. Contact</h2>
-    <p>For questions about these Terms, contact us at <a href="mailto:support@astronova.app">support@astronova.app</a></p>
+    <p>For questions about these Terms, contact us at <a href="mailto:admin@100xai.engineering">admin@100xai.engineering</a></p>
 </body>
 </html>"""
         return Response(html, mimetype="text/html")
@@ -304,7 +304,7 @@ def create_app():
     <p>We may update this Privacy Policy from time to time. We will notify you of significant changes through the App.</p>
 
     <h2>9. Contact Us</h2>
-    <p>For privacy-related questions, contact us at <a href="mailto:privacy@astronova.app">privacy@astronova.app</a></p>
+    <p>For privacy-related questions, contact us at <a href="mailto:admin@100xai.engineering">admin@100xai.engineering</a></p>
 </body>
 </html>"""
         return Response(html, mimetype="text/html")
@@ -343,7 +343,7 @@ def create_app():
             <span class="contact-icon">📧</span>
             <div>
                 <strong>Email Support</strong><br>
-                <a href="mailto:support@astronova.app">support@astronova.app</a><br>
+                <a href="mailto:admin@100xai.engineering">admin@100xai.engineering</a><br>
                 <small style="color: #706860;">Response within 24-48 hours</small>
             </div>
         </div>
@@ -414,7 +414,7 @@ def create_app():
         <li>Try force-quitting and restarting the app</li>
         <li>Restart your device if issues persist</li>
     </ul>
-    <p>If the problem continues, email us at <a href="mailto:support@astronova.app">support@astronova.app</a> with:</p>
+    <p>If the problem continues, email us at <a href="mailto:admin@100xai.engineering">admin@100xai.engineering</a> with:</p>
     <ul>
         <li>Your device model and iOS version</li>
         <li>A description of the issue</li>
