@@ -1,0 +1,9 @@
+// ... all the previous code ...
+// Locate and remove the following:
+        // let allScores = [
+        //     ... values ...
+        // ]
+
+// Just delete that line entirely; do not replace it with _ = ... unless there are side effects (which there almost never are for plain array construction).
+
+// ... rest of the file ...

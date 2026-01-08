@@ -309,6 +309,135 @@ def create_app():
 </html>"""
         return Response(html, mimetype="text/html")
 
+    @app.route("/support", methods=["GET"])
+    def support_page():
+        html = """<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Support - Astronova</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; background: #0E0E14; color: #F5F0E6; }
+        h1 { color: #D4A853; border-bottom: 1px solid #2A2A36; padding-bottom: 10px; }
+        h2 { color: #B08D57; margin-top: 30px; }
+        a { color: #9B7ED9; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .contact-box { background: #1A1A24; border: 1px solid #2A2A36; border-radius: 8px; padding: 20px; margin-top: 20px; }
+        .contact-method { display: flex; align-items: center; margin: 15px 0; }
+        .contact-icon { font-size: 24px; margin-right: 15px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        .faq-item { margin-bottom: 25px; }
+        .faq-question { font-weight: 600; color: #D4A853; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Support</h1>
+
+    <h2>Get Help</h2>
+    <p>We're here to help you with Astronova. Choose the best way to reach us:</p>
+
+    <div class="contact-box">
+        <div class="contact-method">
+            <span class="contact-icon">📧</span>
+            <div>
+                <strong>Email Support</strong><br>
+                <a href="mailto:support@astronova.app">support@astronova.app</a><br>
+                <small style="color: #706860;">Response within 24-48 hours</small>
+            </div>
+        </div>
+    </div>
+
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+        <div class="faq-question">How do I update my birth information?</div>
+        <p>Go to the <strong>Manage</strong> tab (bottom right), tap <strong>Edit Profile</strong>, and update your birth date, time, location, or timezone. Changes will be reflected immediately in your chart and daily insights.</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">How do I cancel my subscription?</div>
+        <p>Subscriptions are managed through your Apple ID:</p>
+        <ol>
+            <li>Open the <strong>Settings</strong> app on your iPhone</li>
+            <li>Tap your name at the top</li>
+            <li>Tap <strong>Subscriptions</strong></li>
+            <li>Select <strong>Astronova Pro</strong></li>
+            <li>Tap <strong>Cancel Subscription</strong></li>
+        </ol>
+        <p>Your subscription will remain active until the end of the current billing period.</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Why don't I see my daily insights?</div>
+        <p>Daily insights require a complete birth profile. Make sure you've entered:</p>
+        <ul>
+            <li>Birth date</li>
+            <li>Birth time (as accurate as possible)</li>
+            <li>Birth location (city/town)</li>
+            <li>Timezone</li>
+        </ul>
+        <p>Update your profile in the <strong>Manage</strong> tab if any information is missing.</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">How do I book a pooja or consult an astrologer?</div>
+        <p>Go to the <strong>Temple</strong> tab to browse:</p>
+        <ul>
+            <li><strong>Expert Astrologers:</strong> Book video consultations with verified pandits</li>
+            <li><strong>Sacred Rituals:</strong> Schedule authentic poojas performed on your behalf</li>
+        </ul>
+        <p>Select a service, choose a time slot, and complete the booking. You'll receive a confirmation with session details.</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">What is Vimshottari Dasha?</div>
+        <p>Vimshottari Dasha is the primary timing system in Vedic astrology. It divides your life into planetary periods (Mahadasha, Antardasha, Pratyantardasha) that influence different life areas. Explore your timeline in the <strong>Time Travel</strong> tab.</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">How accurate are the astrological calculations?</div>
+        <p>Astronova uses the Swiss Ephemeris library for planetary positions, the Lahiri ayanamsha for sidereal zodiac calculations, and traditional Vimshottari dasha formulas. All calculations follow authentic Vedic astrology principles.</p>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Can I delete my account?</div>
+        <p>Yes. Go to <strong>Manage</strong> tab → <strong>Settings</strong> → <strong>Delete Account</strong>. This will permanently remove your account and all associated data.</p>
+    </div>
+
+    <h2>Technical Issues</h2>
+    <p>If you're experiencing technical problems:</p>
+    <ul>
+        <li>Make sure you're running the latest version of Astronova from the App Store</li>
+        <li>Check your internet connection (required for most features)</li>
+        <li>Try force-quitting and restarting the app</li>
+        <li>Restart your device if issues persist</li>
+    </ul>
+    <p>If the problem continues, email us at <a href="mailto:support@astronova.app">support@astronova.app</a> with:</p>
+    <ul>
+        <li>Your device model and iOS version</li>
+        <li>A description of the issue</li>
+        <li>Screenshots if applicable</li>
+    </ul>
+
+    <h2>App Store Reviews</h2>
+    <p>Love Astronova? Please leave us a review on the App Store! Your feedback helps us improve and helps others discover the app.</p>
+
+    <h2>Legal</h2>
+    <ul>
+        <li><a href="/terms">Terms of Service</a></li>
+        <li><a href="/privacy">Privacy Policy</a></li>
+    </ul>
+
+    <p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #2A2A36; color: #706860; font-size: 14px;">
+        Astronova - Your Cosmic Blueprint<br>
+        © 2026 Astronova. All rights reserved.
+    </p>
+</body>
+</html>"""
+        return Response(html, mimetype="text/html")
+
     # Health endpoints - exempt from rate limiting for Render health checks
     @app.route("/health", methods=["GET"])
     @limiter.exempt
