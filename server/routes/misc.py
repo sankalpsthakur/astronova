@@ -64,3 +64,85 @@ def remote_config():
             "home_quick_tiles_enabled": True,
         }
     )
+
+
+@misc_bp.route("/seed-test-user", methods=["POST"])
+def seed_test_user():
+    """
+    Create a test user for App Store review with complete birth data.
+    This endpoint can only be called once - subsequent calls will return existing user.
+    """
+    import uuid
+    from db import get_connection
+
+    test_user_id = "appstore-test-user-2026"
+    test_email = "appstore-test@astronova.app"
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        # Check if test user already exists
+        cur.execute("SELECT id FROM users WHERE id = ?", (test_user_id,))
+        existing = cur.fetchone()
+
+        if existing:
+            return jsonify({
+                "message": "Test user already exists",
+                "user_id": test_user_id,
+                "email": test_email
+            }), 200
+
+        # Create test user
+        now = datetime.utcnow().isoformat()
+        cur.execute("""
+            INSERT INTO users (id, email, first_name, last_name, full_name, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (test_user_id, test_email, "Test", "Reviewer", "Test Reviewer", now, now))
+
+        # Add complete birth data for testing all features
+        # Birth data: Jan 15, 1990, 2:30 PM, New York, NY (40.7128, -74.0060)
+        cur.execute("""
+            INSERT INTO user_birth_data
+            (user_id, birth_date, birth_time, timezone, latitude, longitude, location_name, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            test_user_id,
+            "1990-01-15",
+            "14:30",
+            "America/New_York",
+            40.7128,
+            -74.0060,
+            "New York, NY, USA",
+            now,
+            now
+        ))
+
+        # Set subscription to active for testing premium features
+        cur.execute("""
+            INSERT INTO subscription_status (user_id, is_active, product_id, updated_at)
+            VALUES (?, ?, ?, ?)
+        """, (test_user_id, 1, "astronova_pro_monthly", now))
+
+        conn.commit()
+
+        return jsonify({
+            "message": "Test user created successfully",
+            "user_id": test_user_id,
+            "email": test_email,
+            "birth_data": {
+                "date": "1990-01-15",
+                "time": "14:30",
+                "timezone": "America/New_York",
+                "location": "New York, NY, USA"
+            },
+            "subscription": "active (Pro)",
+            "instructions": "Use X-User-Id header with this user_id for API testing"
+        }), 201
+
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Failed to seed test user: {e}")
+        return jsonify({"error": "Failed to create test user", "details": str(e)}), 500
+    finally:
+        conn.close()
