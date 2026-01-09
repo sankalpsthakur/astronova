@@ -63,8 +63,8 @@ final class OracleViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(quotaManager: OracleQuotaManager = .shared) {
-        self.quotaManager = quotaManager
+    init(quotaManager: OracleQuotaManager? = nil) {
+        self.quotaManager = quotaManager ?? .shared
         addWelcomeMessage()
     }
 
@@ -80,6 +80,11 @@ final class OracleViewModel: ObservableObject {
         }
 
         let userText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        Analytics.shared.track(.oracleChatSent, properties: [
+            "depth": selectedDepth.rawValue,
+            "message_length": "\(userText.count)"
+        ])
 
         // Add user message
         let userMessage = OracleMessage(
@@ -149,6 +154,11 @@ final class OracleViewModel: ObservableObject {
                 timestamp: Date()
             )
 
+            Analytics.shared.track(.oracleChatReceived, properties: [
+                "response_length": "\(response.reply.count)",
+                "depth": selectedDepth.rawValue
+            ])
+
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 messages.append(aiMessage)
             }
@@ -158,7 +168,22 @@ final class OracleViewModel: ObservableObject {
 
         } catch {
             isLoading = false
-            errorMessage = "Connection interrupted"
+            if let networkError = error as? NetworkError {
+                switch networkError {
+                case .authenticationFailed, .tokenExpired:
+                    errorMessage = "Sign in to ask the Oracle."
+                case .offline:
+                    errorMessage = "No internet connection. Please try again."
+                case .timeout:
+                    errorMessage = "Request timed out. Please try again."
+                case .serverError(let code, _):
+                    errorMessage = "Server error (\(code)). Please try again."
+                default:
+                    errorMessage = "Connection interrupted"
+                }
+            } else {
+                errorMessage = "Connection interrupted"
+            }
         }
     }
 }

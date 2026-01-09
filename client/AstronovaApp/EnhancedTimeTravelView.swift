@@ -272,6 +272,13 @@ struct EnhancedTimeTravelView: View {
             }
             .task {
                 await viewModel.loadAll(for: selectedDate, zodiacSystem: zodiacSystem, profileManager: auth.profileManager)
+
+                // Track dasha timeline view
+                if viewModel.dashaData != nil {
+                    Analytics.shared.track(.dashaTimelineViewed, properties: [
+                        "has_complete_data": auth.profileManager.hasCompleteLocationData ? "true" : "false"
+                    ])
+                }
             }
             .onChange(of: auth.profileManager.profile.birthTime) { _, _ in
                 Task {

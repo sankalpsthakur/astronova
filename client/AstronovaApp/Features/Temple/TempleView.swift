@@ -388,6 +388,7 @@ struct AstrologerCard: View {
 struct AstrologerDetailSheet: View {
     let astrologer: Astrologer
     @Environment(\.dismiss) private var dismiss
+    @State private var showConsultationSheet = false
 
     var body: some View {
         NavigationStack {
@@ -475,7 +476,7 @@ struct AstrologerDetailSheet: View {
                     // CTA
                     Button {
                         CosmicHaptics.medium()
-                        // TODO: Implement consultation booking
+                        showConsultationSheet = true
                     } label: {
                         HStack {
                             Image(systemName: astrologer.isOnline ? "phone.fill" : "bell.fill")
@@ -501,6 +502,9 @@ struct AstrologerDetailSheet: View {
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
                 }
+            }
+            .sheet(isPresented: $showConsultationSheet) {
+                ConsultationBookingSheet(astrologer: astrologer)
             }
         }
     }
@@ -913,151 +917,164 @@ struct PoojaBookingSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: Cosmic.Spacing.xl) {
-                    // Pooja Summary
-                    HStack(spacing: Cosmic.Spacing.md) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.cosmicGold.opacity(0.2))
-                                .frame(width: 56, height: 56)
-                            Image(systemName: poojaItem.iconName)
-                                .font(.system(size: 24))
-                                .foregroundStyle(Color.cosmicGold)
-                        }
+            Group {
+                if authState.isAuthenticated {
+                    ScrollView {
+                        VStack(spacing: Cosmic.Spacing.xl) {
+                            // Pooja Summary
+                            HStack(spacing: Cosmic.Spacing.md) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.cosmicGold.opacity(0.2))
+                                        .frame(width: 56, height: 56)
+                                    Image(systemName: poojaItem.iconName)
+                                        .font(.system(size: 24))
+                                        .foregroundStyle(Color.cosmicGold)
+                                }
 
-                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                            Text(poojaItem.name)
-                                .font(.cosmicHeadline)
-                                .foregroundStyle(Color.cosmicTextPrimary)
-                            Text(poojaItem.deity)
-                                .font(.cosmicCaption)
-                                .foregroundStyle(Color.cosmicTextSecondary)
-                            Text(poojaItem.duration)
-                                .font(.cosmicMicro)
-                                .foregroundStyle(Color.cosmicGold)
-                        }
-                        Spacer()
-                    }
-                    .padding(Cosmic.Spacing.md)
-                    .background(Color.cosmicSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
-                    .padding(.horizontal, Cosmic.Spacing.screen)
-
-                    // Date Selection
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                        Text("Select Date")
-                            .font(.cosmicCaptionEmphasis)
-                            .foregroundStyle(Color.cosmicTextTertiary)
-
-                        DatePicker(
-                            "Date",
-                            selection: $selectedDate,
-                            in: Date()...,
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.graphical)
-                        .tint(Color.cosmicGold)
-                        .colorScheme(.dark)
-                    }
-                    .padding(.horizontal, Cosmic.Spacing.screen)
-
-                    // Time Selection
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                        Text("Select Time")
-                            .font(.cosmicCaptionEmphasis)
-                            .foregroundStyle(Color.cosmicTextTertiary)
-
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: Cosmic.Spacing.s) {
-                            ForEach(timeSlots, id: \.self) { slot in
-                                Button {
-                                    CosmicHaptics.light()
-                                    selectedTimeSlot = slot
-                                } label: {
-                                    Text(slot)
+                                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                                    Text(poojaItem.name)
+                                        .font(.cosmicHeadline)
+                                        .foregroundStyle(Color.cosmicTextPrimary)
+                                    Text(poojaItem.deity)
                                         .font(.cosmicCaption)
-                                        .foregroundStyle(selectedTimeSlot == slot ? Color.cosmicVoid : Color.cosmicTextPrimary)
-                                        .padding(.vertical, Cosmic.Spacing.xs)
-                                        .padding(.horizontal, Cosmic.Spacing.s)
-                                        .background {
-                                            if selectedTimeSlot == slot {
-                                                Capsule().fill(LinearGradient.cosmicAntiqueGold)
-                                            } else {
-                                                Capsule().stroke(Color.cosmicTextTertiary.opacity(0.3), lineWidth: 1)
-                                            }
+                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                    Text(poojaItem.duration)
+                                        .font(.cosmicMicro)
+                                        .foregroundStyle(Color.cosmicGold)
+                                }
+                                Spacer()
+                            }
+                            .padding(Cosmic.Spacing.md)
+                            .background(Color.cosmicSurface)
+                            .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            // Date Selection
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                                Text("Select Date")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                DatePicker(
+                                    "Date",
+                                    selection: $selectedDate,
+                                    in: Date()...,
+                                    displayedComponents: .date
+                                )
+                                .datePickerStyle(.graphical)
+                                .tint(Color.cosmicGold)
+                                .colorScheme(.dark)
+                            }
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            // Time Selection
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                                Text("Select Time")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: Cosmic.Spacing.s) {
+                                    ForEach(timeSlots, id: \.self) { slot in
+                                        Button {
+                                            CosmicHaptics.light()
+                                            selectedTimeSlot = slot
+                                        } label: {
+                                            Text(slot)
+                                                .font(.cosmicCaption)
+                                                .foregroundStyle(selectedTimeSlot == slot ? Color.cosmicVoid : Color.cosmicTextPrimary)
+                                                .padding(.vertical, Cosmic.Spacing.xs)
+                                                .padding(.horizontal, Cosmic.Spacing.s)
+                                                .background {
+                                                    if selectedTimeSlot == slot {
+                                                        Capsule().fill(LinearGradient.cosmicAntiqueGold)
+                                                    } else {
+                                                        Capsule().stroke(Color.cosmicTextTertiary.opacity(0.3), lineWidth: 1)
+                                                    }
+                                                }
                                         }
+                                    }
                                 }
                             }
-                        }
-                    }
-                    .padding(.horizontal, Cosmic.Spacing.screen)
-
-                    // Sankalp Details
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
-                        Text("Sankalp Details")
-                            .font(.cosmicCaptionEmphasis)
-                            .foregroundStyle(Color.cosmicTextTertiary)
-
-                        VStack(spacing: Cosmic.Spacing.s) {
-                            BookingTextField(title: "Name (Sankalp)", text: $sankalpName, placeholder: "Your full name")
-                            BookingTextField(title: "Gotra (optional)", text: $sankalpGotra, placeholder: "Family lineage")
-                            BookingTextField(title: "Nakshatra (optional)", text: $sankalpNakshatra, placeholder: "Birth star")
-                        }
-                    }
-                    .padding(.horizontal, Cosmic.Spacing.screen)
-
-                    // Special Requests
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                        Text("Special Requests (optional)")
-                            .font(.cosmicCaptionEmphasis)
-                            .foregroundStyle(Color.cosmicTextTertiary)
-
-                        TextEditor(text: $specialRequests)
-                            .font(.cosmicBody)
-                            .foregroundStyle(Color.cosmicTextPrimary)
-                            .scrollContentBackground(.hidden)
-                            .frame(minHeight: 80)
-                            .padding(Cosmic.Spacing.s)
-                            .background(Color.cosmicSurface)
-                            .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
-                    }
-                    .padding(.horizontal, Cosmic.Spacing.screen)
-
-                    // Error Message
-                    if let error = errorMessage {
-                        Text(error)
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicError)
                             .padding(.horizontal, Cosmic.Spacing.screen)
-                    }
 
-                    // Book Button
-                    Button {
-                        Task { await bookPooja() }
-                    } label: {
-                        HStack {
-                            if isLoading {
-                                ProgressView()
-                                    .tint(Color.cosmicVoid)
-                            } else {
-                                Image(systemName: "checkmark.circle.fill")
-                                Text("Confirm Booking")
+                            // Sankalp Details
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
+                                Text("Sankalp Details")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                VStack(spacing: Cosmic.Spacing.s) {
+                                    BookingTextField(title: "Name (Sankalp)", text: $sankalpName, placeholder: "Your full name")
+                                    BookingTextField(title: "Gotra (optional)", text: $sankalpGotra, placeholder: "Family lineage")
+                                    BookingTextField(title: "Nakshatra (optional)", text: $sankalpNakshatra, placeholder: "Birth star")
+                                }
                             }
-                        }
-                        .font(.cosmicHeadline)
-                        .foregroundStyle(Color.cosmicVoid)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: Cosmic.ButtonHeight.large)
-                        .background(LinearGradient.cosmicAntiqueGold)
-                        .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
-                    }
-                    .disabled(sankalpName.isEmpty || isLoading)
-                    .opacity(sankalpName.isEmpty ? 0.5 : 1)
-                    .padding(.horizontal, Cosmic.Spacing.screen)
+                            .padding(.horizontal, Cosmic.Spacing.screen)
 
-                    Spacer().frame(height: 40)
+                            // Special Requests
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                                Text("Special Requests (optional)")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                TextEditor(text: $specialRequests)
+                                    .font(.cosmicBody)
+                                    .foregroundStyle(Color.cosmicTextPrimary)
+                                    .scrollContentBackground(.hidden)
+                                    .frame(minHeight: 80)
+                                    .padding(Cosmic.Spacing.s)
+                                    .background(Color.cosmicSurface)
+                                    .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                            }
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            // Error Message
+                            if let error = errorMessage {
+                                Text(error)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicError)
+                                    .padding(.horizontal, Cosmic.Spacing.screen)
+                            }
+
+                            // Book Button
+                            Button {
+                                Task { await bookPooja() }
+                            } label: {
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .tint(Color.cosmicVoid)
+                                    } else {
+                                        Image(systemName: "checkmark.circle.fill")
+                                        Text("Confirm Booking")
+                                    }
+                                }
+                                .font(.cosmicHeadline)
+                                .foregroundStyle(Color.cosmicVoid)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: Cosmic.ButtonHeight.large)
+                                .background(LinearGradient.cosmicAntiqueGold)
+                                .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
+                            }
+                            .disabled(sankalpName.isEmpty || isLoading)
+                            .opacity(sankalpName.isEmpty ? 0.5 : 1)
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            Spacer().frame(height: 40)
+                        }
+                        .padding(.top, Cosmic.Spacing.md)
+                    }
+                } else {
+                    VStack {
+                        Spacer()
+                        AuthRequiredView(
+                            title: "Sign in to book a pooja",
+                            message: "Confirm your details and reserve a pandit time slot."
+                        )
+                        Spacer()
+                    }
                 }
-                .padding(.top, Cosmic.Spacing.md)
             }
             .background(Color.cosmicVoid)
             .navigationBarTitleDisplayMode(.inline)
@@ -1095,6 +1112,11 @@ struct PoojaBookingSheet: View {
             // Map local poojaItem.id to API pooja type ID
             let poojaTypeId = mapPoojaItemToAPIId(poojaItem.id)
 
+            Analytics.shared.track(.templeBookingStarted, properties: [
+                "pooja_type": poojaTypeId,
+                "pandit_id": "auto_assigned"
+            ])
+
             let response = try await APIServices.shared.createPoojaBooking(
                 poojaTypeId: poojaTypeId,
                 panditId: nil,
@@ -1107,11 +1129,31 @@ struct PoojaBookingSheet: View {
                 specialRequests: specialRequests.isEmpty ? nil : specialRequests
             )
 
+            Analytics.shared.track(.templeBookingCompleted, properties: [
+                "booking_id": response.bookingId,
+                "pooja_type": poojaTypeId
+            ])
+
             bookingResponse = response
             showSuccess = true
             CosmicHaptics.success()
         } catch {
-            errorMessage = "Failed to create booking. Please try again."
+            if let networkError = error as? NetworkError {
+                switch networkError {
+                case .authenticationFailed, .tokenExpired:
+                    errorMessage = "Sign in to book a pooja."
+                case .offline:
+                    errorMessage = "No internet connection. Please try again."
+                case .timeout:
+                    errorMessage = "Request timed out. Please try again."
+                case .serverError(let code, _):
+                    errorMessage = "Server error (\(code)). Please try again."
+                default:
+                    errorMessage = "Failed to create booking. Please try again."
+                }
+            } else {
+                errorMessage = "Failed to create booking. Please try again."
+            }
             CosmicHaptics.error()
         }
 
@@ -1127,6 +1169,265 @@ struct PoojaBookingSheet: View {
         case "pooja_004": return "pooja_satyanarayan"
         default: return "pooja_ganesh"
         }
+    }
+}
+
+// MARK: - Consultation Booking Sheet
+
+struct ConsultationBookingSheet: View {
+    let astrologer: Astrologer
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var authState: AuthState
+
+    @State private var selectedDate = Date().addingTimeInterval(86400)
+    @State private var selectedTimeSlot: String = "10:00"
+    @State private var durationMinutes: Int = 30
+    @State private var topic: String = ""
+    @State private var isLoading = false
+    @State private var showSuccess = false
+    @State private var errorMessage: String?
+
+    private let timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "18:00", "19:00"]
+    private let durations = [15, 30, 60]
+
+    private var totalPrice: Int {
+        durationMinutes * astrologer.pricePerMinute
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if authState.isAuthenticated {
+                    ScrollView {
+                        VStack(spacing: Cosmic.Spacing.xl) {
+                            HStack(spacing: Cosmic.Spacing.md) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.cosmicGold.opacity(0.2))
+                                        .frame(width: 56, height: 56)
+                                    Image(systemName: "person.crop.circle.badge.checkmark")
+                                        .font(.system(size: 24))
+                                        .foregroundStyle(Color.cosmicGold)
+                                }
+
+                                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                                    Text(astrologer.name)
+                                        .font(.cosmicHeadline)
+                                        .foregroundStyle(Color.cosmicTextPrimary)
+                                    Text(astrologer.specialization)
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                    Text("₹\(astrologer.pricePerMinute)/min")
+                                        .font(.cosmicMicro)
+                                        .foregroundStyle(Color.cosmicGold)
+                                }
+                                Spacer()
+                            }
+                            .padding(Cosmic.Spacing.md)
+                            .background(Color.cosmicSurface)
+                            .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                                Text("Select Date")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                DatePicker(
+                                    "Date",
+                                    selection: $selectedDate,
+                                    in: Date()...,
+                                    displayedComponents: .date
+                                )
+                                .datePickerStyle(.graphical)
+                                .tint(Color.cosmicGold)
+                                .colorScheme(.dark)
+                            }
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                                Text("Select Time")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: Cosmic.Spacing.s) {
+                                    ForEach(timeSlots, id: \.self) { slot in
+                                        Button {
+                                            CosmicHaptics.light()
+                                            selectedTimeSlot = slot
+                                        } label: {
+                                            Text(slot)
+                                                .font(.cosmicCaption)
+                                                .foregroundStyle(selectedTimeSlot == slot ? Color.cosmicVoid : Color.cosmicTextPrimary)
+                                                .padding(.vertical, Cosmic.Spacing.xs)
+                                                .padding(.horizontal, Cosmic.Spacing.s)
+                                                .background {
+                                                    if selectedTimeSlot == slot {
+                                                        Capsule().fill(LinearGradient.cosmicAntiqueGold)
+                                                    } else {
+                                                        Capsule().stroke(Color.cosmicTextTertiary.opacity(0.3), lineWidth: 1)
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                                Text("Duration")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                Picker("Duration", selection: $durationMinutes) {
+                                    ForEach(durations, id: \.self) { minutes in
+                                        Text("\(minutes) min").tag(minutes)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                            }
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                                Text("Topic (optional)")
+                                    .font(.cosmicCaptionEmphasis)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                                TextEditor(text: $topic)
+                                    .font(.cosmicBody)
+                                    .foregroundStyle(Color.cosmicTextPrimary)
+                                    .scrollContentBackground(.hidden)
+                                    .frame(minHeight: 80)
+                                    .padding(Cosmic.Spacing.s)
+                                    .background(Color.cosmicSurface)
+                                    .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                            }
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            HStack {
+                                Text("Total")
+                                    .font(.cosmicCalloutEmphasis)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                                Spacer()
+                                Text("₹\(totalPrice)")
+                                    .font(.cosmicHeadline)
+                                    .foregroundStyle(Color.cosmicGold)
+                            }
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            if let error = errorMessage {
+                                Text(error)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicError)
+                                    .padding(.horizontal, Cosmic.Spacing.screen)
+                            }
+
+                            Button {
+                                Task { await bookConsultation() }
+                            } label: {
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .tint(Color.cosmicVoid)
+                                    } else {
+                                        Image(systemName: "phone.fill")
+                                        Text("Book Consultation")
+                                    }
+                                }
+                                .font(.cosmicHeadline)
+                                .foregroundStyle(Color.cosmicVoid)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: Cosmic.ButtonHeight.large)
+                                .background(LinearGradient.cosmicAntiqueGold)
+                                .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
+                            }
+                            .disabled(isLoading)
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+
+                            Spacer().frame(height: 40)
+                        }
+                        .padding(.top, Cosmic.Spacing.md)
+                    }
+                } else {
+                    VStack {
+                        Spacer()
+                        AuthRequiredView(
+                            title: "Sign in to book a consultation",
+                            message: "Reserve a time and get personalized guidance."
+                        )
+                        Spacer()
+                    }
+                }
+            }
+            .background(Color.cosmicVoid)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Book Consultation")
+                        .font(.cosmicHeadline)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.cosmicTitle3)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                    }
+                }
+            }
+        }
+        .alert("Consultation Booked!", isPresented: $showSuccess) {
+            Button("OK") { dismiss() }
+        } message: {
+            Text("Your consultation is scheduled for \(formattedDate(selectedDate)) at \(selectedTimeSlot).")
+        }
+    }
+
+    private func bookConsultation() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let response = try await APIServices.shared.createPoojaBooking(
+                poojaTypeId: "pooja_consultation",
+                panditId: nil,
+                scheduledDate: selectedDate,
+                scheduledTime: selectedTimeSlot,
+                timezone: TimeZone.current.identifier,
+                sankalpName: authState.profileManager.profile.fullName.isEmpty ? nil : authState.profileManager.profile.fullName,
+                sankalpGotra: nil,
+                sankalpNakshatra: nil,
+                specialRequests: topic.isEmpty ? nil : topic
+            )
+
+            _ = response
+            showSuccess = true
+        } catch {
+            if let networkError = error as? NetworkError {
+                switch networkError {
+                case .authenticationFailed, .tokenExpired:
+                    errorMessage = "Sign in to book a consultation."
+                case .offline:
+                    errorMessage = "No internet connection. Please try again."
+                case .timeout:
+                    errorMessage = "Request timed out. Please try again."
+                case .serverError(let code, _):
+                    errorMessage = "Server error (\(code)). Please try again."
+                default:
+                    errorMessage = "Unable to book consultation. Please try again."
+                }
+            } else {
+                errorMessage = "Unable to book consultation. Please try again."
+            }
+        }
+
+        isLoading = false
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
     }
 }
 

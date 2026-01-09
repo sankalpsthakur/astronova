@@ -281,6 +281,76 @@ struct RootView: View {
     }
 }
 
+struct AuthRequiredView: View {
+    @EnvironmentObject private var auth: AuthState
+    @State private var isSigningIn = false
+
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(spacing: Cosmic.Spacing.lg) {
+            VStack(spacing: Cosmic.Spacing.xs) {
+                Text(title)
+                    .font(.cosmicTitle2)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+
+                Text(message)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            SignInWithAppleButton(
+                onRequest: { request in
+                    request.requestedScopes = [.fullName, .email]
+                    request.nonce = UUID().uuidString
+                },
+                onCompletion: { result in
+                    Task {
+                        await handleSignInResult(result)
+                    }
+                }
+            )
+            .signInWithAppleButtonStyle(.white)
+            .frame(height: 50)
+            .frame(maxWidth: .infinity)
+            .disabled(isSigningIn)
+            .overlay {
+                if isSigningIn {
+                    ProgressView()
+                        .foregroundStyle(Color.cosmicVoid)
+                }
+            }
+            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        }
+        .padding(Cosmic.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.prominent)
+                .fill(Color.cosmicSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.prominent)
+                .stroke(Color.cosmicGold.opacity(0.2), lineWidth: 1)
+        )
+        .padding(.horizontal, Cosmic.Spacing.screen)
+    }
+
+    private func handleSignInResult(_ result: Result<ASAuthorization, Error>) async {
+        isSigningIn = true
+        defer { isSigningIn = false }
+
+        switch result {
+        case .success(let authorization):
+            await auth.handleAppleSignIn(authorization)
+        case .failure(let error):
+            #if DEBUG
+            debugPrint("[AuthRequiredView] Sign in with Apple failed: \(error)")
+            #endif
+        }
+    }
+}
+
 /// Beautiful, delightful onboarding with instant value and smooth animations
 struct SimpleProfileSetupView: View {
     @EnvironmentObject private var auth: AuthState
@@ -3100,6 +3170,11 @@ struct FriendsTab: View {
             
             let response = try await APIServices.shared.getCompatibilityReport(person1: person1, person2: partner)
             let score = Int((response.compatibility_score * 100.0).rounded())
+
+            Analytics.shared.track(.compatibilityAnalyzed, properties: [
+                "relationship_type": "general"
+            ])
+
             await MainActor.run {
                 compatibilityPercent = score
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {

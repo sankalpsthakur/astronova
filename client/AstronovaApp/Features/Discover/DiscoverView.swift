@@ -41,10 +41,10 @@ struct DiscoverView: View {
         .navigationTitle("Discover")
         .navigationBarTitleDisplayMode(.large)
         .refreshable {
-            await viewModel.refresh()
+            await viewModel.refresh(shouldLoadReports: auth.isAuthenticated)
         }
         .task {
-            await viewModel.load(profile: auth.profileManager.profile)
+            await viewModel.load(profile: auth.profileManager.profile, shouldLoadReports: auth.isAuthenticated)
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView(context: .home)
@@ -349,7 +349,7 @@ struct DiscoverView: View {
 
             Button {
                 Task {
-                    await viewModel.load(profile: auth.profileManager.profile)
+                    await viewModel.load(profile: auth.profileManager.profile, shouldLoadReports: auth.isAuthenticated)
                 }
             } label: {
                 Text("Try Again")
@@ -439,7 +439,7 @@ class DiscoverViewModel: ObservableObject {
         return created
     }
 
-    func load(profile: UserProfile?) async {
+    func load(profile: UserProfile?, shouldLoadReports: Bool) async {
         // Check cache first
         if let cached = cache.get() {
             snapshot = cached
@@ -476,7 +476,11 @@ class DiscoverViewModel: ObservableObject {
             hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
 
             // Load user reports
-            await loadUserReports()
+            if shouldLoadReports {
+                await loadUserReports()
+            } else {
+                userReports = []
+            }
 
             // Load connections (placeholder - would come from saved connections)
             loadConnections()
@@ -498,10 +502,10 @@ class DiscoverViewModel: ObservableObject {
         isLoading = false
     }
 
-    func refresh() async {
+    func refresh(shouldLoadReports: Bool) async {
         cache.clear()
         domainInsightsCache.clear()
-        await load(profile: nil)
+        await load(profile: nil, shouldLoadReports: shouldLoadReports)
     }
 
     func loadUserReports() async {

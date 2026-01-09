@@ -258,18 +258,22 @@ class AuthState: ObservableObject {
     }
     
     func signOut() {
+        Analytics.shared.track(.signOut, properties: [
+            "was_anonymous": isAnonymousUser ? "true" : "false"
+        ])
+
         // Clear stored authentication
         jwtToken = nil
         authenticatedUser = nil as AuthenticatedUser?
         deleteJWTToken()
-        
+
         hasSignedIn = false
         isAnonymousUser = false
         profileManager = UserProfileManager() // Reset profile
         isAPIConnected = false
         connectionError = nil
         state = .signedOut
-        
+
         // Notify backend of logout
         Task {
             try? await apiServices.logout()
@@ -277,32 +281,36 @@ class AuthState: ObservableObject {
     }
     
     func continueAsGuest() {
+        Analytics.shared.track(.guestModeStarted, properties: nil)
+
         // Clear any auth errors
         authError = nil
-        
+
         isAnonymousUser = true
         hasSignedIn = true
-        
+
         // Check API connectivity for guest users
         Task {
             await checkAPIConnectivity()
         }
-        
+
         state = (profileManager.isProfileComplete || profileManager.hasMinimalProfileData) ? .signedIn : .needsProfileSetup
     }
     
     func startQuickStart() {
+        Analytics.shared.track(.quickStartModeStarted, properties: nil)
+
         // Clear any auth errors
         authError = nil
-        
+
         isQuickStartUser = true
         hasSignedIn = true
-        
+
         // Check API connectivity for quick start users
         Task {
             await checkAPIConnectivity()
         }
-        
+
         state = .needsProfileSetup
     }
     
@@ -346,6 +354,10 @@ class AuthState: ObservableObject {
             )
         }
     }
+
+    var isAuthenticated: Bool {
+        jwtToken != nil
+    }
 }
 
 /// Feature availability for different user types
@@ -373,12 +385,15 @@ struct FeatureAvailability {
 // MARK: - Apple Sign-In Integration
 extension AuthState {
     func handleAppleSignIn(_ authorization: ASAuthorization) async {
+        Analytics.shared.track(.signInStarted, properties: nil)
+
         guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
               let identityToken = appleIDCredential.identityToken,
               let tokenString = String(data: identityToken, encoding: .utf8) else {
             await MainActor.run {
                 self.authError = "Failed to get Apple ID token"
             }
+            Analytics.shared.track(.signInFailed, properties: ["reason": "failed_to_get_token"])
             #if DEBUG
             debugPrint("[Auth] Failed to get Apple ID token")
             #endif
@@ -398,25 +413,30 @@ extension AuthState {
                 // Clear any previous errors
                 self.authError = nil
                 self.connectionError = nil
-                
+
                 // Store authentication data
                 self.jwtToken = authResponse.jwtToken
                 self.authenticatedUser = authResponse.user
                 self.hasSignedIn = true
                 self.isAnonymousUser = false
-                
+
                 // Store JWT token securely
                 self.storeJWTToken(authResponse.jwtToken)
-                
+
                 // Update API services with token
                 self.apiServices.jwtToken = authResponse.jwtToken
-                
+
                 // Update state
                 if self.profileManager.isProfileComplete {
                     self.state = .signedIn
                 } else {
                     self.state = .needsProfileSetup
                 }
+
+                Analytics.shared.track(.signInSuccess, properties: [
+                    "user_id": authResponse.user.id,
+                    "profile_complete": self.profileManager.isProfileComplete ? "true" : "false"
+                ])
             }
 
             // Sync birth data to server after successful auth
@@ -428,28 +448,39 @@ extension AuthState {
             #if DEBUG
             debugPrint("[Auth] Apple authentication failed: \(error.localizedDescription)")
             #endif
+
+            var errorReason = "unknown"
             await MainActor.run {
                 if let networkError = error as? NetworkError {
                     switch networkError {
                     case .offline:
+                        errorReason = "offline"
                         self.authError = "No internet connection. Please check your network and try again."
                     case .timeout:
+                        errorReason = "timeout"
                         self.authError = "Authentication timed out. Please try again."
                     case .authenticationFailed(let message):
+                        errorReason = "auth_failed"
                         self.authError = message ?? "Authentication failed. Please try again."
                     case .serverError(let code, let message):
                         if code >= 500 {
+                            errorReason = "server_error_\(code)"
                             self.authError = "Server temporarily unavailable. Please try again later."
                         } else {
+                            errorReason = "api_error_\(code)"
                             self.authError = message ?? "Authentication failed. Please try again."
                         }
                     default:
+                        errorReason = "network_error"
                         self.authError = "Authentication failed. Please try again."
                     }
                 } else {
+                    errorReason = "unknown_error"
                     self.authError = "Authentication failed. Please try again."
                 }
             }
+
+            Analytics.shared.track(.signInFailed, properties: ["reason": errorReason])
         }
     }
     
@@ -496,11 +527,13 @@ extension AuthState {
     /// Handle automatic token refresh when token expires
     func handleTokenExpiry() async {
         guard jwtToken != nil else { return }
-        
+
+        Analytics.shared.track(.tokenExpired, properties: nil)
+
         do {
             // Try to refresh the token
             let authResponse = try await apiServices.refreshToken()
-            
+
             await MainActor.run {
                 self.jwtToken = authResponse.jwtToken
                 self.authenticatedUser = authResponse.user
@@ -508,8 +541,12 @@ extension AuthState {
                 self.apiServices.jwtToken = authResponse.jwtToken
                 self.authError = nil
             }
-            
+
+            Analytics.shared.track(.tokenRefreshSuccess, properties: nil)
+
         } catch {
+            Analytics.shared.track(.tokenRefreshFailed, properties: nil)
+
             // Refresh failed, sign out user
             await MainActor.run {
                 self.authError = "Your session has expired. Please sign in again."

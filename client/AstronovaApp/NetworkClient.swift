@@ -177,6 +177,10 @@ class NetworkClient: NetworkClientProtocol {
             case 401:
                 // Try to extract error message from response
                 let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.authenticationError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "401"
+                ])
                 if errorMessage?.contains("expired") == true {
                     throw NetworkError.tokenExpired
                 } else {
@@ -184,9 +188,19 @@ class NetworkClient: NetworkClientProtocol {
                 }
             case 400...499:
                 let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.apiError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "\(httpResponse.statusCode)",
+                    "error_message": errorMessage ?? "unknown"
+                ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             case 500...599:
                 let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.apiError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "\(httpResponse.statusCode)",
+                    "error_message": errorMessage ?? "unknown"
+                ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             default:
                 throw NetworkError.serverError(httpResponse.statusCode, nil)
@@ -245,6 +259,10 @@ class NetworkClient: NetworkClientProtocol {
                 // Only log decoding errors in debug builds, never response data
                 debugPrint("[NetworkClient] Decoding error for \(responseType): \(error.localizedDescription)")
                 #endif
+                Analytics.shared.track(.decodingError, properties: [
+                    "endpoint": endpoint,
+                    "response_type": "\(responseType)"
+                ])
                 throw NetworkError.decodingError
             }
         } catch {
@@ -252,10 +270,23 @@ class NetworkClient: NetworkClientProtocol {
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .notConnectedToInternet, .networkConnectionLost:
+                    Analytics.shared.track(.networkError, properties: [
+                        "error_type": "offline",
+                        "endpoint": endpoint
+                    ])
                     throw NetworkError.offline
                 case .timedOut:
+                    Analytics.shared.track(.networkError, properties: [
+                        "error_type": "timeout",
+                        "endpoint": endpoint
+                    ])
                     throw NetworkError.timeout
                 default:
+                    Analytics.shared.track(.networkError, properties: [
+                        "error_type": "network_failure",
+                        "error_code": "\(urlError.code.rawValue)",
+                        "endpoint": endpoint
+                    ])
                     throw NetworkError.networkError(urlError)
                 }
             } else if error is NetworkError {
@@ -321,6 +352,10 @@ class NetworkClient: NetworkClientProtocol {
             case 401:
                 // Try to extract error message from response
                 let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.authenticationError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "401"
+                ])
                 if errorMessage?.contains("expired") == true {
                     throw NetworkError.tokenExpired
                 } else {
@@ -328,9 +363,19 @@ class NetworkClient: NetworkClientProtocol {
                 }
             case 400...499:
                 let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.apiError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "\(httpResponse.statusCode)",
+                    "error_message": errorMessage ?? "unknown"
+                ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             case 500...599:
                 let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.apiError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "\(httpResponse.statusCode)",
+                    "error_message": errorMessage ?? "unknown"
+                ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             default:
                 throw NetworkError.serverError(httpResponse.statusCode, nil)
@@ -346,10 +391,23 @@ class NetworkClient: NetworkClientProtocol {
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .notConnectedToInternet, .networkConnectionLost:
+                    Analytics.shared.track(.networkError, properties: [
+                        "error_type": "offline",
+                        "endpoint": endpoint
+                    ])
                     throw NetworkError.offline
                 case .timedOut:
+                    Analytics.shared.track(.networkError, properties: [
+                        "error_type": "timeout",
+                        "endpoint": endpoint
+                    ])
                     throw NetworkError.timeout
                 default:
+                    Analytics.shared.track(.networkError, properties: [
+                        "error_type": "network_failure",
+                        "error_code": "\(urlError.code.rawValue)",
+                        "endpoint": endpoint
+                    ])
                     throw NetworkError.networkError(urlError)
                 }
             } else if error is NetworkError {
