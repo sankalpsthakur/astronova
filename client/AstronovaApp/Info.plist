@@ -32,5 +32,9 @@
 	</array>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Astronova uses analytics to improve your experience and understand how features are used. This helps us provide better astrological insights and app performance.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Astronova needs camera access for video sessions with pandits during your pooja bookings.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Astronova needs microphone access to communicate with pandits during video sessions.</string>
 </dict>
 </plist>

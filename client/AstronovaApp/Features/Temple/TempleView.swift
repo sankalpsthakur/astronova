@@ -911,6 +911,8 @@ struct PoojaBookingSheet: View {
     @State private var showSuccess = false
     @State private var bookingResponse: PoojaBookingResponse?
     @State private var errorMessage: String?
+    @State private var showingVideoSession = false
+    @State private var videoSessionId: String = ""
 
     private let timeSlots = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00",
                              "16:00", "17:00", "18:00", "19:00"]
@@ -1100,6 +1102,16 @@ struct PoojaBookingSheet: View {
                 Text("Your pooja is scheduled for \(response.scheduledDate) at \(response.scheduledTime). You will receive a session link before the scheduled time.")
             }
         }
+        .fullScreenCover(isPresented: $showingVideoSession, content: videoSessionCover)
+    }
+
+    @ViewBuilder
+    private func videoSessionCover() -> some View {
+        let userName = authState.profileManager.profile.fullName ?? sankalpName
+        VideoSessionWebView(
+            sessionId: videoSessionId,
+            userName: userName
+        )
     }
 
     private func bookPooja() async {
@@ -1169,6 +1181,21 @@ struct PoojaBookingSheet: View {
         case "pooja_004": return "pooja_satyanarayan"
         default: return "pooja_ganesh"
         }
+    }
+
+    /// Extract session ID from session link URL
+    /// Example: "https://astronova.app/api/v1/temple/session/abc-123" -> "abc-123"
+    private func extractSessionId(from sessionLink: String) -> String? {
+        guard let url = URL(string: sessionLink) else { return nil }
+        let pathComponents = url.pathComponents
+        // Session ID is the last path component
+        return pathComponents.last
+    }
+
+    /// Open video session with given session ID
+    private func openVideoSession(sessionId: String) {
+        videoSessionId = sessionId
+        showingVideoSession = true
     }
 }
 

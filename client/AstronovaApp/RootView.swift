@@ -1821,6 +1821,28 @@ struct SimpleTabBarView: View {
                 }
             }
         }
+        .onOpenURL { url in
+            // Handle video session deep links
+            // Example: astronova://session/abc-123 or https://astronova.app/api/v1/temple/session/abc-123
+            if url.absoluteString.contains("/temple/session/") || url.host == "session" {
+                let sessionId: String
+                if url.host == "session" {
+                    // Deep link format: astronova://session/abc-123
+                    sessionId = url.pathComponents.last ?? ""
+                } else {
+                    // Web URL format: https://astronova.app/api/v1/temple/session/abc-123
+                    sessionId = url.pathComponents.last ?? ""
+                }
+
+                if !sessionId.isEmpty {
+                    // Post notification to open video session
+                    NotificationCenter.default.post(
+                        name: .openVideoSession,
+                        object: sessionId
+                    )
+                }
+            }
+        }
         .keyboardDismissButton()
     }
     

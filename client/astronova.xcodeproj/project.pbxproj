@@ -27,6 +27,7 @@
 		5A811C092DF79DA000BD6D7F /* MapKitAutocompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */; };
 		65A997B5F7E04025AA6D5AAA /* EnhancedTimeTravelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */; };
 		975D40439C2F2C5BDEA2AAC9 /* TempleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1949EBB93135391AC11D9D /* TempleModels.swift */; };
+		F90256D484D343A7B0A06CC5BCC68819 /* VideoSessionWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFD60D6813314AB6B0CC5C76A2D3651F /* VideoSessionWebView.swift */; };
 		AA0002000000000000000001 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000001 /* AppConfig.swift */; };
 		AA0002000000000000000002 /* RemoteConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000002 /* RemoteConfigService.swift */; };
 		AA0002000000000000000003 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000003 /* AnalyticsService.swift */; };
@@ -184,6 +185,7 @@
 		E2E000000000000000000006 /* CosmicMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicMotion.swift; sourceTree = "<group>"; };
 		E2E000000000000000000007 /* ChatPackagesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPackagesSheet.swift; sourceTree = "<group>"; };
 		EE1949EBB93135391AC11D9D /* TempleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TempleModels.swift; path = AstronovaApp/Features/Temple/TempleModels.swift; sourceTree = SOURCE_ROOT; };
+		BFD60D6813314AB6B0CC5C76A2D3651F /* VideoSessionWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VideoSessionWebView.swift; path = AstronovaApp/Features/Temple/VideoSessionWebView.swift; sourceTree = SOURCE_ROOT; };
 		F63A72C22E86F9E8003419B4 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		F697EF632F1055E30054E084 /* SelfDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfDataService.swift; sourceTree = "<group>"; };
 		F697EF642F1055E50054E084 /* ReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportDetailView.swift; sourceTree = "<group>"; };
@@ -240,6 +242,7 @@
 			children = (
 				EE1949EBB93135391AC11D9D /* TempleModels.swift */,
 				4E3043F1B1EB12D1759F3C0C /* TempleView.swift */,
+				BFD60D6813314AB6B0CC5C76A2D3651F /* VideoSessionWebView.swift */,
 			);
 			name = Temple;
 			path = AstronovaApp/Features/Temple;
@@ -699,6 +702,7 @@
 				DIS001000000000000000012 /* DomainDetailView.swift in Sources */,
 				975D40439C2F2C5BDEA2AAC9 /* TempleModels.swift in Sources */,
 				D71E47F8936E2830D8E3DFB2 /* TempleView.swift in Sources */,
+				F90256D484D343A7B0A06CC5BCC68819 /* VideoSessionWebView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

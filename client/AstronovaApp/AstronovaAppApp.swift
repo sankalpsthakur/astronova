@@ -68,4 +68,5 @@ struct AstronovaAppApp: App {
 extension Notification.Name {
     static let switchToTab = Notification.Name("switchToTab")
     static let switchToProfileSection = Notification.Name("switchToProfileSection")
+    static let openVideoSession = Notification.Name("openVideoSession")
 }
