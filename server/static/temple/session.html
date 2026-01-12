@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Astronova Temple Session</title>
-    <script src="https://sdk.twilio.com/js/video/releases/2.28.1/twilio-video.min.js"></script>
+    <script src="https://meet.jit.si/external_api.js"></script>
     <style>
         * {
             margin: 0;
@@ -16,11 +16,17 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             color: #fff;
+            display: flex;
+            flex-direction: column;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         header {
             display: flex;
@@ -39,77 +45,12 @@
             font-size: 14px;
             color: #888;
         }
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .video-container {
-            background: #0d0d1a;
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 16/9;
-            position: relative;
-        }
-        .video-container video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .video-label {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        .local-video {
-            border: 2px solid #D4A853;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 12px;
-        }
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            transition: all 0.2s;
-        }
-        .control-btn:hover {
-            transform: scale(1.1);
-        }
-        .control-btn.active {
-            background: #D4A853;
-            color: #1a1a2e;
-        }
-        .control-btn.inactive {
-            background: #444;
-            color: #fff;
-        }
-        .control-btn.end-call {
-            background: #e74c3c;
-            color: #fff;
-        }
         .join-screen {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 60vh;
+            flex: 1;
             text-align: center;
         }
         .join-screen h1 {
@@ -159,20 +100,6 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        .preview-video {
-            width: 300px;
-            height: 200px;
-            background: #0d0d1a;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            overflow: hidden;
-        }
-        .preview-video video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
         .status {
             padding: 10px 20px;
             background: rgba(212, 168, 83, 0.1);
@@ -187,11 +114,23 @@
         .hidden {
             display: none !important;
         }
-        .participant-count {
-            background: rgba(212, 168, 83, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 14px;
+        #jitsi-container {
+            width: 100%;
+            flex: 1;
+            min-height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0d0d1a;
+        }
+        .powered-by {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .powered-by a {
+            color: #D4A853;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -207,41 +146,23 @@
             <h1>Join Pooja Session</h1>
             <p>Enter your name to join the video session</p>
 
-            <div class="preview-video" id="previewContainer">
-                <video id="previewVideo" autoplay muted playsinline></video>
-            </div>
-
             <div class="join-form">
                 <input type="text" id="nameInput" placeholder="Your name" required>
                 <button class="join-btn" id="joinBtn" onclick="joinRoom()">Join Session</button>
             </div>
 
             <div id="joinStatus" class="status hidden"></div>
+
+            <div class="powered-by">
+                Powered by <a href="https://jitsi.org" target="_blank">Jitsi Meet</a>
+            </div>
         </div>
 
-        <!-- Call Screen -->
-        <div id="callScreen" class="hidden">
-            <div class="status" id="callStatus">
-                <span class="participant-count" id="participantCount">1 participant</span>
-            </div>
-
-            <div class="video-grid" id="videoGrid">
-                <div class="video-container local-video" id="localVideoContainer">
-                    <video id="localVideo" autoplay muted playsinline></video>
-                    <div class="video-label" id="localLabel">You</div>
-                </div>
-            </div>
-
-            <div class="controls">
-                <button class="control-btn active" id="micBtn" onclick="toggleMic()">
-                    <span id="micIcon">🎤</span>
-                </button>
-                <button class="control-btn active" id="videoBtn" onclick="toggleVideo()">
-                    <span id="videoIcon">📹</span>
-                </button>
-                <button class="control-btn end-call" onclick="leaveRoom()">
-                    <span>📞</span>
-                </button>
+        <!-- Jitsi Container -->
+        <div id="jitsiContainer" style="display: none;">
+            <div id="jitsi-container"></div>
+            <div class="powered-by">
+                Powered by <a href="https://jitsi.org" target="_blank">Jitsi Meet</a>
             </div>
         </div>
     </div>
@@ -253,25 +174,7 @@
 
         document.getElementById('sessionInfo').textContent = `Session: ${sessionId.substring(0, 8)}...`;
 
-        let room = null;
-        let localTracks = [];
-        let isMuted = false;
-        let isVideoOff = false;
-
-        // Start camera preview on load
-        async function startPreview() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                const previewVideo = document.getElementById('previewVideo');
-                previewVideo.srcObject = stream;
-
-                // Store tracks for later use
-                localTracks = stream.getTracks();
-            } catch (err) {
-                console.error('Camera access error:', err);
-                showJoinStatus('Please allow camera and microphone access', true);
-            }
-        }
+        let jitsiApi = null;
 
         function showJoinStatus(message, isError = false) {
             const status = document.getElementById('joinStatus');
@@ -292,7 +195,7 @@
             joinBtn.textContent = 'Connecting...';
 
             try {
-                // Get Twilio token from backend
+                // Get Jitsi room URL from backend
                 const response = await fetch(`/api/v1/temple/session/${sessionId}/token`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -300,154 +203,102 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to get access token');
+                    throw new Error('Failed to get room URL');
                 }
 
-                const { token } = await response.json();
+                const data = await response.json();
+                const roomUrl = data.roomUrl;
+                const roomName = data.roomName;
 
-                // Stop preview stream
-                localTracks.forEach(track => track.stop());
+                // Hide join screen, show video container
+                document.getElementById('joinScreen').style.display = 'none';
+                document.getElementById('jitsiContainer').style.display = 'flex';
+                document.getElementById('jitsiContainer').style.flexDirection = 'column';
+                document.getElementById('jitsiContainer').style.flex = '1';
 
-                // Connect to Twilio room
-                room = await Twilio.Video.connect(token, {
-                    name: sessionId,
-                    audio: true,
-                    video: { width: 640 }
-                });
-
-                // Show call screen
-                document.getElementById('joinScreen').classList.add('hidden');
-                document.getElementById('callScreen').classList.remove('hidden');
-                document.getElementById('localLabel').textContent = name;
-
-                // Attach local video
-                room.localParticipant.videoTracks.forEach(publication => {
-                    if (publication.track) {
-                        document.getElementById('localVideo').srcObject = new MediaStream([publication.track.mediaStreamTrack]);
+                // Initialize Jitsi Meet
+                const domain = 'meet.jit.si';
+                const options = {
+                    roomName: roomName,
+                    width: '100%',
+                    height: '100%',
+                    parentNode: document.getElementById('jitsi-container'),
+                    configOverwrite: {
+                        startWithAudioMuted: false,
+                        startWithVideoMuted: false,
+                        enableWelcomePage: false,
+                        prejoinPageEnabled: false,
+                        disableDeepLinking: true,
+                        defaultLanguage: 'en',
+                        // Mobile optimizations
+                        disableInviteFunctions: true,
+                        doNotStoreRoom: true,
+                        startScreenSharing: false,
+                        // UI customization
+                        toolbarButtons: [
+                            'microphone', 'camera', 'closedcaptions', 'desktop',
+                            'fullscreen', 'fodeviceselection', 'hangup', 'chat',
+                            'recording', 'livestreaming', 'etherpad', 'settings',
+                            'videoquality', 'filmstrip', 'stats', 'shortcuts',
+                            'tileview', 'help', 'mute-everyone'
+                        ],
+                    },
+                    interfaceConfigOverwrite: {
+                        SHOW_JITSI_WATERMARK: false,
+                        SHOW_WATERMARK_FOR_GUESTS: false,
+                        SHOW_BRAND_WATERMARK: false,
+                        BRAND_WATERMARK_LINK: '',
+                        SHOW_POWERED_BY: false,
+                        DEFAULT_BACKGROUND: '#1a1a2e',
+                        DISABLE_JOIN_LEAVE_NOTIFICATIONS: false,
+                        MOBILE_APP_PROMO: false,
+                        // Toolbar
+                        TOOLBAR_ALWAYS_VISIBLE: false,
+                        TOOLBAR_TIMEOUT: 4000,
+                    },
+                    userInfo: {
+                        displayName: name
                     }
+                };
+
+                jitsiApi = new JitsiMeetExternalAPI(domain, options);
+
+                // Event listeners
+                jitsiApi.addEventListener('videoConferenceJoined', () => {
+                    console.log('User joined the conference');
                 });
 
-                // Handle existing participants
-                room.participants.forEach(participantConnected);
+                jitsiApi.addEventListener('videoConferenceLeft', () => {
+                    console.log('User left the conference');
+                    // Could redirect back or show a message
+                });
 
-                // Handle new participants
-                room.on('participantConnected', participantConnected);
-                room.on('participantDisconnected', participantDisconnected);
+                jitsiApi.addEventListener('participantJoined', (participant) => {
+                    console.log('Participant joined:', participant);
+                });
 
-                updateParticipantCount();
+                jitsiApi.addEventListener('participantLeft', (participant) => {
+                    console.log('Participant left:', participant);
+                });
+
+                console.log('Jitsi Meet initialized successfully');
 
             } catch (err) {
                 console.error('Join error:', err);
                 showJoinStatus('Failed to join session. Please try again.', true);
                 joinBtn.disabled = false;
                 joinBtn.textContent = 'Join Session';
+                document.getElementById('joinScreen').style.display = 'flex';
+                document.getElementById('jitsiContainer').style.display = 'none';
             }
         }
 
-        function participantConnected(participant) {
-            console.log('Participant connected:', participant.identity);
-
-            const container = document.createElement('div');
-            container.className = 'video-container';
-            container.id = `participant-${participant.sid}`;
-
-            const video = document.createElement('video');
-            video.autoplay = true;
-            video.playsinline = true;
-
-            const label = document.createElement('div');
-            label.className = 'video-label';
-            label.textContent = participant.identity;
-
-            container.appendChild(video);
-            container.appendChild(label);
-            document.getElementById('videoGrid').appendChild(container);
-
-            participant.tracks.forEach(publication => {
-                if (publication.isSubscribed) {
-                    trackSubscribed(container, publication.track);
-                }
-            });
-
-            participant.on('trackSubscribed', track => trackSubscribed(container, track));
-            participant.on('trackUnsubscribed', trackUnsubscribed);
-
-            updateParticipantCount();
-        }
-
-        function participantDisconnected(participant) {
-            console.log('Participant disconnected:', participant.identity);
-            const container = document.getElementById(`participant-${participant.sid}`);
-            if (container) {
-                container.remove();
+        // Allow pressing Enter to join
+        document.getElementById('nameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                joinRoom();
             }
-            updateParticipantCount();
-        }
-
-        function trackSubscribed(container, track) {
-            if (track.kind === 'video') {
-                const video = container.querySelector('video');
-                video.srcObject = new MediaStream([track.mediaStreamTrack]);
-            } else if (track.kind === 'audio') {
-                const audio = document.createElement('audio');
-                audio.autoplay = true;
-                audio.srcObject = new MediaStream([track.mediaStreamTrack]);
-                container.appendChild(audio);
-            }
-        }
-
-        function trackUnsubscribed(track) {
-            track.detach().forEach(element => element.remove());
-        }
-
-        function toggleMic() {
-            if (!room) return;
-
-            room.localParticipant.audioTracks.forEach(publication => {
-                if (isMuted) {
-                    publication.track.enable();
-                } else {
-                    publication.track.disable();
-                }
-            });
-
-            isMuted = !isMuted;
-            document.getElementById('micBtn').className = `control-btn ${isMuted ? 'inactive' : 'active'}`;
-            document.getElementById('micIcon').textContent = isMuted ? '🔇' : '🎤';
-        }
-
-        function toggleVideo() {
-            if (!room) return;
-
-            room.localParticipant.videoTracks.forEach(publication => {
-                if (isVideoOff) {
-                    publication.track.enable();
-                } else {
-                    publication.track.disable();
-                }
-            });
-
-            isVideoOff = !isVideoOff;
-            document.getElementById('videoBtn').className = `control-btn ${isVideoOff ? 'inactive' : 'active'}`;
-            document.getElementById('videoIcon').textContent = isVideoOff ? '📵' : '📹';
-        }
-
-        function leaveRoom() {
-            if (room) {
-                room.disconnect();
-            }
-            window.location.href = '/';
-        }
-
-        function updateParticipantCount() {
-            if (!room) return;
-            const count = room.participants.size + 1;
-            document.getElementById('participantCount').textContent =
-                `${count} participant${count > 1 ? 's' : ''}`;
-        }
-
-        // Initialize preview on load
-        startPreview();
+        });
     </script>
 </body>
 </html>

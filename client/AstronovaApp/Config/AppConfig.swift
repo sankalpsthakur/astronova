@@ -14,7 +14,17 @@ final class AppConfig {
             return
         }
 
-        // Always use production Render server
+        #if DEBUG
+        // Debug + Simulator: use localhost
+        #if targetEnvironment(simulator)
+        apiBaseURL = "http://127.0.0.1:8080"
+        #else
+        // Debug + Real device: use production (for testing)
         apiBaseURL = "https://astronova.onrender.com"
+        #endif
+        #else
+        // Release: always use production
+        apiBaseURL = "https://astronova.onrender.com"
+        #endif
     }
 }

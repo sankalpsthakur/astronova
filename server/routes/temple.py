@@ -25,6 +25,20 @@ logger = logging.getLogger(__name__)
 temple_bp = Blueprint("temple", __name__)
 
 
+def get_base_url() -> str:
+    """Get base URL for session links (environment-aware)"""
+    import os
+    # Check if we're in production (Render sets PORT env var)
+    port = os.environ.get("PORT", "8080")
+
+    # If running on default port 8080 locally, use localhost
+    if port == "8080":
+        return "http://127.0.0.1:8080"
+
+    # Production: use onrender.com domain
+    return "https://astronova.onrender.com"
+
+
 # =============================================================================
 # Contact Detail Filtering Service
 # =============================================================================
@@ -711,7 +725,8 @@ def accept_booking(booking_id: str):
 
     # Generate simple session link - anyone with the link can join
     session_id = str(uuid.uuid4())
-    session_link = f"https://astronova.app/api/v1/temple/session/{session_id}"
+    base_url = get_base_url()
+    session_link = f"{base_url}/api/v1/temple/session/{session_id}"
 
     cur.execute("""
         INSERT OR REPLACE INTO pooja_sessions
@@ -770,7 +785,8 @@ def generate_session_link(booking_id: str):
 
     # Generate simple session link - anyone with the link can join
     session_id = str(uuid.uuid4())
-    session_link = f"https://astronova.app/api/v1/temple/session/{session_id}"
+    base_url = get_base_url()
+    session_link = f"{base_url}/api/v1/temple/session/{session_id}"
 
     now = datetime.utcnow().isoformat()
 
@@ -861,7 +877,7 @@ def enroll_pandit():
         "name": data["name"],
         "status": "pending_verification",
         "message": "Enrollment submitted. Your profile will be verified within 24-48 hours.",
-        "portalLink": f"https://astronova.app/pandit/portal?id={pandit_id}"
+        "portalLink": f"{get_base_url()}/pandit/portal?id={pandit_id}"
     }), 201
 
 
@@ -1009,7 +1025,7 @@ def filter_message():
 
 
 # =============================================================================
-# Twilio Video Token Generation
+# Jitsi Meet Video Session
 # =============================================================================
 
 
@@ -1018,57 +1034,31 @@ def get_session_token(session_id: str):
     """
     POST /api/v1/temple/session/<session_id>/token
 
-    Generate a Twilio Video access token for joining a session.
-    Anyone with the session ID can join.
+    Generate a Jitsi Meet room URL for joining a session.
+    Anyone with the session ID can join - no authentication needed.
 
     Body:
     {
         "identity": "User Name"
     }
     """
-    import os
-
     data = request.get_json() or {}
     identity = data.get("identity", f"Guest-{uuid.uuid4().hex[:6]}")
 
-    # Get Twilio credentials from environment
-    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
-    api_key = os.environ.get("TWILIO_API_KEY")
-    api_secret = os.environ.get("TWILIO_API_SECRET")
+    # Generate Jitsi Meet room URL
+    # Format: https://meet.jit.si/astronova-{session_id}
+    room_name = f"astronova-{session_id}"
+    jitsi_url = f"https://meet.jit.si/{room_name}"
 
-    if not all([account_sid, api_key, api_secret]):
-        # Return mock token for development/testing
-        logger.warning("Twilio credentials not configured, returning mock token")
-        return jsonify({
-            "token": "mock-token-for-development",
-            "identity": identity,
-            "roomName": session_id,
-            "message": "Development mode - Twilio not configured"
-        })
+    logger.info(f"Generated Jitsi room URL for {identity}: {jitsi_url}")
 
-    try:
-        from twilio.jwt.access_token import AccessToken
-        from twilio.jwt.access_token.grants import VideoGrant
-
-        # Create access token
-        token = AccessToken(account_sid, api_key, api_secret, identity=identity)
-
-        # Create Video grant for this room
-        video_grant = VideoGrant(room=session_id)
-        token.add_grant(video_grant)
-
-        return jsonify({
-            "token": token.to_jwt(),
-            "identity": identity,
-            "roomName": session_id,
-        })
-
-    except ImportError:
-        logger.error("Twilio SDK not installed")
-        return jsonify({"error": "Twilio SDK not available"}), 500
-    except Exception as e:
-        logger.error(f"Error generating Twilio token: {e}")
-        return jsonify({"error": "Failed to generate access token"}), 500
+    return jsonify({
+        "roomUrl": jitsi_url,
+        "roomName": room_name,
+        "identity": identity,
+        "provider": "jitsi",
+        "message": "Jitsi Meet - Free & Secure Video Calls"
+    })
 
 
 @temple_bp.route("/session/<session_id>", methods=["GET"])

@@ -223,8 +223,20 @@ struct VideoWebView: UIViewRepresentable {
             initiatedBy frame: WKFrameInfo,
             type: WKMediaCaptureType
         ) async -> WKPermissionDecision {
-            // Always grant camera and microphone permissions for our own domain
-            return .grant
+            // Grant camera and microphone permissions for:
+            // - Our own domain (astronova backend)
+            // - meet.jit.si (Jitsi Meet video calls)
+            // - 8x8.vc (Jitsi's CDN domain)
+            let allowedHosts = ["meet.jit.si", "8x8.vc", "astronova.app", "localhost", "127.0.0.1"]
+            let host = origin.host.lowercased()
+
+            if allowedHosts.contains(where: { host.contains($0) }) {
+                print("[VideoWebView] Granting \(type == .camera ? "camera" : "microphone") permission for \(host)")
+                return .grant
+            }
+
+            print("[VideoWebView] Denying media permission for unknown host: \(host)")
+            return .deny
         }
     }
 }
