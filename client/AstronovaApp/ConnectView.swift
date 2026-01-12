@@ -5,6 +5,7 @@ import SwiftUI
 // Search + Quick Add carousel + Relationship cards with pulse glyphs.
 
 struct ConnectView: View {
+    @EnvironmentObject private var auth: AuthState
     @State private var searchText = ""
     @State private var relationships: [RelationshipProfile] = []
     @State private var selectedRelationship: RelationshipProfile?
@@ -19,7 +20,12 @@ struct ConnectView: View {
             ZStack {
                 Color.cosmicBackground.ignoresSafeArea()
 
-                if isLoading && relationships.isEmpty {
+                if !auth.isAuthenticated {
+                    AuthRequiredView(
+                        title: "Sign in to connect",
+                        message: "Create and sync relationships across your devices."
+                    )
+                } else if isLoading && relationships.isEmpty {
                     loadingView
                 } else if let error = loadError, relationships.isEmpty {
                     errorView(error)
@@ -37,6 +43,8 @@ struct ConnectView: View {
                         Image(systemName: "plus.circle.fill")
                             .foregroundStyle(Color.cosmicGold)
                     }
+                    .accessibilityLabel("Add new relationship")
+                    .accessibilityHint("Create a compatibility analysis")
                 }
             }
             .sheet(isPresented: $showAddSheet) {
@@ -48,10 +56,12 @@ struct ConnectView: View {
                 RelationshipDetailView(profile: profile)
             }
             .task {
+                guard auth.isAuthenticated else { return }
                 await loadRelationships()
                 await contactsService.fetchContacts()
             }
             .refreshable {
+                guard auth.isAuthenticated else { return }
                 await loadRelationships()
             }
         }
@@ -83,6 +93,9 @@ struct ConnectView: View {
                 .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Loading connections")
+        .accessibilityValue("In progress")
     }
 
     // MARK: - Error View
@@ -114,6 +127,9 @@ struct ConnectView: View {
                     .background(Color.cosmicGold.opacity(0.15), in: Capsule())
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Couldn't load connections. \(error.localizedDescription)")
+        .accessibilityHint("Double tap Try Again to reload")
     }
 
     // MARK: - Empty State
@@ -160,6 +176,9 @@ struct ConnectView: View {
             }
         }
         .padding(Cosmic.Spacing.xl)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("No connections yet. Add someone to explore your compatibility.")
+        .accessibilityHint("Double tap Add Your First Connection to get started")
     }
 
     // MARK: - Load Relationships
@@ -191,6 +210,7 @@ struct ConnectView: View {
                 .font(.cosmicCaptionEmphasis)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .padding(.horizontal)
+                .accessibilityAddTraits(.isHeader)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Cosmic.Spacing.sm) {
@@ -240,6 +260,7 @@ struct ConnectView: View {
                 .font(.cosmicCaptionEmphasis)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .padding(.horizontal)
+                .accessibilityAddTraits(.isHeader)
 
             LazyVStack(spacing: 0) {
                 ForEach(filteredRelationships) { relationship in
@@ -294,6 +315,7 @@ struct QuickAddCard: View {
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextTertiary)
                 }
+                .accessibilityHidden(true)
 
                 Text(title)
                     .font(.cosmicMicro)
@@ -316,6 +338,9 @@ struct QuickAddCard: View {
             .frame(width: 100)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title.replacingOccurrences(of: "\n", with: " "))
+        .accessibilityHint(isLocked ? "Locked feature" : "Double tap to add a new connection")
     }
 }
 
@@ -339,6 +364,7 @@ struct SuggestedPersonCard: View {
                             .font(.cosmicTitle2)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     )
+                    .accessibilityHidden(true)
 
                 // Dismiss button
                 Button(action: onDismiss) {
@@ -349,6 +375,9 @@ struct SuggestedPersonCard: View {
                         .padding(4)
                         .background(Circle().fill(Color.cosmicStardust))
                 }
+                .accessibleIconButton()
+                .accessibilityLabel("Dismiss suggestion")
+                .accessibilityHint("Removes this suggestion")
                 .offset(x: 4, y: -4)
             }
 
@@ -378,6 +407,8 @@ struct SuggestedPersonCard: View {
                     )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Add \(name)")
+            .accessibilityHint("Creates a relationship profile")
         }
         .frame(width: 100)
     }
@@ -398,6 +429,7 @@ struct SuggestedContactCard: View {
                     .scaledToFill()
                     .frame(width: 56, height: 56)
                     .clipShape(Circle())
+                    .accessibilityHidden(true)
             } else {
                 Circle()
                     .fill(Color.cosmicSurface)
@@ -407,6 +439,7 @@ struct SuggestedContactCard: View {
                             .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     )
+                    .accessibilityHidden(true)
             }
 
             VStack(spacing: 2) {
@@ -442,8 +475,12 @@ struct SuggestedContactCard: View {
                     )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Add \(contact.fullName)")
+            .accessibilityHint("Creates a relationship profile")
         }
         .frame(width: 100)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(contact.fullName). \(contact.birthdayString ?? "Birthday not set")")
     }
 }
 
@@ -471,6 +508,7 @@ struct RelationshipRow: View {
                             .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextPrimary)
                     )
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text(profile.name)
@@ -499,11 +537,21 @@ struct RelationshipRow: View {
                 Image(systemName: "chevron.right")
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, Cosmic.Spacing.md)
             .padding(.vertical, Cosmic.Spacing.sm)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Relationship with \(profile.name). \(profile.signSummary). \(pulseAccessibilityLabel)")
+        .accessibilityHint("Double tap to view detailed compatibility analysis")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var pulseAccessibilityLabel: String {
+        guard let pulse = profile.lastPulse else { return "" }
+        return "Current energy: \(pulse.label)."
     }
 }
 
@@ -557,13 +605,17 @@ struct AddRelationshipSheet: View {
                             Text("Basic Info")
                                 .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(Color.cosmicTextTertiary)
+                                .accessibilityAddTraits(.isHeader)
 
                             TextField("Name", text: $name)
                                 .textFieldStyle(CosmicTextFieldStyle())
+                                .accessibilityLabel("Partner name")
 
                             DatePicker("Birth Date", selection: $birthDate, in: ...Date(), displayedComponents: .date)
                                 .foregroundStyle(Color.cosmicTextPrimary)
                                 .tint(Color.cosmicGold)
+                                .accessibilityLabel("Partner birth date")
+                                .accessibilityHint("Select the birth date")
                         }
 
                         // Birth Time Section
@@ -571,15 +623,18 @@ struct AddRelationshipSheet: View {
                             Text("Birth Time (Optional)")
                                 .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(Color.cosmicTextTertiary)
+                                .accessibilityAddTraits(.isHeader)
 
                             Toggle("Include birth time", isOn: $includeTime)
                                 .foregroundStyle(Color.cosmicTextPrimary)
                                 .tint(Color.cosmicGold)
+                                .accessibilityHint("Turn on to enter a birth time")
 
                             if includeTime {
                                 DatePicker("Time", selection: $birthTime, displayedComponents: .hourAndMinute)
                                     .foregroundStyle(Color.cosmicTextPrimary)
                                     .tint(Color.cosmicGold)
+                                    .accessibilityLabel("Birth time")
                             }
                         }
 
@@ -588,12 +643,15 @@ struct AddRelationshipSheet: View {
                             Text("Birth Place (Optional)")
                                 .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(Color.cosmicTextTertiary)
+                                .accessibilityAddTraits(.isHeader)
 
                             TextField("City, Country", text: $birthPlace)
                                 .textFieldStyle(CosmicTextFieldStyle())
                                 .onChange(of: birthPlace) { _, newValue in
                                     searchLocation(query: newValue)
                                 }
+                                .accessibilityLabel("Birth location")
+                                .accessibilityHint("Start typing to search for cities")
 
                             if isSearchingLocation {
                                 HStack {
@@ -746,6 +804,7 @@ struct AddRelationshipSheet: View {
                         .font(.title2)
                         .foregroundStyle(Color.cosmicGold)
                 }
+                .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text("Import from Contacts")
@@ -762,6 +821,7 @@ struct AddRelationshipSheet: View {
                 Image(systemName: "chevron.right")
                     .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextTertiary)
+                    .accessibilityHidden(true)
             }
             .padding(16)
             .background(
@@ -774,6 +834,9 @@ struct AddRelationshipSheet: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Import from Contacts")
+        .accessibilityHint("Choose a contact to prefill birth details")
     }
 
     // MARK: - Location Suggestions View
@@ -808,12 +871,16 @@ struct AddRelationshipSheet: View {
                 if selectedLocation == location {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Color.cosmicGold)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.vertical, Cosmic.Spacing.xs)
             .padding(.horizontal, Cosmic.Spacing.sm)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Location \(location.displayName)")
+        .accessibilityHint("Select this location")
+        .accessibilityAddTraits(selectedLocation == location ? [.isSelected] : [])
     }
 
     @ViewBuilder

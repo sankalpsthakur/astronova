@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 // MARK: - Cosmic Motion System
 // Animation presets, scroll behaviors, and interaction patterns
@@ -546,4 +547,76 @@ struct CosmicLoadingView: View {
     }
     .padding()
     .background(Color.cosmicBackground)
+}
+
+// MARK: - Cosmic Audio & Haptics Service
+
+/// Manages haptics and system sounds for a tactile, immersive experience
+@MainActor
+final class CosmicAudio {
+    static let shared = CosmicAudio()
+    
+    // Feedback Generators
+    private let selectionGenerator = UISelectionFeedbackGenerator()
+    private let notificationGenerator = UINotificationFeedbackGenerator()
+    private let lightGenerator = UIImpactFeedbackGenerator(style: .light)
+    private let mediumGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private let heavyGenerator = UIImpactFeedbackGenerator(style: .heavy)
+
+    private init() {
+        // Pre-warm generators
+        selectionGenerator.prepare()
+        notificationGenerator.prepare()
+        lightGenerator.prepare()
+        mediumGenerator.prepare()
+        heavyGenerator.prepare()
+    }
+    
+    // MARK: - Haptics
+    
+    func lightTap() {
+        lightGenerator.impactOccurred(intensity: 0.6)
+        lightGenerator.prepare() // Prepare for next
+    }
+    
+    func mediumTap() {
+        mediumGenerator.impactOccurred()
+        mediumGenerator.prepare()
+    }
+    
+    func heavyTap() {
+        heavyGenerator.impactOccurred()
+        heavyGenerator.prepare()
+    }
+    
+    func selection() {
+        selectionGenerator.selectionChanged()
+        selectionGenerator.prepare()
+    }
+    
+    func success() {
+        notificationGenerator.notificationOccurred(.success)
+        notificationGenerator.prepare()
+    }
+    
+    func error() {
+        notificationGenerator.notificationOccurred(.error)
+        notificationGenerator.prepare()
+    }
+    
+    // MARK: - System Sounds
+    
+    /// Play a safe system sound (1104 = Tock, 1103 = Tink)
+    func playTick() {
+        AudioServicesPlaySystemSound(1104)
+    }
+    
+    func playSnap() {
+        AudioServicesPlaySystemSound(1103)
+    }
+    
+    /// Play custom or system sound
+    func playSystemSound(_ id: SystemSoundID) {
+        AudioServicesPlaySystemSound(id)
+    }
 }

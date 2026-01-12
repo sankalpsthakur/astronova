@@ -83,10 +83,21 @@ struct EnhancedTimeTravelView: View {
                         }
 
                         if !viewModel.planetaryPositions.isEmpty {
+                            
+                            DashaTimelineTrackView(
+                                mahadasha: viewModel.dashaData?.currentPeriod.mahadasha,
+                                antardasha: viewModel.dashaData?.currentPeriod.antardasha,
+                                selectedDate: selectedDate
+                            )
+                            .padding(.top, 4)
+                            
                             PlanetPositionsListView(
                                 planets: viewModel.planetaryPositions,
                                 zodiacSystem: zodiacSystem,
-                                onSelect: { selectedPlanet = $0 }
+                                onSelect: { 
+                                    selectedPlanet = $0
+                                    CosmicAudio.shared.lightTap()
+                                }
                             )
                         }
                     }
@@ -127,6 +138,7 @@ struct EnhancedTimeTravelView: View {
                                 onPeriodTap: { period in
                                     selectedPeriod = period
                                     showDetailCard = true
+                                    CosmicAudio.shared.mediumTap()
                                 }
                             )
                             .frame(height: 320)
@@ -466,6 +478,7 @@ struct DateSelectorView: View {
         if let newDate = calendar.date(from: components) {
             selectedDate = newDate
             onDateChange()
+            CosmicAudio.shared.selection() // Haptic feedback
         }
     }
 }
@@ -611,7 +624,7 @@ struct KeywordSection: View {
                         .font(.cosmicCaption)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .background(.blue.opacity(0.12), in: Capsule())
+                        .background(Color.cosmicTextSecondary.opacity(0.1), in: Capsule())
                 }
             }
         }
@@ -1103,10 +1116,10 @@ struct PlanetariumCanvasView: View {
             let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
 
             ZStack {
-                // Background
-                Circle()
-                    .fill(Color.cosmicBackground.opacity(0.3))
+                // Background - Nebula Void
+                NebulaStarFieldView()
                     .frame(width: size, height: size)
+                    .mask(Circle())
 
                 // Zodiac ring
                 ForEach(0..<12, id: \.self) { index in
@@ -1121,6 +1134,13 @@ struct PlanetariumCanvasView: View {
                         .position(x: x, y: y)
                 }
 
+                // Decorative Orbit Lines
+                ForEach(1...3, id: \.self) { i in
+                    Circle()
+                        .stroke(Color.cosmicTextTertiary.opacity(0.1), lineWidth: 1)
+                        .frame(width: size * (0.32 - CGFloat(i) * 0.08), height: size * (0.32 - CGFloat(i) * 0.08))
+                }
+
                 // Planet positions
                 ForEach(planets) { planet in
                     let totalDegree = signToDegree(planet.sign) + planet.degree
@@ -1129,18 +1149,65 @@ struct PlanetariumCanvasView: View {
                     let x = center.x + cos(angle.radians) * radius
                     let y = center.y + sin(angle.radians) * radius
                     let color = planetColors[planet.name.lowercased()] ?? .white
+                    
+                    let isMahadasha = dasha?.mahadasha.lord.lowercased() == planet.name.lowercased()
+                    let isAntardasha = dasha?.antardasha.lord.lowercased() == planet.name.lowercased()
 
-                    VStack(spacing: 2) {
-                        Text(planet.symbol)
-                            .font(.system(size: 18))
-                        if planet.retrograde {
-                            Text("R")
-                                .font(.cosmicMicro)
-                                .foregroundStyle(.red)
+                    ZStack {
+                        // Resonant Sonar Ripples
+                        if isMahadasha {
+                            RippleRadarView(color: .cosmicGold, maxScale: 2.5)
+                        } else if isAntardasha {
+                            RippleRadarView(color: .cosmicTextSecondary, maxScale: 1.8)
                         }
+                        
+                        VStack(spacing: 2) {
+                            Text(planet.symbol)
+                                .font(.system(size: 18))
+                                .shadow(color: color.opacity(0.8), radius: 2)
+                            
+                            if planet.retrograde {
+                                Text("R")
+                                    .font(.cosmicMicro)
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                        .background(
+                            // Glossy 3D Planet
+                            ZStack {
+                                // Base Sphere
+                                Circle()
+                                    .fill(color)
+                                
+                                // Shadow Gradient (Bottom Right)
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.clear, .black.opacity(0.5)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                
+                                // Specular Highlight (Top Left Reflection)
+                                Circle()
+                                    .fill(
+                                        RadialGradient(
+                                            colors: [.white.opacity(0.7), .clear],
+                                            center: .topLeading,
+                                            startRadius: 0,
+                                            endRadius: 12
+                                        )
+                                    )
+                                    .offset(x: -4, y: -4)
+                                    .blur(radius: 2)
+                            }
+                            .frame(width: 24, height: 24)
+                            .shadow(color: color.opacity(0.4), radius: 6, x: 0, y: 0) // Outer Glow
+                        )
                     }
-                    .foregroundStyle(color)
                     .position(x: x, y: y)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: totalDegree)
                 }
 
                 // Dasha overlay (if enabled)
@@ -1154,8 +1221,12 @@ struct PlanetariumCanvasView: View {
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
                     .padding(8)
-                    .background(Color.cosmicSurface.opacity(0.8))
+                    .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                    )
                     .position(x: center.x, y: center.y)
                 }
             }
@@ -1167,5 +1238,150 @@ struct PlanetariumCanvasView: View {
                      "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"]
         let index = signs.firstIndex(of: sign.lowercased()) ?? 0
         return Double(index) * 30
+    }
+}
+
+// MARK: - Visual Effects Components
+
+struct NebulaStarFieldView: View {
+    var body: some View {
+        ZStack {
+            // Deep Void Background (High Quality Gradient)
+            Rectangle()
+                .fill(Color.black)
+            
+            // Subtle Cosmic Vignette
+            RadialGradient(
+                colors: [
+                    Color.cosmicVoid.opacity(0.3),
+                    Color.black
+                ],
+                center: .center,
+                startRadius: 20,
+                endRadius: 180
+            )
+            
+            // Static High-Res Stars
+            Canvas { context, size in
+                // Distant small stars
+                for _ in 0..<60 {
+                    let x = Double.random(in: 0...size.width)
+                    let y = Double.random(in: 0...size.height)
+                    let opacity = Double.random(in: 0.1...0.5)
+                    let rect = CGRect(x: x, y: y, width: 1, height: 1) // Crisp points
+                    context.opacity = opacity
+                    context.fill(Path(ellipseIn: rect), with: .color(.white))
+                }
+                
+                // Brighter main stars
+                for _ in 0..<15 {
+                    let x = Double.random(in: 0...size.width)
+                    let y = Double.random(in: 0...size.height)
+                    let opacity = Double.random(in: 0.5...0.9)
+                    let sizeVal = Double.random(in: 1.5...2.2)
+                    let rect = CGRect(x: x, y: y, width: sizeVal, height: sizeVal)
+                    context.opacity = opacity
+                    context.fill(Path(ellipseIn: rect), with: .color(.white))
+                }
+            }
+        }
+    }
+}
+
+struct RippleRadarView: View {
+    let color: Color
+    let maxScale: CGFloat
+    @State private var phase = 0.0
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<2) { i in // Reduced count for subtlety
+                Circle()
+                    .stroke(color.opacity(0.3), lineWidth: 0.5) // Thinner line
+                    .scaleEffect(1 + CGFloat(phase) * (maxScale - 1) + CGFloat(i) * 0.3)
+                    .opacity(max(0, (1 - phase - Double(i) * 0.3) * 0.5)) // Fades out gently
+            }
+        }
+        .frame(width: 24, height: 24)
+        .onAppear {
+            withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) { // Slower animation
+                phase = 1.0
+            }
+        }
+    }
+}
+
+// PulsingGlow removed in favor of RippleRadarView
+
+// MARK: - Dasha Timeline Track View
+
+struct DashaTimelineTrackView: View {
+    let mahadasha: DashaCompleteResponse.DashaDetails.Period?
+    let antardasha: DashaCompleteResponse.DashaDetails.Period?
+    let selectedDate: Date
+
+    var body: some View {
+        guard let mahadasha = mahadasha,
+              let start = date(from: mahadasha.start),
+              let end = date(from: mahadasha.end) else {
+            return AnyView(EmptyView())
+        }
+
+        let totalDuration = end.timeIntervalSince(start)
+        let elapsed = selectedDate.timeIntervalSince(start)
+        let progress = max(0, min(1, elapsed / totalDuration))
+
+        return AnyView(
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(mahadasha.lord)
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(Color.cosmicGold)
+                    
+                    Spacer()
+                    
+                    Text("\(mahadasha.start) — \(mahadasha.end)")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        // Base Track (Mahadasha)
+                        Capsule()
+                            .fill(Color.cosmicSurface)
+                            .frame(height: 6)
+
+                        // Highlighted Segment (Antardasha)
+                        if let antardasha = antardasha,
+                           let aStart = date(from: antardasha.start),
+                           let aEnd = date(from: antardasha.end) {
+                            let aStartOffset = aStart.timeIntervalSince(start) / totalDuration
+                            let aDuration = aEnd.timeIntervalSince(aStart) / totalDuration
+                            
+                            Capsule()
+                                .fill(Color.cosmicAmethyst.opacity(0.3))
+                                .frame(width: max(4, geometry.size.width * CGFloat(aDuration)), height: 6)
+                                .offset(x: geometry.size.width * CGFloat(aStartOffset))
+                        }
+
+                        // Playhead (Selected Date)
+                        Rectangle()
+                            .fill(Color.cosmicGold)
+                            .frame(width: 2, height: 12)
+                            .offset(x: geometry.size.width * CGFloat(progress))
+                    }
+                }
+                .frame(height: 12)
+            }
+            .padding(12)
+            .background(Color.cosmicBackground.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+        )
+    }
+
+    private func date(from isoString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: isoString)
     }
 }

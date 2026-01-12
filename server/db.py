@@ -133,6 +133,17 @@ def upsert_user(user_id: str, email: Optional[str], first_name: Optional[str], l
     conn.close()
 
 
+def get_user_preferred_language(user_id: str) -> Optional[str]:
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT preferred_language FROM users WHERE id=?", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        return None
+    return row["preferred_language"] or None
+
+
 def insert_report(report_id: str, user_id: Optional[str], type_: str, title: str, content: str, status: str = "completed"):
     now = datetime.utcnow().isoformat()
     conn = get_connection()

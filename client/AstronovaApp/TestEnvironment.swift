@@ -33,6 +33,7 @@ final class TestEnvironment {
     static let shared = TestEnvironment()
 
     private let processInfo = ProcessInfo.processInfo
+    private let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
 
     /// Whether the app is running in UI test mode
     var isUITest: Bool {
@@ -137,6 +138,7 @@ final class TestEnvironment {
             "is_pro_subscriber",
             "onboarding_complete",
             "user_profile",
+            "mock_reports",
             "trigger_show_report_shop",
             "trigger_show_chat_packages"
         ]
@@ -152,10 +154,23 @@ final class TestEnvironment {
     private func clearAuthKeychain() {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: "com.sankalp.AstronovaApp.jwtToken"
+            kSecAttrAccount as String: jwtTokenKey
         ]
 
         SecItemDelete(query as CFDictionary)
+    }
+
+    private func seedMockJWTToken() {
+        let data = Data("ui-test-jwt-token".utf8)
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrAccount as String: jwtTokenKey,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        ]
+
+        SecItemDelete(query as CFDictionary)
+        SecItemAdd(query as CFDictionary, nil)
     }
 
     private func seedFullProfile() {
@@ -187,6 +202,7 @@ final class TestEnvironment {
         UserDefaults.standard.set(true, forKey: "has_signed_in")
         UserDefaults.standard.set(true, forKey: "is_anonymous_user")
         UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+        seedMockJWTToken()
         UserDefaults.standard.synchronize()
     }
 
@@ -205,6 +221,7 @@ final class TestEnvironment {
         UserDefaults.standard.set(true, forKey: "has_signed_in")
         UserDefaults.standard.set(true, forKey: "is_anonymous_user")
         UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+        seedMockJWTToken()
         UserDefaults.standard.synchronize()
     }
 
@@ -215,7 +232,7 @@ final class TestEnvironment {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let today = formatter.string(from: Date())
-        let key = "dailyMessageCount_\(today)"
+        let key = "oracle_daily_\(today)"
         UserDefaults.standard.set(maxFreeMessages, forKey: key)
 
         UserDefaults.standard.synchronize()
@@ -272,6 +289,7 @@ enum AccessibilityID {
     static let timeTravelTab = "timeTravelTab"
     static let manageTab = "manageTab"
     static let selfTab = "selfTab"
+    static let oracleQuickAccessButton = "oracleQuickAccessButton"
 
     // Chat / Ask
     static let chatInputField = "chatInputField"
@@ -298,6 +316,7 @@ enum AccessibilityID {
     // Reports
     static let reportsStoreView = "reportsStoreView"
     static let myReportsView = "myReportsView"
+    static let reportsShopButton = "reportsShopButton"
     static func reportBuyButton(_ productId: String) -> String {
         "reportBuyButton_\(productId)"
     }

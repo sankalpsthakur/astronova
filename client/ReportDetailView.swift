@@ -1,6 +1,0 @@
-// ... all the previous code ...
-// Replace this:
-        // guard let urlPath = report.downloadUrl else { return }
-// With this:
-        guard report.downloadUrl != nil else { return }
-// ... rest of the file ...

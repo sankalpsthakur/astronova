@@ -257,7 +257,7 @@ struct ReportDetailView: View {
     // MARK: - Helpers
 
     private func loadPDF() async {
-        guard let urlPath = report.downloadUrl else { return }
+        guard report.downloadUrl != nil else { return }
 
         isLoadingPDF = true
         pdfError = nil

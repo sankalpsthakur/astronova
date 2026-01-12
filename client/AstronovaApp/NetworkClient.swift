@@ -72,6 +72,25 @@ enum HTTPMethod: String {
     case DELETE
 }
 
+enum ClientUserId {
+    private static let clientKey = "client_user_id"
+    private static let legacyDeviceKey = "device_user_id"
+
+    static func value() -> String {
+        let defaults = UserDefaults.standard
+        if let existing = defaults.string(forKey: clientKey), !existing.isEmpty {
+            return existing
+        }
+        if let legacy = defaults.string(forKey: legacyDeviceKey), !legacy.isEmpty {
+            defaults.set(legacy, forKey: clientKey)
+            return legacy
+        }
+        let created = UUID().uuidString
+        defaults.set(created, forKey: clientKey)
+        return created
+    }
+}
+
 // MARK: - Network Client Protocol
 
 protocol NetworkClientProtocol {
@@ -100,7 +119,6 @@ class NetworkClient: NetworkClientProtocol {
     private let baseURL: String
     private let session: URLSession
     private var jwtToken: String?
-    private let userIdKey = "client_user_id"
     private var cachedUserId: String?
     
     public init(baseURL: String? = nil, session: URLSession? = nil) {
@@ -122,15 +140,9 @@ class NetworkClient: NetworkClientProtocol {
             return cachedUserId
         }
 
-        if let existing = UserDefaults.standard.string(forKey: userIdKey), !existing.isEmpty {
-            cachedUserId = existing
-            return existing
-        }
-
-        let created = UUID().uuidString
-        UserDefaults.standard.set(created, forKey: userIdKey)
-        cachedUserId = created
-        return created
+        let value = ClientUserId.value()
+        cachedUserId = value
+        return value
     }
     
     /// Generic method to make API requests

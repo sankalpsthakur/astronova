@@ -7,12 +7,9 @@ final class BasicStoreManager: ObservableObject {
     @AppStorage("hasAstronovaPro") var hasProSubscription: Bool = false
     @AppStorage("chat_credits") var chatCredits: Int = 0
     @Published var products: [String: String] = [
-        "love_forecast": "$4.99",
-        "birth_chart": "$7.99",
-        "career_forecast": "$5.99",
-        "year_ahead": "$9.99",
+        // Subscription
         "astronova_pro_monthly": "$9.99",
-        // New detailed report SKUs (7 types, $10+)
+        // Reports (Non-Consumable)
         "report_general": "$12.99",
         "report_love": "$12.99",
         "report_career": "$12.99",
@@ -20,7 +17,7 @@ final class BasicStoreManager: ObservableObject {
         "report_health": "$12.99",
         "report_family": "$12.99",
         "report_spiritual": "$12.99",
-        // Chat credit packages
+        // Chat Credits (Consumable)
         "chat_credits_5": "$14.99",
         "chat_credits_15": "$34.99",
         "chat_credits_50": "$89.99"
@@ -34,10 +31,17 @@ final class BasicStoreManager: ObservableObject {
                 hasProSubscription = true
             }
             if productId.hasPrefix("chat_credits_") {
-                // Extract count from productId and add to chat credits
-                let parts = productId.split(separator: "_")
-                if let last = parts.last, let count = Int(last) {
-                    chatCredits += count
+                // Map Product ID to actual credit amounts
+                // Note: Product IDs can't be changed in App Store Connect,
+                // so we use an explicit mapping instead of parsing the ID
+                let creditAmounts: [String: Int] = [
+                    "chat_credits_5": 50,
+                    "chat_credits_15": 150,
+                    "chat_credits_50": 500
+                ]
+
+                if let credits = creditAmounts[productId] {
+                    chatCredits += credits
                 }
             }
             let purchaseKey = "purchased_\(productId)"

@@ -1,0 +1,158 @@
+=================================================================
+ASTRONOVA - IAP METADATA (Copy & Paste Ready)
+=================================================================
+
+Use this file to quickly fill in all product metadata in
+App Store Connect.
+
+=================================================================
+SUBSCRIPTION: astronova_pro_monthly
+=================================================================
+
+DISPLAY NAME:
+Astronova Pro
+
+DESCRIPTION:
+Unlock the full power of Astronova with unlimited access to all premium features:
+
+• Unlimited Ask the Oracle (AI chat guidance)
+• All detailed astrological reports included
+• Love, Career, Money, Health, Family, Spiritual reports
+• Priority cosmic insights
+• Ad-free experience
+• Cancel anytime
+
+Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage your subscription and turn off auto-renewal in your Account Settings after purchase.
+
+Terms: https://astronova.onrender.com/terms
+Privacy: https://astronova.onrender.com/privacy
+
+=================================================================
+REPORT: report_general
+=================================================================
+
+DISPLAY NAME:
+General Life Report
+
+DESCRIPTION:
+Comprehensive analysis of your complete birth chart covering all major life areas: personality, relationships, career, finances, health, and spiritual path. Includes planetary positions, house placements, dasha timeline, and personalized guidance.
+
+=================================================================
+REPORT: report_love
+=================================================================
+
+DISPLAY NAME:
+Love & Relationships Report
+
+DESCRIPTION:
+Deep dive into your romantic life, relationship patterns, and compatibility insights. Discover Venus and Mars placements, 7th house analysis, synastry guidance, and timing for relationships through dasha periods.
+
+=================================================================
+REPORT: report_career
+=================================================================
+
+DISPLAY NAME:
+Career & Professional Report
+
+DESCRIPTION:
+Unlock your professional potential with insights on career path, timing for job changes, business ventures, and public recognition. Includes 10th house analysis, Saturn and Jupiter influences, and optimal career timing.
+
+=================================================================
+REPORT: report_money
+=================================================================
+
+DISPLAY NAME:
+Money & Wealth Report
+
+DESCRIPTION:
+Financial astrology report covering income patterns, wealth accumulation, investment timing, and financial security. Analyzes 2nd and 11th houses, Jupiter placement, and dasha periods for monetary gains.
+
+=================================================================
+REPORT: report_health
+=================================================================
+
+DISPLAY NAME:
+Health & Vitality Report
+
+DESCRIPTION:
+Personalized health insights based on your birth chart including vulnerable areas, preventive measures, and wellness timing. Covers 6th house, Mars and Saturn influences, and health-related dasha periods.
+
+=================================================================
+REPORT: report_family
+=================================================================
+
+DISPLAY NAME:
+Family & Home Report
+
+DESCRIPTION:
+Family dynamics, home life, and domestic happiness analysis. Explores 4th house placements, Moon's influence, mother and father relationships, property matters, and family-related dasha periods.
+
+=================================================================
+REPORT: report_spiritual
+=================================================================
+
+DISPLAY NAME:
+Spiritual Path Report
+
+DESCRIPTION:
+Spiritual evolution and dharma guidance based on your soul's journey. Includes 9th and 12th house analysis, Jupiter and Ketu placements, meditation practices, and spiritual awakening periods through dashas.
+
+=================================================================
+CHAT CREDITS: chat_credits_5
+=================================================================
+
+DISPLAY NAME:
+50 Chat Credits
+
+DESCRIPTION:
+Get 50 chat credits to explore your cosmic blueprint in depth. Each credit allows one meaningful question with personalized astrological guidance based on your birth chart.
+
+Perfect for: Regular spiritual seekers who want ongoing access to oracle wisdom without a subscription commitment.
+
+Note: Astronova Pro subscribers get unlimited chat included.
+
+=================================================================
+CHAT CREDITS: chat_credits_15
+=================================================================
+
+DISPLAY NAME:
+150 Chat Credits
+
+DESCRIPTION:
+Get 150 chat credits for comprehensive astrological exploration. Perfect for diving deep into multiple life areas, major decisions, or sharing guidance with family members.
+
+Best value: Save 30% compared to the 50-credit package.
+
+Ideal for: Long-term spiritual guidance, life transitions, or exploring complex questions across career, relationships, health, and more.
+
+Note: Astronova Pro subscribers get unlimited chat included.
+
+=================================================================
+CHAT CREDITS: chat_credits_50
+=================================================================
+
+DISPLAY NAME:
+500 Chat Credits
+
+DESCRIPTION:
+Maximum value: 500 chat credits for unlimited astrological guidance. Our largest package provides comprehensive cosmic support for months of daily questions, major life transitions, or entire family use.
+
+Premium value: Save 40% compared to the 50-credit package.
+
+Perfect for: Serious practitioners, families, or those undergoing significant life changes who want extended access to personalized oracle wisdom.
+
+Note: Astronova Pro subscribers get unlimited chat included.
+
+=================================================================
+END OF METADATA
+=================================================================
+
+NEXT STEPS:
+
+1. Fix chat credit Reference Names (5, 15, 50 - not 50, 150, 50!)
+2. Create subscription in Subscriptions section
+3. For each product, click it and add this metadata
+4. Save each product
+5. Submit all for review with your app
+
+Total time: ~15-20 minutes to paste all metadata

@@ -87,8 +87,8 @@ enum Cosmic {
     // MARK: - Button Heights
 
     enum ButtonHeight {
-        /// 40pt - Compact buttons
-        static let small: CGFloat = 40
+        /// 44pt - Compact buttons (minimum touch target)
+        static let small: CGFloat = 44
         /// 48pt - Standard buttons
         static let medium: CGFloat = 48
         /// 52pt - Primary CTA buttons
@@ -211,6 +211,18 @@ extension View {
             x: shadow.x,
             y: shadow.y
         )
+    }
+
+    /// Ensures minimum touch target size (Apple HIG)
+    func accessibleTouchTarget(minSize: CGFloat = Cosmic.TouchTarget.minimum) -> some View {
+        self.frame(minWidth: minSize, minHeight: minSize)
+            .contentShape(Rectangle())
+    }
+
+    /// Square touch target for icon-only buttons
+    func accessibleIconButton(size: CGFloat = Cosmic.TouchTarget.minimum) -> some View {
+        self.frame(width: size, height: size)
+            .contentShape(Rectangle())
     }
 
     /// Standard card styling

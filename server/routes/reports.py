@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import logging
 import threading
 import uuid
@@ -334,6 +335,18 @@ def get_pdf(report_id: str):
     if domain and domain not in _VALID_REPORT_DOMAINS:
         domain = None
     payload = render_report_pdf(report_id, report, domain=domain)
+    etag = hashlib.sha256(payload).hexdigest()
+    cache_control = "private, max-age=3600"
+
+    if request.headers.get("If-None-Match") == etag:
+        resp = Response(status=304)
+        resp.headers["ETag"] = etag
+        resp.headers["Cache-Control"] = cache_control
+        resp.headers["Content-Disposition"] = f'inline; filename="report-{report_id}.pdf"'
+        return resp
+
     resp = Response(payload, mimetype="application/pdf")
     resp.headers["Content-Disposition"] = f'inline; filename="report-{report_id}.pdf"'
+    resp.headers["ETag"] = etag
+    resp.headers["Cache-Control"] = cache_control
     return resp

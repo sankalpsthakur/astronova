@@ -22,31 +22,24 @@ class SelfDataService: ObservableObject {
 
     private var cachedResponse: DashaCompleteResponse?
     private var lastFetchDate: Date?
+    private var lastProfileKey: String?
     private let cacheValidityMinutes: Int = 60
-
-    /// Device-based user ID for anonymous users
-    var currentUserId: String {
-        let key = "client_user_id"
-        if let existing = UserDefaults.standard.string(forKey: key), !existing.isEmpty {
-            return existing
-        }
-        let created = UUID().uuidString
-        UserDefaults.standard.set(created, forKey: key)
-        return created
-    }
 
     // MARK: - Fetch Data
 
     func fetchData(for profile: UserProfile) async {
-        // Check cache validity
-        if let lastFetch = lastFetchDate,
-           Date().timeIntervalSince(lastFetch) < Double(cacheValidityMinutes * 60),
-           cachedResponse != nil {
+        guard let request = buildRequest(from: profile) else {
+            error = "Incomplete birth data"
             return
         }
 
-        guard let request = buildRequest(from: profile) else {
-            error = "Incomplete birth data"
+        let profileKey = cacheKey(for: request)
+
+        // Check cache validity
+        if let lastFetch = lastFetchDate,
+           Date().timeIntervalSince(lastFetch) < Double(cacheValidityMinutes * 60),
+           cachedResponse != nil,
+           profileKey == lastProfileKey {
             return
         }
 
@@ -57,6 +50,7 @@ class SelfDataService: ObservableObject {
             let response = try await APIServices.shared.fetchCompleteDasha(request: request)
             cachedResponse = response
             lastFetchDate = Date()
+            lastProfileKey = profileKey
             parseResponse(response)
         } catch {
             self.error = error.localizedDescription
@@ -154,12 +148,6 @@ class SelfDataService: ObservableObject {
 
         // Add derived strengths from domain scores
         let scores = impact.combinedScores
-        let allScores = [
-            ("Career", scores.career),
-            ("Relations", scores.relationships),
-            ("Health", scores.health),
-            ("Spiritual", scores.spiritual)
-        ]
 
         // Map domain scores to planetary associations
         let planetDomains: [(String, Double)] = [
@@ -202,11 +190,18 @@ class SelfDataService: ObservableObject {
         return max(1, years + 1) // 1-indexed
     }
 
+    private func cacheKey(for request: DashaCompleteRequest) -> String {
+        let birth = request.birthData
+        let target = request.targetDate ?? "current"
+        return "\(birth.date)|\(birth.time)|\(birth.latitude)|\(birth.longitude)|\(birth.timezone)|\(target)"
+    }
+
     // MARK: - Refresh
 
     func refresh(for profile: UserProfile) async {
         lastFetchDate = nil
         cachedResponse = nil
+        lastProfileKey = nil
         await fetchData(for: profile)
     }
 
@@ -215,6 +210,7 @@ class SelfDataService: ObservableObject {
     func clearCache() {
         cachedResponse = nil
         lastFetchDate = nil
+        lastProfileKey = nil
         currentDasha = nil
         moonNakshatra = nil
         nakshatraLord = nil
@@ -231,7 +227,7 @@ class SelfDataService: ObservableObject {
         isLoadingReports = true
 
         do {
-            let reports = try await APIServices.shared.getUserReports(userId: currentUserId)
+            let reports = try await APIServices.shared.getUserReports(userId: ClientUserId.value())
             userReports = reports.sorted { ($0.generatedAt ?? "") > ($1.generatedAt ?? "") }
 
             // Check if any reports are still processing

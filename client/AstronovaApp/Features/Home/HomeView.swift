@@ -31,6 +31,7 @@ struct HomeView: View {
                 Text(headerTitle)
                     .font(SwiftUI.Font.cosmicTitle)
                     .foregroundStyle(Color.cosmicTextPrimary)
+                    .accessibilityAddTraits(.isHeader)
 
                 if let g = vm.guidance {
                     HStack(spacing: Cosmic.Spacing.s) {
@@ -41,6 +42,9 @@ struct HomeView: View {
                             QuickTile(title: "Focus", gradient: .cosmicCoolGradient, detail: g.focus)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Focus. \(g.focus)")
+                        .accessibilityHint("Double tap to open the Focus deep dive")
 
                         Button {
                             CosmicHaptics.light()
@@ -57,6 +61,9 @@ struct HomeView: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Relationships. \(g.relationships)")
+                        .accessibilityHint("Double tap to open the Relationships deep dive")
 
                         Button {
                             CosmicHaptics.light()
@@ -65,6 +72,9 @@ struct HomeView: View {
                             QuickTile(title: "Energy", gradient: .cosmicSunsetGradient, detail: g.energy)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Energy. \(g.energy)")
+                        .accessibilityHint("Double tap to open the Energy deep dive")
                     }
 
                     Text("Tap a tile to open the deep dive.")
@@ -97,6 +107,7 @@ struct HomeView: View {
                         Text("Deepen your day")
                             .font(.cosmicHeadline)
                             .foregroundStyle(Color.cosmicTextPrimary)
+                            .accessibilityAddTraits(.isHeader)
 
                         PremiumInsightsSection(
                             hasSubscription: hasSubscription,
@@ -131,6 +142,8 @@ struct HomeView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Explore all reports")
+                    .accessibilityHint("Opens the reports store")
 
                     HStack {
                         Button {
@@ -140,6 +153,8 @@ struct HomeView: View {
                         } label: {
                             Label("Share Today", systemImage: "square.and.arrow.up")
                         }
+                        .accessibilityLabel("Share today")
+                        .accessibilityHint("Opens the share sheet for today's insights")
                         Spacer()
                         if !notificationAuthorized {
                             Button {
@@ -147,25 +162,36 @@ struct HomeView: View {
                             } label: {
                                 Label("Enable reminder", systemImage: "bell")
                             }
+                            .accessibilityLabel("Enable daily reminder")
+                            .accessibilityHint("Schedules a daily reminder for your insights")
                         }
                     }
                 } else if vm.isLoading {
-                    ProgressView().padding(.vertical, Cosmic.Spacing.xxl)
+                    ProgressView()
+                        .padding(.vertical, Cosmic.Spacing.xxl)
+                        .accessibilityLabel("Loading daily insights")
+                        .accessibilityValue("In progress")
                 } else if let error = vm.error {
                     Text(error)
                         .font(SwiftUI.Font.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextSecondary)
+                        .accessibilityLabel("Error: \(error)")
+                        .accessibilityHint("Try again later")
                 }
 
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                     Text("Check-in")
                         .font(SwiftUI.Font.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
+                        .accessibilityAddTraits(.isHeader)
                     HStack(spacing: Cosmic.Spacing.s) {
                         Image(systemName: "face.smiling")
                             .foregroundStyle(Color.cosmicAccent)
+                            .accessibilityHidden(true)
                         Slider(value: $mood)
                             .tint(Color.cosmicPrimary)
+                            .accessibilityLabel("Mood")
+                            .accessibilityValue("\(Int(mood * 100)) percent")
                     }
                 }
             }
@@ -229,12 +255,17 @@ struct HomeView: View {
     }
 
     private func checkSubscriptionStatus() {
-        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
+        Task {
+            let hasPro = await StoreKitManager.shared.refreshEntitlements()
+            await MainActor.run {
+                hasSubscription = hasPro
+            }
+        }
     }
 
     private func loadUserReports() async {
         do {
-            let reports = try await apiServices.getUserReports(userId: currentUserId())
+            let reports = try await apiServices.getUserReports(userId: ClientUserId.value())
             var loaded = reports
             if loaded.isEmpty && TestEnvironment.shared.isUITest {
                 let now = ISO8601DateFormatter().string(from: Date())
@@ -248,7 +279,7 @@ struct HomeView: View {
                         keyInsights: ["UITEST insight"],
                         downloadUrl: "/api/v1/reports/dummy/pdf",
                         generatedAt: now,
-                        userId: currentUserId(),
+                        userId: ClientUserId.value(),
                         status: "completed"
                     )
                 ]
@@ -267,7 +298,7 @@ struct HomeView: View {
                         keyInsights: ["UITEST insight"],
                         downloadUrl: "/api/v1/reports/dummy/pdf",
                         generatedAt: now,
-                        userId: currentUserId(),
+                        userId: ClientUserId.value(),
                         status: "completed"
                     )
                 ]
@@ -281,7 +312,7 @@ struct HomeView: View {
         Task {
             do {
                 let birthData = try BirthData(from: auth.profileManager.profile)
-                _ = try await apiServices.generateReport(birthData: birthData, type: reportType, userId: currentUserId())
+                _ = try await apiServices.generateReport(birthData: birthData, type: reportType, userId: ClientUserId.value())
                 await loadUserReports()
             } catch {
                 #if DEBUG
@@ -289,16 +320,6 @@ struct HomeView: View {
                 #endif
             }
         }
-    }
-
-    private func currentUserId() -> String {
-        let key = "client_user_id"
-        if let existing = UserDefaults.standard.string(forKey: key), !existing.isEmpty {
-            return existing
-        }
-        let created = UUID().uuidString
-        UserDefaults.standard.set(created, forKey: key)
-        return created
     }
 
     private func shareCard(for g: DailyGuidance) -> some View {

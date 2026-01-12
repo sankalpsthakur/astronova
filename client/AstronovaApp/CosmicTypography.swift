@@ -6,46 +6,90 @@ import SwiftUI
 /// Typography scale following the Modern Mystic design system
 enum CosmicTypography {
 
-    // MARK: - Type Scale
+    // MARK: - Fixed Size Scale (Legacy)
 
     /// 44pt Bold - Hero headlines
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let hero = Font.system(size: 44, weight: .bold, design: .default)
 
     /// 32pt Bold - Display headlines
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let display = Font.system(size: 32, weight: .bold, design: .default)
 
     /// 26pt Semibold - Primary titles
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let title1 = Font.system(size: 26, weight: .semibold, design: .default)
 
     /// 22pt Semibold - Secondary titles
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let title2 = Font.system(size: 22, weight: .semibold, design: .default)
 
     /// 18pt Semibold - Headlines
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let headline = Font.system(size: 18, weight: .semibold, design: .default)
 
     /// 16pt Regular - Body text
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let body = Font.system(size: 16, weight: .regular, design: .default)
 
     /// 16pt Medium - Emphasized body
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let bodyEmphasis = Font.system(size: 16, weight: .medium, design: .default)
 
     /// 14pt Regular - Callout text
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let callout = Font.system(size: 14, weight: .regular, design: .default)
 
     /// 14pt Medium - Emphasized callout
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let calloutEmphasis = Font.system(size: 14, weight: .medium, design: .default)
 
     /// 12pt Medium - Caption text
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let caption = Font.system(size: 12, weight: .medium, design: .default)
 
     /// 10pt Medium - Micro text
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let micro = Font.system(size: 10, weight: .medium, design: .default)
 
     /// Monospaced for numbers/data
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let mono = Font.system(size: 14, weight: .medium, design: .monospaced)
 
     /// Monospaced large for hero numbers
+    @available(*, deprecated, message: "Use CosmicTypography.Dynamic or Font.cosmic* for Dynamic Type support.")
     static let monoLarge = Font.system(size: 32, weight: .bold, design: .monospaced)
+
+    // MARK: - Dynamic Type Scale (Preferred)
+
+    enum Dynamic {
+        /// Large title - Hero headlines
+        static let hero = Font.largeTitle.weight(.bold)
+        /// Title - Display headlines
+        static let display = Font.title.weight(.bold)
+        /// Title2 - Primary titles
+        static let title1 = Font.title2.weight(.semibold)
+        /// Title3 - Secondary titles
+        static let title2 = Font.title3.weight(.semibold)
+        /// Headline - Headlines
+        static let headline = Font.headline.weight(.semibold)
+        /// Body - Body text
+        static let body = Font.body
+        /// Body - Emphasized body
+        static let bodyEmphasis = Font.body.weight(.medium)
+        /// Callout - Callout text
+        static let callout = Font.callout
+        /// Callout - Emphasized callout
+        static let calloutEmphasis = Font.callout.weight(.medium)
+        /// Caption - Caption text
+        static let caption = Font.caption.weight(.medium)
+        /// Caption2 - Micro text
+        static let micro = Font.caption2.weight(.medium)
+        /// Monospaced for numbers/data
+        static let mono = Font.system(.callout, design: .monospaced).weight(.medium)
+        /// Monospaced large for hero numbers
+        static let monoLarge = Font.system(.title, design: .monospaced).weight(.bold)
+    }
 
     // MARK: - Tracking (Letter Spacing)
 
@@ -99,66 +143,66 @@ extension Font {
     // MARK: - Primary Type Scale
 
     /// 44pt Bold - Hero headlines
-    static var cosmicHero: Font { CosmicTypography.hero }
+    static var cosmicHero: Font { CosmicTypography.Dynamic.hero }
 
     /// 32pt Bold - Display headlines
-    static var cosmicDisplay: Font { CosmicTypography.display }
+    static var cosmicDisplay: Font { CosmicTypography.Dynamic.display }
 
     /// 26pt Semibold - Primary titles
-    static var cosmicTitle1: Font { CosmicTypography.title1 }
+    static var cosmicTitle1: Font { CosmicTypography.Dynamic.title1 }
 
     /// 22pt Semibold - Secondary titles
-    static var cosmicTitle2: Font { CosmicTypography.title2 }
+    static var cosmicTitle2: Font { CosmicTypography.Dynamic.title2 }
 
     /// 20pt Semibold - Tertiary titles (legacy alias)
-    static var cosmicTitle3: Font { .system(size: 20, weight: .semibold) }
+    static var cosmicTitle3: Font { CosmicTypography.Dynamic.headline }
 
     /// 20pt Semibold - Section headlines (legacy alias)
-    static var cosmicTitle: Font { .system(size: 20, weight: .semibold) }
+    static var cosmicTitle: Font { CosmicTypography.Dynamic.headline }
 
     /// 18pt Semibold - Headlines
-    static var cosmicHeadline: Font { CosmicTypography.headline }
+    static var cosmicHeadline: Font { CosmicTypography.Dynamic.headline }
 
     /// 16pt Regular - Body text
-    static var cosmicBody: Font { CosmicTypography.body }
+    static var cosmicBody: Font { CosmicTypography.Dynamic.body }
 
     /// 16pt Medium - Emphasized body
-    static var cosmicBodyEmphasis: Font { CosmicTypography.bodyEmphasis }
+    static var cosmicBodyEmphasis: Font { CosmicTypography.Dynamic.bodyEmphasis }
 
     /// 14pt Regular - Callout text
-    static var cosmicCallout: Font { CosmicTypography.callout }
+    static var cosmicCallout: Font { CosmicTypography.Dynamic.callout }
 
     /// 14pt Medium - Emphasized callout
-    static var cosmicCalloutEmphasis: Font { CosmicTypography.calloutEmphasis }
+    static var cosmicCalloutEmphasis: Font { CosmicTypography.Dynamic.calloutEmphasis }
 
     /// 13pt Regular - Subheadline (legacy)
-    static var cosmicSubheadline: Font { .system(size: 13, weight: .regular) }
+    static var cosmicSubheadline: Font { Font.subheadline }
 
     /// 13pt Regular - Footnote (legacy)
-    static var cosmicFootnote: Font { .system(size: 13, weight: .regular) }
+    static var cosmicFootnote: Font { Font.footnote }
 
     /// 13pt Medium - Emphasized footnote (legacy)
-    static var cosmicFootnoteEmphasis: Font { .system(size: 13, weight: .medium) }
+    static var cosmicFootnoteEmphasis: Font { Font.footnote.weight(.medium) }
 
     /// 12pt Medium - Caption text
-    static var cosmicCaption: Font { CosmicTypography.caption }
+    static var cosmicCaption: Font { CosmicTypography.Dynamic.caption }
 
     /// 12pt Medium - Caption emphasis (legacy alias)
-    static var cosmicCaptionEmphasis: Font { .system(size: 12, weight: .medium) }
+    static var cosmicCaptionEmphasis: Font { CosmicTypography.Dynamic.caption }
 
     /// 10pt Medium - Micro text
-    static var cosmicMicro: Font { CosmicTypography.micro }
+    static var cosmicMicro: Font { CosmicTypography.Dynamic.micro }
 
     /// 11pt Medium - Label (legacy)
-    static var cosmicLabel: Font { .system(size: 11, weight: .medium) }
+    static var cosmicLabel: Font { Font.caption2.weight(.medium) }
 
     // MARK: - Monospaced
 
     /// Monospaced for numbers/data
-    static var cosmicMono: Font { CosmicTypography.mono }
+    static var cosmicMono: Font { CosmicTypography.Dynamic.mono }
 
     /// Monospaced large for hero numbers
-    static var cosmicMonoLarge: Font { CosmicTypography.monoLarge }
+    static var cosmicMonoLarge: Font { CosmicTypography.Dynamic.monoLarge }
 }
 
 // MARK: - Text Modifiers

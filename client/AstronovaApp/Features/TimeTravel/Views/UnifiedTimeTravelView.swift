@@ -121,6 +121,21 @@ struct UnifiedTimeTravelView: View {
                     .task {
                         await state.bootstrap(profile: auth.profileManager.profile)
                     }
+                    .onChange(of: auth.profileManager.profile.birthTime) { _, _ in
+                        Task { await state.bootstrap(profile: auth.profileManager.profile) }
+                    }
+                    .onChange(of: auth.profileManager.profile.birthLatitude) { _, _ in
+                        Task { await state.bootstrap(profile: auth.profileManager.profile) }
+                    }
+                    .onChange(of: auth.profileManager.profile.birthLongitude) { _, _ in
+                        Task { await state.bootstrap(profile: auth.profileManager.profile) }
+                    }
+                    .onChange(of: auth.profileManager.profile.timezone) { _, _ in
+                        Task { await state.bootstrap(profile: auth.profileManager.profile) }
+                    }
+                    .onChange(of: auth.profileManager.profile.birthDate) { _, _ in
+                        Task { await state.bootstrap(profile: auth.profileManager.profile) }
+                    }
                 }
             }
             .navigationTitle("Time Travel")
@@ -351,6 +366,10 @@ class TimeTravelViewState: ObservableObject {
 
     private var snapshotCache: [String: TimeTravelSnapshot] = [:]
     private var planetsCache: [String: [PlanetState]] = [:]
+    private var snapshotCacheOrder: [String] = []
+    private var planetsCacheOrder: [String] = []
+    private let maxSnapshotCacheEntries = 24
+    private let maxPlanetsCacheEntries = 24
 
     // Debounce
     private var debounceTask: Task<Void, Never>?
@@ -359,7 +378,13 @@ class TimeTravelViewState: ObservableObject {
     private let systemQuery: String = "vedic"
 
     func bootstrap(profile: UserProfile) async {
+        let shouldRefresh = profileDidChange(from: self.profile, to: profile)
         self.profile = profile
+        if shouldRefresh {
+            resetCaches()
+            await fetchSnapshot(for: targetDate)
+            return
+        }
         guard displaySnapshot == nil else { return }
         await fetchSnapshot(for: targetDate)
     }
@@ -374,12 +399,14 @@ class TimeTravelViewState: ObservableObject {
         guard let key = dateKey(for: targetDate) else { return }
 
         if let cached = snapshotCache[key] {
+            touchKey(key, order: &snapshotCacheOrder)
             displaySnapshot = cached
             scrubFeedback = TimeTravelSnapshot.scrubFeedback(from: previous, to: cached)
             return
         }
 
         if let planets = planetsCache[key] {
+            touchKey(key, order: &planetsCacheOrder)
             var nextPlanets = planets
             // Carry dasha highlighting forward while user is scrubbing.
             for idx in nextPlanets.indices {
@@ -402,6 +429,25 @@ class TimeTravelViewState: ObservableObject {
             displaySnapshot = next
             scrubFeedback = TimeTravelSnapshot.scrubFeedback(from: previous, to: next)
         }
+    }
+
+    private func profileDidChange(from oldProfile: UserProfile?, to newProfile: UserProfile) -> Bool {
+        guard let oldProfile else { return true }
+        return oldProfile.birthDate != newProfile.birthDate ||
+            oldProfile.birthTime != newProfile.birthTime ||
+            oldProfile.birthLatitude != newProfile.birthLatitude ||
+            oldProfile.birthLongitude != newProfile.birthLongitude ||
+            oldProfile.timezone != newProfile.timezone
+    }
+
+    private func resetCaches() {
+        snapshotCache.removeAll()
+        planetsCache.removeAll()
+        snapshotCacheOrder.removeAll()
+        planetsCacheOrder.removeAll()
+        displaySnapshot = nil
+        scrubFeedback = ScrubFeedback(insights: [], summary: nil)
+        errorMessage = nil
     }
 
     func onDateCommit() {
@@ -466,9 +512,9 @@ class TimeTravelViewState: ObservableObject {
             let planetStates = sortPlanets(planetPositions.map(TimeTravelSnapshot.planetState(from:)))
 
             if let key = dateKey(for: date) {
-                planetsCache[key] = planetStates
                 let snapshot = TimeTravelSnapshot.build(targetDate: date, planets: planetStates, dashaResponse: dashaResponse)
-                snapshotCache[key] = snapshot
+                cachePlanets(planetStates, for: key)
+                cacheSnapshot(snapshot, for: key)
 
                 if let previous = displaySnapshot {
                     scrubFeedback = TimeTravelSnapshot.scrubFeedback(from: previous, to: snapshot)
@@ -507,11 +553,41 @@ class TimeTravelViewState: ObservableObject {
                 do {
                     let positions = try await self.api.getPlanetaryPositions(for: d, latitude: latitude, longitude: longitude, system: self.systemQuery)
                     let states = self.sortPlanets(positions.map(TimeTravelSnapshot.planetState(from:)))
-                    self.planetsCache[key] = states
+                    self.cachePlanets(states, for: key)
                 } catch {
                     // Best-effort prefetch.
                 }
             }
+        }
+    }
+
+    private func cacheSnapshot(_ snapshot: TimeTravelSnapshot, for key: String) {
+        snapshotCache[key] = snapshot
+        touchKey(key, order: &snapshotCacheOrder)
+        trimCache(&snapshotCache, order: &snapshotCacheOrder, maxEntries: maxSnapshotCacheEntries)
+    }
+
+    private func cachePlanets(_ planets: [PlanetState], for key: String) {
+        planetsCache[key] = planets
+        touchKey(key, order: &planetsCacheOrder)
+        trimCache(&planetsCache, order: &planetsCacheOrder, maxEntries: maxPlanetsCacheEntries)
+    }
+
+    private func touchKey(_ key: String, order: inout [String]) {
+        if let index = order.firstIndex(of: key) {
+            order.remove(at: index)
+        }
+        order.append(key)
+    }
+
+    private func trimCache<T>(
+        _ cache: inout [String: T],
+        order: inout [String],
+        maxEntries: Int
+    ) {
+        while order.count > maxEntries {
+            let key = order.removeFirst()
+            cache.removeValue(forKey: key)
         }
     }
 

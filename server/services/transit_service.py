@@ -81,10 +81,56 @@ class TransitService:
         Returns:
             Tuple of (is_activated, activation_strength) where strength is 0.0-1.0
         """
-        # Get transiting planet positions
+        transits = self.ephemeris.get_positions_for_date(target_date)
+        transit_planets = transits.get("planets", {})
+        return self._is_aspect_activated_with_transits(
+            synastry_aspect, transit_planets, natal_a, natal_b
+        )
+
+    def get_day_activations(
+        self,
+        synastry_aspects: List[Dict[str, Any]],
+        target_date: datetime,
+        natal_a: Dict[str, Any],
+        natal_b: Dict[str, Any],
+    ) -> List[Dict[str, Any]]:
+        """Get all aspect activations for a specific day.
+
+        Returns list of activated aspects with their strengths.
+        """
+        activations = []
         transits = self.ephemeris.get_positions_for_date(target_date)
         transit_planets = transits.get("planets", {})
 
+        for aspect in synastry_aspects:
+            is_active, strength = self._is_aspect_activated_with_transits(
+                aspect, transit_planets, natal_a, natal_b
+            )
+
+            if is_active and strength >= 0.3:  # Minimum threshold
+                planet1 = aspect.get("planet1") or aspect.get("planetA", "")
+                planet2 = aspect.get("planet2") or aspect.get("planetB", "")
+                aspect_type = aspect.get("aspect") or aspect.get("aspectType", "")
+                is_harmonious = aspect.get("compatibility", 0) > 0 or aspect.get("isHarmonious", True)
+
+                activations.append({
+                    "aspect": aspect,
+                    "strength": strength,
+                    "is_harmonious": is_harmonious,
+                    "description": f"{planet1} {aspect_type} {planet2}",
+                })
+
+        # Sort by strength descending
+        activations.sort(key=lambda x: x["strength"], reverse=True)
+        return activations
+
+    def _is_aspect_activated_with_transits(
+        self,
+        synastry_aspect: Dict[str, Any],
+        transit_planets: Dict[str, Any],
+        natal_a: Dict[str, Any],
+        natal_b: Dict[str, Any],
+    ) -> Tuple[bool, float]:
         # Extract the natal planets in the synastry aspect
         planet_a_key = synastry_aspect.get("planet1") or synastry_aspect.get("planetA", "")
         planet_b_key = synastry_aspect.get("planet2") or synastry_aspect.get("planetB", "")
@@ -134,41 +180,6 @@ class TransitService:
                     is_activated = True
 
         return is_activated, min(1.0, max_strength)
-
-    def get_day_activations(
-        self,
-        synastry_aspects: List[Dict[str, Any]],
-        target_date: datetime,
-        natal_a: Dict[str, Any],
-        natal_b: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
-        """Get all aspect activations for a specific day.
-
-        Returns list of activated aspects with their strengths.
-        """
-        activations = []
-
-        for aspect in synastry_aspects:
-            is_active, strength = self.is_aspect_activated_now(
-                aspect, target_date, natal_a, natal_b
-            )
-
-            if is_active and strength >= 0.3:  # Minimum threshold
-                planet1 = aspect.get("planet1") or aspect.get("planetA", "")
-                planet2 = aspect.get("planet2") or aspect.get("planetB", "")
-                aspect_type = aspect.get("aspect") or aspect.get("aspectType", "")
-                is_harmonious = aspect.get("compatibility", 0) > 0 or aspect.get("isHarmonious", True)
-
-                activations.append({
-                    "aspect": aspect,
-                    "strength": strength,
-                    "is_harmonious": is_harmonious,
-                    "description": f"{planet1} {aspect_type} {planet2}",
-                })
-
-        # Sort by strength descending
-        activations.sort(key=lambda x: x["strength"], reverse=True)
-        return activations
 
     def find_next_significant_transit(
         self,

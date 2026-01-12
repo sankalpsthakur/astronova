@@ -4,11 +4,12 @@ import logging
 import os
 
 from flask import Flask, Response, jsonify, redirect, request
+from flask_babel import Babel
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from db import init_db
+from db import get_user_preferred_language, init_db
 from middleware import add_request_id, log_request_response, setup_logging
 from routes import (
     astrology_bp,
@@ -28,10 +29,26 @@ from routes import (
 
 setup_logging()
 logger = logging.getLogger(__name__)
+SUPPORTED_LOCALES = ["en", "hi", "es", "ta", "te", "bn", "ar"]
+babel = Babel()
 
 
 def create_app():
     app = Flask(__name__)
+
+    def select_locale() -> str:
+        user_id = request.headers.get("X-User-Id")
+        if user_id:
+            preferred_language = get_user_preferred_language(user_id)
+            if preferred_language in SUPPORTED_LOCALES:
+                return preferred_language
+
+        best_match = request.accept_languages.best_match(SUPPORTED_LOCALES)
+        return best_match or "en"
+
+    app.config["BABEL_DEFAULT_LOCALE"] = "en"
+    app.config["BABEL_SUPPORTED_LOCALES"] = SUPPORTED_LOCALES
+    babel.init_app(app, locale_selector=select_locale)
 
     # CORS configuration - restrict to known origins
     # iOS native apps don't send Origin headers, so this mainly protects against browser-based attacks
@@ -269,6 +286,7 @@ def create_app():
         <li><strong>Location Data:</strong> Birth location for chart calculations (not your current location)</li>
         <li><strong>Purchase History:</strong> In-app purchases and subscription status</li>
         <li><strong>Device Identifier:</strong> Anonymous user ID for account management</li>
+        <li><strong>Usage Analytics:</strong> App usage and session diagnostics collected via Smartlook</li>
     </ul>
 
     <h2>2. How We Use Your Information</h2>
@@ -281,7 +299,7 @@ def create_app():
     </ul>
 
     <h2>3. Data Sharing</h2>
-    <p>We do not sell, trade, or share your personal information with third parties. Your birth data is stored securely and used only for astrological calculations.</p>
+    <p>We do not sell or trade your personal information. Limited service providers (such as Smartlook) process analytics and session diagnostics strictly to help us improve Astronova.</p>
 
     <h2>4. Data Retention</h2>
     <p>We retain your data while your account is active. You can delete your account and all associated data at any time through the app settings.</p>
@@ -403,7 +421,7 @@ def create_app():
 
     <div class="faq-item">
         <div class="faq-question">Can I delete my account?</div>
-        <p>Yes. Go to <strong>Manage</strong> tab → <strong>Settings</strong> → <strong>Delete Account</strong>. This will permanently remove your account and all associated data.</p>
+        <p>Yes, if you're signed in. Go to <strong>Manage</strong> tab → <strong>Settings</strong> → <strong>Delete Account</strong>. This will permanently remove your account and all associated data.</p>
     </div>
 
     <h2>Technical Issues</h2>

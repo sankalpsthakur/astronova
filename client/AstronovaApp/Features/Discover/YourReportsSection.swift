@@ -25,7 +25,7 @@ struct YourReportsSection: View {
 
                     Spacer()
 
-                    if reports.count > 3 {
+                    if onViewAllTap != nil {
                         Button {
                             CosmicHaptics.light()
                             onViewAllTap?()

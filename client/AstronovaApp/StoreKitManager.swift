@@ -21,11 +21,22 @@ class StoreKitManager: ObservableObject {
     
     // Product IDs defined in App Store Connect
     private let productIDs: Set<String> = [
-        "love_forecast",
-        "birth_chart", 
-        "career_forecast",
-        "year_ahead",
-        "astronova_pro_monthly"
+        // Subscription
+        "astronova_pro_monthly",
+
+        // Reports (Non-Consumable)
+        "report_general",
+        "report_love",
+        "report_career",
+        "report_money",
+        "report_health",
+        "report_family",
+        "report_spiritual",
+
+        // Chat Credits (Consumable)
+        "chat_credits_5",
+        "chat_credits_15",
+        "chat_credits_50"
     ]
     
     init() {
@@ -60,14 +71,25 @@ class StoreKitManager: ObservableObject {
             #if DEBUG
             debugPrint("[StoreKit] Failed to load products: \(error.localizedDescription)")
             #endif
-            // Fallback to hardcoded prices
+            // Fallback to hardcoded prices (must match BasicStoreManager)
             await MainActor.run {
                 self.products = [
-                    "love_forecast": "$4.99",
-                    "birth_chart": "$7.99", 
-                    "career_forecast": "$5.99",
-                    "year_ahead": "$9.99",
-                    "astronova_pro_monthly": "$9.99"
+                    // Subscription
+                    "astronova_pro_monthly": "$9.99",
+
+                    // Reports
+                    "report_general": "$12.99",
+                    "report_love": "$12.99",
+                    "report_career": "$12.99",
+                    "report_money": "$12.99",
+                    "report_health": "$12.99",
+                    "report_family": "$12.99",
+                    "report_spiritual": "$12.99",
+
+                    // Chat Credits
+                    "chat_credits_5": "$14.99",
+                    "chat_credits_15": "$34.99",
+                    "chat_credits_50": "$89.99"
                 ]
             }
         }
@@ -147,7 +169,14 @@ class StoreKitManager: ObservableObject {
     func restorePurchases() async -> Bool {
         let hadProBefore = hasProSubscription
         await checkCurrentEntitlements()
-        return hasProSubscription && !hadProBefore
+        return hasProSubscription || hadProBefore
+    }
+
+    /// Refresh entitlement state without triggering a restore flow
+    @discardableResult
+    func refreshEntitlements() async -> Bool {
+        await checkCurrentEntitlements()
+        return hasProSubscription
     }
     
     // MARK: - Private Methods
@@ -183,41 +212,68 @@ class StoreKitManager: ObservableObject {
             if transaction.productID == "astronova_pro_monthly" {
                 self.hasProSubscription = true
             }
-            
-            // Handle other product purchases (individual reports)
+
+            // Handle chat credit purchases (consumable)
+            if transaction.productID.hasPrefix("chat_credits_") {
+                // Map Product ID to actual credit amounts
+                // Note: Product IDs can't be changed in App Store Connect,
+                // so we use an explicit mapping instead of parsing the ID
+                let creditAmounts: [String: Int] = [
+                    "chat_credits_5": 50,
+                    "chat_credits_15": 150,
+                    "chat_credits_50": 500
+                ]
+
+                if let credits = creditAmounts[transaction.productID] {
+                    let currentCredits = UserDefaults.standard.integer(forKey: "chat_credits")
+                    UserDefaults.standard.set(currentCredits + credits, forKey: "chat_credits")
+                }
+            }
+
+            // Handle other product purchases (individual reports, non-consumable)
             // Store purchase history or enable access to specific reports
             let purchaseKey = "purchased_\(transaction.productID)"
             UserDefaults.standard.set(true, forKey: purchaseKey)
-            
+
             // Post notification for UI updates
             NotificationCenter.default.post(
-                name: .purchaseCompleted, 
+                name: .purchaseCompleted,
                 object: transaction.productID
             )
         }
     }
     
     private func checkCurrentEntitlements() async {
+        var hasPro = false
+        var purchasedProductIds: [String] = []
+
         // Check for current subscription entitlements
         for await result in StoreKit.Transaction.currentEntitlements {
             do {
                 let transaction = try checkVerified(result)
-                
+
                 if transaction.productID == "astronova_pro_monthly" {
-                    await MainActor.run {
-                        self.hasProSubscription = true
-                    }
+                    hasPro = true
                 }
-                
+
                 // Mark individual products as purchased if they're current entitlements
-                await MainActor.run {
-                    let purchaseKey = "purchased_\(transaction.productID)"
-                    UserDefaults.standard.set(true, forKey: purchaseKey)
-                }
+                purchasedProductIds.append(transaction.productID)
             } catch {
                 #if DEBUG
                 debugPrint("[StoreKit] Failed to verify current entitlement: \(error.localizedDescription)")
                 #endif
+            }
+        }
+
+        // Capture values before MainActor context
+        let finalHasPro = hasPro
+        let finalPurchasedProductIds = purchasedProductIds
+
+        await MainActor.run {
+            self.hasProSubscription = finalHasPro
+            for productId in finalPurchasedProductIds {
+                let purchaseKey = "purchased_\(productId)"
+                UserDefaults.standard.set(true, forKey: purchaseKey)
             }
         }
     }
@@ -227,4 +283,5 @@ class StoreKitManager: ObservableObject {
 
 extension Notification.Name {
     static let purchaseCompleted = Notification.Name("purchaseCompleted")
+    static let reportPurchased = Notification.Name("reportPurchased")
 }

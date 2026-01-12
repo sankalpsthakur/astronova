@@ -1244,7 +1244,7 @@ struct PoojaBookingSheet: View {
 
     @ViewBuilder
     private func videoSessionCover() -> some View {
-        let userName = authState.profileManager.profile.fullName ?? sankalpName
+        let userName = authState.profileManager.profile.fullName
         VideoSessionWebView(
             sessionId: videoSessionId,
             userName: userName

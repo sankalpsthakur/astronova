@@ -2,6 +2,7 @@
 Minimal misc endpoints: health and system status.
 """
 
+import logging
 import sys
 from datetime import datetime
 
@@ -10,6 +11,7 @@ from flask import Blueprint, jsonify, request
 from db import get_subscription, init_db
 
 misc_bp = Blueprint("misc", __name__)
+logger = logging.getLogger(__name__)
 
 
 @misc_bp.route("/health", methods=["GET"])
@@ -72,7 +74,6 @@ def seed_test_user():
     Create a test user for App Store review with complete birth data.
     This endpoint can only be called once - subsequent calls will return existing user.
     """
-    import uuid
     from db import get_connection
 
     test_user_id = "appstore-test-user-2026"

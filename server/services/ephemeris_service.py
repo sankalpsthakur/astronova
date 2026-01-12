@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+from threading import RLock
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,42 @@ except ImportError:
     SWE_AVAILABLE = False
     swe = None
 
-# Cache removed in minimal build
+_CACHE_LOCK = RLock()
+_POSITIONS_CACHE: Dict[tuple, tuple[Dict[str, Any], datetime]] = {}
+_CACHE_MAX_ENTRIES = 256
+
+
+def _cache_key(dt: datetime, lat: Optional[float], lon: Optional[float], system: str) -> tuple:
+    # Bucket to minute to improve hit rate without meaningful accuracy loss.
+    dt_key = dt.replace(second=0, microsecond=0)
+    return (dt_key.isoformat(), lat, lon, system)
+
+
+def _cache_ttl_seconds(dt: datetime) -> int:
+    today = datetime.utcnow().date()
+    return 300 if dt.date() == today else 86400
+
+
+def _get_cached_positions(key: tuple) -> Optional[Dict[str, Any]]:
+    now = datetime.utcnow()
+    with _CACHE_LOCK:
+        cached = _POSITIONS_CACHE.get(key)
+        if not cached:
+            return None
+        payload, expires_at = cached
+        if expires_at <= now:
+            _POSITIONS_CACHE.pop(key, None)
+            return None
+        return payload
+
+
+def _set_cached_positions(key: tuple, payload: Dict[str, Any], ttl_seconds: int) -> None:
+    expires_at = datetime.utcnow() + timedelta(seconds=ttl_seconds)
+    with _CACHE_LOCK:
+        _POSITIONS_CACHE[key] = (payload, expires_at)
+        if len(_POSITIONS_CACHE) > _CACHE_MAX_ENTRIES:
+            oldest_key = min(_POSITIONS_CACHE.items(), key=lambda item: item[1][1])[0]
+            _POSITIONS_CACHE.pop(oldest_key, None)
 
 ZODIAC_SIGNS = [
     "Aries",
@@ -158,6 +194,11 @@ class EphemerisService:
         sign_names = VEDIC_SIGNS if use_sidereal else ZODIAC_SIGNS
         positions = {}
 
+        cache_key = _cache_key(dt, lat, lon, system)
+        cached = _get_cached_positions(cache_key)
+        if cached is not None:
+            return cached
+
         if SWE_AVAILABLE:
             jd = _julian_day(dt)
             flags = 0
@@ -261,4 +302,6 @@ class EphemerisService:
             except Exception:
                 positions["ascendant"] = {"sign": "Unknown", "degree": 0.0, "longitude": 0.0}
 
-        return {"planets": positions}
+        payload = {"planets": positions}
+        _set_cached_positions(cache_key, payload, _cache_ttl_seconds(dt))
+        return payload

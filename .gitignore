@@ -2,7 +2,7 @@
 .DS_Store
 
 # Xcode / Swift
-/.build
+.build/
 /Packages
 xcuserdata/
 DerivedData/

@@ -27,7 +27,6 @@
 		5A811C092DF79DA000BD6D7F /* MapKitAutocompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A811C022DF79DA000BD6D7F /* MapKitAutocompleteView.swift */; };
 		65A997B5F7E04025AA6D5AAA /* EnhancedTimeTravelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */; };
 		975D40439C2F2C5BDEA2AAC9 /* TempleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1949EBB93135391AC11D9D /* TempleModels.swift */; };
-		F90256D484D343A7B0A06CC5BCC68819 /* VideoSessionWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFD60D6813314AB6B0CC5C76A2D3651F /* VideoSessionWebView.swift */; };
 		AA0002000000000000000001 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000001 /* AppConfig.swift */; };
 		AA0002000000000000000002 /* RemoteConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000002 /* RemoteConfigService.swift */; };
 		AA0002000000000000000003 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000003 /* AnalyticsService.swift */; };
@@ -74,9 +73,11 @@
 		E2E001000000000000000005 /* CosmicTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000005 /* CosmicTypography.swift */; };
 		E2E001000000000000000006 /* CosmicMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000006 /* CosmicMotion.swift */; };
 		E2E001000000000000000007 /* ChatPackagesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000007 /* ChatPackagesSheet.swift */; };
-		ORACLE01000000000001 /* OracleQuotaManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ORACLE02000000000001 /* OracleQuotaManager.swift */; };
-		ORACLE01000000000002 /* OracleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ORACLE02000000000002 /* OracleViewModel.swift */; };
-		ORACLE01000000000003 /* OracleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ORACLE02000000000003 /* OracleView.swift */; };
+		F90256D484D343A7B0A06CC5BCC68819 /* VideoSessionWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFD60D6813314AB6B0CC5C76A2D3651F /* VideoSessionWebView.swift */; };
+		L10NBF000000000000000001 /* LocalizedStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000001 /* LocalizedStrings.swift */; };
+		L10NBF000000000000000002 /* LocaleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000002 /* LocaleFormatter.swift */; };
+		L10NBF000000000000000003 /* CurrencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000003 /* CurrencyManager.swift */; };
+		LAUNCH100000000000001 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = LAUNCH000000000000001 /* LaunchScreen.storyboard */; };
 		SELFNEW01000000000001 /* SelfTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000001 /* SelfTabView.swift */; };
 		SELFNEW01000000000002 /* CosmicPulseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000002 /* CosmicPulseView.swift */; };
 		SELFNEW01000000000003 /* EssenceBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000003 /* EssenceBar.swift */; };
@@ -154,6 +155,7 @@
 		AA0001000000000000000012 /* ShopCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCatalog.swift; sourceTree = "<group>"; };
 		AA0001000000000000000013 /* CosmicDesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicDesignTokens.swift; sourceTree = "<group>"; };
 		AA0001000000000000000014 /* CosmicColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicColors.swift; sourceTree = "<group>"; };
+		BFD60D6813314AB6B0CC5C76A2D3651F /* VideoSessionWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VideoSessionWebView.swift; path = AstronovaApp/Features/Temple/VideoSessionWebView.swift; sourceTree = SOURCE_ROOT; };
 		CDFF139DD6F247BDBF102B37 /* DashaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaModels.swift; sourceTree = "<group>"; };
 		CMP000000000000000000001 /* CompatibilityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompatibilityModels.swift; sourceTree = "<group>"; };
 		CMP000000000000000000002 /* SynastryCompassView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SynastryCompassView.swift; sourceTree = "<group>"; };
@@ -185,12 +187,24 @@
 		E2E000000000000000000006 /* CosmicMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicMotion.swift; sourceTree = "<group>"; };
 		E2E000000000000000000007 /* ChatPackagesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPackagesSheet.swift; sourceTree = "<group>"; };
 		EE1949EBB93135391AC11D9D /* TempleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TempleModels.swift; path = AstronovaApp/Features/Temple/TempleModels.swift; sourceTree = SOURCE_ROOT; };
-		BFD60D6813314AB6B0CC5C76A2D3651F /* VideoSessionWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VideoSessionWebView.swift; path = AstronovaApp/Features/Temple/VideoSessionWebView.swift; sourceTree = SOURCE_ROOT; };
 		F63A72C22E86F9E8003419B4 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		F697EF632F1055E30054E084 /* SelfDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfDataService.swift; sourceTree = "<group>"; };
-		F697EF642F1055E50054E084 /* ReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportDetailView.swift; sourceTree = "<group>"; };
-		F697EF652F1055E70054E084 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaChakraWheelView.swift; sourceTree = "<group>"; };
+		L10NFL000000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10NFL000000000000000002 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hi; path = hi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10NFL000000000000000003 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10NFL000000000000000004 /* ta */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ta; path = ta.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10NFL000000000000000005 /* te */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = te; path = te.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10NFL000000000000000006 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = bn; path = bn.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10NFL000000000000000101 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = en.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		L10NFL000000000000000102 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = hi; path = hi.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		L10NFL000000000000000103 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = es; path = es.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		L10NFL000000000000000104 /* ta */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = ta; path = ta.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		L10NFL000000000000000105 /* te */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = te; path = te.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		L10NFL000000000000000106 /* bn */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = bn; path = bn.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		L10NFR000000000000000001 /* LocalizedStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedStrings.swift; sourceTree = "<group>"; };
+		L10NFR000000000000000002 /* LocaleFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleFormatter.swift; sourceTree = "<group>"; };
+		L10NFR000000000000000003 /* CurrencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyManager.swift; sourceTree = "<group>"; };
+		LAUNCH000000000000001 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ORACLE02000000000001 /* OracleQuotaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OracleQuotaManager.swift; path = AstronovaApp/Features/Oracle/OracleQuotaManager.swift; sourceTree = "<group>"; };
 		ORACLE02000000000002 /* OracleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OracleViewModel.swift; path = AstronovaApp/Features/Oracle/OracleViewModel.swift; sourceTree = "<group>"; };
 		ORACLE02000000000003 /* OracleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OracleView.swift; path = AstronovaApp/Features/Oracle/OracleView.swift; sourceTree = "<group>"; };
@@ -260,9 +274,6 @@
 				F63A72C22E86F9E8003419B4 /* Package.swift */,
 				0B7041B39F493411FDF0D4F3 /* Temple */,
 				F697EF622F1054730054E084 /* Recovered References */,
-				F697EF632F1055E30054E084 /* SelfDataService.swift */,
-				F697EF642F1055E50054E084 /* ReportDetailView.swift */,
-				F697EF652F1055E70054E084 /* RootView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -273,6 +284,7 @@
 				AA0003000000000000000002 /* Analytics */,
 				AA0003000000000000000003 /* Components */,
 				AA000300000000000000000B /* DesignSystem */,
+				L10NGR000000000000000001 /* Localization */,
 				AA0003000000000000000004 /* Features */,
 				AA0003000000000000000008 /* Services */,
 				AA0003000000000000000009 /* Utils */,
@@ -290,6 +302,7 @@
 				DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */,
 				CDFF139DD6F247BDBF102B37 /* DashaModels.swift */,
 				3D01F8152C0A000000000009 /* Info.plist */,
+				LAUNCH000000000000001 /* LaunchScreen.storyboard */,
 				3D01F8162C0A00000000000A /* AstronovaApp.entitlements */,
 				3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */,
 				3D01F7E32C0A000000000001 /* AstronovaAppApp.swift */,
@@ -493,6 +506,18 @@
 			name = "Recovered References";
 			sourceTree = "<group>";
 		};
+		L10NGR000000000000000001 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				L10NFR000000000000000001 /* LocalizedStrings.swift */,
+				L10NFR000000000000000002 /* LocaleFormatter.swift */,
+				L10NFR000000000000000003 /* CurrencyManager.swift */,
+				L10NVG000000000000000001 /* Localizable.strings */,
+				L10NVG000000000000000002 /* Localizable.stringsdict */,
+			);
+			path = Localization;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -579,6 +604,11 @@
 			knownRegions = (
 				en,
 				Base,
+				hi,
+				es,
+				ta,
+				te,
+				bn,
 			);
 			mainGroup = 3D01F7D72C0A000000000001;
 			packageReferences = (
@@ -603,6 +633,7 @@
 				3D01F7EB2C0A000000000001 /* Preview Assets.xcassets in Resources */,
 				3D01F7E82C0A000000000001 /* Assets.xcassets in Resources */,
 				AA0002000000000000000008 /* remote_config.json in Resources */,
+				LAUNCH100000000000001 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -639,6 +670,9 @@
 				SELFNEW0100000000000A /* QuickBirthEditSheet.swift in Sources */,
 				SELFNEW0100000000000B /* ReportDetailView.swift in Sources */,
 				3D01F7E62C0A000000000001 /* RootView.swift in Sources */,
+				L10NBF000000000000000001 /* LocalizedStrings.swift in Sources */,
+				L10NBF000000000000000002 /* LocaleFormatter.swift in Sources */,
+				L10NBF000000000000000003 /* CurrencyManager.swift in Sources */,
 				3D01F8142C0A000000000008 /* APIModels.swift in Sources */,
 				3D01F8132C0A000000000007 /* APIServices.swift in Sources */,
 				5A811C062DF79DA000BD6D7F /* MapKitLocationService.swift in Sources */,
@@ -710,9 +744,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ORACLE01000000000001 /* OracleQuotaManager.swift in Sources */,
-				ORACLE01000000000002 /* OracleViewModel.swift in Sources */,
-				ORACLE01000000000003 /* OracleView.swift in Sources */,
 				3D01F7F52C0A000000000001 /* AstronovaAppTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -741,6 +772,35 @@
 			targetProxy = 3D01F7FB2C0A000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		L10NVG000000000000000001 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				L10NFL000000000000000001 /* en */,
+				L10NFL000000000000000002 /* hi */,
+				L10NFL000000000000000003 /* es */,
+				L10NFL000000000000000004 /* ta */,
+				L10NFL000000000000000005 /* te */,
+				L10NFL000000000000000006 /* bn */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		L10NVG000000000000000002 /* Localizable.stringsdict */ = {
+			isa = PBXVariantGroup;
+			children = (
+				L10NFL000000000000000101 /* en */,
+				L10NFL000000000000000102 /* hi */,
+				L10NFL000000000000000103 /* es */,
+				L10NFL000000000000000104 /* ta */,
+				L10NFL000000000000000105 /* te */,
+				L10NFL000000000000000106 /* bn */,
+			);
+			name = Localizable.stringsdict;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		3D01F8022C0A000000000001 /* Debug */ = {
@@ -883,9 +943,9 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -919,9 +979,9 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -942,12 +1002,12 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = ZBSZPCY34Y;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = iCloud.com.sankalp.AstronovaApp.AstronovaAppTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -985,7 +1045,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = iCloud.com.sankalp.AstronovaApp.AstronovaAppUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;

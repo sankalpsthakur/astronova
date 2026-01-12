@@ -4,8 +4,6 @@
 <dict>
 	<key>NSContactsUsageDescription</key>
 	<string>Astronova uses your contacts to help you explore compatibility with friends and loved ones based on their birth dates.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Astronova uses your location to suggest birth places and improve location-based astrology calculations.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
@@ -26,6 +24,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

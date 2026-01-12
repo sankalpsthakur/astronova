@@ -55,10 +55,10 @@ final class OracleViewModel: ObservableObject {
     // MARK: - Contextual Prompts
 
     let contextualPrompts: [String] = [
-        "What energy surrounds me today?",
-        "How can I align with my highest path?",
-        "What planetary influences affect me?",
-        "Where should I focus my energy now?"
+        L10n.Oracle.Prompts.energyToday,
+        L10n.Oracle.Prompts.highestPath,
+        L10n.Oracle.Prompts.influences,
+        L10n.Oracle.Prompts.focusNow
     ]
 
     // MARK: - Initialization
@@ -75,7 +75,7 @@ final class OracleViewModel: ObservableObject {
 
         // Check quota
         guard quotaManager.canAfford(depth: selectedDepth) else {
-            errorMessage = "Daily reading complete"
+            errorMessage = L10n.Oracle.dailyLimitReached
             return
         }
 
@@ -129,7 +129,7 @@ final class OracleViewModel: ObservableObject {
     private func addWelcomeMessage() {
         let welcome = OracleMessage(
             id: "welcome",
-            text: "The stars are aligned. What guidance do you seek?",
+            text: L10n.Oracle.welcomeMessage,
             isUser: false,
             type: .welcome,
             timestamp: Date()
@@ -171,18 +171,18 @@ final class OracleViewModel: ObservableObject {
             if let networkError = error as? NetworkError {
                 switch networkError {
                 case .authenticationFailed, .tokenExpired:
-                    errorMessage = "Sign in to ask the Oracle."
+                    errorMessage = L10n.Oracle.signInRequired
                 case .offline:
-                    errorMessage = "No internet connection. Please try again."
+                    errorMessage = L10n.Errors.noInternet
                 case .timeout:
-                    errorMessage = "Request timed out. Please try again."
+                    errorMessage = L10n.Errors.timeout
                 case .serverError(let code, _):
-                    errorMessage = "Server error (\(code)). Please try again."
+                    errorMessage = L10n.Errors.serverError(code)
                 default:
-                    errorMessage = "Connection interrupted"
+                    errorMessage = L10n.Errors.connectionInterrupted
                 }
             } else {
-                errorMessage = "Connection interrupted"
+                errorMessage = L10n.Errors.connectionInterrupted
             }
         }
     }

@@ -43,6 +43,15 @@ final class AstronovaAppTests: XCTestCase {
         SecItemDelete(query as CFDictionary)
     }
 
+    private func makeDate(year: Int, month: Int, day: Int) -> Date {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.timeZone = TimeZone(secondsFromGMT: 0)
+        return Calendar(identifier: .gregorian).date(from: components) ?? Date(timeIntervalSince1970: 0)
+    }
+
     // MARK: - Model Tests
     
     func testUserProfileCreation() throws {
@@ -96,6 +105,35 @@ final class AstronovaAppTests: XCTestCase {
         XCTAssertTrue(reportIds.contains("birth_chart"))
         XCTAssertTrue(reportIds.contains("career_forecast"))
         XCTAssertTrue(reportIds.contains("year_ahead"))
+    }
+
+    // MARK: - Copy Tests
+
+    func testQuickStartInsightIncludesNameAndYear() throws {
+        let date = makeDate(year: 1990, month: 1, day: 15)
+        let insight = PersonalizationCopy.quickStartInsight(name: "Ava", birthDate: date)
+        XCTAssertTrue(insight.contains("Ava"))
+        XCTAssertTrue(insight.contains("1990"))
+        XCTAssertTrue(insight.lowercased().contains("birth date"))
+    }
+
+    func testQuickStartInsightWithoutNameUsesGenericIntro() throws {
+        let date = makeDate(year: 1992, month: 6, day: 10)
+        let insight = PersonalizationCopy.quickStartInsight(name: " ", birthDate: date)
+        XCTAssertTrue(insight.contains("Based on your birth date"))
+        XCTAssertTrue(insight.contains("1992"))
+    }
+
+    func testCompatibilitySummaryUsesNameAndScore() throws {
+        let summary = PersonalizationCopy.compatibilitySummary(score: 88, partnerName: "Taylor")
+        XCTAssertTrue(summary.contains("Taylor"))
+        XCTAssertTrue(summary.contains("88%"))
+    }
+
+    func testCompatibilitySummaryFallsBackForEmptyName() throws {
+        let summary = PersonalizationCopy.compatibilitySummary(score: 50, partnerName: "")
+        XCTAssertTrue(summary.contains("this person"))
+        XCTAssertTrue(summary.contains("50%"))
     }
     
     // MARK: - Auth State Tests

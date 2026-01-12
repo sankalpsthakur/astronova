@@ -151,19 +151,20 @@ struct MoreOptionsSheet: View {
                             )
                         }
                         .buttonStyle(.plain)
-
-                        Button {
-                            showingDeleteConfirmation = true
-                        } label: {
-                            OptionRowContent(
-                                icon: "trash.fill",
-                                iconColor: .cosmicError,
-                                title: "Delete Account",
-                                subtitle: nil,
-                                isDestructive: true
-                            )
+                        if auth.isAuthenticated {
+                            Button {
+                                showingDeleteConfirmation = true
+                            } label: {
+                                OptionRowContent(
+                                    icon: "trash.fill",
+                                    iconColor: .cosmicError,
+                                    title: "Delete Account",
+                                    subtitle: nil,
+                                    isDestructive: true
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
 
                     // App version

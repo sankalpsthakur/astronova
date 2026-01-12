@@ -9,7 +9,7 @@ This service creates context-aware chat responses based on:
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
@@ -30,12 +30,18 @@ class ChatResponseService:
         api_key = os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=api_key) if OpenAI and api_key else None
         self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self._transit_cache: Optional[tuple[Dict[str, Any], datetime]] = None
 
     def _get_current_transits(self) -> Dict[str, Any]:
         """Get current planetary positions."""
-        dt = datetime.utcnow()
-        positions = self.ephem.get_positions_for_date(dt)
-        return positions.get("planets", {})
+        now = datetime.utcnow()
+        if self._transit_cache and self._transit_cache[1] > now:
+            return self._transit_cache[0]
+
+        positions = self.ephem.get_positions_for_date(now)
+        transits = positions.get("planets", {})
+        self._transit_cache = (transits, now + timedelta(seconds=60))
+        return transits
 
     def _get_natal_positions(self, birth_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Get natal chart positions from birth data."""

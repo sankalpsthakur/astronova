@@ -503,10 +503,10 @@ extension PlanetaryPosition {
 /// Compatibility response structure
 struct CompatibilityResponse: Codable {
     let compatibility_score: Double
-    let summary: String
-    let detailed_analysis: String
-    let strengths: [String]
-    let challenges: [String]
+    let summary: String?
+    let detailed_analysis: String?
+    let strengths: [String]?
+    let challenges: [String]?
 }
 
 

@@ -1,14 +1,13 @@
 """Unit tests for TransitService."""
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from datetime import datetime
+from unittest.mock import MagicMock
 
 from services.transit_service import (
     TransitService,
     _angular_distance,
     _check_aspect,
-    ASPECT_CONFIG,
 )
 
 

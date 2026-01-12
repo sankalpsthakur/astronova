@@ -49,17 +49,11 @@ class UserProfileManager: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let profileKey = "user_profile"
     private let chartKey = "last_chart"
-    private let deviceIdKey = "device_user_id"
     private let apiServices = APIServices.shared
 
     /// Device-based user ID for anonymous users
     var deviceUserId: String {
-        if let existingId = userDefaults.string(forKey: deviceIdKey) {
-            return existingId
-        }
-        let newId = "device-\(UUID().uuidString.lowercased())"
-        userDefaults.set(newId, forKey: deviceIdKey)
-        return newId
+        ClientUserId.value()
     }
 
     init() {

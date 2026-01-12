@@ -1,0 +1,303 @@
+/* Brand */
+"brand.name" = "Astronova";
+
+/* Tab titles */
+"tabs.discover" = "Discover";
+"tabs.timeTravel" = "Time Travel";
+"tabs.temple" = "Temple";
+"tabs.connect" = "Connect";
+"tabs.self" = "Self";
+"tabs.positionHint" = "Tab %d of %d";
+
+/* Common actions */
+"actions.save" = "Save";
+"actions.cancel" = "Cancel";
+"actions.delete" = "Delete";
+"actions.edit" = "Edit";
+"actions.done" = "Done";
+"actions.next" = "Next";
+"actions.back" = "Back";
+"actions.close" = "Close";
+"actions.continue" = "Continue";
+"actions.ok" = "OK";
+"actions.gotIt" = "Got it";
+"actions.dismiss" = "Dismiss";
+"actions.dismissHint" = "Dismisses this message";
+
+/* Onboarding */
+"onboarding.progress.title" = "Creating Your Cosmic Profile";
+"onboarding.progress.step" = "Step %d of %d";
+"onboarding.actions.beginJourney" = "Begin Journey";
+"onboarding.actions.createProfile" = "Create My Profile";
+"onboarding.actions.skipForNow" = "Skip for Now";
+"onboarding.welcome.title" = "Welcome to";
+"onboarding.welcome.subtitle" = "Discover what the stars reveal about your personality, relationships, and destiny through personalized cosmic insights.";
+"onboarding.name.title" = "What should we call you?";
+"onboarding.name.subtitle" = "Your name helps us create a personal connection with your cosmic journey.";
+"onboarding.name.placeholder" = "Enter your name";
+"onboarding.name.success" = "Perfect! The cosmos recognizes you, %@.";
+"onboarding.name.error.tooShort" = "Name must be at least 2 characters long";
+"onboarding.name.error.tooLong" = "Name cannot exceed 50 characters";
+"onboarding.name.error.invalidCharacters" = "Name can only contain letters, spaces, hyphens, and apostrophes";
+"onboarding.name.error.consecutiveSpaces" = "Name cannot contain multiple consecutive spaces";
+"onboarding.birthDate.title" = "When were you born?";
+"onboarding.birthDate.subtitle" = "Your birth date reveals your sun sign and unlocks the cosmic blueprint of your personality.";
+"onboarding.birthDate.selected" = "Selected: %@";
+"onboarding.birthDate.quickStart" = "Quick Start";
+"onboarding.birthDate.skipDetails" = "Skip Details";
+"onboarding.birthDate.quickStart.hint" = "Start exploring with just your birth date. You can add birth time and location later for more precise readings.";
+"onboarding.birthDate.error.future" = "Birth date cannot be in the future";
+"onboarding.birthDate.error.tooOld" = "Birth date cannot be more than 120 years ago";
+"onboarding.birthTime.title" = "What time were you born?";
+"onboarding.birthTime.subtitle" = "Birth time improves rising sign and house calculations. If unknown, we'll assume 12:00 noon and mark some insights as approximate.";
+"onboarding.birthTime.unknownToggle" = "I don't know my birth time";
+"onboarding.birthTime.whyTitle" = "Why birth time matters";
+"onboarding.birthTime.whyMessage" = "Birth time helps calculate your rising sign and houses. If you don't know it, we'll default to 12:00 noon, and some insights may be approximate.";
+"onboarding.birthTime.assumedNoon" = "We'll assume 12:00 noon (approximate)";
+"onboarding.birthTime.selected" = "Selected: %@";
+"onboarding.birthPlace.title" = "Where were you born?";
+"onboarding.birthPlace.subtitle" = "Your birth location helps us calculate precise celestial positions. You can add this later if you prefer to skip for now.";
+"onboarding.birthPlace.placeholder" = "City, State/Country";
+"onboarding.birthPlace.validated" = "Perfect! Location validated with coordinates.";
+"onboarding.birthPlace.dropdownHint" = "Select a location from the dropdown for best results, or skip to add later.";
+"onboarding.birthPlace.optionalHint" = "Birth location is optional - you can always add it later in your profile.";
+"onboarding.birthPlace.searchPrompt" = "Search for a city";
+"onboarding.birthPlace.selectLocationTitle" = "Select Location";
+"onboarding.insights.analyzingTitle" = "Analyzing Your Cosmic Blueprint";
+"onboarding.insights.analyzingSubtitle" = "Reading planetary positions and celestial influences...";
+"onboarding.insights.profileCreated" = "Profile Created!";
+"onboarding.insights.welcomeGeneric" = "Welcome!";
+"onboarding.insights.welcomeName" = "Welcome, %@!";
+"onboarding.insights.startJourney" = "Start Your Journey";
+"onboarding.quickStart.withName" = "%@, based on your birth date of %@, this is a starter insight. Add your birth time and place to unlock your full chart.";
+"onboarding.quickStart.noName" = "Based on your birth date of %@, this is a starter insight. Add your birth time and place to unlock your full chart.";
+"onboarding.personalized.welcomeGeneric" = "Welcome to your cosmic journey!";
+"onboarding.personalized.welcome" = "Welcome to your cosmic journey, %@!";
+"onboarding.personalized.locationSuffix" = " in %@";
+"onboarding.personalized.birthDetails" = "Born on %@ at %@%@, the stars reveal fascinating insights about your celestial blueprint.";
+"onboarding.personalized.sunMoon" = "Your Sun in %@ illuminates your core identity, while your Moon in %@ reflects your emotional nature. This unique combination creates a personality that is both dynamic and deeply intuitive.";
+"onboarding.personalized.talents" = "The planetary positions at your birth moment suggest you possess natural talents for leadership and creativity, with a special gift for understanding others' perspectives.";
+"onboarding.personalized.offlineMessage" = "Your birth data has been recorded: %@ at %@%@. Connect to the internet to receive your personalized cosmic insights based on actual planetary positions at your time of birth.";
+"onboarding.errors.saveProfile" = "Failed to save profile: %@";
+
+/* Home - Cosmic Weather */
+"home.cosmicWeather.title" = "Today's Cosmic Weather";
+"home.cosmicWeather.date" = "for %@";
+
+/* Home - Domains */
+"home.domains.personal" = "Personal";
+"home.domains.love" = "Love";
+"home.domains.career" = "Career";
+"home.domains.wealth" = "Wealth";
+"home.domains.health" = "Health";
+"home.domains.family" = "Family";
+"home.domains.spiritual" = "Spiritual";
+
+/* Oracle */
+"oracle.title" = "Oracle";
+"oracle.input.placeholder" = "Ask Oracle about your cosmic journey...";
+"oracle.send" = "Send";
+"oracle.typing" = "Oracle is typing...";
+"oracle.welcome" = "The stars are aligned. What guidance do you seek?";
+"oracle.limit.dailyComplete" = "Daily reading complete";
+"oracle.signInRequired" = "Sign in to ask the Oracle.";
+"oracle.signInMessage" = "Get personalized answers and save your readings.";
+"oracle.packages.title" = "Chat Packages";
+"oracle.packages.remaining" = "%d messages remaining";
+"oracle.prompts.energyToday" = "What energy surrounds me today?";
+"oracle.prompts.highestPath" = "How can I align with my highest path?";
+"oracle.prompts.influences" = "What planetary influences affect me?";
+"oracle.prompts.focusNow" = "Where should I focus my energy now?";
+"oracle.depth.quick" = "Quick";
+"oracle.depth.deep" = "Deep";
+"oracle.depth.quickDescription" = "Direct insight";
+"oracle.depth.deepDescription" = "Detailed analysis + timing";
+"oracle.depth.hint" = "Double tap to choose depth";
+"oracle.accessibility.conversationLabel" = "Chat conversation with Oracle";
+"oracle.accessibility.conversationHint" = "Scroll to view message history";
+"oracle.accessibility.inputLabel" = "Message input field";
+"oracle.accessibility.inputHint" = "Type your question for the Oracle";
+"oracle.accessibility.sendHint" = "Sends your question to the Oracle";
+"oracle.accessibility.depthLabel" = "Reading depth";
+"oracle.accessibility.userMessage" = "You said: %@";
+"oracle.accessibility.oracleMessage" = "Oracle replied: %@";
+"oracle.accessibility.promptLabel" = "Suggested prompt: %@";
+"oracle.accessibility.promptHint" = "Inserts this prompt into the input field";
+"oracle.accessibility.typingLabel" = "Oracle is composing a response";
+"oracle.accessibility.closeHint" = "Dismisses the Oracle";
+"oracle.quota.dailyComplete" = "Daily reading complete";
+"oracle.quota.nextInsight" = "New insight in %@";
+"oracle.quota.getCredits" = "Get Credits";
+"oracle.quota.unlockAll" = "Unlock All";
+"oracle.quota.getCreditsHint" = "Opens chat credit options";
+"oracle.quota.unlockAllHint" = "Opens the Pro subscription options";
+
+/* Temple */
+"temple.title" = "Temple";
+"temple.selectPooja" = "Select Pooja Type";
+"temple.selectPandit" = "Select Pandit";
+"temple.sections.astrologers" = "Astrologers";
+"temple.sections.pooja" = "Pooja";
+"temple.sections.astrologersHint" = "Shows available astrologers";
+"temple.sections.poojaHint" = "Shows pooja offerings";
+"temple.oracleQuickAccess.title" = "Ask the Oracle";
+"temple.oracleQuickAccess.subtitle" = "Get personalized cosmic guidance";
+"temple.oracleQuickAccess.accessibilityLabel" = "Ask the Oracle. Get personalized cosmic guidance.";
+"temple.oracleQuickAccess.accessibilityHint" = "Double tap to open the Oracle chat";
+"temple.astrologers.headerTitle" = "Expert Astrologers";
+"temple.astrologers.headerSubtitle" = "Connect with verified Vedic experts";
+"temple.astrologers.availableNow" = "Available Now";
+"temple.astrologers.currentlyOffline" = "Currently Offline";
+"temple.astrologers.reviews" = "%d reviews";
+"temple.astrologers.experienceLabel" = "Experience";
+"temple.astrologers.perMinuteLabel" = "per min";
+"temple.astrologers.pricePerMinute" = "%@/min";
+"temple.astrologers.startConsultation" = "Start Consultation";
+"temple.astrologers.notifyWhenAvailable" = "Notify When Available";
+"temple.astrologers.languagesTitle" = "Languages";
+"temple.astrologers.expertiseTitle" = "Expertise";
+"temple.astrologers.status.available" = "Available now.";
+"temple.astrologers.status.offline" = "Currently offline.";
+"temple.astrologers.cardAccessibilityLabel" = "Pandit %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@";
+"temple.astrologers.cardAccessibilityHint" = "Double tap to view astrologer details";
+"temple.muhurat.title" = "Today's Muhurat";
+"temple.muhurat.subtitle" = "Auspicious timings for the day";
+"temple.muhurat.accessibilityLabel" = "%@. %@ timing. %@. %@";
+"temple.pooja.ritualsTitle" = "Sacred Rituals";
+"temple.pooja.ritualsSubtitle" = "Perform poojas with complete ingredients";
+"temple.pooja.itemsCount" = "%d items";
+"temple.pooja.cardAccessibilityHint" = "Double tap to view details and book this pooja";
+"temple.pooja.cardAccessibilityLabel" = "%@ pooja. Duration %@. %d items. %@";
+"temple.pooja.detailsTitle" = "Pooja Details";
+"temple.pooja.benefitsTitle" = "Benefits";
+"temple.pooja.ingredientsChecklistTitle" = "Ingredients Checklist";
+"temple.pooja.bookThisPooja" = "Book This Pooja";
+"temple.pooja.bookThisPoojaLabel" = "Book this pooja";
+"temple.pooja.bookThisPoojaHint" = "Select a date and time to confirm your booking";
+"temple.booking.confirm" = "Confirm Booking";
+"temple.booking.date" = "Pooja Date";
+"temple.booking.time" = "Time Slot";
+"temple.booking.sankalp.name" = "Your Name";
+"temple.booking.sankalp.gotra" = "Gotra (Optional)";
+"temple.booking.sankalp.nakshatra" = "Nakshatra (Optional)";
+"temple.booking.specialRequests" = "Special Requests";
+"temple.booking.selectDate" = "Select Date";
+"temple.booking.selectTime" = "Select Time";
+"temple.booking.sankalpDetails" = "Sankalp Details";
+"temple.booking.specialRequestsOptional" = "Special Requests (optional)";
+"temple.booking.sankalpNameTitle" = "Name (Sankalp)";
+"temple.booking.sankalpNamePlaceholder" = "Your full name";
+"temple.booking.sankalpGotraTitle" = "Gotra (optional)";
+"temple.booking.sankalpGotraPlaceholder" = "Family lineage";
+"temple.booking.sankalpNakshatraTitle" = "Nakshatra (optional)";
+"temple.booking.sankalpNakshatraPlaceholder" = "Birth star";
+"temple.booking.specialRequestsLabel" = "Special requests";
+"temple.booking.specialRequestsHint" = "Optional. Add any special instructions for the pandit";
+"temple.booking.poojaDateLabel" = "Pooja date";
+"temple.booking.poojaDateHint" = "Select the date for your pooja ceremony";
+"temple.booking.timeSlotLabel" = "Time slot %@";
+"temple.booking.timeSlotHint" = "Select this time slot";
+"temple.booking.confirmBookingLabel" = "Confirm booking";
+"temple.booking.confirmBookingHint" = "Complete your booking and proceed";
+"temple.booking.bookPoojaTitle" = "Book Pooja";
+"temple.booking.confirmedTitle" = "Booking Confirmed!";
+"temple.booking.confirmedMessage" = "Your pooja is scheduled for %@ at %@. You will receive a session link before the scheduled time.";
+"temple.booking.signInTitle" = "Sign in to book a pooja";
+"temple.booking.signInMessage" = "Confirm your details and reserve a pandit time slot.";
+"temple.consultation.selectDate" = "Select Date";
+"temple.consultation.selectTime" = "Select Time";
+"temple.consultation.duration" = "Duration";
+"temple.consultation.topicOptional" = "Topic (optional)";
+"temple.consultation.total" = "Total";
+"temple.consultation.bookConsultation" = "Book Consultation";
+"temple.consultation.bookConsultationLabel" = "Book consultation";
+"temple.consultation.bookConsultationHint" = "Confirm your consultation booking";
+"temple.consultation.dateLabel" = "Consultation date";
+"temple.consultation.dateHint" = "Select a date for your consultation";
+"temple.consultation.topicLabel" = "Consultation topic";
+"temple.consultation.topicHint" = "Optional. Add a topic for the consultation";
+"temple.consultation.durationLabel" = "Consultation duration";
+"temple.consultation.durationHint" = "Select the consultation length";
+"temple.consultation.minutes" = "%d min";
+"temple.consultation.navTitle" = "Book Consultation";
+"temple.consultation.bookedTitle" = "Consultation Booked!";
+"temple.consultation.bookedMessage" = "Your consultation is scheduled for %@ at %@.";
+"temple.consultation.signInTitle" = "Sign in to book a consultation";
+"temple.consultation.signInMessage" = "Reserve a time and get personalized guidance.";
+"temple.accessibility.checked" = "Checked";
+"temple.accessibility.unchecked" = "Unchecked";
+"temple.accessibility.toggleHint" = "Double tap to toggle";
+"temple.errors.signInPooja" = "Sign in to book a pooja.";
+"temple.errors.signInConsultation" = "Sign in to book a consultation.";
+"temple.errors.bookingFailed" = "Failed to create booking. Please try again.";
+"temple.errors.consultationFailed" = "Unable to book consultation. Please try again.";
+"temple.status.pending" = "Pending";
+"temple.status.confirmed" = "Confirmed";
+"temple.status.inProgress" = "In Progress";
+"temple.status.completed" = "Completed";
+"temple.status.cancelled" = "Cancelled";
+
+/* Connect */
+"connect.title" = "Connect";
+"connect.add" = "Add Relationship";
+"connect.empty" = "No relationships yet";
+"connect.compatibility.score" = "%d%% compatibility";
+"connect.pulse.flowing" = "Flowing";
+"connect.pulse.electric" = "Electric";
+"connect.pulse.magnetic" = "Magnetic";
+"connect.pulse.grounded" = "Grounded";
+"connect.pulse.friction" = "Friction";
+
+/* Astrology - Signs */
+"astrology.signs.aries" = "Aries";
+"astrology.signs.taurus" = "Taurus";
+"astrology.signs.gemini" = "Gemini";
+"astrology.signs.cancer" = "Cancer";
+"astrology.signs.leo" = "Leo";
+"astrology.signs.virgo" = "Virgo";
+"astrology.signs.libra" = "Libra";
+"astrology.signs.scorpio" = "Scorpio";
+"astrology.signs.sagittarius" = "Sagittarius";
+"astrology.signs.capricorn" = "Capricorn";
+"astrology.signs.aquarius" = "Aquarius";
+"astrology.signs.pisces" = "Pisces";
+
+/* Astrology - Planets */
+"astrology.planets.sun" = "Sun";
+"astrology.planets.moon" = "Moon";
+"astrology.planets.mercury" = "Mercury";
+"astrology.planets.venus" = "Venus";
+"astrology.planets.mars" = "Mars";
+"astrology.planets.jupiter" = "Jupiter";
+"astrology.planets.saturn" = "Saturn";
+"astrology.planets.rahu" = "Rahu";
+"astrology.planets.ketu" = "Ketu";
+
+/* Astrology - Dasha */
+"astrology.dasha.mahadasha" = "Mahadasha";
+"astrology.dasha.antardasha" = "Antardasha";
+"astrology.dasha.pratyantardasha" = "Pratyantardasha";
+"astrology.dasha.years" = "%d years";
+
+/* Astrology - Aspects */
+"astrology.aspects.conjunction" = "Conjunction";
+"astrology.aspects.sextile" = "Sextile";
+"astrology.aspects.square" = "Square";
+"astrology.aspects.trine" = "Trine";
+"astrology.aspects.opposition" = "Opposition";
+
+/* Errors */
+"errors.generic" = "Something went wrong. Please try again.";
+"errors.network" = "Unable to connect. Check your internet connection.";
+"errors.noInternet" = "No internet connection. Please try again.";
+"errors.timeout" = "Request timed out. Please try again.";
+"errors.serverError" = "Server error (%d). Please try again.";
+"errors.connectionInterrupted" = "Connection interrupted";
+"errors.accessibilityLabel" = "Error: %@";
+"errors.unauthorized" = "Please sign in to continue.";
+"errors.notFound" = "The requested resource was not found.";
+
+/* Date & Time */
+"datetime.today" = "Today";
+"datetime.tomorrow" = "Tomorrow";
+"datetime.yesterday" = "Yesterday";

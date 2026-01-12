@@ -25,6 +25,7 @@ if str(SERVER_ROOT) not in sys.path:
 
 from app import create_app
 from db import get_connection
+from routes.auth import generate_jwt
 
 
 @pytest.fixture()
@@ -60,8 +61,8 @@ def client(test_db_path):
 
 @pytest.fixture()
 def auth_token():
-    """Valid demo authentication token."""
-    return "demo-token"
+    """Valid authentication token."""
+    return generate_jwt("test-user-123", "test@astronova.com")
 
 
 @pytest.fixture()
@@ -273,23 +274,24 @@ class TestTokenRefresh:
         """Test token refresh with malformed token."""
         response = client.post("/api/v1/auth/refresh", headers={"Authorization": "Bearer !!!invalid-token-format!!!"})
 
-        # Current implementation accepts any non-empty token (demo mode)
-        # In production with real JWT, this should fail
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
 
     def test_refresh_with_whitespace_in_token(self, client):
         """Test token refresh with token containing whitespace."""
         response = client.post("/api/v1/auth/refresh", headers={"Authorization": "Bearer   demo-token   "})
 
-        # Implementation strips whitespace
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
 
 
 class TestTokenValidation:
     """Test token validation endpoint."""
 
     def test_validate_with_correct_token(self, client, auth_token):
-        """Test validation with correct demo token."""
+        """Test validation with correct token."""
         response = client.get("/api/v1/auth/validate", headers={"Authorization": f"Bearer {auth_token}"})
 
         assert response.status_code == 200
@@ -345,28 +347,29 @@ class TestLogout:
 class TestDeleteAccount:
     """Test account deletion endpoint."""
 
-    def test_delete_account_success(self, client):
+    def test_delete_account_success(self, client, auth_token):
         """Test delete account returns success."""
-        response = client.delete("/api/v1/auth/delete-account")
-
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["status"] == "ok"
-
-    def test_delete_account_with_token(self, client, auth_token):
-        """Test delete account with authentication token."""
         response = client.delete("/api/v1/auth/delete-account", headers={"Authorization": f"Bearer {auth_token}"})
 
         assert response.status_code == 200
         data = response.get_json()
         assert data["status"] == "ok"
 
+    def test_delete_account_with_invalid_token(self, client):
+        """Test delete account with invalid authentication token."""
+        response = client.delete("/api/v1/auth/delete-account", headers={"Authorization": "Bearer wrong-token"})
+
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
+
     def test_delete_account_without_token(self, client):
         """Test delete account without authentication token."""
-        # Current implementation doesn't require auth or actually delete data
         response = client.delete("/api/v1/auth/delete-account")
 
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "AUTH_REQUIRED"
 
 
 class TestProtectedEndpoints:
@@ -513,8 +516,9 @@ class TestInvalidTokenFormats:
 
         response = client.post("/api/v1/auth/refresh", headers={"Authorization": f"Bearer {fake_jwt}"})
 
-        # Demo mode accepts any token, production would reject
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
 
     def test_token_with_special_characters(self, client):
         """Test token containing special characters."""
@@ -522,7 +526,9 @@ class TestInvalidTokenFormats:
 
         response = client.post("/api/v1/auth/refresh", headers={"Authorization": f"Bearer {special_token}"})
 
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
 
     def test_extremely_long_token(self, client):
         """Test extremely long token."""
@@ -530,7 +536,9 @@ class TestInvalidTokenFormats:
 
         response = client.post("/api/v1/auth/refresh", headers={"Authorization": f"Bearer {long_token}"})
 
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
 
     def test_token_with_unicode(self, client):
         """Test token containing unicode characters."""
@@ -538,14 +546,17 @@ class TestInvalidTokenFormats:
 
         response = client.post("/api/v1/auth/refresh", headers={"Authorization": f"Bearer {unicode_token}"})
 
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
 
     def test_multiple_bearer_prefixes(self, client):
         """Test Authorization header with multiple Bearer prefixes."""
         response = client.post("/api/v1/auth/refresh", headers={"Authorization": "Bearer Bearer demo-token"})
 
-        # Implementation replaces 'Bearer ' once
-        assert response.status_code == 200
+        assert response.status_code == 401
+        data = response.get_json()
+        assert data["code"] == "INVALID_TOKEN"
 
 
 class TestJWTExpiration:

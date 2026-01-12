@@ -28,10 +28,9 @@ struct AstronovaAppApp: App {
         // Apply UI test configuration if running in test mode
         TestEnvironment.shared.applyTestConfiguration()
 
-        // Pro bypass only for explicit UI tests, not all Debug builds
-        // This prevents accidental free access in development builds
+        // Pro bypass only when explicitly requested by UI tests
         #if DEBUG
-        if TestEnvironment.shared.isUITest {
+        if TestEnvironment.shared.hasArgument(.setProSubscribed) {
             UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
         }
         #endif
@@ -39,16 +38,18 @@ struct AstronovaAppApp: App {
         _authState = StateObject(wrappedValue: AuthState())
     }
 
+    #if canImport(SmartlookAnalytics)
     private static func setupSmartlook() {
-        #if canImport(SmartlookAnalytics)
         Smartlook.instance.preferences.projectKey = "3ea51a8cc18ecd6b6b43eec84450f694a65569ed"
         Smartlook.instance.start()
 
         #if DEBUG
         print("[Smartlook] Session recording started")
         #endif
-        #endif
     }
+    #else
+    private static func setupSmartlook() {}
+    #endif
 
     var body: some Scene {
         WindowGroup {

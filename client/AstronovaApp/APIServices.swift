@@ -48,6 +48,10 @@ class APIServices: ObservableObject, APIServicesProtocol {
     static let shared = APIServices()
     
     private let networkClient: NetworkClientProtocol
+
+    #if DEBUG
+    private let mockReportsKey = "mock_reports"
+    #endif
     
     // JWT token for authenticated requests
     var jwtToken: String? {
@@ -159,17 +163,8 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     /// Get compatibility report for protocol conformance
     func getCompatibilityReport(person1: BirthData, person2: BirthData) async throws -> CompatibilityResponse {
-        // Convert legacy method to return structured data
         let data = try await calculateCompatibility(person1: person1, person2: person2)
-        let matchResponse = try JSONDecoder().decode(MatchResponse.self, from: data)
-
-        return CompatibilityResponse(
-            compatibility_score: matchResponse.overallIntensity.fillLevel,
-            summary: "Compatibility analysis based on astrological factors",
-            detailed_analysis: "Detailed analysis of planetary aspects and compatibility",
-            strengths: ["Communication", "Emotional connection"],
-            challenges: ["Different life approaches"]
-        )
+        return try JSONDecoder().decode(CompatibilityResponse.self, from: data)
     }
     
     /// Get detailed report for protocol conformance
@@ -568,6 +563,11 @@ class APIServices: ObservableObject, APIServicesProtocol {
     
     /// Get user reports
     func getUserReports(userId: String) async throws -> [DetailedReport] {
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+            return loadMockReports()
+        }
+        #endif
         return try await networkClient.request(
             endpoint: "/api/v1/reports/user/\(userId)",
             method: HTTPMethod.GET,
@@ -575,6 +575,28 @@ class APIServices: ObservableObject, APIServicesProtocol {
             responseType: [DetailedReport].self
         )
     }
+
+    #if DEBUG
+    func appendMockReport(_ report: DetailedReport) {
+        var reports = loadMockReports()
+        reports.insert(report, at: 0)
+        saveMockReports(reports)
+    }
+
+    private func loadMockReports() -> [DetailedReport] {
+        guard let data = UserDefaults.standard.data(forKey: mockReportsKey),
+              let reports = try? JSONDecoder().decode([DetailedReport].self, from: data) else {
+            return []
+        }
+        return reports
+    }
+
+    private func saveMockReports(_ reports: [DetailedReport]) {
+        if let data = try? JSONEncoder().encode(reports) {
+            UserDefaults.standard.set(data, forKey: mockReportsKey)
+        }
+    }
+    #endif
     
     /// Generate detailed report with user profile
     func generateDetailedReport(userId: String, reportType: String, profileData: UserProfile) async throws -> DetailedReportResponse {

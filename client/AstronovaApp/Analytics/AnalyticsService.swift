@@ -59,8 +59,8 @@ final class Analytics: AnalyticsServiceProtocol {
         }
         #endif
 
-        // Track to Smartlook
         #if canImport(SmartlookAnalytics)
+        // Track to Smartlook
         if let properties = properties, !properties.isEmpty {
             var smartlookProps = Properties()
             for (key, value) in properties {

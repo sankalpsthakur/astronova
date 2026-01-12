@@ -51,14 +51,48 @@ final class MonetizationJourneyTests: XCTestCase {
     }
 
     private func tapTab(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
-        let button = app.buttons[identifier]
-        if button.waitForExistence(timeout: 10) {
-            button.tap()
+        let candidates = tabCandidates(for: identifier)
+        for (index, candidate) in candidates.enumerated() {
+            let timeout: TimeInterval = index == 0 ? 10 : 5
+            let button = app.buttons[candidate]
+            if button.waitForExistence(timeout: timeout) {
+                button.tap()
+                return
+            }
+            let other = app.otherElements[candidate]
+            if other.waitForExistence(timeout: timeout) {
+                other.tap()
+                return
+            }
+        }
+        XCTFail("Tab '\(identifier)' should exist (tried: \(candidates.joined(separator: ", ")))", file: file, line: line)
+    }
+
+    private func tabCandidates(for identifier: String) -> [String] {
+        switch identifier {
+        case "askTab":
+            return ["askTab", "templeTab"]
+        case "manageTab":
+            return ["manageTab", "selfTab"]
+        default:
+            return [identifier]
+        }
+    }
+
+    private func openOracleFromTemple(file: StaticString = #filePath, line: UInt = #line) {
+        let quickAccess = anyElement("oracleQuickAccessButton")
+        if quickAccess.waitForExistence(timeout: 8) {
+            quickAccess.tap()
             return
         }
-        let other = app.otherElements[identifier]
-        XCTAssertTrue(other.waitForExistence(timeout: 10), "Tab '\(identifier)' should exist", file: file, line: line)
-        other.tap()
+
+        let askOracle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ask the Oracle")).firstMatch
+        if askOracle.waitForExistence(timeout: 8) {
+            askOracle.tap()
+            return
+        }
+
+        XCTFail("Oracle quick access card should be visible in Temple tab.", file: file, line: line)
     }
 
     private func waitForNotExists(_ element: XCUIElement, timeout: TimeInterval = 8) -> Bool {
@@ -68,6 +102,21 @@ final class MonetizationJourneyTests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
         return !element.exists
+    }
+
+    private func scrollToElement(_ element: XCUIElement, maxSwipes: Int = 6) {
+        var attempts = 0
+        while !element.isHittable && attempts < maxSwipes {
+            app.swipeUp()
+            attempts += 1
+        }
+    }
+
+    private func dismissAlertIfPresent(buttonLabel: String, timeout: TimeInterval = 3) {
+        let button = app.buttons[buttonLabel]
+        if button.waitForExistence(timeout: timeout) {
+            button.tap()
+        }
     }
 
     private func chatInputElement() -> XCUIElement {
@@ -93,6 +142,7 @@ final class MonetizationJourneyTests: XCTestCase {
         ])
 
         tapTab("askTab")
+        openOracleFromTemple()
 
         let getPackages = anyElement("getChatPackagesButton")
         XCTAssertTrue(getPackages.waitForExistence(timeout: 8), "Get Chat Packages CTA should be visible")
@@ -142,6 +192,7 @@ final class MonetizationJourneyTests: XCTestCase {
         ])
 
         tapTab("askTab")
+        openOracleFromTemple()
 
         let goUnlimited = anyElement("goUnlimitedButton")
         if !goUnlimited.waitForExistence(timeout: 8) {
@@ -156,14 +207,10 @@ final class MonetizationJourneyTests: XCTestCase {
         let startPro = anyElement("startProButton")
         XCTAssertTrue(startPro.waitForExistence(timeout: 8), "Start Pro button should exist")
         startPro.tap()
+        dismissAlertIfPresent(buttonLabel: "Continue")
 
         XCTAssertTrue(waitForNotExists(paywall, timeout: 12), "Paywall should dismiss after Pro purchase")
-
-        // Refresh Ask tab state (it reads subscription status onAppear)
-        tapTab("homeTab")
-        tapTab("askTab")
-
-        XCTAssertFalse(anyElement("goUnlimitedButton").exists, "Free limit banner should not show for Pro users")
+        XCTAssertTrue(waitForNotExists(anyElement("goUnlimitedButton"), timeout: 12), "Free limit banner should not show for Pro users")
     }
 
     // MARK: - Journey C: Report Purchase -> Generation -> Library
@@ -180,9 +227,15 @@ final class MonetizationJourneyTests: XCTestCase {
 
         tapTab("manageTab")
 
-        let reportsShopLink = app.staticTexts["Reports Shop"]
-        XCTAssertTrue(reportsShopLink.waitForExistence(timeout: 10), "Reports Shop entry should exist in Manage")
-        reportsShopLink.tap()
+        let reportsShopButton = anyElement("reportsShopButton")
+        if reportsShopButton.waitForExistence(timeout: 10) {
+            scrollToElement(reportsShopButton)
+            reportsShopButton.tap()
+        } else {
+            let reportsShopLink = app.staticTexts["Reports Shop"]
+            XCTAssertTrue(reportsShopLink.waitForExistence(timeout: 5), "Reports Shop entry should exist in Manage")
+            reportsShopLink.tap()
+        }
 
         XCTAssertTrue(
             anyElement("reportsStoreView").waitForExistence(timeout: 8) || app.navigationBars["Reports Shop"].waitForExistence(timeout: 8),
@@ -195,6 +248,7 @@ final class MonetizationJourneyTests: XCTestCase {
 
         // Allow backend generation to complete.
         sleep(2)
+        dismissAlertIfPresent(buttonLabel: "OK")
 
         let done = anyElement("doneButton")
         XCTAssertTrue(done.waitForExistence(timeout: 8), "Done button should exist to exit the shop")
@@ -203,8 +257,9 @@ final class MonetizationJourneyTests: XCTestCase {
         // Back to Discover and open the library.
         tapTab("homeTab")
 
-        let viewAll = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'View All'")).firstMatch
+        let viewAll = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'View all'")).firstMatch
         XCTAssertTrue(viewAll.waitForExistence(timeout: 12), "View All should appear once at least one report exists")
+        scrollToElement(viewAll)
         viewAll.tap()
 
         XCTAssertTrue(anyElement("myReportsView").waitForExistence(timeout: 10), "My Reports library should open")

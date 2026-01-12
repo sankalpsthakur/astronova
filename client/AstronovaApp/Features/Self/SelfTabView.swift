@@ -7,15 +7,10 @@ import SwiftUI
 struct SelfTabView: View {
     @EnvironmentObject private var auth: AuthState
     @StateObject private var dataService = SelfDataService()
+    @AppStorage("hasAstronovaPro") private var hasProSubscription = false
 
-    @State private var showingBirthEdit = false
-    @State private var showingSettings = false
-    @State private var showingPaywall = false
-    @State private var showingDashaDetail = false
     @State private var foundationExpanded = false
-    @State private var showingReportDetail = false
-    @State private var selectedReport: DetailedReport?
-    @State private var showingReportShop = false
+    @State private var activeSheet: SheetDestination?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -25,6 +20,35 @@ struct SelfTabView: View {
 
     private var completeness: ProfileCompleteness {
         ProfileCompleteness(profile: profile)
+    }
+
+    private enum SheetDestination: Identifiable {
+        case birthEdit
+        case settings
+        case paywall
+        case dashaDetail
+        case reportDetail(DetailedReport)
+        case reportShop
+        case reportsLibrary
+
+        var id: String {
+            switch self {
+            case .birthEdit:
+                return "birthEdit"
+            case .settings:
+                return "settings"
+            case .paywall:
+                return "paywall"
+            case .dashaDetail:
+                return "dashaDetail"
+            case .reportDetail(let report):
+                return "reportDetail-\(report.reportId)"
+            case .reportShop:
+                return "reportShop"
+            case .reportsLibrary:
+                return "reportsLibrary"
+            }
+        }
     }
 
     // Non-blocking: calculations work with minimal data
@@ -54,7 +78,7 @@ struct SelfTabView: View {
 
                     // Unlock prompt for next improvement
                     if let nextUnlock = completeness.nextUnlock {
-                        UnlockPromptView(item: nextUnlock, onTap: { showingBirthEdit = true })
+                        UnlockPromptView(item: nextUnlock, onTap: { activeSheet = .birthEdit })
                     }
 
                     // Today's Energy (Transit strengths)
@@ -76,7 +100,11 @@ struct SelfTabView: View {
             }
             .refreshable {
                 await dataService.refresh(for: profile)
-                await dataService.fetchReports()
+                if auth.isAuthenticated {
+                    await dataService.fetchReports()
+                } else {
+                    dataService.stopReportPolling()
+                }
             }
 
             // Loading overlay
@@ -89,7 +117,17 @@ struct SelfTabView: View {
             if canFetchData {
                 await dataService.fetchData(for: profile)
             }
-            await dataService.fetchReports()
+            if auth.isAuthenticated {
+                await dataService.fetchReports()
+            } else {
+                dataService.stopReportPolling()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .reportPurchased)) { _ in
+            guard auth.isAuthenticated else { return }
+            Task {
+                await dataService.fetchReports()
+            }
         }
         .onDisappear {
             dataService.stopReportPolling()
@@ -110,31 +148,29 @@ struct SelfTabView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingBirthEdit) {
-            QuickBirthEditView()
-                .environmentObject(auth)
-        }
-        .sheet(isPresented: $showingSettings) {
-            MoreOptionsSheet(bookmarks: .constant([]))
-                .environmentObject(auth)
-        }
-        .sheet(isPresented: $showingPaywall) {
-            PaywallView()
-        }
-        .sheet(isPresented: $showingDashaDetail) {
-            NavigationStack {
-                EnhancedTimeTravelView()
+        .sheet(item: $activeSheet) { destination in
+            switch destination {
+            case .birthEdit:
+                QuickBirthEditView()
                     .environmentObject(auth)
-            }
-        }
-        .sheet(isPresented: $showingReportDetail) {
-            if let report = selectedReport {
+            case .settings:
+                MoreOptionsSheet(bookmarks: .constant([]))
+                    .environmentObject(auth)
+            case .paywall:
+                PaywallView()
+            case .dashaDetail:
+                NavigationStack {
+                    EnhancedTimeTravelView()
+                        .environmentObject(auth)
+                }
+            case .reportDetail(let report):
                 ReportDetailView(report: report)
+            case .reportShop:
+                InlineReportsStoreSheet()
+                    .environmentObject(auth)
+            case .reportsLibrary:
+                ReportsLibraryView(reports: dataService.userReports)
             }
-        }
-        .sheet(isPresented: $showingReportShop) {
-            InlineReportsStoreSheet()
-                .environmentObject(auth)
         }
     }
 
@@ -194,13 +230,13 @@ struct SelfTabView: View {
             if canFetchData {
                 // Show dasha even with basic data (birth date only)
                 // Accuracy indicator shows user they can improve
-                CosmicPulseView(
-                    currentDasha: dataService.currentDasha ?? fallbackDasha,
-                    accuracyLevel: completeness.level,
-                    onTap: { showingDashaDetail = true }
-                )
+                    CosmicPulseView(
+                        currentDasha: dataService.currentDasha ?? fallbackDasha,
+                        accuracyLevel: completeness.level,
+                        onTap: { activeSheet = .dashaDetail }
+                    )
             } else {
-                CosmicPulseEmptyView(onSetup: { showingBirthEdit = true })
+                CosmicPulseEmptyView(onSetup: { activeSheet = .birthEdit })
             }
         }
     }
@@ -220,13 +256,30 @@ struct SelfTabView: View {
     private var todaysEnergySection: some View {
         Group {
             if canFetchData {
-                // Show planetary strengths with available data
-                TodaysEnergyView(
-                    planetaryStrengths: dataService.planetaryStrengths.isEmpty
-                        ? PlanetaryStrength.sample
-                        : dataService.planetaryStrengths,
-                    dominantPlanet: dataService.dominantPlanet
-                )
+                if dataService.planetaryStrengths.isEmpty {
+                    if dataService.isLoading {
+                        TodaysEnergyEmptyView(
+                            title: "Calculating your energy",
+                            message: "We're generating your planetary strengths now."
+                        )
+                    } else if dataService.error != nil {
+                        TodaysEnergyEmptyView(
+                            title: "Energy reading unavailable",
+                            message: "We couldn't calculate your energy. Check your birth time and place, then try again."
+                        )
+                    } else {
+                        TodaysEnergyEmptyView(
+                            title: "Energy reading unavailable",
+                            message: "We don't have enough data yet. Add your birth time and place to calculate."
+                        )
+                    }
+                } else {
+                    // Show planetary strengths with available data
+                    TodaysEnergyView(
+                        planetaryStrengths: dataService.planetaryStrengths,
+                        dominantPlanet: dataService.dominantPlanet
+                    )
+                }
             } else {
                 TodaysEnergyEmptyView()
             }
@@ -242,17 +295,16 @@ struct SelfTabView: View {
                     reports: dataService.userReports,
                     onReportTap: { report in
                         if report.status?.lowercased() == "completed" {
-                            selectedReport = report
-                            showingReportDetail = true
+                            activeSheet = .reportDetail(report)
                         }
                     },
                     onViewAllTap: {
-                        showingReportShop = true
+                        activeSheet = .reportsLibrary
                     }
                 )
             } else {
                 // Empty state with CTA to browse reports
-                ReportsEmptyState(onBrowse: { showingReportShop = true })
+                ReportsEmptyState(onBrowse: { activeSheet = .reportShop })
             }
         }
     }
@@ -262,8 +314,8 @@ struct SelfTabView: View {
     private var foundationSection: some View {
         FoundationSection(
             isExpanded: $foundationExpanded,
-            onEditBirth: { showingBirthEdit = true },
-            onViewChart: { showingDashaDetail = true }
+            onEditBirth: { activeSheet = .birthEdit },
+            onViewChart: { activeSheet = .dashaDetail }
         )
     }
 
@@ -271,21 +323,13 @@ struct SelfTabView: View {
 
     private var accountSection: some View {
         AccountFooter(
-            isPro: isPro,
-            onUpgrade: { showingPaywall = true },
-            onSettings: { showingSettings = true }
+            isPro: hasProSubscription,
+            onUpgrade: { activeSheet = .paywall },
+            onSettings: { activeSheet = .settings }
         )
     }
 
     // MARK: - Computed Properties
-
-    private var isPro: Bool {
-        #if DEBUG
-        return BasicStoreManager.shared.hasProSubscription
-        #else
-        return StoreKitManager.shared.hasProSubscription
-        #endif
-    }
 
     // Fallback dasha while loading or if API fails
     private var fallbackDasha: DashaInfo {
@@ -384,6 +428,7 @@ private struct ReportsEmptyState: View {
                     .padding(.vertical, Cosmic.Spacing.sm)
                     .background(Color.cosmicGold.opacity(0.15), in: Capsule())
                 }
+                .accessibilityIdentifier(AccessibilityID.reportsShopButton)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, Cosmic.Spacing.lg)

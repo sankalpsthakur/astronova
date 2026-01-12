@@ -77,9 +77,9 @@ extension SwiftUI.Color {
 
     // MARK: - Accent Colors
 
-    /// Primary gold accent (#D4A853 dark / #B8923D light)
+    /// Primary gold accent (#D4A853 dark / #7F5E25 light)
     static let cosmicGold = SwiftUI.Color(
-        light: SwiftUI.Color(hex: "B8923D"),
+        light: SwiftUI.Color(hex: "7F5E25"),
         dark: SwiftUI.Color(hex: "D4A853")
     )
 

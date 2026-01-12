@@ -11,8 +11,8 @@ struct QuickBirthEditView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var fullName: String = ""
-    @State private var birthDate: Date = Date()
-    @State private var birthTime: Date = Date()
+    @State private var birthDate: Date = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
+    @State private var birthTime: Date = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date()) ?? Date()
     @State private var hasBirthTime: Bool = false
     @State private var birthPlace: String = ""
     @State private var selectedLocation: LocationResult?
@@ -187,6 +187,11 @@ struct QuickBirthEditView: View {
                     RoundedRectangle(cornerRadius: Cosmic.Radius.soft, style: .continuous)
                         .fill(Color.cosmicWarning.opacity(0.1))
                 )
+            }
+        }
+        .onChange(of: hasBirthTime) { _, newValue in
+            if newValue && profile.birthTime == nil {
+                birthTime = defaultBirthTime(for: birthDate)
             }
         }
         .animation(.cosmicSpring, value: hasBirthTime)
@@ -384,6 +389,8 @@ struct QuickBirthEditView: View {
         if let time = profile.birthTime {
             birthTime = time
             hasBirthTime = true
+        } else {
+            birthTime = defaultBirthTime(for: profile.birthDate)
         }
         birthPlace = profile.birthPlace ?? ""
         if let lat = profile.birthLatitude, let lon = profile.birthLongitude {
@@ -464,6 +471,10 @@ struct QuickBirthEditView: View {
 
         isSaving = false
         dismiss()
+    }
+
+    private func defaultBirthTime(for date: Date) -> Date {
+        Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
     }
 }
 

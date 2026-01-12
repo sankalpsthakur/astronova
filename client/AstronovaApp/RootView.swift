@@ -3548,6 +3548,7 @@ final class OracleViewModel: ObservableObject {
 struct OracleView: View {
     @StateObject private var viewModel = OracleViewModel()
     @EnvironmentObject private var auth: AuthState
+    @State private var showingSignInPrompt = false
 
     var body: some View {
         NavigationStack {
@@ -3613,11 +3614,25 @@ struct OracleView: View {
                         text: $viewModel.inputText,
                         depth: $viewModel.selectedDepth,
                         prompts: viewModel.contextualPrompts,
-                        isDisabled: viewModel.isLoading || viewModel.quotaManager.isLimited,
+                        isDisabled: viewModel.isLoading || viewModel.quotaManager.isLimited || !auth.isAuthenticated,
                         onSend: { viewModel.sendMessage() },
                         onPromptTap: { viewModel.selectPrompt($0) }
                     )
                     .padding(.bottom, 100) // Tab bar clearance
+                }
+
+                // Sign-in overlay when not authenticated
+                if !auth.isAuthenticated {
+                    OracleSignInOverlay(
+                        onSignIn: {
+                            // Navigate to sign in (using the onboarding flow)
+                            auth.state = .signedOut
+                        },
+                        onDismiss: {
+                            // User can dismiss to see read-only chat
+                            showingSignInPrompt = false
+                        }
+                    )
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -3629,6 +3644,11 @@ struct OracleView: View {
         }
         .onAppear {
             viewModel.quotaManager.refresh()
+
+            // Show sign-in prompt if not authenticated
+            if !auth.isAuthenticated {
+                showingSignInPrompt = true
+            }
         }
         .sheet(isPresented: $viewModel.showingPaywall) {
             PaywallView(context: .chatLimit)
@@ -3986,6 +4006,85 @@ struct OracleErrorBanner: View {
         .padding(Cosmic.Spacing.md)
         .background(Color.cosmicWarning.opacity(0.1), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
         .accessibilityElement(children: .contain)
+    }
+}
+
+// MARK: - Oracle Sign-In Overlay
+
+struct OracleSignInOverlay: View {
+    let onSignIn: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            // Semi-transparent background
+            Color.cosmicVoid.opacity(0.95)
+                .ignoresSafeArea()
+
+            VStack(spacing: Cosmic.Spacing.xl) {
+                // Icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient.cosmicGoldGlow
+                        )
+                        .frame(width: 80, height: 80)
+                        .blur(radius: 20)
+
+                    Circle()
+                        .fill(Color.cosmicSurface)
+                        .frame(width: 80, height: 80)
+
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 36, weight: .medium))
+                        .foregroundStyle(Color.cosmicGold)
+                }
+                .padding(.top, Cosmic.Spacing.xxl)
+
+                VStack(spacing: Cosmic.Spacing.md) {
+                    Text("Sign In to Use Oracle")
+                        .font(.cosmicTitle1)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .multilineTextAlignment(.center)
+
+                    Text("Connect with the Oracle to receive personalized cosmic guidance based on your birth chart.")
+                        .font(.cosmicBody)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Cosmic.Spacing.xl)
+                }
+
+                VStack(spacing: Cosmic.Spacing.md) {
+                    Button(action: onSignIn) {
+                        HStack(spacing: Cosmic.Spacing.sm) {
+                            Image(systemName: "person.crop.circle.fill")
+                                .font(.cosmicCallout)
+                            Text("Sign In with Apple")
+                                .font(.cosmicBodyEmphasis)
+                        }
+                        .foregroundStyle(Color.cosmicVoid)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Cosmic.Spacing.md)
+                        .background(
+                            LinearGradient.cosmicAntiqueGold,
+                            in: Capsule()
+                        )
+                    }
+                    .accessibilityLabel("Sign in with Apple to use Oracle")
+
+                    Button(action: onDismiss) {
+                        Text("Maybe Later")
+                            .font(.cosmicCallout)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                    }
+                    .accessibilityLabel("Dismiss sign-in prompt")
+                }
+                .padding(.horizontal, Cosmic.Spacing.screen)
+
+                Spacer()
+            }
+        }
+        .transition(.opacity)
     }
 }
 

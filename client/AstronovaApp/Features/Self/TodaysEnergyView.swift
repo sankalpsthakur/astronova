@@ -190,17 +190,28 @@ struct PlanetaryStrength: Identifiable {
 // MARK: - Empty State
 
 struct TodaysEnergyEmptyView: View {
+    let title: String
+    let message: String
+
+    init(
+        title: String = "Energy Reading Unavailable",
+        message: String = "Add your birth details to see\nhow today's planets affect you"
+    ) {
+        self.title = title
+        self.message = message
+    }
+
     var body: some View {
         VStack(spacing: Cosmic.Spacing.md) {
             Image(systemName: "waveform.path.ecg")
                 .font(.system(size: 28))
                 .foregroundStyle(Color.cosmicTextTertiary)
 
-            Text("Energy Reading Unavailable")
+            Text(title)
                 .font(.cosmicCalloutEmphasis)
                 .foregroundStyle(Color.cosmicTextSecondary)
 
-            Text("Add your birth details to see\nhow today's planets affect you")
+            Text(message)
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .multilineTextAlignment(.center)

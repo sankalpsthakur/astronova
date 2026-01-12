@@ -81,9 +81,9 @@ struct ShopCatalog {
     
     // Central list of chat credit packs
     static let chatPacks: [ChatPack] = [
-        .init(id: "c5", productId: "chat_credits_5", title: "5 Replies", subtitle: "Quick clarity", credits: 5),
-        .init(id: "c15", productId: "chat_credits_15", title: "15 Replies", subtitle: "Deeper guidance", credits: 15),
-        .init(id: "c50", productId: "chat_credits_50", title: "50 Replies", subtitle: "Best value", credits: 50)
+        .init(id: "c5", productId: "chat_credits_5", title: "50 Credits", subtitle: "Regular use", credits: 50),
+        .init(id: "c15", productId: "chat_credits_15", title: "150 Credits", subtitle: "Extended guidance", credits: 150),
+        .init(id: "c50", productId: "chat_credits_50", title: "500 Credits", subtitle: "Best value", credits: 500)
     ]
 
     // Price helper - prefer StoreKitManager (real prices), fallback to BasicStoreManager for tests

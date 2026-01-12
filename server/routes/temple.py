@@ -15,9 +15,8 @@ import logging
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Optional
-
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 
 from db import get_connection
 
@@ -206,7 +205,7 @@ def get_pooja_type(pooja_id: str):
     conn.close()
 
     if not row:
-        return jsonify({"error": "Pooja not found"}), 404
+        return jsonify({"error": _("Pooja not found")}), 404
 
     return jsonify({
         "id": row["id"],
@@ -313,7 +312,7 @@ def get_pandit(pandit_id: str):
     conn.close()
 
     if not row:
-        return jsonify({"error": "Pandit not found"}), 404
+        return jsonify({"error": _("Pandit not found")}), 404
 
     return jsonify({
         "id": row["id"],
@@ -428,18 +427,18 @@ def create_booking():
     """
     user_id = request.headers.get("X-User-Id")
     if not user_id:
-        return jsonify({"error": "Authentication required"}), 401
+        return jsonify({"error": _("Authentication required")}), 401
 
     data = request.get_json() or {}
 
     pooja_type_id = data.get("poojaTypeId")
     if not pooja_type_id:
-        return jsonify({"error": "poojaTypeId is required"}), 400
+        return jsonify({"error": _("poojaTypeId is required")}), 400
 
     scheduled_date = data.get("scheduledDate")
     scheduled_time = data.get("scheduledTime")
     if not scheduled_date or not scheduled_time:
-        return jsonify({"error": "scheduledDate and scheduledTime are required"}), 400
+        return jsonify({"error": _("scheduledDate and scheduledTime are required")}), 400
 
     pandit_id = data.get("panditId")
 
@@ -451,7 +450,7 @@ def create_booking():
     pooja_row = cur.fetchone()
     if not pooja_row:
         conn.close()
-        return jsonify({"error": "Invalid pooja type"}), 400
+        return jsonify({"error": _("Invalid pooja type")}), 400
 
     # Auto-assign pandit if not provided
     if not pandit_id:
@@ -518,7 +517,7 @@ def list_user_bookings():
     """
     user_id = request.headers.get("X-User-Id")
     if not user_id:
-        return jsonify({"error": "Authentication required"}), 401
+        return jsonify({"error": _("Authentication required")}), 401
 
     status_filter = request.args.get("status")
 
@@ -580,7 +579,7 @@ def get_booking(booking_id: str):
     """
     user_id = request.headers.get("X-User-Id")
     if not user_id:
-        return jsonify({"error": "Authentication required"}), 401
+        return jsonify({"error": _("Authentication required")}), 401
 
     conn = get_connection()
     cur = conn.cursor()
@@ -599,7 +598,7 @@ def get_booking(booking_id: str):
     conn.close()
 
     if not row:
-        return jsonify({"error": "Booking not found"}), 404
+        return jsonify({"error": _("Booking not found")}), 404
 
     return jsonify({
         "id": row["id"],
@@ -636,7 +635,7 @@ def cancel_booking(booking_id: str):
     """
     user_id = request.headers.get("X-User-Id")
     if not user_id:
-        return jsonify({"error": "Authentication required"}), 401
+        return jsonify({"error": _("Authentication required")}), 401
 
     conn = get_connection()
     cur = conn.cursor()
@@ -650,11 +649,13 @@ def cancel_booking(booking_id: str):
     row = cur.fetchone()
     if not row:
         conn.close()
-        return jsonify({"error": "Booking not found"}), 404
+        return jsonify({"error": _("Booking not found")}), 404
 
     if row["status"] in ("completed", "cancelled"):
         conn.close()
-        return jsonify({"error": f"Cannot cancel booking with status: {row['status']}"}), 400
+        return jsonify({
+            "error": _("Cannot cancel booking with status: %(status)s") % {"status": row["status"]}
+        }), 400
 
     # Update status
     now = datetime.utcnow().isoformat()
@@ -683,7 +684,7 @@ def accept_booking(booking_id: str):
     """
     pandit_id = request.headers.get("X-Pandit-Id")
     if not pandit_id:
-        return jsonify({"error": "Pandit authentication required"}), 401
+        return jsonify({"error": _("Pandit authentication required")}), 401
 
     conn = get_connection()
     cur = conn.cursor()
@@ -693,7 +694,7 @@ def accept_booking(booking_id: str):
     pandit = cur.fetchone()
     if not pandit:
         conn.close()
-        return jsonify({"error": "Pandit not found"}), 404
+        return jsonify({"error": _("Pandit not found")}), 404
 
     # Check booking exists and is available for acceptance
     cur.execute("""
@@ -705,15 +706,17 @@ def accept_booking(booking_id: str):
     booking = cur.fetchone()
     if not booking:
         conn.close()
-        return jsonify({"error": "Booking not found"}), 404
+        return jsonify({"error": _("Booking not found")}), 404
 
     if booking["pandit_id"] and booking["pandit_id"] != pandit_id:
         conn.close()
-        return jsonify({"error": "Booking already assigned to another pandit"}), 400
+        return jsonify({"error": _("Booking already assigned to another pandit")}), 400
 
     if booking["status"] in ("completed", "cancelled"):
         conn.close()
-        return jsonify({"error": f"Cannot accept booking with status: {booking['status']}"}), 400
+        return jsonify({
+            "error": _("Cannot accept booking with status: %(status)s") % {"status": booking["status"]}
+        }), 400
 
     # Assign pandit to booking
     now = datetime.now(timezone.utc).isoformat()
@@ -766,7 +769,7 @@ def generate_session_link(booking_id: str):
     """
     user_id = request.headers.get("X-User-Id")
     if not user_id:
-        return jsonify({"error": "Authentication required"}), 401
+        return jsonify({"error": _("Authentication required")}), 401
 
     conn = get_connection()
     cur = conn.cursor()
@@ -781,7 +784,7 @@ def generate_session_link(booking_id: str):
     row = cur.fetchone()
     if not row:
         conn.close()
-        return jsonify({"error": "Booking not found"}), 404
+        return jsonify({"error": _("Booking not found")}), 404
 
     # Generate simple session link - anyone with the link can join
     session_id = str(uuid.uuid4())
@@ -833,7 +836,7 @@ def enroll_pandit():
     required = ["name", "email", "phone", "specializations", "languages", "experienceYears"]
     for field in required:
         if field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
+            return jsonify({"error": _("%(field)s is required") % {"field": field}}), 400
 
     conn = get_connection()
     cur = conn.cursor()
@@ -842,7 +845,7 @@ def enroll_pandit():
     cur.execute("SELECT id FROM pandits WHERE email = ?", (data["email"],))
     if cur.fetchone():
         conn.close()
-        return jsonify({"error": "Email already registered"}), 400
+        return jsonify({"error": _("Email already registered")}), 400
 
     pandit_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -896,7 +899,7 @@ def list_pandit_bookings():
     """
     pandit_id = request.headers.get("X-Pandit-Id")
     if not pandit_id:
-        return jsonify({"error": "Pandit authentication required"}), 401
+        return jsonify({"error": _("Pandit authentication required")}), 401
 
     status_filter = request.args.get("status")
 
@@ -952,7 +955,7 @@ def get_pandit_session_link(booking_id: str):
     """
     pandit_id = request.headers.get("X-Pandit-Id")
     if not pandit_id:
-        return jsonify({"error": "Pandit authentication required"}), 401
+        return jsonify({"error": _("Pandit authentication required")}), 401
 
     conn = get_connection()
     cur = conn.cursor()
@@ -968,7 +971,7 @@ def get_pandit_session_link(booking_id: str):
     conn.close()
 
     if not row:
-        return jsonify({"error": "Session not found"}), 404
+        return jsonify({"error": _("Session not found")}), 404
 
     return jsonify({
         "sessionLink": row["pandit_link"],

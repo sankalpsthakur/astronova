@@ -1,0 +1,193 @@
+
+msgid ""
+msgstr ""
+"Project-Id-Version: astronova 1.0\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-01-13 02:58+0530\n"
+"PO-Revision-Date: 2026-01-13 00:00+0000\n"
+"Last-Translator: \n"
+"Language: es\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: routes/auth.py:87
+msgid "Token missing key ID (kid)"
+msgstr ""
+
+#: routes/auth.py:96
+#, python-format
+msgid "Apple public key not found for kid: %(kid)s"
+msgstr ""
+
+#: routes/auth.py:115 routes/auth.py:185
+msgid "Token has expired"
+msgstr ""
+
+#: routes/auth.py:117
+#, python-format
+msgid "Invalid audience - expected %(bundle_id)s"
+msgstr ""
+
+#: routes/auth.py:119
+#, python-format
+msgid "Invalid issuer - expected %(issuer)s"
+msgstr ""
+
+#: routes/auth.py:121 routes/auth.py:187
+#, python-format
+msgid "Invalid token: %(error)s"
+msgstr ""
+
+#: routes/auth.py:133
+msgid "Invalid token format"
+msgstr ""
+
+#: routes/auth.py:234 routes/horoscope.py:370
+msgid "Request body must be valid JSON"
+msgstr ""
+
+#: routes/auth.py:245
+msgid "Request body must be a JSON object"
+msgstr ""
+
+#: routes/auth.py:283 routes/auth.py:358
+msgid "User"
+msgstr ""
+
+#: routes/auth.py:312
+msgid "No token provided"
+msgstr ""
+
+#: routes/auth.py:331
+msgid "Authorization header with Bearer token required"
+msgstr ""
+
+#: routes/auth.py:336
+msgid "Valid token required for refresh"
+msgstr ""
+
+#: routes/auth.py:347 routes/auth.py:411
+msgid "Invalid token - no user ID"
+msgstr ""
+
+#: routes/auth.py:385
+msgid "Authorization required"
+msgstr ""
+
+#: routes/auth.py:393
+msgid "Valid authorization token required"
+msgstr ""
+
+#: routes/auth.py:425
+msgid "Account and all associated data deleted"
+msgstr ""
+
+#: routes/auth.py:432
+msgid "Deletion failed"
+msgstr ""
+
+#: routes/chat.py:105
+msgid "birthData required"
+msgstr ""
+
+#: routes/chat.py:109
+msgid "birth date required in birthData"
+msgstr ""
+
+#: routes/chat.py:125
+msgid ""
+"Birth data saved successfully. Your chat responses will now be "
+"personalized!"
+msgstr ""
+
+#: routes/horoscope.py:297 routes/horoscope.py:415 routes/horoscope.py:445
+msgid "Invalid zodiac sign"
+msgstr ""
+
+#: routes/horoscope.py:307 routes/horoscope.py:378 routes/horoscope.py:454
+msgid "Invalid date format, use YYYY-MM-DD"
+msgstr ""
+
+#: routes/horoscope.py:387
+msgid "birthData is required for personalized horoscope"
+msgstr ""
+
+#: routes/horoscope.py:397
+msgid "latitude and longitude required in birthData"
+msgstr ""
+
+#: routes/horoscope.py:418
+#, python-format
+msgid "Missing required field in birthData: %(field)s"
+msgstr ""
+
+#: routes/horoscope.py:420
+#, python-format
+msgid "Invalid birth data format: %(error)s"
+msgstr ""
+
+#: routes/temple.py:208
+msgid "Pooja not found"
+msgstr ""
+
+#: routes/temple.py:315 routes/temple.py:697
+msgid "Pandit not found"
+msgstr ""
+
+#: routes/temple.py:430 routes/temple.py:520 routes/temple.py:582
+#: routes/temple.py:638 routes/temple.py:772
+msgid "Authentication required"
+msgstr ""
+
+#: routes/temple.py:436
+msgid "poojaTypeId is required"
+msgstr ""
+
+#: routes/temple.py:441
+msgid "scheduledDate and scheduledTime are required"
+msgstr ""
+
+#: routes/temple.py:453
+msgid "Invalid pooja type"
+msgstr ""
+
+#: routes/temple.py:601 routes/temple.py:652 routes/temple.py:709
+#: routes/temple.py:787
+msgid "Booking not found"
+msgstr ""
+
+#: routes/temple.py:657
+#, python-format
+msgid "Cannot cancel booking with status: %(status)s"
+msgstr ""
+
+#: routes/temple.py:687 routes/temple.py:902 routes/temple.py:958
+msgid "Pandit authentication required"
+msgstr ""
+
+#: routes/temple.py:713
+msgid "Booking already assigned to another pandit"
+msgstr ""
+
+#: routes/temple.py:718
+#, python-format
+msgid "Cannot accept booking with status: %(status)s"
+msgstr ""
+
+#: routes/temple.py:839
+#, python-format
+msgid "%(field)s is required"
+msgstr ""
+
+#: routes/temple.py:848
+msgid "Email already registered"
+msgstr ""
+
+#: routes/temple.py:974
+msgid "Session not found"
+msgstr ""
+

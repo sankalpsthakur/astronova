@@ -449,35 +449,40 @@ extension AuthState {
             debugPrint("[Auth] Apple authentication failed: \(error.localizedDescription)")
             #endif
 
-            var errorReason = "unknown"
-            await MainActor.run {
-                if let networkError = error as? NetworkError {
-                    switch networkError {
-                    case .offline:
-                        errorReason = "offline"
-                        self.authError = "No internet connection. Please check your network and try again."
-                    case .timeout:
-                        errorReason = "timeout"
-                        self.authError = "Authentication timed out. Please try again."
-                    case .authenticationFailed(let message):
-                        errorReason = "auth_failed"
-                        self.authError = message ?? "Authentication failed. Please try again."
-                    case .serverError(let code, let message):
-                        if code >= 500 {
-                            errorReason = "server_error_\(code)"
-                            self.authError = "Server temporarily unavailable. Please try again later."
-                        } else {
-                            errorReason = "api_error_\(code)"
-                            self.authError = message ?? "Authentication failed. Please try again."
-                        }
-                    default:
-                        errorReason = "network_error"
-                        self.authError = "Authentication failed. Please try again."
+            // Determine error reason and message before MainActor context
+            let errorReason: String
+            let errorMessage: String
+
+            if let networkError = error as? NetworkError {
+                switch networkError {
+                case .offline:
+                    errorReason = "offline"
+                    errorMessage = "No internet connection. Please check your network and try again."
+                case .timeout:
+                    errorReason = "timeout"
+                    errorMessage = "Authentication timed out. Please try again."
+                case .authenticationFailed(let message):
+                    errorReason = "auth_failed"
+                    errorMessage = message ?? "Authentication failed. Please try again."
+                case .serverError(let code, let message):
+                    if code >= 500 {
+                        errorReason = "server_error_\(code)"
+                        errorMessage = "Server temporarily unavailable. Please try again later."
+                    } else {
+                        errorReason = "api_error_\(code)"
+                        errorMessage = message ?? "Authentication failed. Please try again."
                     }
-                } else {
-                    errorReason = "unknown_error"
-                    self.authError = "Authentication failed. Please try again."
+                default:
+                    errorReason = "network_error"
+                    errorMessage = "Authentication failed. Please try again."
                 }
+            } else {
+                errorReason = "unknown_error"
+                errorMessage = "Authentication failed. Please try again."
+            }
+
+            await MainActor.run {
+                self.authError = errorMessage
             }
 
             Analytics.shared.track(.signInFailed, properties: ["reason": errorReason])

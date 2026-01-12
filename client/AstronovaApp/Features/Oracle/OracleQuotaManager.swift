@@ -6,7 +6,7 @@ import SwiftUI
 
 @MainActor
 final class OracleQuotaManager: ObservableObject {
-    static let shared = OracleQuotaManager()
+    nonisolated(unsafe) static let shared = OracleQuotaManager()
 
     // MARK: - Published State
 
@@ -50,12 +50,18 @@ final class OracleQuotaManager: ObservableObject {
     }
 
     var resetCountdown: String {
-        let remaining = max(0, Int(resetTime.timeIntervalSince(Date())))
-        let hours = remaining / 3600
-        let minutes = (remaining % 3600) / 60
-        if hours > 0 { return "\(hours)h \(minutes)m" }
-        return "\(minutes)m"
+        let remaining = max(0, resetTime.timeIntervalSince(Date()))
+        return Self.countdownFormatter.string(from: remaining) ?? "0m"
     }
+
+    private static let countdownFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+        formatter.zeroFormattingBehavior = .pad
+        return formatter
+    }()
 
     // MARK: - Initialization
 
@@ -132,8 +138,8 @@ enum OracleDepth: String, CaseIterable {
 
     var description: String {
         switch self {
-        case .quick: return "Direct insight"
-        case .deep: return "Detailed analysis + timing"
+        case .quick: return L10n.Oracle.Depth.quickDescription
+        case .deep: return L10n.Oracle.Depth.deepDescription
         }
     }
 

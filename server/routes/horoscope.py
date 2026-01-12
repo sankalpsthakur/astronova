@@ -4,6 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 
 from db import get_user_birth_data
 from services.ephemeris_service import EphemerisService
@@ -293,7 +294,7 @@ def _generate_horoscope(sign: str, dt: datetime, period: str, natal_data: dict =
 def horoscope():
     sign = request.args.get("sign", "aries").lower()
     if sign not in VALID_SIGNS:
-        return jsonify({"error": "Invalid zodiac sign"}), 400
+        return jsonify({"error": _("Invalid zodiac sign")}), 400
 
     date_str = request.args.get("date")
     period = request.args.get("type", "daily").lower()
@@ -303,7 +304,7 @@ def horoscope():
         try:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
-            return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
+            return jsonify({"error": _("Invalid date format, use YYYY-MM-DD")}), 400
     else:
         dt = datetime.utcnow()
 
@@ -366,7 +367,7 @@ def personalized_horoscope():
     """
     payload = request.get_json(silent=True)
     if not payload:
-        return jsonify({"error": "Request body must be valid JSON"}), 400
+        return jsonify({"error": _("Request body must be valid JSON")}), 400
 
     # Parse target date
     date_str = payload.get("date")
@@ -374,7 +375,7 @@ def personalized_horoscope():
         try:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
-            return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
+            return jsonify({"error": _("Invalid date format, use YYYY-MM-DD")}), 400
     else:
         dt = datetime.utcnow()
 
@@ -383,7 +384,7 @@ def personalized_horoscope():
     # Parse birth data
     birth_data = payload.get("birthData")
     if not birth_data:
-        return jsonify({"error": "birthData is required for personalized horoscope"}), 400
+        return jsonify({"error": _("birthData is required for personalized horoscope")}), 400
 
     try:
         birth_date = birth_data["date"]
@@ -393,7 +394,7 @@ def personalized_horoscope():
         lon = birth_data.get("longitude")
 
         if lat is None or lon is None:
-            return jsonify({"error": "latitude and longitude required in birthData"}), 400
+            return jsonify({"error": _("latitude and longitude required in birthData")}), 400
 
         # Calculate natal chart
         bd_local = datetime.strptime(f"{birth_date}T{birth_time}", "%Y-%m-%dT%H:%M")
@@ -411,12 +412,12 @@ def personalized_horoscope():
             sign = sign.lower()
 
         if sign not in VALID_SIGNS:
-            return jsonify({"error": "Invalid zodiac sign"}), 400
+            return jsonify({"error": _("Invalid zodiac sign")}), 400
 
     except KeyError as e:
-        return jsonify({"error": f"Missing required field in birthData: {e}"}), 400
+        return jsonify({"error": _("Missing required field in birthData: %(field)s") % {"field": e}}), 400
     except ValueError as e:
-        return jsonify({"error": f"Invalid birth data format: {e}"}), 400
+        return jsonify({"error": _("Invalid birth data format: %(error)s") % {"error": e}}), 400
 
     # Generate personalized horoscope
     content, lucky_elements = _generate_horoscope(sign, dt, period, natal_planets)
@@ -441,7 +442,7 @@ def daily_horoscope():
     # Convenience endpoint that forces daily type
     sign = request.args.get("sign", "aries").lower()
     if sign not in VALID_SIGNS:
-        return jsonify({"error": "Invalid zodiac sign"}), 400
+        return jsonify({"error": _("Invalid zodiac sign")}), 400
 
     date_str = request.args.get("date")
     user_id = request.args.get("user_id")  # Optional user ID for personalization
@@ -450,7 +451,7 @@ def daily_horoscope():
         try:
             dt = datetime.strptime(date_str, "%Y-%m-%d")
         except ValueError:
-            return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
+            return jsonify({"error": _("Invalid date format, use YYYY-MM-DD")}), 400
     else:
         dt = datetime.utcnow()
 

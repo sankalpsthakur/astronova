@@ -56,6 +56,7 @@ struct DomainGridView: View {
                     Text("Today's Cosmic Weather")
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
+                        .accessibilityAddTraits(.isHeader)
 
                     Text(formattedDate)
                         .font(.cosmicCaption)
@@ -68,6 +69,7 @@ struct DomainGridView: View {
                 if !reduceMotion {
                     CosmicGlowOrb()
                         .frame(width: 40, height: 40)
+                        .accessibilityHidden(true)
                 }
             }
 
@@ -113,6 +115,9 @@ struct DomainGridView: View {
                     lineWidth: Cosmic.Border.hairline
                 )
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(cosmicWeatherAccessibilityLabel)
+        .accessibilityHint("Displays your daily astrological summary")
     }
 
     private var formattedDate: String {
@@ -122,7 +127,12 @@ struct DomainGridView: View {
     }
 
     private var defaultSummary: String {
-        "The cosmos aligns to bring you clarity and purpose today. Pay attention to the subtle energies around you and trust your intuition."
+        "Your personalized cosmic weather isn't available yet. Connect to the internet or refresh to see today's insight."
+    }
+
+    private var cosmicWeatherAccessibilityLabel: String {
+        let summary = horoscope?.isEmpty == false ? (horoscope ?? defaultSummary) : defaultSummary
+        return "Today's cosmic weather for \(formattedDate). \(summary)"
     }
 }
 

@@ -53,6 +53,12 @@ struct DiscoverView: View {
                 showingReportShop = true
             }
         }
+        .onAppear {
+            guard auth.isAuthenticated else { return }
+            Task {
+                await viewModel.loadUserReports()
+            }
+        }
         .onChange(of: triggerShowReportShop) { _, newValue in
             if newValue {
                 triggerShowReportShop = false

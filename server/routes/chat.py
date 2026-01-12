@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
+from flask_babel import gettext as _
 
 from db import add_chat_message, ensure_conversation, get_user_birth_data, init_db, upsert_user_birth_data
-from middleware import get_authenticated_user_id, require_auth
+from middleware import require_auth
 from services.chat_response_service import ChatResponseService, ChatServiceError
 
 chat_bp = Blueprint("chat", __name__)
@@ -45,7 +46,7 @@ def chat():
     # Ensure conversation exists (or create one)
     conversation_id = ensure_conversation(conversation_id, user_id)
     # Persist user message
-    _ = add_chat_message(conversation_id, "user", message, user_id)
+    user_message_id = add_chat_message(conversation_id, "user", message, user_id)
 
     # Generate personalized response using chat service
     try:
@@ -101,11 +102,11 @@ def save_birth_data():
 
     birth_data = data.get("birthData")
     if not birth_data:
-        return jsonify({"error": "birthData required"}), 400
+        return jsonify({"error": _("birthData required")}), 400
 
     birth_date = birth_data.get("date")
     if not birth_date:
-        return jsonify({"error": "birth date required in birthData"}), 400
+        return jsonify({"error": _("birth date required in birthData")}), 400
 
     # Save birth data
     upsert_user_birth_data(
@@ -119,7 +120,10 @@ def save_birth_data():
     )
 
     return jsonify(
-        {"status": "success", "message": "Birth data saved successfully. Your chat responses will now be personalized!"}
+        {
+            "status": "success",
+            "message": _("Birth data saved successfully. Your chat responses will now be personalized!"),
+        }
     )
 
 

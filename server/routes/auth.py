@@ -5,10 +5,10 @@ import logging
 import os
 import uuid
 from datetime import datetime, timedelta
-from functools import lru_cache
 from typing import Optional
 
 from flask import Blueprint, jsonify, request
+from flask_babel import gettext as _
 
 from db import upsert_user, delete_user_data
 
@@ -77,7 +77,6 @@ def validate_apple_id_token(id_token: str) -> dict:
         ValueError: If token is invalid
     """
     import jwt
-    from jwt import PyJWKClient
 
     try:
         # Get the header to find the key ID
@@ -85,7 +84,7 @@ def validate_apple_id_token(id_token: str) -> dict:
         kid = unverified_header.get("kid")
 
         if not kid:
-            raise ValueError("Token missing key ID (kid)")
+            raise ValueError(_("Token missing key ID (kid)"))
 
         # Get Apple's matching public key
         apple_key = _get_key_by_kid(kid)
@@ -94,7 +93,7 @@ def validate_apple_id_token(id_token: str) -> dict:
             _apple_keys_cache["expires"] = None
             apple_key = _get_key_by_kid(kid)
             if not apple_key:
-                raise ValueError(f"Apple public key not found for kid: {kid}")
+                raise ValueError(_("Apple public key not found for kid: %(kid)s") % {"kid": kid})
 
         # Convert JWK to PEM format
         from jwt.algorithms import RSAAlgorithm
@@ -113,13 +112,13 @@ def validate_apple_id_token(id_token: str) -> dict:
         return decoded
 
     except jwt.ExpiredSignatureError:
-        raise ValueError("Token has expired")
+        raise ValueError(_("Token has expired"))
     except jwt.InvalidAudienceError:
-        raise ValueError(f"Invalid audience - expected {APPLE_BUNDLE_ID}")
+        raise ValueError(_("Invalid audience - expected %(bundle_id)s") % {"bundle_id": APPLE_BUNDLE_ID})
     except jwt.InvalidIssuerError:
-        raise ValueError(f"Invalid issuer - expected {APPLE_ISSUER}")
+        raise ValueError(_("Invalid issuer - expected %(issuer)s") % {"issuer": APPLE_ISSUER})
     except jwt.InvalidTokenError as e:
-        raise ValueError(f"Invalid token: {str(e)}")
+        raise ValueError(_("Invalid token: %(error)s") % {"error": str(e)})
     except ImportError:
         # PyJWT not installed - skip validation in development
         logger.warning("PyJWT not installed - skipping Apple token validation")
@@ -131,7 +130,7 @@ def validate_apple_id_token(id_token: str) -> dict:
             # Add padding if needed
             payload = parts[1] + "=" * (4 - len(parts[1]) % 4)
             return json.loads(base64.urlsafe_b64decode(payload))
-        raise ValueError("Invalid token format")
+        raise ValueError(_("Invalid token format"))
 
 
 # JWT secret key - in production, use a strong random secret from environment
@@ -183,9 +182,9 @@ def validate_jwt(token: str) -> dict:
             "email": payload.get("email"),
         }
     except jwt.ExpiredSignatureError:
-        raise ValueError("Token has expired")
+        raise ValueError(_("Token has expired"))
     except jwt.InvalidTokenError as e:
-        raise ValueError(f"Invalid token: {str(e)}")
+        raise ValueError(_("Invalid token: %(error)s") % {"error": str(e)})
 
 
 @auth_bp.route("", methods=["GET"])
@@ -232,7 +231,7 @@ def apple_auth():
             return (
                 jsonify(
                     {
-                        "error": "Request body must be valid JSON",
+                        "error": _("Request body must be valid JSON"),
                         "code": "INVALID_JSON",
                     }
                 ),
@@ -243,7 +242,7 @@ def apple_auth():
 
     data = payload or {}
     if not isinstance(data, dict):
-        return jsonify({"error": "Request body must be a JSON object", "code": "INVALID_PAYLOAD"}), 400
+        return jsonify({"error": _("Request body must be a JSON object"), "code": "INVALID_PAYLOAD"}), 400
 
     # Get user info from payload
     identity_token = data.get("identityToken")
@@ -281,7 +280,7 @@ def apple_auth():
         user_identifier = str(uuid.uuid4())
         logger.info(f"Generated anonymous user ID: {user_identifier}")
 
-    full_name = (f"{first_name or ''} {last_name or ''}").strip() or (email or "User")
+    full_name = (f"{first_name or ''} {last_name or ''}").strip() or (email or _("User"))
 
     upsert_user(user_identifier, email, first_name, last_name, full_name)
 
@@ -310,7 +309,7 @@ def validate():
     token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
 
     if not token:
-        return jsonify({"valid": False, "error": "No token provided"})
+        return jsonify({"valid": False, "error": _("No token provided")})
 
     try:
         decoded = validate_jwt(token)
@@ -329,12 +328,12 @@ def refresh():
     auth_header = request.headers.get("Authorization", "")
 
     if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Authorization header with Bearer token required", "code": "AUTH_REQUIRED"}), 401
+        return jsonify({"error": _("Authorization header with Bearer token required"), "code": "AUTH_REQUIRED"}), 401
 
     token = auth_header.replace("Bearer ", "").strip()
 
     if not token or token == "null" or token == "undefined":
-        return jsonify({"error": "Valid token required for refresh", "code": "INVALID_TOKEN"}), 401
+        return jsonify({"error": _("Valid token required for refresh"), "code": "INVALID_TOKEN"}), 401
 
     # Validate existing token and extract user info
     try:
@@ -345,7 +344,7 @@ def refresh():
         return jsonify({"error": str(e), "code": "INVALID_TOKEN"}), 401
 
     if not user_id:
-        return jsonify({"error": "Invalid token - no user ID", "code": "INVALID_TOKEN"}), 401
+        return jsonify({"error": _("Invalid token - no user ID"), "code": "INVALID_TOKEN"}), 401
 
     # Issue new token with same user info
     new_token = generate_jwt(user_id, email)
@@ -356,7 +355,7 @@ def refresh():
             "email": email,
             "firstName": None,
             "lastName": None,
-            "fullName": email or "User",
+            "fullName": email or _("User"),
             "createdAt": datetime.utcnow().isoformat(),
             "updatedAt": datetime.utcnow().isoformat(),
         },
@@ -377,13 +376,13 @@ def delete_account():
     Required for App Store compliance (Guideline 5.1.1).
 
     SECURITY: Requires Bearer token authentication.
-    User ID is derived from authenticated context, not from headers.
+    User ID is derived from authenticated token only.
     """
     # Require Bearer token authentication
     auth_header = request.headers.get("Authorization", "")
     if not auth_header or not auth_header.startswith("Bearer "):
         return jsonify({
-            "error": "Authorization required",
+            "error": _("Authorization required"),
             "code": "AUTH_REQUIRED",
             "deleted": False
         }), 401
@@ -391,29 +390,28 @@ def delete_account():
     token = auth_header.replace("Bearer ", "").strip()
     if not token or token == "null" or token == "undefined":
         return jsonify({
-            "error": "Valid authorization token required",
+            "error": _("Valid authorization token required"),
             "code": "INVALID_TOKEN",
             "deleted": False
         }), 401
 
-    # Get user ID - prefer from request body (authenticated context)
-    # X-User-Id header is accepted but only with valid Bearer token
-    user_id = None
+    # Derive user ID from the verified token only.
     try:
-        data = request.get_json(silent=True) or {}
-        user_id = data.get("userId")
-    except Exception:
-        pass
+        decoded = validate_jwt(token)
+    except ValueError as e:
+        return jsonify({
+            "error": str(e),
+            "code": "INVALID_TOKEN",
+            "deleted": False
+        }), 401
 
-    if not user_id:
-        user_id = request.headers.get("X-User-Id")
-
+    user_id = decoded.get("user_id")
     if not user_id:
         return jsonify({
-            "error": "User ID required in request body or X-User-Id header",
-            "code": "USER_ID_REQUIRED",
+            "error": _("Invalid token - no user ID"),
+            "code": "INVALID_TOKEN",
             "deleted": False
-        }), 400
+        }), 401
 
     logger.info(f"Account deletion requested for user: {user_id}")
 
@@ -424,14 +422,14 @@ def delete_account():
         logger.info(f"Account deleted successfully: {user_id}")
         return jsonify({
             "status": "ok",
-            "message": "Account and all associated data deleted",
+            "message": _("Account and all associated data deleted"),
             "deleted": True,
             "deletedRecords": result.get("deletedRecords", {})
         }), 200
     else:
         logger.error(f"Account deletion failed: {user_id} - {result.get('error')}")
         return jsonify({
-            "error": result.get("error", "Deletion failed"),
+            "error": result.get("error", _("Deletion failed")),
             "code": "DELETION_FAILED",
             "deleted": False
         }), 500
