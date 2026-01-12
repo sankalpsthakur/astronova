@@ -205,6 +205,460 @@ def create_app():
 
         return compatibility_handler()
 
+    # Marketing landing page
+    @app.route("/", methods=["GET"])
+    def landing_page():
+        html = """<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Astronova - Authentic Vedic Astrology</title>
+    <meta name="description" content="Decode cosmic frequencies with authentic Vedic astrology. Personalized insights, AI oracle, expert consultations, and sacred ceremonies.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #F5F0E6;
+            background: #0E0E14;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #0E0E14 0%, #1A1A2E 50%, #0D1B2A 100%);
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(212, 168, 83, 0.1) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+        }
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #D4A853 0%, #B08D57 50%, #C67D4D 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        h1 {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #F5F0E6 0%, #D4A853 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 22px;
+            color: #B8B8B8;
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 16px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #D4A853 0%, #B08D57 50%, #C67D4D 100%);
+            color: #0E0E14;
+            box-shadow: 0 8px 24px rgba(212, 168, 83, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(212, 168, 83, 0.4);
+        }
+        .btn-secondary {
+            background: rgba(212, 168, 83, 0.1);
+            color: #D4A853;
+            border: 2px solid #D4A853;
+        }
+        .btn-secondary:hover {
+            background: rgba(212, 168, 83, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 20px;
+            background: #0E0E14;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #D4A853 0%, #B08D57 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .section-subtitle {
+            text-align: center;
+            font-size: 20px;
+            color: #B8B8B8;
+            margin-bottom: 60px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+        .feature-card {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.6) 0%, rgba(13, 27, 42, 0.6) 100%);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(212, 168, 83, 0.5);
+            box-shadow: 0 12px 40px rgba(212, 168, 83, 0.2);
+        }
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #D4A853;
+        }
+        .feature-card p {
+            color: #B8B8B8;
+            line-height: 1.7;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 100px 20px;
+            background: linear-gradient(180deg, #0E0E14 0%, #1A1A2E 100%);
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+        .step {
+            text-align: center;
+            padding: 30px;
+        }
+        .step-number {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #D4A853 0%, #C67D4D 100%);
+            color: #0E0E14;
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .step h3 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            color: #F5F0E6;
+        }
+        .step p {
+            color: #B8B8B8;
+        }
+
+        /* Social Proof */
+        .social-proof {
+            padding: 100px 20px;
+            background: #0E0E14;
+            text-align: center;
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            flex-wrap: wrap;
+            margin-top: 60px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #D4A853 0%, #C67D4D 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            color: #B8B8B8;
+            font-size: 18px;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #1A1A2E 0%, #0D1B2A 100%);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(212, 168, 83, 0.15) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+        }
+        .cta-content {
+            position: relative;
+            z-index: 1;
+        }
+        .cta-section h2 {
+            font-size: 42px;
+            margin-bottom: 20px;
+        }
+        .cta-section p {
+            font-size: 20px;
+            color: #B8B8B8;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            padding: 60px 20px 40px;
+            background: #0A0A0F;
+            text-align: center;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            color: #B8B8B8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .footer-links a:hover {
+            color: #D4A853;
+        }
+        .copyright {
+            color: #706860;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 36px; }
+            .hero p { font-size: 18px; }
+            .section-title { font-size: 32px; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .stats { gap: 40px; }
+            .cta-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="logo">✦ ASTRONOVA</div>
+            <h1>Decode the Cosmic Frequencies<br>Shaping Your Life</h1>
+            <p>Authentic Vedic astrology powered by 5,000 years of wisdom and NASA-grade planetary calculations. Your personal guide to timing, relationships, and life's deeper patterns.</p>
+            <div class="cta-buttons">
+                <a href="#" class="btn btn-primary">Download for iOS</a>
+                <a href="#features" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Everything You Need</h2>
+            <p class="section-subtitle">From daily insights to expert consultations, unlock the full spectrum of Vedic astrology</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🌟</div>
+                    <h3>Personalized Daily Insights</h3>
+                    <p>Every morning, receive guidance calculated specifically for your unique birth chart. Know where to focus energy, which relationships need attention, and when to take action.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⏳</div>
+                    <h3>Dasha Timeline</h3>
+                    <p>See your life's planetary periods mapped on an interactive wheel. Understand which cosmic energies influence you right now and when they shift.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔮</div>
+                    <h3>AI Oracle</h3>
+                    <p>Ask specific questions about timing, decisions, and direction. Get astrological wisdom combined with your birth chart data for personalized guidance.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💫</div>
+                    <h3>Compatibility Analysis</h3>
+                    <p>Explore relationship dynamics through synastry and composite charts. Understand how your frequencies interact with others.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🕉️</div>
+                    <h3>Temple Services</h3>
+                    <p>Book authentic poojas performed by verified pandits at real temples. Participate via live video streaming from anywhere in the world.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">👤</div>
+                    <h3>Expert Consultations</h3>
+                    <p>Video sessions with verified Vedic astrologers specializing in career, relationships, health, or spiritual growth. Real expertise, real results.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-subtitle">Get started in minutes, gain insights for a lifetime</p>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Create Your Profile</h3>
+                    <p>Enter your birth date, time, and location. We calculate your complete Vedic birth chart using Swiss Ephemeris precision.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Get Daily Insights</h3>
+                    <p>Every day, discover personalized guidance based on current planetary transits and your unique chart.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Explore & Deepen</h3>
+                    <p>Dive into your dasha timeline, ask the Oracle questions, or book consultations with expert astrologers.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Live in Flow</h3>
+                    <p>Use cosmic timing to make better decisions, understand relationships, and navigate life with clarity.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section class="social-proof">
+        <div class="container">
+            <h2 class="section-title">Trusted by Seekers Worldwide</h2>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number">5,000+</div>
+                    <div class="stat-label">Years of Wisdom</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Authentic Vedic</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-number">NASA</div>
+                    <div class="stat-label">Grade Calculations</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Start Your Cosmic Journey Today</h2>
+            <p>Join thousands discovering authentic Vedic astrology. Download Astronova and decode the frequencies shaping your life.</p>
+            <a href="#" class="btn btn-primary">Download Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="/support">Support</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+        </div>
+        <p class="copyright">© 2026 Astronova. All rights reserved.</p>
+    </footer>
+</body>
+</html>"""
+        return Response(html, mimetype="text/html")
+
     # Legal pages (App Store compliance - required for subscription apps)
     @app.route("/terms", methods=["GET"])
     def terms_of_service():
