@@ -72,7 +72,7 @@ def create_app():
     limiter = Limiter(
         key_func=get_key,
         app=app,
-        default_limits=["200 per day", "60 per hour"],
+        default_limits=["2000 per day", "500 per hour"],
         storage_uri="memory://",
     )
 

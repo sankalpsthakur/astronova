@@ -44,14 +44,14 @@ A complete end-to-end pooja booking system with verified pandits, video sessions
 
 #### 3. Video Session System ✅
 - **File**: `server/static/temple/session.html` (454 lines)
-- **Technology**: Twilio Video SDK
+- **Technology**: WebRTC Video SDK
 - **Features**:
   - Camera preview before joining
   - Participant grid layout
   - Mic/video toggle controls
   - Cosmic design system (matches app aesthetic)
 - **Status**:
-  - ⚠️ **Mock Mode** - Twilio credentials not configured
+  - ⚠️ **Mock Mode** - Video service credentials not configured
   - Returns mock tokens for development testing
   - Real tokens require env vars (see Configuration section)
 
@@ -150,27 +150,27 @@ GET http://127.0.0.1:8080/api/v1/temple/pandits
 
 ## ⚠️ What's Pending (Optional Enhancements)
 
-### 1. Twilio Video Configuration (For Production)
+### 1. Video Service Configuration (For Production)
 
 **Current**: Mock mode enabled (development)
 **To Enable Real Video**:
 
 ```bash
 # Add to server/.env or environment variables
-export TWILIO_ACCOUNT_SID="your_account_sid"
-export TWILIO_API_KEY="your_api_key"
-export TWILIO_API_SECRET="your_api_secret"
+export VIDEO_SERVICE_ACCOUNT_SID="your_account_sid"
+export VIDEO_SERVICE_API_KEY="your_api_key"
+export VIDEO_SERVICE_API_SECRET="your_api_secret"
 ```
 
 **Get Credentials**:
-1. Sign up at https://www.twilio.com/console
-2. Create API Key at Console → API Keys
+1. Sign up with a video service provider
+2. Create API Key in provider console
 3. Copy credentials to environment
 
 **Mock Behavior** (temple.py:1040-1047):
 - Returns `"mock-token-for-development"`
 - Session page loads but won't connect to real video
-- UI/UX testable without Twilio account
+- UI/UX testable without video service account
 
 ### 2. End-to-End iOS Testing
 
@@ -246,7 +246,7 @@ export TWILIO_API_SECRET="your_api_secret"
 1. [ ] Test complete booking flow in iOS Simulator
 2. [ ] Add payment integration (Stripe/Razorpay)
 3. [ ] Deploy to Render with updated schema
-4. [ ] Set up Twilio account for real video sessions
+4. [ ] Set up video service account for real video sessions
 
 ### Long-Term (This Month)
 1. [ ] Build Pandit Portal (web/mobile)
@@ -298,7 +298,7 @@ Grand Total: 2,489 lines of production code
 |-----------|--------|--------------|
 | Database Schema | ✅ Complete | 100% |
 | API Endpoints | ✅ Complete | 100% |
-| Video Session System | ⚠️ Mock Mode | 80% (needs Twilio creds) |
+| Video Session System | ⚠️ Mock Mode | 80% (needs video service creds) |
 | iOS API Integration | ✅ Complete | 100% |
 | iOS Data Models | ✅ Complete | 100% |
 | iOS Booking UI | ✅ Complete | 100% |
@@ -315,7 +315,7 @@ The Temple/Pooja booking feature is **complete and functional**. You can:
 
 1. **Test immediately**: iOS booking flow works end-to-end (without real video)
 2. **Deploy to staging**: All backend code is production-ready
-3. **Add Twilio later**: Video sessions work in mock mode for now
+3. **Add video service later**: Video sessions work in mock mode for now
 
 **Suggested commit message**:
 ```
@@ -324,7 +324,7 @@ feat(temple): add complete pooja booking system with video sessions
 - Add 6 seeded pooja types (Ganesh, Lakshmi, Navagraha, etc.)
 - Add pandit management with verification system
 - Implement booking flow with scheduling
-- Add Twilio video session integration (mock mode for dev)
+- Add video session integration (mock mode for dev)
 - Add contact detail filtering for security
 - Add comprehensive booking UI in iOS client
 - Fix navigation bugs in Discover and Self tabs

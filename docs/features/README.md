@@ -19,7 +19,7 @@ Implementation status and details for the Temple/Pooja booking system:
 - Pooja type catalog
 - Pandit enrollment and management
 - Booking workflow
-- Video session integration (Twilio)
+- Video session integration
 - Contact filtering and safety features
 - Payment integration
 

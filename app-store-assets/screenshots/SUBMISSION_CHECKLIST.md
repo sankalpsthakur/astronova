@@ -77,7 +77,7 @@ SUBSCRIPTIONS:
 
 THIRD-PARTY SERVICES:
 - Backend API: Hosted on Render (https://astronova.onrender.com)
-- Video calls: Twilio Video (for pandit consultations)
+- Video consultations: WebRTC video service (for pandit consultations)
 - Ephemeris calculations: Swiss Ephemeris library
 - AI guidance: OpenAI API (optional, degrades gracefully)
 

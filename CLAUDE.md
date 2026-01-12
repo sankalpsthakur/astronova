@@ -15,7 +15,7 @@ Astronova is an iOS SwiftUI app with a Flask backend for Vedic astrology feature
   - SQLite database with WAL mode and auto-migrations
 
 **Tech Stack:**
-- **Backend**: Python 3.11, Flask, SQLite, Swiss Ephemeris, Twilio Video, OpenAI API
+- **Backend**: Python 3.11, Flask, SQLite, Swiss Ephemeris, OpenAI API
 - **Frontend**: SwiftUI, iOS 17+, Combine, StoreKit 2, MapKit
 - **Testing**: pytest (backend), XCTest (iOS), pre-commit hooks
 - **Deployment**: Render (Flask), Xcode Cloud (iOS)
@@ -39,11 +39,6 @@ python app.py                    # Runs on 0.0.0.0:8080
 | `OPENAI_MODEL` | No | `gpt-4o-mini` | OpenAI model for chat |
 | `JWT_SECRET` | Recommended | Auto-generated | JWT signing secret (set in production) |
 | `APPLE_BUNDLE_ID` | For iOS auth | - | Apple Sign-In bundle identifier |
-| `TWILIO_ACCOUNT_SID` | For video | - | Twilio account SID for video sessions |
-| `TWILIO_API_KEY` | For video | - | Twilio API key |
-| `TWILIO_API_SECRET` | For video | - | Twilio API secret |
-
-**Note**: Missing Twilio credentials will fall back to mock tokens for development
 
 ### iOS Client
 Open `client/astronova.xcodeproj` in Xcode 15+. Use scheme `AstronovaApp` targeting iOS 17+ simulator.
@@ -356,7 +351,6 @@ astronova/
 - `GET /api/v1/temple/bookings/{id}` — Get booking details
 - `POST /api/v1/temple/bookings/{id}/cancel` — Cancel booking
 - `POST /api/v1/temple/bookings/{id}/session` — Generate video session link
-- `POST /api/v1/temple/session/{id}/token` — Get Twilio video access token
 - `POST /api/v1/temple/pandits/enroll` — Enroll new pandit
 - `GET /api/v1/temple/pandit/bookings` — List pandit's bookings (requires X-Pandit-Id header)
 - `POST /api/v1/temple/filter-message` — Filter contact details from messages
@@ -598,9 +592,9 @@ Complete pooja booking workflow with video session integration:
   2. System auto-assigns pandit or user selects preferred pandit
   3. Payment confirmation triggers session link generation
   4. Both parties receive unique video session links
-- **Video Sessions**: Twilio Video integration for live pooja streaming
+- **Video Sessions**: WebRTC integration for live pooja streaming
   - Token-based authentication for secure access
-  - Mock tokens provided for development when Twilio not configured
+  - Mock tokens provided for development when video service not configured
   - Session recording support
 - **Contact Filtering**: Automatic removal of phone/email/social handles from chat messages
   - Regex-based pattern matching for Indian/international numbers
@@ -1147,9 +1141,9 @@ do {
    - Set availability via `pandit_availability` table
    - Admin must verify (set `is_verified = 1`)
 3. **Video Session Integration**:
-   - Configure Twilio credentials in environment (`TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`)
+   - Configure video service credentials in environment
    - Session links auto-generate on booking confirmation
-   - Frontend loads Twilio Video SDK for live streaming
+   - Frontend loads video SDK for live streaming
 
 ### Database Changes & Migrations
 When adding new tables or columns:
@@ -1712,9 +1706,6 @@ export FLASK_DEBUG=true
 export DB_PATH=./astronova.db
 export OPENAI_API_KEY=sk-...
 export JWT_SECRET=your-secret-key
-export TWILIO_ACCOUNT_SID=AC...
-export TWILIO_API_KEY=SK...
-export TWILIO_API_SECRET=...
 ```
 
 ### Design System Quick Reference
@@ -1793,7 +1784,6 @@ Located in `app-store-assets/` directory:
 - Backend API: `https://astronova.onrender.com`
 - Features require network connectivity
 - StoreKit testing enabled for subscription flow
-- Twilio video integration (functional in production)
 
 ### Privacy Declarations
 Required data disclosures:
@@ -1810,7 +1800,6 @@ Required data disclosures:
 - **Database locked**: SQLite WAL mode enabled; check for zombie connections
 - **Swiss Ephemeris unavailable**: Backend falls back to approximations (less accurate); install `pyswisseph` for full precision
 - **Coverage below 80%**: Run `pytest --cov=. --cov-report=html` and check `htmlcov/index.html` for uncovered code
-- **Twilio video not working**: Check credentials in environment; falls back to mock tokens in development
 
 ### iOS Issues
 - **Build errors about SwiftUI `.onChange`**: Ensure iOS 17+ SDK and Xcode 15+

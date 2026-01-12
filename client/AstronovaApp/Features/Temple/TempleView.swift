@@ -1059,8 +1059,7 @@ struct PoojaBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                                 Text(L10n.Temple.Booking.selectDate)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
-                                    .accessibilityAddTraits(.isHeader)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .accessibilityAddTraits(.isHeader)
 
                                 DatePicker(
@@ -1081,8 +1080,7 @@ struct PoojaBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                                 Text(L10n.Temple.Booking.selectTime)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
-                                    .accessibilityAddTraits(.isHeader)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .accessibilityAddTraits(.isHeader)
 
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: Cosmic.Spacing.s) {
@@ -1117,7 +1115,7 @@ struct PoojaBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
                                 Text(L10n.Temple.Booking.sankalpDetails)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .accessibilityAddTraits(.isHeader)
 
                                 VStack(spacing: Cosmic.Spacing.s) {
@@ -1144,7 +1142,7 @@ struct PoojaBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                                 Text(L10n.Temple.Booking.specialRequestsOptional)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .accessibilityAddTraits(.isHeader)
 
                                 TextEditor(text: $specialRequests)
@@ -1395,7 +1393,7 @@ struct ConsultationBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                                 Text(L10n.Temple.Consultation.selectDate)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
 
                                 DatePicker(
                                     L10n.Temple.Booking.dateLabel,
@@ -1414,7 +1412,7 @@ struct ConsultationBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                                 Text(L10n.Temple.Consultation.selectTime)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
 
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: Cosmic.Spacing.s) {
                                     ForEach(timeSlots, id: \.self) { slot in
@@ -1447,7 +1445,7 @@ struct ConsultationBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                                 Text(L10n.Temple.Consultation.duration)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .accessibilityAddTraits(.isHeader)
 
                                 Picker(L10n.Temple.Consultation.duration, selection: $durationMinutes) {
@@ -1464,7 +1462,7 @@ struct ConsultationBookingSheet: View {
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                                 Text(L10n.Temple.Consultation.topicOptional)
                                     .font(.cosmicCaptionEmphasis)
-                                    .foregroundStyle(Color.cosmicTextTertiary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                                     .accessibilityAddTraits(.isHeader)
 
                                 TextEditor(text: $topic)
@@ -1480,14 +1478,22 @@ struct ConsultationBookingSheet: View {
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
-                            HStack {
-                                Text(L10n.Temple.Consultation.total)
-                                    .font(.cosmicCalloutEmphasis)
+                            // Payment Notice
+                            VStack(spacing: Cosmic.Spacing.xs) {
+                                HStack {
+                                    Text(L10n.Temple.Consultation.total)
+                                        .font(.cosmicCalloutEmphasis)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                    Spacer()
+                                    Text("₹\(totalPrice)")
+                                        .font(.cosmicHeadline)
+                                        .foregroundStyle(Color.cosmicGold)
+                                }
+
+                                Text("Payment will be collected securely during consultation")
+                                    .font(.cosmicMicro)
                                     .foregroundStyle(Color.cosmicTextSecondary)
-                                Spacer()
-                                Text("₹\(totalPrice)")
-                                    .font(.cosmicHeadline)
-                                    .foregroundStyle(Color.cosmicGold)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
@@ -1507,8 +1513,8 @@ struct ConsultationBookingSheet: View {
                                         ProgressView()
                                             .tint(Color.cosmicVoid)
                                     } else {
-                                        Image(systemName: "phone.fill")
-                                        Text(L10n.Temple.Consultation.bookConsultation)
+                                        Image(systemName: "calendar.badge.checkmark")
+                                        Text("Schedule Consultation")
                                     }
                                 }
                                 .font(.cosmicHeadline)
@@ -1519,8 +1525,8 @@ struct ConsultationBookingSheet: View {
                                 .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
                             }
                             .disabled(isLoading)
-                            .accessibilityLabel(L10n.Temple.Consultation.bookConsultationLabel)
-                            .accessibilityHint(L10n.Temple.Consultation.bookConsultationHint)
+                            .accessibilityLabel("Schedule consultation for \(formattedDate(selectedDate)) at \(selectedTimeSlot)")
+                            .accessibilityHint("Schedules a \(durationMinutes)-minute consultation with \(astrologer.name)")
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             Spacer().frame(height: 40)
