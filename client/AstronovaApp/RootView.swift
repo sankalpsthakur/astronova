@@ -5,6 +5,33 @@ import AuthenticationServices
 import CoreLocation
 import MapKit
 
+enum PersonalizationCopy {
+    static func quickStartInsight(name: String, birthDate: Date) -> String {
+        let birthDateText = LocaleFormatter.shared.longDate.string(from: birthDate)
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedName.isEmpty {
+            return L10n.Onboarding.QuickStart.introWithoutName(birthDateText)
+        }
+        return L10n.Onboarding.QuickStart.introWithName(trimmedName, birthDateText)
+    }
+
+    static func compatibilitySummary(score: Int, partnerName: String) -> String {
+        let trimmedName = partnerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = trimmedName.isEmpty ? "this person" : trimmedName
+        let clampedScore = min(100, max(0, score))
+        let scoreText = "\(clampedScore)%"
+
+        switch clampedScore {
+        case 80...:
+            return "Your charts show strong alignment with \(name). The overall score is \(scoreText)."
+        case 60..<80:
+            return "Your charts show a balanced mix of harmony and tension with \(name). The overall score is \(scoreText)."
+        default:
+            return "Your charts show more growth areas than harmony with \(name). The overall score is \(scoreText)."
+        }
+    }
+}
+
 // MARK: - Temporary Stubs for Missing Components
 
 struct ProfileSetupContentView: View {
@@ -29,7 +56,7 @@ struct ProfileSetupContentView: View {
                 // Elegant progress indicator
                 VStack(spacing: Cosmic.Spacing.s) {
                     HStack {
-                        Text("✨ Creating Your Cosmic Profile")
+                        (Text("✨ ") + Text(L10n.Onboarding.progressTitle))
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextPrimary)
                         Spacer()
@@ -43,7 +70,7 @@ struct ProfileSetupContentView: View {
                                 .scaleEffect(step == currentStep ? 1.3 : 1.0)
                         }
                         Spacer()
-                        Text("\(currentStep + 1) / \(totalSteps)")
+                        Text(L10n.Onboarding.progressStep(currentStep + 1, totalSteps))
                             .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
@@ -93,12 +120,14 @@ struct ProfileSetupContentView: View {
                             if currentStep == totalSteps - 1 {
                                 Image(systemName: "moon.stars.circle.fill")
                                     .font(.cosmicTitle3)
-                                Text("Create My Profile")
+                                Text(L10n.Onboarding.Actions.createProfile)
                                     .font(.cosmicTitle3)
                             } else {
-                                let buttonText = currentStep == 0 ? "Begin Journey" :
-                                                currentStep == 4 ? (birthPlace.isEmpty ? "Skip for Now" : "Continue") :
-                                                "Continue"
+                                let buttonText = currentStep == 0
+                                    ? L10n.Onboarding.Actions.beginJourney
+                                    : currentStep == 4
+                                        ? (birthPlace.isEmpty ? L10n.Onboarding.Actions.skipForNow : L10n.Actions.continueLabel)
+                                        : L10n.Actions.continueLabel
                                 Text(buttonText)
                                     .font(.cosmicTitle3)
                                 Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "forward.end" : "arrow.right")
@@ -118,7 +147,7 @@ struct ProfileSetupContentView: View {
                     .accessibilityIdentifier(AccessibilityID.saveProfileButton)
 
                     if currentStep > 0 {
-                        Button("Back") {
+                        Button(L10n.Actions.back) {
                             withAnimation(.cosmicSpring) {
                                 currentStep = max(0, currentStep - 1)
                             }
@@ -358,7 +387,10 @@ struct SimpleProfileSetupView: View {
     @AppStorage("profile_setup_step") private var currentStep = 0
     @AppStorage("profile_setup_name") private var fullName = ""
     @AppStorage("profile_setup_birth_date") private var birthDateTimestamp: Double = Self.defaultBirthDateTimestamp
-    @AppStorage("profile_setup_birth_time") private var birthTimeTimestamp: Double = Date().timeIntervalSince1970
+    @AppStorage("profile_setup_birth_time") private var birthTimeTimestamp: Double = {
+        let noon = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date()) ?? Date()
+        return noon.timeIntervalSince1970
+    }()
 
     /// Default birth date is 25 years ago to make it obvious user should set their actual date
     private static var defaultBirthDateTimestamp: Double {
@@ -568,7 +600,7 @@ struct SimpleProfileSetupView: View {
                 try auth.profileManager.saveProfile()
             } catch {
                 await MainActor.run {
-                    saveError = "Failed to save profile: \(error.localizedDescription)"
+                    saveError = L10n.Onboarding.Errors.saveProfile(error.localizedDescription)
                     showingSaveError = true
                 }
                 #if DEBUG
@@ -598,17 +630,25 @@ struct SimpleProfileSetupView: View {
             let sunSign = westernChart.positions["sun"]?.sign ?? "Unknown"
             let moonSign = westernChart.positions["moon"]?.sign ?? "Unknown"
             
-            let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
-            
-            let insight = """
-            Welcome to your cosmic journey, \(fullName)! 
-            
-            Born on \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue))\(locationText), the stars reveal fascinating insights about your celestial blueprint.
-            
-            Your Sun in \(sunSign) illuminates your core identity, while your Moon in \(moonSign) reflects your emotional nature. This unique combination creates a personality that is both dynamic and deeply intuitive.
-            
-            The planetary positions at your birth moment suggest you possess natural talents for leadership and creativity, with a special gift for understanding others' perspectives.
-            """
+            let trimmedName = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let locationText = birthPlace.isEmpty
+                ? ""
+                : L10n.Onboarding.Personalized.locationSuffix(birthPlace)
+            let insight = [
+                trimmedName.isEmpty
+                    ? L10n.Onboarding.Personalized.welcomeGeneric
+                    : L10n.Onboarding.Personalized.welcome(trimmedName),
+                "",
+                L10n.Onboarding.Personalized.birthDetails(
+                    formatDate(birthDate.wrappedValue),
+                    formatTime(birthTime.wrappedValue),
+                    locationText
+                ),
+                "",
+                L10n.Onboarding.Personalized.sunMoon(sunSign, moonSign),
+                "",
+                L10n.Onboarding.Personalized.talents
+            ].joined(separator: "\n")
             
             await MainActor.run {
                 personalizedInsight = insight
@@ -620,10 +660,16 @@ struct SimpleProfileSetupView: View {
     }
     
     private func generateOfflineInsight() async {
-        let locationText = birthPlace.isEmpty ? "" : " in \(birthPlace)"
+        let locationText = birthPlace.isEmpty
+            ? ""
+            : L10n.Onboarding.Personalized.locationSuffix(birthPlace)
 
         // Be honest when offline - we can't calculate real astrological data without the server
-        let offlineMessage = "Your birth data has been recorded: \(formatDate(birthDate.wrappedValue)) at \(formatTime(birthTime.wrappedValue))\(locationText). Connect to the internet to receive your personalized cosmic insights based on actual planetary positions at your time of birth."
+        let offlineMessage = L10n.Onboarding.Personalized.offlineMessage(
+            formatDate(birthDate.wrappedValue),
+            formatTime(birthTime.wrappedValue),
+            locationText
+        )
 
         await MainActor.run {
             personalizedInsight = offlineMessage
@@ -650,17 +696,7 @@ struct SimpleProfileSetupView: View {
     }
     
     private func generateQuickStartInsight() -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .long
-        let birthDateString = dateFormatter.string(from: birthDate.wrappedValue)
-        
-        let quickStartInsights = [
-            "Born on \(birthDateString), you're ready to explore the cosmos! Your sun sign reveals natural talents waiting to be discovered. Let's begin your astrological journey!",
-            "Welcome to AstroNova! Your birth date of \(birthDateString) holds the key to understanding your cosmic blueprint. Ready to unlock your potential?",
-            "The universe has been waiting for this moment! Born on \(birthDateString), you carry unique celestial gifts. Let's explore what the stars have in store for you."
-        ]
-        
-        return quickStartInsights.randomElement() ?? quickStartInsights[0]
+        PersonalizationCopy.quickStartInsight(name: fullName, birthDate: birthDate.wrappedValue)
     }
     
     private func showPersonalizedInsight() {
@@ -672,15 +708,11 @@ struct SimpleProfileSetupView: View {
     }
     
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        return formatter.string(from: date)
+        LocaleFormatter.shared.longDate.string(from: date)
     }
     
     private func formatTime(_ time: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: time)
+        LocaleFormatter.shared.time.string(from: time)
     }
 }
 
@@ -719,16 +751,16 @@ struct EnhancedWelcomeStepView: View {
                 
                 VStack(spacing: 20) {
                     VStack(spacing: 8) {
-                        Text("Welcome to")
+                        Text(L10n.Onboarding.Welcome.title)
                             .font(.title2.weight(.light))
                             .foregroundStyle(.white.opacity(0.9))
                         
-                        Text("Astronova")
+                        Text(L10n.Brand.name)
                             .font(.system(size: 36, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                     }
                     
-                    Text("Discover what the stars reveal about your personality, relationships, and destiny through personalized cosmic insights.")
+                    Text(L10n.Onboarding.Welcome.subtitle)
                         .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
@@ -779,12 +811,12 @@ struct EnhancedNameStepView: View {
                 .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
                 VStack(spacing: 16) {
-                    Text("What should we call you?")
+                    Text(L10n.Onboarding.Name.title)
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                     
-                    Text("Your name helps us create a personal connection with your cosmic journey.")
+                    Text(L10n.Onboarding.Name.subtitle)
                         .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
@@ -794,7 +826,11 @@ struct EnhancedNameStepView: View {
                 
                 // Enhanced text field with validation
                 VStack(spacing: 8) {
-                    TextField("", text: $fullName, prompt: Text("Enter your name").foregroundColor(.white.opacity(0.6)))
+                    TextField(
+                        "",
+                        text: $fullName,
+                        prompt: Text(L10n.Onboarding.Name.placeholder).foregroundColor(.white.opacity(0.6))
+                    )
                         .font(.title3.weight(.medium))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 20)
@@ -834,7 +870,7 @@ struct EnhancedNameStepView: View {
                             Image(systemName: "star.fill")
                                 .font(.cosmicCaption)
                                 .foregroundStyle(.yellow)
-                            Text("Perfect! The cosmos recognizes you, \(fullName.components(separatedBy: " ").first ?? fullName).")
+                            Text(L10n.Onboarding.Name.success(fullName.components(separatedBy: " ").first ?? fullName))
                                 .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.8))
                             Spacer()
@@ -867,12 +903,12 @@ struct EnhancedNameStepView: View {
         }
         
         if trimmedName.count < 2 {
-            validationError = "Name must be at least 2 characters long"
+            validationError = L10n.Onboarding.Name.errorTooShort
             return
         }
         
         if trimmedName.count > 50 {
-            validationError = "Name cannot exceed 50 characters"
+            validationError = L10n.Onboarding.Name.errorTooLong
             return
         }
         
@@ -880,13 +916,13 @@ struct EnhancedNameStepView: View {
         let validNameRegex = "^[a-zA-Z\\s\\-']+$"
         let nameTest = NSPredicate(format: "SELF MATCHES %@", validNameRegex)
         if !nameTest.evaluate(with: trimmedName) {
-            validationError = "Name can only contain letters, spaces, hyphens, and apostrophes"
+            validationError = L10n.Onboarding.Name.errorInvalidCharacters
             return
         }
         
         // Check for reasonable number of consecutive spaces
         if trimmedName.contains("  ") {
-            validationError = "Name cannot contain multiple consecutive spaces"
+            validationError = L10n.Onboarding.Name.errorConsecutiveSpaces
             return
         }
         
@@ -937,12 +973,12 @@ struct EnhancedBirthDateStepView: View {
                 .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
                 VStack(spacing: 16) {
-                    Text("When were you born?")
+                    Text(L10n.Onboarding.BirthDate.title)
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                     
-                    Text("Your birth date reveals your sun sign and unlocks the cosmic blueprint of your personality.")
+                    Text(L10n.Onboarding.BirthDate.subtitle)
                         .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
@@ -991,7 +1027,7 @@ struct EnhancedBirthDateStepView: View {
                         .transition(.scale.combined(with: .opacity))
                         .padding(.horizontal, 24)
                     } else {
-                        Text("Selected: \(formatSelectedDate())")
+                        Text(L10n.Onboarding.BirthDate.selected(formatSelectedDate()))
                             .font(.caption.weight(.medium))
                             .foregroundStyle(.white.opacity(0.7))
                             .padding(.horizontal, 8)
@@ -1016,10 +1052,10 @@ struct EnhancedBirthDateStepView: View {
                             HStack {
                                 Image(systemName: "bolt.shield.fill")
                                     .font(.cosmicHeadline)
-                                Text("Quick Start")
+                                Text(L10n.Onboarding.BirthDate.quickStart)
                                     .font(.title3.weight(.medium))
                                 Spacer()
-                                Text("Skip Details")
+                                Text(L10n.Onboarding.BirthDate.skipDetails)
                                     .font(.caption.weight(.medium))
                                     .opacity(0.7)
                                 Image(systemName: "arrow.right")
@@ -1039,7 +1075,7 @@ struct EnhancedBirthDateStepView: View {
                         }
                         .padding(.horizontal, 24)
                         
-                        Text("Start exploring with just your birth date. You can add birth time and location later for more precise readings.")
+                        Text(L10n.Onboarding.BirthDate.quickStartHint)
                             .font(.cosmicCaption)
                             .foregroundStyle(.white.opacity(0.6))
                             .multilineTextAlignment(.center)
@@ -1077,14 +1113,14 @@ struct EnhancedBirthDateStepView: View {
         
         // Check if date is in the future
         if date > now {
-            validationError = "Birth date cannot be in the future"
+            validationError = L10n.Onboarding.BirthDate.errorFuture
             return
         }
         
         // Check if date is too far in the past (more than 120 years ago)
         if let earliestValidDate = calendar.date(byAdding: .year, value: -120, to: now),
            date < earliestValidDate {
-            validationError = "Birth date cannot be more than 120 years ago"
+            validationError = L10n.Onboarding.BirthDate.errorTooOld
             return
         }
         
@@ -1092,9 +1128,7 @@ struct EnhancedBirthDateStepView: View {
     }
     
     private func formatSelectedDate() -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .long
-        return formatter.string(from: birthDate)
+        LocaleFormatter.shared.longDate.string(from: birthDate)
     }
 }
 
@@ -1133,12 +1167,12 @@ struct EnhancedBirthTimeStepView: View {
                 .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
 
                 VStack(spacing: 16) {
-                    Text("What time were you born?")
+                    Text(L10n.Onboarding.BirthTime.title)
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
 
-                    Text("Birth time improves rising sign and house calculations. If unknown, we'll assume 12:00 noon and mark some insights as approximate.")
+                    Text(L10n.Onboarding.BirthTime.subtitle)
                         .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
@@ -1150,7 +1184,7 @@ struct EnhancedBirthTimeStepView: View {
                 VStack(spacing: 12) {
                     HStack(spacing: 12) {
                         Toggle(isOn: $unknownTime) {
-                            Text("I don't know my birth time")
+                            Text(L10n.Onboarding.BirthTime.unknownToggle)
                                 .foregroundStyle(.white)
                         }
                         .toggleStyle(SwitchToggleStyle(tint: .white))
@@ -1160,10 +1194,10 @@ struct EnhancedBirthTimeStepView: View {
                             Image(systemName: "questionmark.circle")
                                 .foregroundStyle(.white.opacity(0.8))
                         }
-                        .alert("Why birth time matters", isPresented: $showWhy) {
-                            Button("Got it", role: .cancel) {}
+                        .alert(L10n.Onboarding.BirthTime.whyTitle, isPresented: $showWhy) {
+                            Button(L10n.Actions.gotIt, role: .cancel) {}
                         } message: {
-                            Text("Birth time helps calculate your rising sign and houses. If you don't know it, we'll default to 12:00 noon, and some insights may be approximate.")
+                            Text(L10n.Onboarding.BirthTime.whyMessage)
                         }
                     }
 
@@ -1183,7 +1217,9 @@ struct EnhancedBirthTimeStepView: View {
                     .disabled(unknownTime)
                     .opacity(unknownTime ? 0.5 : 1.0)
 
-                    Text(unknownTime ? "We'll assume 12:00 noon (approximate)" : "Selected: \(formatSelectedTime())")
+                    Text(unknownTime
+                         ? L10n.Onboarding.BirthTime.assumedNoon
+                         : L10n.Onboarding.BirthTime.selected(formatSelectedTime()))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.white.opacity(0.7))
                         .padding(.horizontal, 8)
@@ -1209,9 +1245,7 @@ struct EnhancedBirthTimeStepView: View {
     }
 
     private func formatSelectedTime() -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: birthTime)
+        LocaleFormatter.shared.time.string(from: birthTime)
     }
 }
 
@@ -1247,12 +1281,12 @@ struct EnhancedBirthPlaceStepView: View {
                 .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
                 VStack(spacing: 16) {
-                    Text("Where were you born?")
+                    Text(L10n.Onboarding.BirthPlace.title)
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                     
-                    Text("Your birth location helps us calculate precise celestial positions. You can add this later if you prefer to skip for now.")
+                    Text(L10n.Onboarding.BirthPlace.subtitle)
                         .font(.cosmicBody)
                         .foregroundStyle(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
@@ -1263,7 +1297,11 @@ struct EnhancedBirthPlaceStepView: View {
                 // Enhanced text field with autocomplete
                 VStack(spacing: 8) {
                     ZStack(alignment: .trailing) {
-                        TextField("", text: $birthPlace, prompt: Text("City, State/Country").foregroundColor(.white.opacity(0.6)))
+                        TextField(
+                            "",
+                            text: $birthPlace,
+                            prompt: Text(L10n.Onboarding.BirthPlace.placeholder).foregroundColor(.white.opacity(0.6))
+                        )
                             .font(.title3.weight(.medium))
                             .foregroundStyle(.white)
                             .accessibilityIdentifier(AccessibilityID.locationSearchField)
@@ -1340,14 +1378,14 @@ struct EnhancedBirthPlaceStepView: View {
                                 Image(systemName: "checkmark.seal.fill")
                                     .font(.cosmicCaption)
                                     .foregroundStyle(.green)
-                                Text("Perfect! Location validated with coordinates.")
+                                Text(L10n.Onboarding.BirthPlace.validated)
                                     .font(.cosmicCaption)
                                     .foregroundStyle(.white.opacity(0.8))
                             } else {
                                 Image(systemName: "exclamationmark.diamond.fill")
                                     .font(.cosmicCaption)
                                     .foregroundStyle(.orange)
-                                Text("Select a location from the dropdown for best results, or skip to add later.")
+                                Text(L10n.Onboarding.BirthPlace.dropdownHint)
                                     .font(.cosmicCaption)
                                     .foregroundStyle(.orange.opacity(0.9))
                             }
@@ -1363,7 +1401,7 @@ struct EnhancedBirthPlaceStepView: View {
                             Image(systemName: "questionmark.bubble.fill")
                                 .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.6))
-                            Text("Birth location is optional - you can always add it later in your profile.")
+                            Text(L10n.Onboarding.BirthPlace.optionalHint)
                                 .font(.cosmicCaption)
                                 .foregroundStyle(.white.opacity(0.6))
                             Spacer()
@@ -1510,12 +1548,12 @@ struct PersonalizedInsightView: View {
                         }
                         
                         VStack(spacing: 12) {
-                            Text("Analyzing Your Cosmic Blueprint")
+                            Text(L10n.Onboarding.Insights.analyzingTitle)
                                 .font(.title2.weight(.semibold))
                                 .foregroundStyle(.white)
                                 .multilineTextAlignment(.center)
                             
-                            Text("Reading planetary positions and celestial influences...")
+                            Text(L10n.Onboarding.Insights.analyzingSubtitle)
                                 .font(.cosmicCallout)
                                 .foregroundStyle(.white.opacity(0.8))
                                 .multilineTextAlignment(.center)
@@ -1543,7 +1581,7 @@ struct PersonalizedInsightView: View {
                                 .scaleEffect(showContent ? 1.2 : 1.0)
                                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showContent)
                             
-                            Text("Profile Created!")
+                            Text(L10n.Onboarding.Insights.profileCreated)
                                 .font(.title.weight(.bold))
                                 .foregroundStyle(.white)
                                 .opacity(showContent ? 1 : 0)
@@ -1551,7 +1589,9 @@ struct PersonalizedInsightView: View {
                         
                         // Personalized content
                         VStack(spacing: 16) {
-                            Text("Welcome\(name.isEmpty ? "!" : ", \(name.components(separatedBy: " ").first ?? name)!")")
+                            Text(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                 ? L10n.Onboarding.Insights.welcomeGeneric
+                                 : L10n.Onboarding.Insights.welcomeName(name.components(separatedBy: " ").first ?? name))
                                 .font(.title2.weight(.semibold))
                                 .foregroundStyle(.white)
                                 .opacity(showContent ? 1 : 0)
@@ -1570,7 +1610,7 @@ struct PersonalizedInsightView: View {
                             onContinue()
                         } label: {
                             HStack {
-                                Text("Start Your Journey")
+                                Text(L10n.Onboarding.Insights.startJourney)
                                     .font(.headline.weight(.semibold))
                                 Image(systemName: "arrow.forward.circle.fill")
                                     .font(.cosmicHeadline)
@@ -1712,12 +1752,12 @@ struct LocationSearchView: View {
                     dismiss()
                 }
             }
-            .searchable(text: $query, prompt: "Search for a city")
-            .navigationTitle("Select Location")
+            .searchable(text: $query, prompt: L10n.Onboarding.BirthPlace.searchPrompt)
+            .navigationTitle(L10n.Onboarding.BirthPlace.selectLocationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button(L10n.Actions.done) { dismiss() }
                 }
             }
             .onAppear {
@@ -2001,11 +2041,11 @@ struct CustomTabBar: View {
     @Binding var selectedTab: Int
 
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
-        (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
-        (title: "Time Travel", icon: "clock", customIcon: nil),
-        (title: "Temple", icon: "building.columns.fill", customIcon: nil),
-        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
-        (title: "Self", icon: "person.crop.circle.fill", customIcon: nil)
+        (title: L10n.Tabs.discover, icon: "moon.stars.fill", customIcon: nil),
+        (title: L10n.Tabs.timeTravel, icon: "clock", customIcon: nil),
+        (title: L10n.Tabs.temple, icon: "building.columns.fill", customIcon: nil),
+        (title: L10n.Tabs.connect, icon: "person.2.square.stack.fill", customIcon: nil),
+        (title: L10n.Tabs.profile, icon: "person.crop.circle.fill", customIcon: nil)
     ]
 
     private func tabIdentifier(for index: Int) -> String {
@@ -2041,7 +2081,7 @@ struct CustomTabBar: View {
                             
                             // Icon
                             Image(systemName: tabs[index].icon)
-                                .font(.system(size: tabs[index].title == "Oracle" ? 20 : 22, weight: .medium))
+                                .font(.system(size: tabs[index].title == L10n.Oracle.title ? 20 : 22, weight: .medium))
                                 .symbolRenderingMode(.hierarchical)
                         }
                         .frame(width: 44, height: 44)
@@ -2069,7 +2109,7 @@ struct CustomTabBar: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(tabs[index].title)
                 .accessibilityIdentifier(tabIdentifier(for: index))
-                .accessibilityHint("Tab \(index + 1) of \(tabs.count)")
+                .accessibilityHint(L10n.Tabs.positionHint(index + 1, tabs.count))
                 .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
@@ -2096,11 +2136,11 @@ struct FloatingTabBar: View {
     @Binding var selectedTab: Int
 
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
-        (title: "Discover", icon: "moon.stars.fill", customIcon: nil),
-        (title: "Time Travel", icon: "clock", customIcon: nil),
-        (title: "Temple", icon: "building.columns.fill", customIcon: nil),
-        (title: "Connect", icon: "person.2.square.stack.fill", customIcon: nil),
-        (title: "Self", icon: "person.crop.circle.fill", customIcon: nil)
+        (title: L10n.Tabs.discover, icon: "moon.stars.fill", customIcon: nil),
+        (title: L10n.Tabs.timeTravel, icon: "clock", customIcon: nil),
+        (title: L10n.Tabs.temple, icon: "building.columns.fill", customIcon: nil),
+        (title: L10n.Tabs.connect, icon: "person.2.square.stack.fill", customIcon: nil),
+        (title: L10n.Tabs.profile, icon: "person.crop.circle.fill", customIcon: nil)
     ]
 
     private func tabIdentifier(for index: Int) -> String {
@@ -2166,7 +2206,7 @@ struct FloatingTabBar: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(tabs[index].title)
                 .accessibilityIdentifier(tabIdentifier(for: index))
-                .accessibilityHint("Tab \(index + 1) of \(tabs.count)")
+                .accessibilityHint(L10n.Tabs.positionHint(index + 1, tabs.count))
                 .accessibilityAddTraits(selectedTab == index ? [.isSelected] : [])
             }
         }
@@ -2211,7 +2251,7 @@ struct TodayTab: View {
     @State private var showingReportsLibrary = false
     @State private var selectedReportType: String = ""
     @State private var userReports: [DetailedReport] = []
-    @State private var hasSubscription = false
+    @AppStorage("hasAstronovaPro") private var hasSubscription = false
     @State private var showingReportShop = false
     @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
     
@@ -2285,6 +2325,9 @@ struct TodayTab: View {
                 triggerShowReportShop = false
                 showingReportShop = true
             }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .reportPurchased)) { _ in
+            loadUserReports()
         }
         .sheet(isPresented: $showingReportSheet) {
             ReportGenerationSheet(
@@ -2456,13 +2499,15 @@ struct TodayTab: View {
     // MARK: - Helper Functions
     
     private func checkSubscriptionStatus() {
-        hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
+        Task {
+            _ = await StoreKitManager.shared.refreshEntitlements()
+        }
     }
     
     private func loadUserReports() {
         Task {
             do {
-                let reports = try await apiServices.getUserReports(userId: currentUserId())
+                let reports = try await apiServices.getUserReports(userId: ClientUserId.value())
                 await MainActor.run {
                     var loaded = reports
                     // Deterministic UI-test fallback: ensure at least one report so the library CTA renders.
@@ -2477,7 +2522,7 @@ struct TodayTab: View {
                             keyInsights: ["UITEST insight"],
                             downloadUrl: "/api/v1/reports/dummy/pdf",
                             generatedAt: now,
-                            userId: currentUserId(),
+                            userId: ClientUserId.value(),
                             status: "completed"
                         )
                         loaded = [dummy]
@@ -2502,7 +2547,7 @@ struct TodayTab: View {
                                 keyInsights: ["UITEST insight"],
                                 downloadUrl: "/api/v1/reports/dummy/pdf",
                                 generatedAt: now,
-                                userId: currentUserId(),
+                                userId: ClientUserId.value(),
                                 status: "completed"
                             )
                         ]
@@ -2518,7 +2563,7 @@ struct TodayTab: View {
         Task {
             do {
                 let birthData = try BirthData(from: auth.profileManager.profile)
-                _ = try await apiServices.generateReport(birthData: birthData, type: reportType, userId: currentUserId())
+                _ = try await apiServices.generateReport(birthData: birthData, type: reportType, userId: ClientUserId.value())
                 
                 // Reload user reports after generation
                 loadUserReports()
@@ -2530,16 +2575,6 @@ struct TodayTab: View {
         }
     }
 
-    private func currentUserId() -> String {
-        let key = "client_user_id"
-        if let existing = UserDefaults.standard.string(forKey: key), !existing.isEmpty {
-            return existing
-        }
-        let created = UUID().uuidString
-        UserDefaults.standard.set(created, forKey: key)
-        return created
-    }
-    
     private var shouldShowWelcome: Bool {
         return !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
     }
@@ -2930,6 +2965,10 @@ struct FriendsTab: View {
     @State private var animateHearts = false
     @State private var isCalculating = false
     @State private var compatibilityPercent: Int? = nil
+    @State private var compatibilitySummary: String? = nil
+    @State private var compatibilityStrengths: [String] = []
+    @State private var compatibilityChallenges: [String] = []
+    @State private var compatibilityError: String? = nil
     
     var body: some View {
         NavigationStack {
@@ -3040,102 +3079,116 @@ struct FriendsTab: View {
                     }
                     
                     if showingResults {
-                        VStack(spacing: 16) {
-                            // Compatibility score with animation
+                        if let error = compatibilityError {
                             VStack(spacing: 12) {
-                                HStack {
-                                    Image(systemName: "heart.rectangle.fill")
-                                        .font(.cosmicTitle2)
-                                        .foregroundStyle(.pink)
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Compatibility Score")
-                                            .font(.subheadline.weight(.semibold))
-                                        Text("Based on cosmic alignment")
-                                            .font(.cosmicMicro)
-                                            .foregroundStyle(Color.cosmicTextSecondary)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Text("\(compatibilityPercent ?? 75)%")
-                                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                                        .foregroundStyle(.green)
-                                }
-                                .padding(16)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.green.opacity(0.08))
-                                        .stroke(.green.opacity(0.2), lineWidth: 1)
-                                )
-                                
-                                Text("Great cosmic connection! You and \(partnerName.isEmpty ? "this person" : partnerName) share harmonious energy patterns.")
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(Color.cosmicWarning)
+
+                                Text("Unable to calculate")
+                                    .font(.cosmicHeadline)
+                                    .foregroundStyle(Color.cosmicTextPrimary)
+
+                                Text(error)
                                     .font(.cosmicCaption)
                                     .foregroundStyle(Color.cosmicTextSecondary)
                                     .multilineTextAlignment(.center)
                                     .lineSpacing(2)
                                     .padding(.horizontal, 4)
                             }
-                            
-                            // Compatibility breakdown
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
-                                CompatibilityCard(title: "Emotional", score: 92, color: .purple)
-                                CompatibilityCard(title: "Mental", score: 88, color: .blue)
-                                CompatibilityCard(title: "Physical", score: 85, color: .pink)
-                                CompatibilityCard(title: "Spiritual", score: 91, color: .green)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .move(edge: .top)),
-                            removal: .scale(scale: 0.9).combined(with: .opacity)
-                        ))
-                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showingResults)
-                    }
-                    
-                    // Recent matches (simplified)
-                    if !sampleMatches.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("Recent Checks")
-                                    .font(.cosmicHeadline)
-                                Spacer()
-                            }
+                            .padding(16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.cosmicSurface)
+                                    .stroke(Color.cosmicNebula.opacity(0.6), lineWidth: 1)
+                            )
                             .padding(.horizontal)
-                            
-                            ForEach(sampleMatches, id: \.name) { match in
-                                HStack {
-                                    Circle()
-                                        .fill(.blue.opacity(0.2))
-                                        .frame(width: 36, height: 36)
-                                        .overlay(
-                                            Text(String(match.name.prefix(1)))
-                                                .font(.headline.weight(.semibold))
-                                                .foregroundStyle(.blue)
-                                        )
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(match.name)
-                                            .font(.callout.weight(.medium))
-                                        HStack(spacing: 4) {
-                                            Text("☉ \(match.sun)")
-                                            Text("☽ \(match.moon)")
-                                            Text("⬆️ \(match.rising)")
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .move(edge: .top)),
+                                removal: .scale(scale: 0.9).combined(with: .opacity)
+                            ))
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showingResults)
+                        } else if let score = compatibilityPercent {
+                            VStack(spacing: 16) {
+                                // Compatibility score with animation
+                                VStack(spacing: 12) {
+                                    HStack {
+                                        Image(systemName: "heart.rectangle.fill")
+                                            .font(.cosmicTitle2)
+                                            .foregroundStyle(.pink)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Compatibility Score")
+                                                .font(.subheadline.weight(.semibold))
+                                            Text("Based on your birth details")
+                                                .font(.cosmicMicro)
+                                                .foregroundStyle(Color.cosmicTextSecondary)
                                         }
+
+                                        Spacer()
+
+                                        Text("\(score)%")
+                                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                                            .foregroundStyle(.green)
+                                    }
+                                    .padding(16)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(.green.opacity(0.08))
+                                            .stroke(.green.opacity(0.2), lineWidth: 1)
+                                    )
+
+                                    Text(compatibilitySummary ?? PersonalizationCopy.compatibilitySummary(score: score, partnerName: partnerName))
                                         .font(.cosmicCaption)
                                         .foregroundStyle(Color.cosmicTextSecondary)
-                                    }
-                                    
-                                    Spacer()
+                                        .multilineTextAlignment(.center)
+                                        .lineSpacing(2)
+                                        .padding(.horizontal, 4)
                                 }
-                                .padding(16)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.gray.opacity(0.05))
-                                        .stroke(.gray.opacity(0.1), lineWidth: 1)
-                                )
+
+                                if !compatibilityStrengths.isEmpty || !compatibilityChallenges.isEmpty {
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        if !compatibilityStrengths.isEmpty {
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                Text("Strengths")
+                                                    .font(.cosmicCalloutEmphasis)
+                                                    .foregroundStyle(Color.cosmicTextPrimary)
+                                                ForEach(compatibilityStrengths, id: \.self) { strength in
+                                                    Text("- \(strength)")
+                                                        .font(.cosmicCaption)
+                                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                                }
+                                            }
+                                        }
+
+                                        if !compatibilityChallenges.isEmpty {
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                Text("Growth Areas")
+                                                    .font(.cosmicCalloutEmphasis)
+                                                    .foregroundStyle(Color.cosmicTextPrimary)
+                                                ForEach(compatibilityChallenges, id: \.self) { challenge in
+                                                    Text("- \(challenge)")
+                                                        .font(.cosmicCaption)
+                                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .padding(16)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.cosmicSurface)
+                                            .stroke(Color.cosmicNebula.opacity(0.6), lineWidth: 1)
+                                    )
+                                }
                             }
                             .padding(.horizontal)
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .move(edge: .top)),
+                                removal: .scale(scale: 0.9).combined(with: .opacity)
+                            ))
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showingResults)
                         }
                     }
                 }
@@ -3155,6 +3208,11 @@ struct FriendsTab: View {
         await MainActor.run {
             isCalculating = true
             showingResults = false
+            compatibilityPercent = nil
+            compatibilitySummary = nil
+            compatibilityStrengths = []
+            compatibilityChallenges = []
+            compatibilityError = nil
         }
         defer {
             Task { @MainActor in isCalculating = false }
@@ -3191,7 +3249,12 @@ struct FriendsTab: View {
             )
             
             let response = try await APIServices.shared.getCompatibilityReport(person1: person1, person2: partner)
-            let score = Int((response.compatibility_score * 100.0).rounded())
+            let rawScore = response.compatibility_score
+            let normalizedScore = rawScore > 1.0 ? rawScore / 100.0 : rawScore
+            let score = Int((normalizedScore * 100.0).rounded())
+            let summary = (response.summary ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let strengths = (response.strengths ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            let challenges = (response.challenges ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
 
             Analytics.shared.track(.compatibilityAnalyzed, properties: [
                 "relationship_type": "general"
@@ -3199,64 +3262,20 @@ struct FriendsTab: View {
 
             await MainActor.run {
                 compatibilityPercent = score
+                compatibilitySummary = summary.isEmpty
+                    ? PersonalizationCopy.compatibilitySummary(score: score, partnerName: partnerName)
+                    : summary
+                compatibilityStrengths = strengths
+                compatibilityChallenges = challenges
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     showingResults = true
                 }
             }
         } catch {
-            // Fallback to a neutral score on failure to avoid a dead-end UI
             await MainActor.run {
-                compatibilityPercent = 75
+                compatibilityError = "We couldn't calculate compatibility right now. Please try again in a moment."
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     showingResults = true
-                }
-            }
-        }
-    }
-    
-    private let sampleMatches = [
-        (name: "Sarah", sun: "Leo", moon: "Pisces", rising: "Virgo"),
-        (name: "Alex", sun: "Gemini", moon: "Scorpio", rising: "Libra"),
-        (name: "Jordan", sun: "Aquarius", moon: "Taurus", rising: "Cancer")
-    ]
-}
-
-struct CompatibilityCard: View {
-    let title: String
-    let score: Int
-    let color: Color
-    @State private var animateScore = false
-    @State private var displayedScore = 0
-    
-    var body: some View {
-        VStack(spacing: 6) {
-            Text(title)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(Color.cosmicTextSecondary)
-            
-            Text("\(displayedScore)%")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(color)
-                .scaleEffect(animateScore ? 1.1 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateScore)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(color.opacity(0.08))
-                .stroke(color.opacity(0.2), lineWidth: 1)
-        )
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.8).delay(0.1)) {
-                displayedScore = score
-                animateScore = true
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    animateScore = false
                 }
             }
         }
@@ -3269,6 +3288,13 @@ enum OracleDepth: String, CaseIterable {
     case quick = "Quick"
     case deep = "Deep"
 
+    var title: String {
+        switch self {
+        case .quick: return L10n.Oracle.Depth.quick
+        case .deep: return L10n.Oracle.Depth.deep
+        }
+    }
+
     var creditCost: Int {
         switch self {
         case .quick: return 1
@@ -3278,8 +3304,8 @@ enum OracleDepth: String, CaseIterable {
 
     var description: String {
         switch self {
-        case .quick: return "Direct insight"
-        case .deep: return "Detailed analysis + timing"
+        case .quick: return L10n.Oracle.Depth.quickDescription
+        case .deep: return L10n.Oracle.Depth.deepDescription
         }
     }
 
@@ -3320,12 +3346,18 @@ final class OracleQuotaManager: ObservableObject {
     }
 
     var resetCountdown: String {
-        let remaining = max(0, Int(resetTime.timeIntervalSince(Date())))
-        let hours = remaining / 3600
-        let minutes = (remaining % 3600) / 60
-        if hours > 0 { return "\(hours)h \(minutes)m" }
-        return "\(minutes)m"
+        let remaining = max(0, resetTime.timeIntervalSince(Date()))
+        return Self.countdownFormatter.string(from: remaining) ?? "0m"
     }
+
+    private static let countdownFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+        formatter.zeroFormattingBehavior = .pad
+        return formatter
+    }()
 
     private init() {
         loadDailyUsage()
@@ -3422,10 +3454,10 @@ final class OracleViewModel: ObservableObject {
     private let apiServices = APIServices.shared
 
     let contextualPrompts: [String] = [
-        "What energy surrounds me today?",
-        "How can I align with my highest path?",
-        "What planetary influences affect me?",
-        "Where should I focus my energy now?"
+        L10n.Oracle.Prompts.energyToday,
+        L10n.Oracle.Prompts.highestPath,
+        L10n.Oracle.Prompts.influences,
+        L10n.Oracle.Prompts.focusNow
     ]
 
     init(quotaManager: OracleQuotaManager = .shared) {
@@ -3437,7 +3469,7 @@ final class OracleViewModel: ObservableObject {
         guard !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
         guard quotaManager.canAfford(depth: selectedDepth) else {
-            errorMessage = "Daily reading complete"
+            errorMessage = L10n.Oracle.dailyLimitReached
             return
         }
 
@@ -3475,7 +3507,7 @@ final class OracleViewModel: ObservableObject {
     private func addWelcomeMessage() {
         let welcome = OracleMessage(
             id: "welcome",
-            text: "The stars are aligned. What guidance do you seek?",
+            text: L10n.Oracle.welcomeMessage,
             isUser: false,
             type: .welcome,
             timestamp: Date()
@@ -3506,7 +3538,7 @@ final class OracleViewModel: ObservableObject {
 
         } catch {
             isLoading = false
-            errorMessage = "Connection interrupted"
+            errorMessage = L10n.Errors.connectionInterrupted
         }
     }
 }
@@ -3558,6 +3590,10 @@ struct OracleView: View {
                             .padding(.top, Cosmic.Spacing.md)
                             .padding(.bottom, Cosmic.Spacing.xl)
                         }
+                        .accessibilityLabel(L10n.Oracle.Accessibility.conversationLabel)
+                        .accessibilityHint(L10n.Oracle.Accessibility.conversationHint)
+                        .accessibilityIdentifier(AccessibilityID.chatMessagesList)
+                        .accessibilityElement(children: .contain)
                         .onChange(of: viewModel.messages.count) { _, _ in
                             if let lastId = viewModel.messages.last?.id {
                                 withAnimation {
@@ -3618,7 +3654,7 @@ private struct OracleNavTitle: View {
             Image(systemName: "sparkles")
                 .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicGold)
-            Text("Oracle")
+            Text(L10n.Oracle.title)
                 .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
         }
@@ -3642,6 +3678,7 @@ struct OracleMessageCard: View {
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicGold)
                 }
+                .accessibilityHidden(true)
             }
 
             VStack(alignment: message.isUser ? .trailing : .leading, spacing: Cosmic.Spacing.xs) {
@@ -3653,6 +3690,7 @@ struct OracleMessageCard: View {
                 Text(message.timestamp, style: .time)
                     .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextTertiary)
+                    .accessibilityHidden(true)
             }
             .padding(Cosmic.Spacing.md)
             .background(
@@ -3665,6 +3703,9 @@ struct OracleMessageCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(L10n.Oracle.Accessibility.messageLabel(isUser: message.isUser, message: message.text))
+        .accessibilityAddTraits(.isStaticText)
     }
 }
 
@@ -3693,7 +3734,7 @@ struct OracleInputArea: View {
                 DepthToggle(depth: $depth)
 
                 // Text field
-                TextField("Ask the Oracle...", text: $text)
+                TextField(L10n.Oracle.inputPlaceholder, text: $text)
                     .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .focused($isFocused)
@@ -3701,6 +3742,17 @@ struct OracleInputArea: View {
                     .padding(.vertical, Cosmic.Spacing.sm)
                     .background(Color.cosmicSurface, in: Capsule())
                     .disabled(isDisabled)
+                    .accessibilityIdentifier(AccessibilityID.chatInputField)
+                    .accessibilityLabel(L10n.Oracle.Accessibility.inputLabel)
+                    .accessibilityHint(L10n.Oracle.Accessibility.inputHint)
+                    .submitLabel(.send)
+                    .onSubmit {
+                        guard !isDisabled else { return }
+                        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            onSend()
+                        }
+                    }
 
                 // Send button
                 Button(action: onSend) {
@@ -3713,6 +3765,10 @@ struct OracleInputArea: View {
                         )
                 }
                 .disabled(text.isEmpty || isDisabled)
+                .accessibleIconButton()
+                .accessibilityIdentifier(AccessibilityID.sendMessageButton)
+                .accessibilityLabel(L10n.Oracle.sendButton)
+                .accessibilityHint(L10n.Oracle.Accessibility.sendHint)
             }
             .padding(.horizontal, Cosmic.Spacing.screen)
         }
@@ -3745,7 +3801,7 @@ struct DepthToggle: View {
                 } label: {
                     Label {
                         VStack(alignment: .leading) {
-                            Text(option.rawValue)
+                            Text(option.title)
                             Text(option.description)
                                 .font(.cosmicCaption)
                                 .foregroundStyle(Color.cosmicTextSecondary)
@@ -3759,14 +3815,18 @@ struct DepthToggle: View {
             HStack(spacing: 4) {
                 Image(systemName: depth.icon)
                     .font(.cosmicCaption)
-                Text(depth.rawValue)
+                Text(depth.title)
                     .font(.cosmicCaption)
             }
             .foregroundStyle(Color.cosmicGold)
             .padding(.horizontal, Cosmic.Spacing.sm)
             .padding(.vertical, Cosmic.Spacing.xs)
             .background(Color.cosmicGold.opacity(0.15), in: Capsule())
+            .accessibleTouchTarget()
         }
+        .accessibilityLabel(L10n.Oracle.Accessibility.depthLabel)
+        .accessibilityValue(depth.title)
+        .accessibilityHint(L10n.Oracle.Depth.depthHint)
     }
 }
 
@@ -3779,7 +3839,7 @@ struct PromptChipsRow: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Cosmic.Spacing.xs) {
-                ForEach(prompts, id: \.self) { prompt in
+                ForEach(Array(prompts.enumerated()), id: \.offset) { index, prompt in
                     Button {
                         onTap(prompt)
                     } label: {
@@ -3790,6 +3850,9 @@ struct PromptChipsRow: View {
                             .padding(.vertical, Cosmic.Spacing.xs)
                             .background(Color.cosmicSurface, in: Capsule())
                     }
+                    .accessibilityIdentifier(AccessibilityID.suggestedPromptButton(index))
+                    .accessibilityLabel(L10n.Oracle.Accessibility.promptLabel(prompt))
+                    .accessibilityHint(L10n.Oracle.Accessibility.promptHint)
                 }
             }
             .padding(.horizontal, Cosmic.Spacing.screen)
@@ -3811,10 +3874,10 @@ struct OracleQuotaBanner: View {
                     .foregroundStyle(Color.cosmicGold)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Daily reading complete")
+                    Text(L10n.Oracle.Quota.dailyComplete)
                         .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
-                    Text("New insight in \(resetCountdown)")
+                    Text(L10n.Oracle.Quota.nextInsight(resetCountdown))
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
@@ -3824,26 +3887,33 @@ struct OracleQuotaBanner: View {
 
             HStack(spacing: Cosmic.Spacing.sm) {
                 Button(action: onBuyCredits) {
-                    Text("Get Credits")
+                    Text(L10n.Oracle.Quota.getCredits)
                         .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicGold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, Cosmic.Spacing.sm)
                         .background(Color.cosmicGold.opacity(0.15), in: Capsule())
                 }
+                .accessibleTouchTarget()
+                .accessibilityIdentifier(AccessibilityID.getChatPackagesButton)
+                .accessibilityHint(L10n.Oracle.Quota.getCreditsHint)
 
                 Button(action: onUpgrade) {
-                    Text("Unlock All")
+                    Text(L10n.Oracle.Quota.unlockAll)
                         .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicVoid)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, Cosmic.Spacing.sm)
                         .background(Color.cosmicGold, in: Capsule())
                 }
+                .accessibleTouchTarget()
+                .accessibilityIdentifier(AccessibilityID.goUnlimitedButton)
+                .accessibilityHint(L10n.Oracle.Quota.unlockAllHint)
             }
         }
         .padding(Cosmic.Spacing.md)
         .background(Color.cosmicGold.opacity(0.1))
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -3862,6 +3932,7 @@ struct OracleTypingIndicator: View {
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicGold)
             }
+            .accessibilityHidden(true)
 
             HStack(spacing: 4) {
                 ForEach(0..<3, id: \.self) { index in
@@ -3882,6 +3953,8 @@ struct OracleTypingIndicator: View {
 
             Spacer()
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L10n.Oracle.Accessibility.typingLabel)
         .onAppear { animating = true }
     }
 }
@@ -3896,19 +3969,23 @@ struct OracleErrorBanner: View {
         HStack(spacing: Cosmic.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle")
                 .foregroundStyle(Color.cosmicWarning)
+                .accessibilityHidden(true)
 
             Text(message)
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextSecondary)
+                .accessibilityLabel(L10n.Errors.accessibilityLabel(message))
 
             Spacer()
 
-            Button("Dismiss", action: onDismiss)
+            Button(L10n.Actions.dismiss, action: onDismiss)
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicGold)
+                .accessibilityHint(L10n.Actions.dismissHint)
         }
         .padding(Cosmic.Spacing.md)
         .background(Color.cosmicWarning.opacity(0.1), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -3929,7 +4006,7 @@ struct ErrorMessageView: View {
             
             Spacer()
             
-            Button("Dismiss") {
+            Button(L10n.Actions.dismiss) {
                 onDismiss()
             }
             .font(.caption.weight(.medium))
@@ -3987,6 +4064,7 @@ struct SubscriptionSheet: View {
                         Task {
                             let success = await BasicStoreManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
                             if success {
+                                OracleQuotaManager.shared.checkSubscription()
                                 await MainActor.run { dismiss() }
                             }
                         }
@@ -4604,6 +4682,7 @@ struct ProfileTab: View {
 struct ManageDashboardView: View {
     @EnvironmentObject private var auth: AuthState
     @Binding var bookmarks: [BookmarkedReading]
+    @AppStorage("hasAstronovaPro") private var hasProSubscription = false
     
     @State private var showingSettings = false
     @State private var showingPaywall = false
@@ -4633,14 +4712,7 @@ struct ManageDashboardView: View {
                 HStack {
                     Label("Astronova Pro", systemImage: "crown.fill")
                     Spacer()
-                    // Use StoreKitManager in Release, BasicStoreManager in Debug
-                    let isPro: Bool = {
-                        #if DEBUG
-                        return BasicStoreManager.shared.hasProSubscription
-                        #else
-                        return StoreKitManager.shared.hasProSubscription
-                        #endif
-                    }()
+                    let isPro = hasProSubscription
                     Text(isPro ? "Active" : "Free")
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
@@ -4836,6 +4908,8 @@ struct ProfileOverviewView: View {
             ProfileEditView(profileManager: auth.profileManager)
                 .environmentObject(auth)
         }
+        .navigationTitle("Edit Profile")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -4922,7 +4996,7 @@ struct ProfileEditView: View {
         self.profileManager = profileManager
         _editedProfile = State(initialValue: profileManager.profile)
         _hasBirthTime = State(initialValue: profileManager.profile.birthTime != nil)
-        _birthTimeValue = State(initialValue: profileManager.profile.birthTime ?? Date())
+        _birthTimeValue = State(initialValue: profileManager.profile.birthTime ?? Self.defaultBirthTime(for: profileManager.profile.birthDate))
     }
     
     var body: some View {
@@ -4974,7 +5048,7 @@ struct ProfileEditView: View {
                             } else {
                                 editedProfile = profileManager.profile
                                 hasBirthTime = profileManager.profile.birthTime != nil
-                                birthTimeValue = profileManager.profile.birthTime ?? Date()
+                                birthTimeValue = profileManager.profile.birthTime ?? Self.defaultBirthTime(for: profileManager.profile.birthDate)
                             }
                             isEditing.toggle()
                         }
@@ -5025,6 +5099,7 @@ struct ProfileEditView: View {
                                     DatePicker("Birth Time", selection: $birthTimeValue, displayedComponents: .hourAndMinute)
                                         .datePickerStyle(.compact)
                                         .tint(Color.cosmicGold)
+                                        .accessibilityIdentifier(AccessibilityID.birthTimePicker)
                                 } else {
                                     HStack {
                                         Image(systemName: "clock.badge.questionmark")
@@ -5036,6 +5111,11 @@ struct ProfileEditView: View {
                                     .padding(Cosmic.Spacing.sm)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .background(Color.cosmicWarning.opacity(0.1), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                                }
+                            }
+                            .onChange(of: hasBirthTime) { _, newValue in
+                                if newValue && editedProfile.birthTime == nil {
+                                    birthTimeValue = Self.defaultBirthTime(for: editedProfile.birthDate)
                                 }
                             }
 
@@ -5133,6 +5213,8 @@ struct ProfileEditView: View {
             }
             .padding(.horizontal, 20)
         }
+        .navigationTitle("Edit Profile")
+        .navigationBarTitleDisplayMode(.inline)
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -5145,6 +5227,10 @@ struct ProfileEditView: View {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: time)
+    }
+
+    private static func defaultBirthTime(for date: Date) -> Date {
+        Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
     }
 }
 
@@ -5282,15 +5368,16 @@ struct EnhancedSettingsView: View {
                         }
                         .foregroundStyle(.red)
                     }
-                    
-                    Button {
-                        showingAccountDeletion = true
-                    } label: {
-                        HStack {
-                            Label("Delete Account", systemImage: "xmark.shield.fill")
-                            Spacer()
+                    if auth.isAuthenticated {
+                        Button {
+                            showingAccountDeletion = true
+                        } label: {
+                            HStack {
+                                Label("Delete Account", systemImage: "xmark.shield.fill")
+                                Spacer()
+                            }
+                            .foregroundStyle(.red)
                         }
-                        .foregroundStyle(.red)
                     }
                 } header: {
                     Text("Account")
@@ -5458,7 +5545,7 @@ struct PrivacyPolicyView: View {
             bulletPoints: [
                 "Profile details you provide (name, date, time, and place of birth)",
                 "Optional preferences you set inside the app",
-                "Anonymized usage analytics gathered through Apple frameworks to improve stability"
+                "Usage analytics and session diagnostics collected via Smartlook to improve stability"
             ]
         )
     }
@@ -5480,7 +5567,7 @@ struct PrivacyPolicyView: View {
             bulletPoints: [
                 "Update or delete birth details at any time from Settings",
                 "Export your data as a JSON file from Settings › Data & Privacy",
-                "Request deletion of your account directly from the Delete Account option"
+                "Request deletion of your account from Delete Account (signed-in users)"
             ]
         )
     }
@@ -5488,7 +5575,7 @@ struct PrivacyPolicyView: View {
     private var thirdPartySection: some View {
         PolicySection(
             title: "Third-Party Access",
-            content: "We do not sell or share your personal data with third parties. Limited service providers (such as secure analytics platforms) process anonymized metrics strictly to help us improve Astronova."
+            content: "We do not sell or share your personal data with third parties. Limited service providers (such as Smartlook) process analytics and session diagnostics strictly to help us improve Astronova."
         )
     }
 
@@ -5551,7 +5638,7 @@ struct DataPrivacyView: View {
                 
                 PrivacySection(
                     title: "What We Collect",
-                    content: "• Birth date, time, and location\n• Astrological preferences\n• App usage analytics"
+                    content: "• Birth date, time, and location\n• Astrological preferences\n• Usage analytics and session diagnostics (Smartlook)"
                 )
                 
                 PrivacySection(
@@ -5561,7 +5648,7 @@ struct DataPrivacyView: View {
                 
                 PrivacySection(
                     title: "Data Security",
-                    content: "• All data is encrypted\n• Stored securely on your device\n• Optional cloud backup via iCloud"
+                    content: "• All data is encrypted in transit\n• Stored securely on your device and our servers\n• Access controlled with authentication"
                 )
             }
             .padding()
@@ -6904,7 +6991,7 @@ struct InlineReportsStoreSheet: View {
     @EnvironmentObject private var auth: AuthState
     @ObservedObject private var storeKitManager = StoreKitManager.shared
     @State private var isPurchasing: String? = nil
-    @State private var showRestoreSuccess = false
+    @State private var activeAlert: AlertState?
 
     private let offers: [ShopCatalog.Report] = ShopCatalog.reports
 
@@ -6912,11 +6999,52 @@ struct InlineReportsStoreSheet: View {
     private let termsURL = URL(string: "https://astronova.onrender.com/terms")!
     private let privacyURL = URL(string: "https://astronova.onrender.com/privacy")!
 
+    private enum AlertState: Identifiable {
+        case purchaseSuccess(String)
+        case purchaseQueued(String)
+        case purchaseError(String)
+        case restore(Bool)
+
+        var id: String {
+            switch self {
+            case .purchaseSuccess(let title): return "purchase-success-\(title)"
+            case .purchaseQueued(let title): return "purchase-queued-\(title)"
+            case .purchaseError(let message): return "purchase-error-\(message)"
+            case .restore(let restored): return "restore-\(restored)"
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .purchaseSuccess: return "Report Ready"
+            case .purchaseQueued: return "Purchase Complete"
+            case .purchaseError: return "Purchase Failed"
+            case .restore(let restored): return restored ? "Purchases Restored" : "No Purchases Found"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .purchaseSuccess(let title):
+                return "\(title) is now in your library."
+            case .purchaseQueued(let title):
+                return "\(title) will generate once your birth data is complete."
+            case .purchaseError(let message):
+                return message
+            case .restore(let restored):
+                return restored
+                    ? "Your previous purchases have been restored."
+                    : "We couldn't find any previous purchases to restore."
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
                 Section("Detailed Reports") {
                     ForEach(offers) { offer in
+                        let purchased = isPurchased(offer)
                         HStack(spacing: 12) {
                             Circle().fill(offer.color.opacity(0.15)).frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
@@ -6929,11 +7057,15 @@ struct InlineReportsStoreSheet: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     if isPurchasing == offer.productId { ProgressView().tint(.white) }
-                                    Text(isPurchasing == offer.productId ? "Processing…" : (storeKitManager.products[offer.productId] ?? ShopCatalog.price(for: offer.productId)))
+                                    if purchased {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 12))
+                                    }
+                                    Text(purchased ? "Purchased" : (isPurchasing == offer.productId ? "Processing…" : priceLabel(for: offer)))
                                 }
                             }
                             .buttonStyle(.borderedProminent)
-                            .disabled(isPurchasing != nil)
+                            .disabled(isPurchasing != nil || purchased)
                             .accessibilityIdentifier(AccessibilityID.reportBuyButton(offer.productId))
                         }
                     }
@@ -6943,8 +7075,20 @@ struct InlineReportsStoreSheet: View {
                 Section {
                     Button {
                         Task {
-                            await storeKitManager.restorePurchases()
-                            showRestoreSuccess = true
+                            #if DEBUG
+                            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+                                let restored = await BasicStoreManager.shared.restorePurchases()
+                                await MainActor.run {
+                                    activeAlert = .restore(restored)
+                                }
+                                return
+                            }
+                            #endif
+
+                            let restored = await storeKitManager.restorePurchases()
+                            await MainActor.run {
+                                activeAlert = .restore(restored)
+                            }
                         }
                     } label: {
                         HStack {
@@ -6984,25 +7128,35 @@ struct InlineReportsStoreSheet: View {
                         .accessibilityIdentifier(AccessibilityID.doneButton)
                 }
             }
-            .alert("Purchases Restored", isPresented: $showRestoreSuccess) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Your previous purchases have been restored.")
+            .alert(item: $activeAlert) { alert in
+                Alert(
+                    title: Text(alert.title),
+                    message: Text(alert.message),
+                    dismissButton: .default(Text("OK"))
+                )
             }
         }
     }
 
     private func buy(_ offer: ShopCatalog.Report) async {
         guard isPurchasing == nil else { return }
-        isPurchasing = offer.productId
-        defer { isPurchasing = nil }
+        await MainActor.run { isPurchasing = offer.productId }
+        defer { Task { @MainActor in isPurchasing = nil } }
 
         #if DEBUG
         // UI tests only: use mock store
         if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
             let ok = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
-            if ok {
-                await generateReportAfterPurchase(offer)
+            guard ok else {
+                await MainActor.run {
+                    activeAlert = .purchaseError("Purchase could not be completed. Please try again.")
+                }
+                return
+            }
+            let generated = await generateReportAfterPurchase(offer)
+            NotificationCenter.default.post(name: .reportPurchased, object: offer.productId)
+            await MainActor.run {
+                activeAlert = generated ? .purchaseSuccess(offer.title) : .purchaseQueued(offer.title)
             }
             return
         }
@@ -7010,25 +7164,56 @@ struct InlineReportsStoreSheet: View {
 
         // Production: Use StoreKit
         let ok = await storeKitManager.purchaseProduct(productId: offer.productId)
-        guard ok else { return }
+        guard ok else {
+            await MainActor.run {
+                activeAlert = .purchaseError("Purchase could not be completed. You were not charged.")
+            }
+            return
+        }
 
-        await generateReportAfterPurchase(offer)
+        let generated = await generateReportAfterPurchase(offer)
+        NotificationCenter.default.post(name: .reportPurchased, object: offer.productId)
+        await MainActor.run {
+            activeAlert = generated ? .purchaseSuccess(offer.title) : .purchaseQueued(offer.title)
+        }
     }
 
-    private func generateReportAfterPurchase(_ offer: ShopCatalog.Report) async {
+    private func generateReportAfterPurchase(_ offer: ShopCatalog.Report) async -> Bool {
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+            let now = ISO8601DateFormatter().string(from: Date())
+            let report = DetailedReport(
+                reportId: UUID().uuidString,
+                type: mapReportType(offer.id),
+                title: offer.title,
+                content: "Purchase confirmed. Your report will appear after sync.",
+                summary: "Mock report generated for UI testing.",
+                keyInsights: ["Mock report ready"],
+                downloadUrl: nil,
+                generatedAt: now,
+                userId: ClientUserId.value(),
+                status: "completed"
+            )
+            APIServices.shared.appendMockReport(report)
+            return true
+        }
+        #endif
+
         // Kick off report generation immediately so it lands in the user's library.
         do {
             let birthData = try BirthData(from: auth.profileManager.profile)
             _ = try await APIServices.shared.generateReport(
                 birthData: birthData,
                 type: mapReportType(offer.id),
-                userId: currentUserId()
+                userId: ClientUserId.value()
             )
+            return true
         } catch {
             // If profile is incomplete, keep purchase but skip generation.
             #if DEBUG
             debugPrint("[RootView] Report generation skipped: \(error)")
             #endif
+            return false
         }
     }
 
@@ -7045,15 +7230,19 @@ struct InlineReportsStoreSheet: View {
         }
     }
 
-    private func currentUserId() -> String {
-        let key = "client_user_id"
-        if let existing = UserDefaults.standard.string(forKey: key), !existing.isEmpty {
-            return existing
-        }
-        let created = UUID().uuidString
-        UserDefaults.standard.set(created, forKey: key)
-        return created
+    private func priceLabel(for offer: ShopCatalog.Report) -> String {
+        storeKitManager.products[offer.productId] ?? ShopCatalog.price(for: offer.productId)
     }
+
+    private func isPurchased(_ offer: ShopCatalog.Report) -> Bool {
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+            return BasicStoreManager.shared.hasProduct(offer.productId)
+        }
+        #endif
+        return storeKitManager.hasProduct(offer.productId)
+    }
+
 }
 
 struct SimpleFeatureRow: View {

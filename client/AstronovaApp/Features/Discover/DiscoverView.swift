@@ -5,6 +5,7 @@ import UserNotifications
 struct DiscoverView: View {
     @EnvironmentObject private var auth: AuthState
     @StateObject private var viewModel = DiscoverViewModel()
+    @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
 
     @State private var showingReportSheet = false
     @State private var selectedReportType = ""
@@ -45,6 +46,24 @@ struct DiscoverView: View {
         }
         .task {
             await viewModel.load(profile: auth.profileManager.profile, shouldLoadReports: auth.isAuthenticated)
+
+            // Check if we should show report shop (triggered from PaywallView)
+            if triggerShowReportShop {
+                triggerShowReportShop = false
+                showingReportShop = true
+            }
+        }
+        .onChange(of: triggerShowReportShop) { _, newValue in
+            if newValue {
+                triggerShowReportShop = false
+                showingReportShop = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .reportPurchased)) { _ in
+            guard auth.isAuthenticated else { return }
+            Task {
+                await viewModel.loadUserReports()
+            }
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView(context: .home)
@@ -118,6 +137,7 @@ struct DiscoverView: View {
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .padding(.horizontal, Cosmic.Spacing.m)
+                        .accessibilityAddTraits(.isHeader)
 
                     NarrativeTilesView(tiles: snapshot.now.narrativeTiles) { tile in
                         #if DEBUG
@@ -219,6 +239,8 @@ struct DiscoverView: View {
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
+            .accessibilityLabel("Share your daily insight")
+            .accessibilityHint("Opens the share sheet")
 
             Spacer()
 
@@ -231,6 +253,8 @@ struct DiscoverView: View {
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
+            .accessibilityLabel("Set a reminder")
+            .accessibilityHint("Schedules a daily reminder")
         }
         .padding(.vertical, Cosmic.Spacing.s)
         .alert("Reminder Set", isPresented: $showingReminderConfirmation) {
@@ -363,6 +387,9 @@ struct DiscoverView: View {
 
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Unable to load. \(error)")
+        .accessibilityHint("Double tap Try Again to reload")
     }
 
     // MARK: - Helpers
@@ -374,7 +401,7 @@ struct DiscoverView: View {
                 let response = try await APIServices.shared.generateReport(
                     birthData: birthData,
                     type: type,
-                    userId: viewModel.currentUserId
+                    userId: ClientUserId.value()
                 )
                 await viewModel.loadUserReports()
 
@@ -388,7 +415,7 @@ struct DiscoverView: View {
                     keyInsights: response.keyInsights,
                     downloadUrl: response.downloadUrl,
                     generatedAt: response.generatedAt,
-                    userId: viewModel.currentUserId,
+                    userId: ClientUserId.value(),
                     status: response.status
                 )
 
@@ -428,16 +455,6 @@ class DiscoverViewModel: ObservableObject {
     private let apiServices = APIServices.shared
     private let cache = DiscoverSnapshotCache.shared
     private let domainInsightsCache = DomainInsightsCache.shared
-
-    var currentUserId: String {
-        let key = "client_user_id"
-        if let existing = UserDefaults.standard.string(forKey: key), !existing.isEmpty {
-            return existing
-        }
-        let created = UUID().uuidString
-        UserDefaults.standard.set(created, forKey: key)
-        return created
-    }
 
     func load(profile: UserProfile?, shouldLoadReports: Bool) async {
         // Check cache first
@@ -510,7 +527,7 @@ class DiscoverViewModel: ObservableObject {
 
     func loadUserReports() async {
         do {
-            let reports = try await apiServices.getUserReports(userId: currentUserId)
+            let reports = try await apiServices.getUserReports(userId: ClientUserId.value())
             userReports = reports
         } catch {
             // Keep existing reports on error
@@ -565,13 +582,23 @@ class DiscoverSnapshotCache {
     static let shared = DiscoverSnapshotCache()
 
     private var cachedSnapshot: DiscoverSnapshot?
-    private var cacheTime: Date?
-    private let ttl: TimeInterval = 3600 // 1 hour
+    private var expiresAt: Date?
+    private let defaultTTL: TimeInterval = 3600 // 1 hour
+    private let isoFormatter = ISO8601DateFormatter()
+    private let fallbackFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
 
     func get() -> DiscoverSnapshot? {
-        guard let cached = cachedSnapshot,
-              let time = cacheTime,
-              Date().timeIntervalSince(time) < ttl else {
+        guard let cached = cachedSnapshot else {
+            return nil
+        }
+        if let expiresAt, Date() >= expiresAt {
+            clear()
             return nil
         }
         return cached
@@ -579,12 +606,24 @@ class DiscoverSnapshotCache {
 
     func set(_ snapshot: DiscoverSnapshot) {
         cachedSnapshot = snapshot
-        cacheTime = Date()
+        expiresAt = computeExpiry(for: snapshot)
     }
 
     func clear() {
         cachedSnapshot = nil
-        cacheTime = nil
+        expiresAt = nil
+    }
+
+    private func computeExpiry(for snapshot: DiscoverSnapshot) -> Date {
+        if let nextRefresh = snapshot.cacheHints?.nextRefresh {
+            if let date = isoFormatter.date(from: nextRefresh) ?? fallbackFormatter.date(from: nextRefresh) {
+                return date
+            }
+        }
+        if let ttlSeconds = snapshot.cacheHints?.ttlSeconds {
+            return Date().addingTimeInterval(TimeInterval(ttlSeconds))
+        }
+        return Date().addingTimeInterval(defaultTTL)
     }
 }
 

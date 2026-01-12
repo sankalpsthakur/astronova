@@ -10,14 +10,22 @@ import SwiftUI
 // MARK: - Temple View
 
 struct TempleView: View {
+    @AppStorage("trigger_show_chat_packages") private var triggerShowChatPackages: Bool = false
     @State private var selectedSection: TempleSection = .astrologers
     @State private var showingOracleSheet = false
     @State private var selectedPooja: PoojaItem?
     @State private var selectedAstrologer: Astrologer?
 
-    enum TempleSection: String, CaseIterable {
-        case astrologers = "Astrologers"
-        case pooja = "Pooja"
+    enum TempleSection: CaseIterable {
+        case astrologers
+        case pooja
+
+        var title: String {
+            switch self {
+            case .astrologers: return L10n.Temple.Sections.astrologers
+            case .pooja: return L10n.Temple.Sections.pooja
+            }
+        }
 
         var icon: String {
             switch self {
@@ -73,6 +81,19 @@ struct TempleView: View {
                 }
             }
         }
+        .onAppear {
+            // Check if we should show Oracle with chat packages (triggered from PaywallView)
+            if triggerShowChatPackages {
+                triggerShowChatPackages = false
+                showingOracleSheet = true
+            }
+        }
+        .onChange(of: triggerShowChatPackages) { _, newValue in
+            if newValue {
+                triggerShowChatPackages = false
+                showingOracleSheet = true
+            }
+        }
         .fullScreenCover(isPresented: $showingOracleSheet) {
             OracleSheetWrapper(isPresented: $showingOracleSheet)
         }
@@ -108,6 +129,9 @@ struct OracleSheetWrapper: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .background(Circle().fill(Color.cosmicVoid).padding(4))
             }
+            .accessibleIconButton()
+            .accessibilityLabel(L10n.Actions.close)
+            .accessibilityHint(L10n.Oracle.Accessibility.closeHint)
             .padding(.top, 12)
             .padding(.trailing, 16)
         }
@@ -122,7 +146,7 @@ struct TempleNavTitle: View {
             Image(systemName: "building.columns.fill")
                 .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicGold)
-            Text("Temple")
+            Text(L10n.Temple.title)
                 .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
         }
@@ -146,7 +170,7 @@ struct TempleSectionPicker: View {
                     HStack(spacing: Cosmic.Spacing.xs) {
                         Image(systemName: section.icon)
                             .font(.cosmicCaption)
-                        Text(section.rawValue)
+                        Text(section.title)
                             .font(.cosmicCalloutEmphasis)
                     }
                     .foregroundStyle(selection == section ? Color.cosmicVoid : Color.cosmicTextSecondary)
@@ -163,6 +187,12 @@ struct TempleSectionPicker: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibleTouchTarget()
+                .accessibilityLabel(section.title)
+                .accessibilityHint(section == .astrologers
+                                   ? L10n.Temple.Sections.astrologersHint
+                                   : L10n.Temple.Sections.poojaHint)
+                .accessibilityAddTraits(selection == section ? [.isSelected] : [])
             }
             Spacer()
         }
@@ -194,12 +224,13 @@ struct OracleQuickAccessCard: View {
                         .font(.system(size: 24, weight: .medium))
                         .foregroundStyle(Color.cosmicGold)
                 }
+                .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                    Text("Ask the Oracle")
+                    Text(L10n.Temple.OracleQuickAccess.title)
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
-                    Text("Get personalized cosmic guidance")
+                    Text(L10n.Temple.OracleQuickAccess.subtitle)
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
@@ -209,6 +240,7 @@ struct OracleQuickAccessCard: View {
                 Image(systemName: "chevron.right")
                     .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicGold)
+                    .accessibilityHidden(true)
             }
             .padding(Cosmic.Spacing.md)
             .background {
@@ -228,6 +260,10 @@ struct OracleQuickAccessCard: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(AccessibilityID.oracleQuickAccessButton)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(L10n.Temple.OracleQuickAccess.accessibilityLabel)
+        .accessibilityHint(L10n.Temple.OracleQuickAccess.accessibilityHint)
     }
 }
 
@@ -242,10 +278,11 @@ struct AstrologersSection: View {
             // Section Header
             HStack {
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                    Text("Expert Astrologers")
+                    Text(L10n.Temple.Astrologers.headerTitle)
                         .font(.cosmicTitle3)
                         .foregroundStyle(Color.cosmicTextPrimary)
-                    Text("Connect with verified Vedic experts")
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L10n.Temple.Astrologers.headerSubtitle)
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
@@ -261,7 +298,8 @@ struct AstrologersSection: View {
                         Circle()
                             .fill(Color.cosmicSuccess)
                             .frame(width: 8, height: 8)
-                        Text("Available Now")
+                            .accessibilityHidden(true)
+                        Text(L10n.Temple.Astrologers.availableNow)
                             .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicSuccess)
                     }
@@ -286,7 +324,8 @@ struct AstrologersSection: View {
                         Circle()
                             .fill(Color.cosmicTextTertiary)
                             .frame(width: 8, height: 8)
-                        Text("Currently Offline")
+                            .accessibilityHidden(true)
+                        Text(L10n.Temple.Astrologers.currentlyOffline)
                             .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicTextTertiary)
                     }
@@ -333,6 +372,7 @@ struct AstrologerCard: View {
                                 .font(.cosmicTitle2)
                                 .foregroundStyle(Color.cosmicGold)
                         }
+                        .accessibilityHidden(true)
 
                     if astrologer.isOnline {
                         Circle()
@@ -342,6 +382,7 @@ struct AstrologerCard: View {
                                 Circle()
                                     .stroke(Color.cosmicVoid, lineWidth: 2)
                             }
+                            .accessibilityHidden(true)
                     }
                 }
 
@@ -350,6 +391,7 @@ struct AstrologerCard: View {
                     .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
                 // Specialization
                 Text(astrologer.specialization)
@@ -362,13 +404,14 @@ struct AstrologerCard: View {
                     Image(systemName: "star.fill")
                         .font(.system(size: 10))
                         .foregroundStyle(Color.cosmicGold)
+                        .accessibilityHidden(true)
                     Text(String(format: "%.1f", astrologer.rating))
                         .font(.cosmicMicro)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 }
 
                 // Price
-                Text("\(astrologer.pricePerMinute)/min")
+                Text(L10n.Temple.Astrologers.pricePerMinute("\(astrologer.pricePerMinute)"))
                     .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicGold)
             }
@@ -380,6 +423,18 @@ struct AstrologerCard: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            L10n.Temple.Astrologers.cardAccessibilityLabel(
+                name: astrologer.name,
+                experience: astrologer.experience,
+                rating: String(format: "%.1f", astrologer.rating),
+                specialization: astrologer.specialization,
+                pricePerMinute: "\(astrologer.pricePerMinute)",
+                isOnline: astrologer.isOnline
+            )
+        )
+        .accessibilityHint(L10n.Temple.Astrologers.cardAccessibilityHint)
     }
 }
 
@@ -432,15 +487,27 @@ struct AstrologerDetailSheet: View {
                             .foregroundStyle(Color.cosmicTextSecondary)
 
                         HStack(spacing: Cosmic.Spacing.lg) {
-                            StatBadge(icon: "star.fill", value: String(format: "%.1f", astrologer.rating), label: "\(astrologer.reviewCount) reviews")
-                            StatBadge(icon: "clock.fill", value: astrologer.experience, label: "Experience")
-                            StatBadge(icon: "indianrupeesign", value: "\(astrologer.pricePerMinute)", label: "per min")
+                            StatBadge(
+                                icon: "star.fill",
+                                value: String(format: "%.1f", astrologer.rating),
+                                label: L10n.Temple.Astrologers.reviews(astrologer.reviewCount)
+                            )
+                            StatBadge(
+                                icon: "clock.fill",
+                                value: astrologer.experience,
+                                label: L10n.Temple.Astrologers.experienceLabel
+                            )
+                            StatBadge(
+                                icon: "indianrupeesign",
+                                value: "\(astrologer.pricePerMinute)",
+                                label: L10n.Temple.Astrologers.perMinuteLabel
+                            )
                         }
                     }
                     .padding(.top, Cosmic.Spacing.xl)
 
                     // Languages
-                    DetailSection(title: "Languages") {
+                    DetailSection(title: L10n.Temple.Astrologers.languagesTitle) {
                         HStack(spacing: Cosmic.Spacing.s) {
                             ForEach(astrologer.languages, id: \.self) { lang in
                                 Text(lang)
@@ -454,7 +521,7 @@ struct AstrologerDetailSheet: View {
                     }
 
                     // Expertise
-                    DetailSection(title: "Expertise") {
+                    DetailSection(title: L10n.Temple.Astrologers.expertiseTitle) {
                         FlowLayout(spacing: Cosmic.Spacing.s) {
                             ForEach(astrologer.expertise, id: \.self) { skill in
                                 Text(skill)
@@ -480,7 +547,9 @@ struct AstrologerDetailSheet: View {
                     } label: {
                         HStack {
                             Image(systemName: astrologer.isOnline ? "phone.fill" : "bell.fill")
-                            Text(astrologer.isOnline ? "Start Consultation" : "Notify When Available")
+                            Text(astrologer.isOnline
+                                 ? L10n.Temple.Astrologers.startConsultation
+                                 : L10n.Temple.Astrologers.notifyWhenAvailable)
                         }
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicVoid)
@@ -501,6 +570,8 @@ struct AstrologerDetailSheet: View {
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
+                    .accessibleIconButton()
+                    .accessibilityLabel(L10n.Actions.close)
                 }
             }
             .sheet(isPresented: $showConsultationSheet) {
@@ -561,10 +632,11 @@ struct PoojaSection: View {
             VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
                 HStack {
                     VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                        Text("Today's Muhurat")
+                        Text(L10n.Temple.Muhurat.title)
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextPrimary)
-                        Text("Auspicious timings for the day")
+                            .accessibilityAddTraits(.isHeader)
+                        Text(L10n.Temple.Muhurat.subtitle)
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
@@ -586,10 +658,11 @@ struct PoojaSection: View {
             VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
                 HStack {
                     VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                        Text("Sacred Rituals")
+                        Text(L10n.Temple.Pooja.ritualsTitle)
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextPrimary)
-                        Text("Perform poojas with complete ingredients")
+                            .accessibilityAddTraits(.isHeader)
+                        Text(L10n.Temple.Pooja.ritualsSubtitle)
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
@@ -628,6 +701,7 @@ struct MuhuratCard: View {
             HStack(spacing: Cosmic.Spacing.xxs) {
                 Image(systemName: muhurat.quality.icon)
                     .font(.system(size: 10))
+                    .accessibilityHidden(true)
                 Text(muhurat.quality.displayName)
                     .font(.cosmicMicro)
             }
@@ -658,6 +732,15 @@ struct MuhuratCard: View {
                         .stroke(qualityColor.opacity(0.3), lineWidth: 1)
                 }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            L10n.Temple.Muhurat.accessibilityLabel(
+                name: muhurat.name,
+                quality: muhurat.quality.displayName,
+                timeRange: muhurat.timeRange,
+                description: muhurat.description
+            )
+        )
     }
 }
 
@@ -687,6 +770,7 @@ struct PoojaCard: View {
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(Color.cosmicGold)
                 }
+                .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
                     Text(pooja.name)
@@ -696,11 +780,11 @@ struct PoojaCard: View {
                     Text(pooja.description)
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
 
                     HStack(spacing: Cosmic.Spacing.s) {
                         Label(pooja.duration, systemImage: "clock")
-                        Label("\(pooja.ingredients.count) items", systemImage: "list.bullet")
+                        Label(L10n.Temple.Pooja.itemsCount(pooja.ingredients.count), systemImage: "list.bullet")
                     }
                     .font(.cosmicMicro)
                     .foregroundStyle(Color.cosmicTextTertiary)
@@ -711,6 +795,7 @@ struct PoojaCard: View {
                 Image(systemName: "chevron.right")
                     .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextTertiary)
+                    .accessibilityHidden(true)
             }
             .padding(Cosmic.Spacing.md)
             .background {
@@ -719,6 +804,16 @@ struct PoojaCard: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            L10n.Temple.Pooja.cardAccessibilityLabel(
+                name: pooja.name,
+                duration: pooja.duration,
+                items: pooja.ingredients.count,
+                description: pooja.description
+            )
+        )
+        .accessibilityHint(L10n.Temple.Pooja.cardAccessibilityHint)
     }
 }
 
@@ -755,6 +850,7 @@ struct PoojaDetailSheet: View {
                             Image(systemName: pooja.iconName)
                                 .font(.system(size: 40, weight: .medium))
                                 .foregroundStyle(Color.cosmicGold)
+                                .accessibilityHidden(true)
                         }
 
                         Text(pooja.name)
@@ -778,9 +874,10 @@ struct PoojaDetailSheet: View {
 
                     // Benefits
                     VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                        Text("Benefits")
+                        Text(L10n.Temple.Pooja.benefitsTitle)
                             .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicTextTertiary)
+                            .accessibilityAddTraits(.isHeader)
 
                         FlowLayout(spacing: Cosmic.Spacing.s) {
                             ForEach(pooja.benefits, id: \.self) { benefit in
@@ -788,6 +885,7 @@ struct PoojaDetailSheet: View {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 12))
                                         .foregroundStyle(Color.cosmicSuccess)
+                                        .accessibilityHidden(true)
                                     Text(benefit)
                                         .font(.cosmicCaption)
                                         .foregroundStyle(Color.cosmicTextPrimary)
@@ -807,9 +905,10 @@ struct PoojaDetailSheet: View {
                     // Ingredients Checklist
                     VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
                         HStack {
-                            Text("Ingredients Checklist")
+                            Text(L10n.Temple.Pooja.ingredientsChecklistTitle)
                                 .font(.cosmicTitle3)
                                 .foregroundStyle(Color.cosmicTextPrimary)
+                                .accessibilityAddTraits(.isHeader)
                             Spacer()
                             Text("\(checkedIngredients.count)/\(pooja.ingredients.count)")
                                 .font(.cosmicCaptionEmphasis)
@@ -856,7 +955,7 @@ struct PoojaDetailSheet: View {
                     } label: {
                         HStack {
                             Image(systemName: "calendar.badge.plus")
-                            Text("Book This Pooja")
+                            Text(L10n.Temple.Pooja.bookThisPooja)
                         }
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicVoid)
@@ -865,6 +964,8 @@ struct PoojaDetailSheet: View {
                         .background(LinearGradient.cosmicAntiqueGold)
                         .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
                     }
+                    .accessibilityLabel(L10n.Temple.Pooja.bookThisPoojaLabel)
+                    .accessibilityHint(L10n.Temple.Pooja.bookThisPoojaHint)
                     .padding(.horizontal, Cosmic.Spacing.screen)
 
                     Spacer()
@@ -875,7 +976,7 @@ struct PoojaDetailSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Pooja Details")
+                    Text(L10n.Temple.Pooja.detailsTitle)
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 }
@@ -885,6 +986,8 @@ struct PoojaDetailSheet: View {
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
+                    .accessibleIconButton()
+                    .accessibilityLabel(L10n.Actions.close)
                 }
             }
         }
@@ -954,12 +1057,14 @@ struct PoojaBookingSheet: View {
 
                             // Date Selection
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                                Text("Select Date")
+                                Text(L10n.Temple.Booking.selectDate)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
+                                    .accessibilityAddTraits(.isHeader)
+                                    .accessibilityAddTraits(.isHeader)
 
                                 DatePicker(
-                                    "Date",
+                                    L10n.Temple.Consultation.consultationDateLabel,
                                     selection: $selectedDate,
                                     in: Date()...,
                                     displayedComponents: .date
@@ -967,14 +1072,18 @@ struct PoojaBookingSheet: View {
                                 .datePickerStyle(.graphical)
                                 .tint(Color.cosmicGold)
                                 .colorScheme(.dark)
+                                .accessibilityLabel(L10n.Temple.Booking.poojaDateLabel)
+                                .accessibilityHint(L10n.Temple.Booking.poojaDateHint)
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             // Time Selection
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                                Text("Select Time")
+                                Text(L10n.Temple.Booking.selectTime)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
+                                    .accessibilityAddTraits(.isHeader)
+                                    .accessibilityAddTraits(.isHeader)
 
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: Cosmic.Spacing.s) {
                                     ForEach(timeSlots, id: \.self) { slot in
@@ -995,6 +1104,10 @@ struct PoojaBookingSheet: View {
                                                     }
                                                 }
                                         }
+                                        .accessibleTouchTarget()
+                                        .accessibilityLabel(L10n.Temple.Booking.timeSlotLabel(slot))
+                                        .accessibilityHint(L10n.Temple.Booking.timeSlotHint)
+                                        .accessibilityAddTraits(selectedTimeSlot == slot ? [.isSelected] : [])
                                     }
                                 }
                             }
@@ -1002,23 +1115,37 @@ struct PoojaBookingSheet: View {
 
                             // Sankalp Details
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
-                                Text("Sankalp Details")
+                                Text(L10n.Temple.Booking.sankalpDetails)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
+                                    .accessibilityAddTraits(.isHeader)
 
                                 VStack(spacing: Cosmic.Spacing.s) {
-                                    BookingTextField(title: "Name (Sankalp)", text: $sankalpName, placeholder: "Your full name")
-                                    BookingTextField(title: "Gotra (optional)", text: $sankalpGotra, placeholder: "Family lineage")
-                                    BookingTextField(title: "Nakshatra (optional)", text: $sankalpNakshatra, placeholder: "Birth star")
+                                    BookingTextField(
+                                        title: L10n.Temple.Booking.sankalpNameTitle,
+                                        text: $sankalpName,
+                                        placeholder: L10n.Temple.Booking.sankalpNamePlaceholder
+                                    )
+                                    BookingTextField(
+                                        title: L10n.Temple.Booking.sankalpGotraTitle,
+                                        text: $sankalpGotra,
+                                        placeholder: L10n.Temple.Booking.sankalpGotraPlaceholder
+                                    )
+                                    BookingTextField(
+                                        title: L10n.Temple.Booking.sankalpNakshatraTitle,
+                                        text: $sankalpNakshatra,
+                                        placeholder: L10n.Temple.Booking.sankalpNakshatraPlaceholder
+                                    )
                                 }
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             // Special Requests
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                                Text("Special Requests (optional)")
+                                Text(L10n.Temple.Booking.specialRequestsOptional)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
+                                    .accessibilityAddTraits(.isHeader)
 
                                 TextEditor(text: $specialRequests)
                                     .font(.cosmicBody)
@@ -1028,6 +1155,8 @@ struct PoojaBookingSheet: View {
                                     .padding(Cosmic.Spacing.s)
                                     .background(Color.cosmicSurface)
                                     .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                                    .accessibilityLabel(L10n.Temple.Booking.specialRequestsLabel)
+                                    .accessibilityHint(L10n.Temple.Booking.specialRequestsHint)
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
@@ -1037,6 +1166,7 @@ struct PoojaBookingSheet: View {
                                     .font(.cosmicCaption)
                                     .foregroundStyle(Color.cosmicError)
                                     .padding(.horizontal, Cosmic.Spacing.screen)
+                                    .accessibilityLabel(L10n.Errors.accessibilityLabel(error))
                             }
 
                             // Book Button
@@ -1049,7 +1179,7 @@ struct PoojaBookingSheet: View {
                                             .tint(Color.cosmicVoid)
                                     } else {
                                         Image(systemName: "checkmark.circle.fill")
-                                        Text("Confirm Booking")
+                                        Text(L10n.Temple.Booking.confirmButton)
                                     }
                                 }
                                 .font(.cosmicHeadline)
@@ -1061,6 +1191,8 @@ struct PoojaBookingSheet: View {
                             }
                             .disabled(sankalpName.isEmpty || isLoading)
                             .opacity(sankalpName.isEmpty ? 0.5 : 1)
+                            .accessibilityLabel(L10n.Temple.Booking.confirmBookingLabel)
+                            .accessibilityHint(L10n.Temple.Booking.confirmBookingHint)
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             Spacer().frame(height: 40)
@@ -1071,8 +1203,8 @@ struct PoojaBookingSheet: View {
                     VStack {
                         Spacer()
                         AuthRequiredView(
-                            title: "Sign in to book a pooja",
-                            message: "Confirm your details and reserve a pandit time slot."
+                            title: L10n.Temple.Booking.signInTitle,
+                            message: L10n.Temple.Booking.signInMessage
                         )
                         Spacer()
                     }
@@ -1082,7 +1214,7 @@ struct PoojaBookingSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Book Pooja")
+                    Text(L10n.Temple.Booking.bookPoojaTitle)
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 }
@@ -1092,14 +1224,19 @@ struct PoojaBookingSheet: View {
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
+                    .accessibleIconButton()
+                    .accessibilityLabel(L10n.Actions.close)
                 }
             }
         }
-        .alert("Booking Confirmed!", isPresented: $showSuccess) {
-            Button("OK") { dismiss() }
+        .alert(L10n.Temple.Booking.bookingConfirmedTitle, isPresented: $showSuccess) {
+            Button(L10n.Actions.ok) { dismiss() }
         } message: {
             if let response = bookingResponse {
-                Text("Your pooja is scheduled for \(response.scheduledDate) at \(response.scheduledTime). You will receive a session link before the scheduled time.")
+                Text(L10n.Temple.Booking.bookingConfirmedMessage(
+                    date: response.scheduledDate,
+                    time: response.scheduledTime
+                ))
             }
         }
         .fullScreenCover(isPresented: $showingVideoSession, content: videoSessionCover)
@@ -1153,18 +1290,18 @@ struct PoojaBookingSheet: View {
             if let networkError = error as? NetworkError {
                 switch networkError {
                 case .authenticationFailed, .tokenExpired:
-                    errorMessage = "Sign in to book a pooja."
+                    errorMessage = L10n.Temple.Errors.signInPooja
                 case .offline:
-                    errorMessage = "No internet connection. Please try again."
+                    errorMessage = L10n.Errors.noInternet
                 case .timeout:
-                    errorMessage = "Request timed out. Please try again."
+                    errorMessage = L10n.Errors.timeout
                 case .serverError(let code, _):
-                    errorMessage = "Server error (\(code)). Please try again."
+                    errorMessage = L10n.Errors.serverError(code)
                 default:
-                    errorMessage = "Failed to create booking. Please try again."
+                    errorMessage = L10n.Temple.Errors.bookingFailed
                 }
             } else {
-                errorMessage = "Failed to create booking. Please try again."
+                errorMessage = L10n.Temple.Errors.bookingFailed
             }
             CosmicHaptics.error()
         }
@@ -1244,7 +1381,7 @@ struct ConsultationBookingSheet: View {
                                     Text(astrologer.specialization)
                                         .font(.cosmicCaption)
                                         .foregroundStyle(Color.cosmicTextSecondary)
-                                    Text("₹\(astrologer.pricePerMinute)/min")
+                                    Text(L10n.Temple.Astrologers.pricePerMinute("₹\(astrologer.pricePerMinute)"))
                                         .font(.cosmicMicro)
                                         .foregroundStyle(Color.cosmicGold)
                                 }
@@ -1256,12 +1393,12 @@ struct ConsultationBookingSheet: View {
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                                Text("Select Date")
+                                Text(L10n.Temple.Consultation.selectDate)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
 
                                 DatePicker(
-                                    "Date",
+                                    L10n.Temple.Booking.dateLabel,
                                     selection: $selectedDate,
                                     in: Date()...,
                                     displayedComponents: .date
@@ -1269,11 +1406,13 @@ struct ConsultationBookingSheet: View {
                                 .datePickerStyle(.graphical)
                                 .tint(Color.cosmicGold)
                                 .colorScheme(.dark)
+                                .accessibilityLabel(L10n.Temple.Consultation.consultationDateLabel)
+                                .accessibilityHint(L10n.Temple.Consultation.consultationDateHint)
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                                Text("Select Time")
+                                Text(L10n.Temple.Consultation.selectTime)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
 
@@ -1296,29 +1435,37 @@ struct ConsultationBookingSheet: View {
                                                     }
                                                 }
                                         }
+                                        .accessibleTouchTarget()
+                                        .accessibilityLabel(L10n.Temple.Booking.timeSlotLabel(slot))
+                                        .accessibilityHint(L10n.Temple.Booking.timeSlotHint)
+                                        .accessibilityAddTraits(selectedTimeSlot == slot ? [.isSelected] : [])
                                     }
                                 }
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                                Text("Duration")
+                                Text(L10n.Temple.Consultation.duration)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
+                                    .accessibilityAddTraits(.isHeader)
 
-                                Picker("Duration", selection: $durationMinutes) {
+                                Picker(L10n.Temple.Consultation.duration, selection: $durationMinutes) {
                                     ForEach(durations, id: \.self) { minutes in
-                                        Text("\(minutes) min").tag(minutes)
+                                        Text(L10n.Temple.Consultation.minutes(minutes)).tag(minutes)
                                     }
                                 }
                                 .pickerStyle(.segmented)
+                                .accessibilityLabel(L10n.Temple.Consultation.durationLabel)
+                                .accessibilityHint(L10n.Temple.Consultation.durationHint)
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
-                                Text("Topic (optional)")
+                                Text(L10n.Temple.Consultation.topicOptional)
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
+                                    .accessibilityAddTraits(.isHeader)
 
                                 TextEditor(text: $topic)
                                     .font(.cosmicBody)
@@ -1328,11 +1475,13 @@ struct ConsultationBookingSheet: View {
                                     .padding(Cosmic.Spacing.s)
                                     .background(Color.cosmicSurface)
                                     .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                                    .accessibilityLabel(L10n.Temple.Consultation.consultationTopicLabel)
+                                    .accessibilityHint(L10n.Temple.Consultation.consultationTopicHint)
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             HStack {
-                                Text("Total")
+                                Text(L10n.Temple.Consultation.total)
                                     .font(.cosmicCalloutEmphasis)
                                     .foregroundStyle(Color.cosmicTextSecondary)
                                 Spacer()
@@ -1347,6 +1496,7 @@ struct ConsultationBookingSheet: View {
                                     .font(.cosmicCaption)
                                     .foregroundStyle(Color.cosmicError)
                                     .padding(.horizontal, Cosmic.Spacing.screen)
+                                    .accessibilityLabel(L10n.Errors.accessibilityLabel(error))
                             }
 
                             Button {
@@ -1358,7 +1508,7 @@ struct ConsultationBookingSheet: View {
                                             .tint(Color.cosmicVoid)
                                     } else {
                                         Image(systemName: "phone.fill")
-                                        Text("Book Consultation")
+                                        Text(L10n.Temple.Consultation.bookConsultation)
                                     }
                                 }
                                 .font(.cosmicHeadline)
@@ -1369,6 +1519,8 @@ struct ConsultationBookingSheet: View {
                                 .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
                             }
                             .disabled(isLoading)
+                            .accessibilityLabel(L10n.Temple.Consultation.bookConsultationLabel)
+                            .accessibilityHint(L10n.Temple.Consultation.bookConsultationHint)
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             Spacer().frame(height: 40)
@@ -1379,8 +1531,8 @@ struct ConsultationBookingSheet: View {
                     VStack {
                         Spacer()
                         AuthRequiredView(
-                            title: "Sign in to book a consultation",
-                            message: "Reserve a time and get personalized guidance."
+                            title: L10n.Temple.Consultation.signInTitle,
+                            message: L10n.Temple.Consultation.signInMessage
                         )
                         Spacer()
                     }
@@ -1390,7 +1542,7 @@ struct ConsultationBookingSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Book Consultation")
+                    Text(L10n.Temple.Consultation.navTitle)
                         .font(.cosmicHeadline)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 }
@@ -1400,13 +1552,18 @@ struct ConsultationBookingSheet: View {
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
+                    .accessibleIconButton()
+                    .accessibilityLabel(L10n.Actions.close)
                 }
             }
         }
-        .alert("Consultation Booked!", isPresented: $showSuccess) {
-            Button("OK") { dismiss() }
+        .alert(L10n.Temple.Consultation.bookedTitle, isPresented: $showSuccess) {
+            Button(L10n.Actions.ok) { dismiss() }
         } message: {
-            Text("Your consultation is scheduled for \(formattedDate(selectedDate)) at \(selectedTimeSlot).")
+            Text(L10n.Temple.Consultation.bookedMessage(
+                date: formattedDate(selectedDate),
+                time: selectedTimeSlot
+            ))
         }
     }
 
@@ -1433,18 +1590,18 @@ struct ConsultationBookingSheet: View {
             if let networkError = error as? NetworkError {
                 switch networkError {
                 case .authenticationFailed, .tokenExpired:
-                    errorMessage = "Sign in to book a consultation."
+                    errorMessage = L10n.Temple.Errors.signInConsultation
                 case .offline:
-                    errorMessage = "No internet connection. Please try again."
+                    errorMessage = L10n.Errors.noInternet
                 case .timeout:
-                    errorMessage = "Request timed out. Please try again."
+                    errorMessage = L10n.Errors.timeout
                 case .serverError(let code, _):
-                    errorMessage = "Server error (\(code)). Please try again."
+                    errorMessage = L10n.Errors.serverError(code)
                 default:
-                    errorMessage = "Unable to book consultation. Please try again."
+                    errorMessage = L10n.Temple.Errors.consultationFailed
                 }
             } else {
-                errorMessage = "Unable to book consultation. Please try again."
+                errorMessage = L10n.Temple.Errors.consultationFailed
             }
         }
 
@@ -1452,9 +1609,7 @@ struct ConsultationBookingSheet: View {
     }
 
     private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: date)
+        LocaleFormatter.shared.mediumDate.string(from: date)
     }
 }
 
@@ -1477,6 +1632,8 @@ struct BookingTextField: View {
                 .padding(Cosmic.Spacing.s)
                 .background(Color.cosmicSurface)
                 .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                .accessibilityLabel(title)
+                .accessibilityHint(placeholder)
         }
     }
 }
@@ -1492,6 +1649,7 @@ struct IngredientRow: View {
                 Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.cosmicBody)
                     .foregroundStyle(isChecked ? Color.cosmicSuccess : Color.cosmicTextTertiary)
+                    .accessibilityHidden(true)
 
                 Text(ingredient.name)
                     .font(.cosmicBody)
@@ -1505,8 +1663,12 @@ struct IngredientRow: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
             .padding(.vertical, Cosmic.Spacing.xs)
+            .frame(minHeight: Cosmic.TouchTarget.minimum)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(ingredient.name), \(ingredient.quantity)")
+        .accessibilityValue(isChecked ? L10n.Temple.Accessibility.checked : L10n.Temple.Accessibility.unchecked)
+        .accessibilityHint(L10n.Temple.Accessibility.toggleHint)
     }
 }
 

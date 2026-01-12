@@ -143,6 +143,7 @@ struct PaywallView: View {
                             LinearGradient.cosmicAntiqueGold
                         )
                         .padding(.bottom, Cosmic.Spacing.xs)
+                        .accessibilityHidden(true)
 
                     Text(heroTitle)
                         .font(.cosmicDisplay)
@@ -185,6 +186,7 @@ struct PaywallView: View {
                 }
                 .buttonStyle(.cosmicPrimary)
                 .accessibilityIdentifier(AccessibilityID.startProButton)
+                .accessibilityHint("Starts your Pro subscription")
 
                 // Restore purchases
                 Button {
@@ -199,6 +201,7 @@ struct PaywallView: View {
                 }
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .accessibilityIdentifier(AccessibilityID.restorePurchasesButton)
+                .accessibilityHint("Restores previous purchases")
 
                 // MARK: - Subscription Disclosure (App Store Guideline 3.1.2)
                 VStack(spacing: Cosmic.Spacing.xs) {
@@ -258,7 +261,7 @@ struct PaywallView: View {
 
                     Button {
                         triggerShowChatPackages = true
-                        NotificationCenter.default.post(name: .switchToTab, object: 3)
+                        NotificationCenter.default.post(name: .switchToTab, object: 2)
                         dismiss()
                     } label: {
                         HStack(spacing: Cosmic.Spacing.sm) {
@@ -290,7 +293,9 @@ struct PaywallView: View {
                     .padding(Cosmic.Spacing.md)
             }
             .accessibilityLabel("Close")
+            .accessibilityHint("Dismisses the paywall")
             .accessibilityIdentifier("paywallCloseButton")
+            .accessibleIconButton()
         }
         .accessibilityIdentifier(AccessibilityID.paywallView)
         .onAppear {
@@ -351,6 +356,7 @@ struct PaywallView: View {
             if success {
                 Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
                 await MainActor.run {
+                    OracleQuotaManager.shared.checkSubscription()
                     purchaseResult = .success
                 }
             } else {
@@ -367,6 +373,7 @@ struct PaywallView: View {
         if success {
             Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
             await MainActor.run {
+                OracleQuotaManager.shared.checkSubscription()
                 purchaseResult = .success
             }
         } else {
@@ -388,6 +395,7 @@ struct PaywallView: View {
         if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
             let restored = await BasicStoreManager.shared.restorePurchases()
             await MainActor.run {
+                OracleQuotaManager.shared.checkSubscription()
                 purchaseResult = restored ? .restored : .restoredNone
             }
             return
@@ -396,6 +404,7 @@ struct PaywallView: View {
 
         let restored = await storeKitManager.restorePurchases()
         await MainActor.run {
+            OracleQuotaManager.shared.checkSubscription()
             purchaseResult = restored ? .restored : .restoredNone
         }
     }
@@ -413,6 +422,7 @@ private struct PaywallFeatureRow: View {
                 .font(.system(size: 18))
                 .foregroundStyle(Color.cosmicGold)
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             Text(text)
                 .font(.cosmicBody)
@@ -423,7 +433,10 @@ private struct PaywallFeatureRow: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 16))
                 .foregroundStyle(Color.cosmicSuccess)
+                .accessibilityHidden(true)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
     }
 }
 
