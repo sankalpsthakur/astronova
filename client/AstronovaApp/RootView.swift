@@ -753,19 +753,22 @@ struct EnhancedWelcomeStepView: View {
                     VStack(spacing: 8) {
                         Text(L10n.Onboarding.Welcome.title)
                             .font(.title2.weight(.light))
-                            .foregroundStyle(.white.opacity(0.9))
-                        
+                            .foregroundStyle(.white.opacity(0.95))
+                            .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
+
                         Text(L10n.Brand.name)
                             .font(.system(size: 36, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
                     }
-                    
+
                     Text(L10n.Onboarding.Welcome.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white.opacity(0.95))
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
                         .padding(.horizontal, 8)
+                        .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
             }
             .padding(.horizontal, 24)
@@ -815,13 +818,15 @@ struct EnhancedNameStepView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
-                    
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
+
                     Text(L10n.Onboarding.Name.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white.opacity(0.95))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
+                        .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
                 
                 // Enhanced text field with validation
@@ -977,13 +982,15 @@ struct EnhancedBirthDateStepView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
-                    
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
+
                     Text(L10n.Onboarding.BirthDate.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white.opacity(0.95))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
+                        .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
                 
                 // Enhanced date picker with validation
@@ -1171,13 +1178,15 @@ struct EnhancedBirthTimeStepView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
 
                     Text(L10n.Onboarding.BirthTime.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white.opacity(0.95))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
+                        .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
 
                 // Time picker with unknown toggle
@@ -1285,13 +1294,15 @@ struct EnhancedBirthPlaceStepView: View {
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
-                    
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
+
                     Text(L10n.Onboarding.BirthPlace.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.white.opacity(0.95))
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
+                        .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
                 
                 // Enhanced text field with autocomplete

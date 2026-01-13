@@ -231,7 +231,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F66A274F2F15C9EC00B07FAD /* SmartlookAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -613,6 +612,7 @@
 			);
 			mainGroup = 3D01F7D72C0A000000000001;
 			packageReferences = (
+				F6DE070D2F10857D00496C25 /* XCRemoteSwiftPackageReference "analytics-swift-package" */,
 			);
 			productRefGroup = 3D01F7D72C0A000000000001;
 			projectDirPath = "";
@@ -940,7 +940,6 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Astronova;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -977,7 +976,6 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstronovaApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Astronova;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -1116,11 +1114,15 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F6DE070D2F10857D00496C25 /* XCRemoteSwiftPackageReference "analytics-swift-package" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/smartlook/analytics-swift-package";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.15;
+			};
 		};
 /* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3D01F7D82C0A000000000001 /* Project object */;
 }
