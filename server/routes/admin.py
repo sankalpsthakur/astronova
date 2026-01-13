@@ -16,11 +16,12 @@ admin_bp = Blueprint("admin", __name__)
 @admin_bp.route("/grant-pro", methods=["POST"])
 def grant_pro():
     """
-    Grant Pro subscription to a user by email.
+    Grant Pro subscription to a user by email or user ID.
 
     Request body:
     {
-        "email": "user@example.com"
+        "email": "user@example.com"  // OR
+        "userId": "user-id-here"
     }
 
     Response:
@@ -36,15 +37,20 @@ def grant_pro():
     """
     data = request.get_json() or {}
     email = data.get("email")
+    user_id = data.get("userId")
 
-    if not email:
-        return jsonify({"error": "email is required"}), 400
+    if not email and not user_id:
+        return jsonify({"error": "email or userId is required"}), 400
 
     conn = get_connection()
     cur = conn.cursor()
 
-    # Find user by email
-    cur.execute("SELECT id, email, full_name FROM users WHERE email = ?", (email,))
+    # Find user by email or userId
+    if email:
+        cur.execute("SELECT id, email, full_name FROM users WHERE email = ?", (email,))
+    else:
+        cur.execute("SELECT id, email, full_name FROM users WHERE id = ?", (user_id,))
+
     user = cur.fetchone()
 
     if not user:
@@ -52,6 +58,7 @@ def grant_pro():
         return jsonify({
             "error": "User not found",
             "email": email,
+            "userId": user_id,
             "message": "User must sign in at least once before granting Pro access"
         }), 404
 
