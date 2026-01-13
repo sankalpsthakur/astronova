@@ -1,5 +1,5 @@
 """
-Chat Response Service - Generates personalized astrological responses using OpenAI.
+Chat Response Service - Generates personalized astrological responses using Gemini or OpenAI.
 
 This service creates context-aware chat responses based on:
 - User's birth data (anonymized planetary positions)
@@ -12,6 +12,12 @@ import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
+# Try to import Gemini first, then fall back to OpenAI
+try:
+    import google.generativeai as genai  # type: ignore
+except Exception:  # pragma: no cover
+    genai = None  # type: ignore
+
 try:
     from openai import OpenAI  # type: ignore
 except Exception:  # pragma: no cover
@@ -21,15 +27,31 @@ from services.ephemeris_service import EphemerisService
 
 
 class ChatServiceError(RuntimeError):
-    """Raised when the chat pipeline cannot reach the OpenAI provider."""
+    """Raised when the chat pipeline cannot reach the AI provider."""
 
 
 class ChatResponseService:
     def __init__(self):
         self.ephem = EphemerisService()
-        api_key = os.getenv("OPENAI_API_KEY")
-        self.client = OpenAI(api_key=api_key) if OpenAI and api_key else None
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+        # Prefer Gemini, fall back to OpenAI
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        openai_key = os.getenv("OPENAI_API_KEY")
+
+        if gemini_key and genai:
+            genai.configure(api_key=gemini_key)
+            self.client_type = "gemini"
+            self.client = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-1.5-flash"))
+            self.model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        elif openai_key and OpenAI:
+            self.client_type = "openai"
+            self.client = OpenAI(api_key=openai_key)
+            self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        else:
+            self.client_type = None
+            self.client = None
+            self.model = None
+
         self._transit_cache: Optional[tuple[Dict[str, Any], datetime]] = None
 
     def _get_current_transits(self) -> Dict[str, Any]:
@@ -225,24 +247,39 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
         system_prompt = self._build_system_prompt(transits, natal, category)
 
         if not self.client:
-            raise ChatServiceError("OpenAI client not configured")
+            raise ChatServiceError("AI client not configured - set GEMINI_API_KEY or OPENAI_API_KEY")
 
         try:
-            # Call OpenAI
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": message}
-                ],
-                max_tokens=300,
-                temperature=0.8,
-            )
+            if self.client_type == "gemini":
+                # Call Gemini API
+                full_prompt = f"{system_prompt}\n\nUser Question: {message}\n\nOracle Response:"
+                response = self.client.generate_content(
+                    full_prompt,
+                    generation_config=genai.GenerationConfig(
+                        max_output_tokens=300,
+                        temperature=0.8,
+                    )
+                )
+                reply = response.text.strip()
 
-            reply = response.choices[0].message.content.strip()
+            elif self.client_type == "openai":
+                # Call OpenAI API
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": message}
+                    ],
+                    max_tokens=300,
+                    temperature=0.8,
+                )
+                reply = response.choices[0].message.content.strip()
+
+            else:
+                raise ChatServiceError("No AI provider configured")
 
         except Exception as e:
-            raise ChatServiceError("OpenAI request failed") from e
+            raise ChatServiceError(f"AI request failed ({self.client_type})") from e
 
         # Generate follow-ups
         follow_ups = self._generate_follow_ups(category, has_birth_data)

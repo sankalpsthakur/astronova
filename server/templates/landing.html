@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astronova - Authentic Vedic Astrology</title>
+    <meta name="description"
+        content="Authentic Vedic astrology powered by the Swiss Ephemeris and 5,000 years of tradition. Precision timing, expert verification, and sacred rituals.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Trust Palette */
+            --bg-deep: #05080F;
+            /* Deep Midnight */
+            --bg-card: #0B101A;
+            --text-main: #E1E1E6;
+            /* Starlight Silver */
+            --text-muted: #9499A8;
+            --gold-primary: #D4AF37;
+            /* Antique Gold */
+            --gold-dim: #8A7224;
+            --border: rgba(212, 175, 55, 0.15);
+            --border-hover: rgba(212, 175, 55, 0.4);
+
+            --font-display: 'Playfair Display', serif;
+            --font-body: 'Inter', sans-serif;
+
+            --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: var(--font-display);
+            font-weight: 400;
+            color: #fff;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Subtle Geometric background pattern */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image:
+                linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+            background-size: 100px 100px;
+            z-index: -1;
+            mask-image: radial-gradient(circle at 50% 50%, black 40%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at 50% 50%, black 40%, transparent 80%);
+            pointer-events: none;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: linear-gradient(to bottom, rgba(5, 8, 15, 0.95), transparent);
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            letter-spacing: 0.05em;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--gold-primary);
+            transform: rotate(45deg);
+            display: grid;
+            place-items: center;
+        }
+
+        .logo-icon::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--gold-primary);
+        }
+
+        .nav-link {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--gold-primary);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .eyebrow {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            color: var(--gold-primary);
+            margin-bottom: 24px;
+            opacity: 0;
+            animation: fadeIn 1s var(--ease-out) 0.2s forwards;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .eyebrow::before,
+        .eyebrow::after {
+            content: '';
+            width: 40px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+        }
+
+        h1 {
+            font-size: clamp(3rem, 5vw, 4.5rem);
+            line-height: 1.1;
+            margin-bottom: 32px;
+            max-width: 900px;
+            opacity: 0;
+            animation: fadeIn 1s var(--ease-out) 0.4s forwards;
+            background: linear-gradient(180deg, #FFFFFF 20%, #B4B4B4 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 48px;
+            opacity: 0;
+            animation: fadeIn 1s var(--ease-out) 0.6s forwards;
+        }
+
+        .btn-group {
+            opacity: 0;
+            animation: fadeIn 1s var(--ease-out) 0.8s forwards;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 16px 40px;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            border: 1px solid var(--gold-primary);
+            background: transparent;
+            color: var(--gold-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: rgba(212, 175, 55, 0.1);
+            color: #fff;
+            border-color: var(--gold-primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--gold-primary);
+            color: #000;
+        }
+
+        /* Trust Banner */
+        .trust-banner {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+            background: rgba(11, 16, 26, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+
+        .trust-icon {
+            color: var(--gold-primary);
+            font-size: 1.2rem;
+        }
+
+        /* Features */
+        .features {
+            padding: 120px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-head {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-head h2 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+            color: var(--gold-primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 32px;
+        }
+
+        .feature-card {
+            padding: 48px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .feature-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 24px;
+        }
+
+        .feature-line {
+            width: 40px;
+            height: 2px;
+            background: var(--gold-primary);
+            margin-bottom: 24px;
+        }
+
+        /* Testimonial preview */
+        .quote-section {
+            padding: 100px 20px;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .quote {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-style: italic;
+            color: #fff;
+            margin-bottom: 32px;
+            line-height: 1.4;
+        }
+
+        .author {
+            color: var(--gold-primary);
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* Footer */
+        footer {
+            padding: 60px 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        .footer-links a:hover {
+            color: var(--gold-primary);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.8rem;
+            }
+
+            .trust-banner {
+                gap: 24px;
+                padding: 32px 20px;
+                justify-content: flex-start;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .trust-item {
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-pattern"></div>
+
+    <nav>
+        <div class="logo">
+            <div class="logo-icon"></div>
+            ASTRONOVA
+        </div>
+        <a href="https://apps.apple.com/app/id6449557484" class="nav-link">Get App</a>
+    </nav>
+
+    <header class="hero">
+        <div class="eyebrow">The Royal Observatory</div>
+        <h1>Ancient Wisdom.<br>Mathematical Precision.</h1>
+        <p>The only astrology app powered by the Swiss Ephemeris and verified Vedic Pandits. Clear guidance for life's
+            most important decisions.</p>
+
+        <div class="btn-group">
+            <a href="https://apps.apple.com/app/id6449557484" class="btn btn-primary">Download for iOS</a>
+        </div>
+    </header>
+
+    <div class="trust-banner">
+        <div class="trust-item">
+            <span class="trust-icon">✦</span> 5,000+ Years Tradition
+        </div>
+        <div class="trust-item">
+            <span class="trust-icon">✦</span> NASA-Grade Data
+        </div>
+        <div class="trust-item">
+            <span class="trust-icon">✦</span> Verified Experts
+        </div>
+        <div class="trust-item">
+            <span class="trust-icon">✦</span> Secure & Private
+        </div>
+    </div>
+
+    <section class="features">
+        <div class="section-head">
+            <h2>The Science of Fate</h2>
+        </div>
+
+        <div class="grid">
+            <div class="feature-card">
+                <div class="feature-line"></div>
+                <h3>Planetary Insights</h3>
+                <p>Calculated using the Swiss Ephemeris for 100% astronomical accuracy. Know exactly where the planets
+                    stand and how they influence your chart.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-line"></div>
+                <h3>Vedic Timeline</h3>
+                <p>Your life is mapped into Dashas—cosmic chapters that define your current focus. Understand the 'Why'
+                    and 'When' of life events.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-line"></div>
+                <h3>Sacred Rituals</h3>
+                <p>Access authentic poojas performed at ancient temples in India. We bridge the gap between devotion and
+                    digital convenience.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-line"></div>
+                <h3>Expert Counsel</h3>
+                <p>When algorithms aren't enough, consult verified Vedic astrologers via video. Real human wisdom for
+                    complex life situations.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="quote-section">
+        <div class="quote">"Astronomy is the study of the universe's body. Astrology is the study of its soul. Astronova
+            brings them together."</div>
+        <div class="author">— Dr. V. Sharma, Vedic Scholar</div>
+    </section>
+
+    <footer>
+        <div class="footer-links">
+            <a href="/support">Support</a>
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+        </div>
+        <p>© 2026 Astronova. Made with devotion & precision.</p>
+    </footer>
+</body>
+
+</html>

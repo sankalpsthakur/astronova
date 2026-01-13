@@ -35,7 +35,9 @@ python app.py                    # Runs on 0.0.0.0:8080
 | `PORT` | No | `8080` | Server port |
 | `FLASK_DEBUG` | No | `false` | Enable debug mode (auto-reload) |
 | `DB_PATH` | No | `./astronova.db` | SQLite database file path |
-| `OPENAI_API_KEY` | For chat | - | OpenAI API key for chat service |
+| `GEMINI_API_KEY` | For chat | - | Google Gemini API key for Oracle chat (preferred) |
+| `GEMINI_MODEL` | No | `gemini-1.5-flash` | Gemini model for chat |
+| `OPENAI_API_KEY` | For chat | - | OpenAI API key (fallback if Gemini not available) |
 | `OPENAI_MODEL` | No | `gpt-4o-mini` | OpenAI model for chat |
 | `JWT_SECRET` | Recommended | Auto-generated | JWT signing secret (set in production) |
 | `APPLE_BUNDLE_ID` | For iOS auth | - | Apple Sign-In bundle identifier |
