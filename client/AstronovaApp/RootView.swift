@@ -828,6 +828,13 @@ struct EnhancedNameStepView: View {
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
+                .padding(.vertical, 20)
+                .padding(.horizontal, 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.black.opacity(0.35))
+                        .blur(radius: 20)
+                )
                 
                 // Enhanced text field with validation
                 VStack(spacing: 8) {
@@ -992,6 +999,13 @@ struct EnhancedBirthDateStepView: View {
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
+                .padding(.vertical, 20)
+                .padding(.horizontal, 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.black.opacity(0.35))
+                        .blur(radius: 20)
+                )
                 
                 // Enhanced date picker with validation
                 VStack(spacing: 12) {
@@ -1188,6 +1202,13 @@ struct EnhancedBirthTimeStepView: View {
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
+                .padding(.vertical, 20)
+                .padding(.horizontal, 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.black.opacity(0.35))
+                        .blur(radius: 20)
+                )
 
                 // Time picker with unknown toggle
                 VStack(spacing: 12) {
@@ -1304,6 +1325,13 @@ struct EnhancedBirthPlaceStepView: View {
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
+                .padding(.vertical, 20)
+                .padding(.horizontal, 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.black.opacity(0.35))
+                        .blur(radius: 20)
+                )
                 
                 // Enhanced text field with autocomplete
                 VStack(spacing: 8) {
