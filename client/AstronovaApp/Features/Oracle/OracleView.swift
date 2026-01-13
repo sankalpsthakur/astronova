@@ -38,6 +38,7 @@ struct OracleView: View {
                                     // Typing indicator
                                     if viewModel.isLoading {
                                         OracleTypingIndicator()
+                                            .id("typing")
                                     }
 
                                     // Error
@@ -45,19 +46,30 @@ struct OracleView: View {
                                         OracleErrorBanner(message: error) {
                                             viewModel.dismissError()
                                         }
+                                        .id("error")
                                     }
                                 }
                                 .padding(.horizontal, Cosmic.Spacing.screen)
                                 .padding(.top, Cosmic.Spacing.md)
-                                .padding(.bottom, Cosmic.Spacing.xl)
+                                .padding(.bottom, 120) // Space for input area + safe area
                             }
                             .accessibilityLabel(L10n.Oracle.Accessibility.conversationLabel)
                             .accessibilityHint(L10n.Oracle.Accessibility.conversationHint)
                             .accessibilityElement(children: .contain)
                             .onChange(of: viewModel.messages.count) { _, _ in
-                                if let lastId = viewModel.messages.last?.id {
+                                scrollToBottom(proxy: proxy)
+                            }
+                            .onChange(of: viewModel.isLoading) { _, newValue in
+                                if newValue {
                                     withAnimation {
-                                        proxy.scrollTo(lastId, anchor: .bottom)
+                                        proxy.scrollTo("typing", anchor: .bottom)
+                                    }
+                                }
+                            }
+                            .onChange(of: viewModel.errorMessage) { _, newValue in
+                                if newValue != nil {
+                                    withAnimation {
+                                        proxy.scrollTo("error", anchor: .bottom)
                                     }
                                 }
                             }
@@ -68,9 +80,7 @@ struct OracleView: View {
                             hideKeyboard()
                         }
 
-                        Spacer(minLength: 0)
-
-                        // Input area
+                        // Input area (pinned to bottom)
                         OracleInputArea(
                             text: $viewModel.inputText,
                             depth: $viewModel.selectedDepth,
@@ -79,7 +89,6 @@ struct OracleView: View {
                             onSend: { viewModel.sendMessage() },
                             onPromptTap: { viewModel.selectPrompt($0) }
                         )
-                        .padding(.bottom, 100) // Tab bar clearance
                     }
                 } else {
                     VStack {
@@ -126,6 +135,22 @@ struct OracleView: View {
             #selector(UIResponder.resignFirstResponder),
             to: nil, from: nil, for: nil
         )
+    }
+
+    private func scrollToBottom(proxy: ScrollViewProxy) {
+        if viewModel.isLoading {
+            withAnimation {
+                proxy.scrollTo("typing", anchor: .bottom)
+            }
+        } else if viewModel.errorMessage != nil {
+            withAnimation {
+                proxy.scrollTo("error", anchor: .bottom)
+            }
+        } else if let lastId = viewModel.messages.last?.id {
+            withAnimation {
+                proxy.scrollTo(lastId, anchor: .bottom)
+            }
+        }
     }
 }
 

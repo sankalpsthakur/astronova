@@ -1,3 +1,4 @@
+from .admin import admin_bp
 from .astrology import astrology_bp
 from .auth import auth_bp
 from .chart import chart_bp
@@ -13,6 +14,7 @@ from .reports import reports_bp
 from .temple import temple_bp
 
 __all__ = [
+    "admin_bp",
     "astrology_bp",
     "auth_bp",
     "chart_bp",

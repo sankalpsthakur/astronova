@@ -3752,6 +3752,8 @@ struct OracleInputArea: View {
             HStack(spacing: Cosmic.Spacing.sm) {
                 // Depth toggle
                 DepthToggle(depth: $depth)
+                    .disabled(isDisabled)
+                    .opacity(isDisabled ? 0.5 : 1.0)
 
                 // Text field
                 TextField(L10n.Oracle.inputPlaceholder, text: $text)
@@ -3762,6 +3764,7 @@ struct OracleInputArea: View {
                     .padding(.vertical, Cosmic.Spacing.sm)
                     .background(Color.cosmicSurface, in: Capsule())
                     .disabled(isDisabled)
+                    .opacity(isDisabled ? 0.6 : 1.0)
                     .accessibilityIdentifier(AccessibilityID.chatInputField)
                     .accessibilityLabel(L10n.Oracle.Accessibility.inputLabel)
                     .accessibilityHint(L10n.Oracle.Accessibility.inputHint)
@@ -3792,7 +3795,8 @@ struct OracleInputArea: View {
             }
             .padding(.horizontal, Cosmic.Spacing.screen)
         }
-        .padding(.vertical, Cosmic.Spacing.sm)
+        .padding(.vertical, Cosmic.Spacing.md)
+        .padding(.bottom, Cosmic.Spacing.xs)
         .background(
             Color.cosmicVoid
                 .overlay(
@@ -4872,7 +4876,7 @@ struct ManageDashboardView: View {
                     Label("About", systemImage: "star.circle.fill")
                 }
                 
-                Link(destination: URL(string: "mailto:support@astronova.app")!) {
+                Link(destination: URL(string: "mailto:admin@100xai.engineering")!) {
                     Label("Contact Support", systemImage: "message.badge.filled.fill")
                 }
                 
@@ -5435,7 +5439,7 @@ struct EnhancedSettingsView: View {
                 
                 // Support
                 Section {
-                    Link(destination: URL(string: "mailto:support@astronova.app")!) {
+                    Link(destination: URL(string: "mailto:admin@100xai.engineering")!) {
                         Label("Contact Support", systemImage: "message.badge.filled.fill")
                     }
                     
@@ -5681,7 +5685,7 @@ struct PrivacyPolicyView: View {
     private var contactSection: some View {
         PolicySection(
             title: "Contact Us",
-            content: "Questions about this policy? Email support@astronova.app and we will respond within 48 hours."
+            content: "Questions about this policy? Email admin@100xai.engineering and we will respond within 48 hours."
         )
     }
 }

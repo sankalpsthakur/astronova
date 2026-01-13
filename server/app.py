@@ -12,6 +12,7 @@ from flask_limiter.util import get_remote_address
 from db import get_user_preferred_language, init_db
 from middleware import add_request_id, log_request_response, setup_logging
 from routes import (
+    admin_bp,
     astrology_bp,
     auth_bp,
     chart_bp,
@@ -130,6 +131,7 @@ def create_app():
         target = "/api/v1/reports" + ("" if not path else f"/{path}")
         return redirect(target, code=307)
 
+    app.register_blueprint(admin_bp, url_prefix="/api/v1/admin")
     app.register_blueprint(astrology_bp, url_prefix="/api/v1/astrology")
     app.register_blueprint(compat_bp, url_prefix="/api/v1/compatibility")
     app.register_blueprint(content_bp, url_prefix="/api/v1/content")

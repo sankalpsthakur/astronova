@@ -20,9 +20,13 @@ struct AstronovaAppApp: App {
         #if DEBUG
         if !TestEnvironment.shared.isUITest {
             Self.setupSmartlook()
+            print("🔍 [DEBUG] Smartlook initialization attempted (non-UI-test mode)")
+        } else {
+            print("🔍 [DEBUG] Smartlook SKIPPED - Running in UI test mode")
         }
         #else
         Self.setupSmartlook()
+        print("🔍 [RELEASE] Smartlook initialization attempted")
         #endif
 
         // Apply UI test configuration if running in test mode
@@ -40,15 +44,17 @@ struct AstronovaAppApp: App {
 
     #if canImport(SmartlookAnalytics)
     private static func setupSmartlook() {
+        print("✅ [Smartlook] SDK is available - starting setup")
         Smartlook.instance.preferences.projectKey = "3ea51a8cc18ecd6b6b43eec84450f694a65569ed"
         Smartlook.instance.start()
-
-        #if DEBUG
-        print("[Smartlook] Session recording started")
-        #endif
+        print("✅ [Smartlook] Session recording started with project key: 3ea51a8...9ed")
+        print("✅ [Smartlook] Check dashboard at: https://app.smartlook.com/")
     }
     #else
-    private static func setupSmartlook() {}
+    private static func setupSmartlook() {
+        print("❌ [Smartlook] SDK NOT available - SmartlookAnalytics cannot be imported")
+        print("❌ [Smartlook] Check if package is properly linked to target")
+    }
     #endif
 
     var body: some Scene {

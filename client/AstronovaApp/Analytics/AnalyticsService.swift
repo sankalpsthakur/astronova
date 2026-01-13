@@ -55,6 +55,7 @@ final class Analytics: AnalyticsServiceProtocol {
         // Skip tracking in UI test mode
         #if DEBUG
         if TestEnvironment.shared.isUITest {
+            logger.debug("[ANALYTICS] Skipped (UI test mode): \(event.rawValue, privacy: .public)")
             return
         }
         #endif
@@ -67,9 +68,13 @@ final class Analytics: AnalyticsServiceProtocol {
                 smartlookProps = smartlookProps.setProperty(key, to: value)
             }
             Smartlook.instance.track(event: event.rawValue, properties: smartlookProps)
+            logger.debug("[ANALYTICS] ✅ Smartlook tracked: \(event.rawValue, privacy: .public) with \(properties.count) properties")
         } else {
             Smartlook.instance.track(event: event.rawValue)
+            logger.debug("[ANALYTICS] ✅ Smartlook tracked: \(event.rawValue, privacy: .public)")
         }
+        #else
+        logger.warning("[ANALYTICS] ⚠️ Smartlook SDK not available - event logged locally only: \(event.rawValue, privacy: .public)")
         #endif
 
         // Keep debug logging

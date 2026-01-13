@@ -106,7 +106,7 @@ struct MoreOptionsSheet: View {
 
                     // Support Section
                     OptionsSection(title: "Support") {
-                        Link(destination: URL(string: "mailto:support@astronova.app")!) {
+                        Link(destination: URL(string: "mailto:admin@100xai.engineering")!) {
                             OptionRowContent(
                                 icon: "message.fill",
                                 iconColor: .cosmicInfo,

@@ -560,6 +560,7 @@ def delete_user_data(user_id: str) -> dict:
 
     # Delete from all tables that reference user_id
     tables_to_clean = [
+        ("pooja_bookings", "user_id"),  # Temple/Pooja bookings
         ("relationships", "user_id"),
         ("chat_messages", "user_id"),
         ("chat_conversations", "user_id"),
