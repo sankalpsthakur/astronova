@@ -12,17 +12,32 @@ struct CosmicMapView: View {
     // Constants
     private let zodiacSigns = ["Ari", "Tau", "Gem", "Can", "Leo", "Vir", "Lib", "Sco", "Sag", "Cap", "Aqu", "Pis"]
     private let dashaLords = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
+    private let vimshottariYears: [String: Double] = [
+        "Ketu": 7,
+        "Venus": 20,
+        "Sun": 6,
+        "Moon": 10,
+        "Mars": 7,
+        "Rahu": 18,
+        "Jupiter": 16,
+        "Saturn": 19,
+        "Mercury": 17,
+    ]
 
     private let planetColors: [String: Color] = [
-        "sun": .yellow,
-        "moon": .cyan,
-        "mercury": .green,
-        "venus": .pink,
-        "mars": .red,
-        "jupiter": .orange,
-        "saturn": .brown,
-        "rahu": .purple,
-        "ketu": .indigo
+        "sun": .planetSun,
+        "moon": .planetMoon,
+        "mercury": .planetMercury,
+        "venus": .planetVenus,
+        "mars": .planetMars,
+        "jupiter": .planetJupiter,
+        "saturn": .planetSaturn,
+        "uranus": .planetUranus,
+        "neptune": .planetNeptune,
+        "pluto": .planetPluto,
+        "rahu": .planetRahu,
+        "ketu": .planetKetu,
+        "ascendant": .cosmicGold,
     ]
 
     var body: some View {
@@ -86,7 +101,7 @@ struct CosmicMapView: View {
 
     private func handleTap(at point: CGPoint, center: CGPoint, size: CGFloat) {
         let planetRadius = size * 0.38
-        let dashaRadius = size * 0.22
+        let dashaBaseRadius = size * 0.22
 
         // Planet hit testing
         var nearestPlanet: (element: CosmicElement, distance: CGFloat)?
@@ -113,24 +128,28 @@ struct CosmicMapView: View {
             return
         }
 
-        // Dasha ring hit testing
-        for (index, lord) in dashaLords.enumerated() {
-            let startAngle = CGFloat(index) * 40.0 - 90
-            let endAngle = startAngle + 40.0
-            let midAngle = (startAngle + endAngle) / 2
-            let radians = midAngle * .pi / 180
+        // Dasha ring hit testing (polar)
+        let layout = dashaRingLayout(baseRadius: dashaBaseRadius)
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+        let radialDistance = sqrt(dx * dx + dy * dy)
 
-            let hitCenter = CGPoint(
-                x: center.x + dashaRadius * cos(radians),
-                y: center.y + dashaRadius * sin(radians)
-            )
+        let minHitRadius = layout.antarRadius - layout.antarWidth / 2 - 12
+        let maxHitRadius = layout.labelRadius + 18
+        if radialDistance >= minHitRadius && radialDistance <= maxHitRadius {
+            var angleDeg = Double(atan2(dy, dx) * 180 / .pi)
+            if angleDeg < -90 { angleDeg += 360 }
 
-            let dx = point.x - hitCenter.x
-            let dy = point.y - hitCenter.y
-            let distance = sqrt(dx * dx + dy * dy)
+            let mahaInner = layout.mahaRadius - layout.mahaWidth / 2 - 6
+            let mahaOuter = layout.mahaRadius + layout.mahaWidth / 2 + 6
+            if radialDistance >= mahaInner && radialDistance <= mahaOuter {
+                applySelection(.dashaLord(snapshot.currentDasha.mahadasha.lord))
+                return
+            }
 
-            if distance <= 30 {
-                applySelection(.dashaLord(lord))
+            let segments = antardashaSegments()
+            if let hit = segments.first(where: { angleDeg >= $0.startAngleDeg && angleDeg < $0.endAngleDeg }) {
+                applySelection(.dashaLord(hit.lord))
                 return
             }
         }
@@ -231,65 +250,139 @@ struct CosmicMapView: View {
 
             let signText = Text(zodiacSigns[i])
                 .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(.white.opacity(0.75))
 
             context.draw(signText, at: labelPos, anchor: .center)
         }
     }
 
     private func drawDashaRing(_ context: inout GraphicsContext, center: CGPoint, radius: CGFloat) {
-        let currentMahaLord = snapshot.currentDasha.mahadasha.lord
-        let currentAntarLord = snapshot.currentDasha.antardasha.lord
+        let mahaLord = snapshot.currentDasha.mahadasha.lord
+        let antarLord = snapshot.currentDasha.antardasha.lord
+        let mahaColor = planetColors[mahaLord.lowercased()] ?? .white
 
-        for (index, lord) in dashaLords.enumerated() {
-            let startAngle = CGFloat(index) * 40.0 - 90
-            let endAngle = startAngle + 40.0
-            let midAngle = (startAngle + endAngle) / 2
+        let layout = dashaRingLayout(baseRadius: radius)
 
-            let isMahaLord = lord == currentMahaLord
-            let isAntarLord = lord == currentAntarLord
-            let isSelected = selectedElement == .dashaLord(lord)
+        // Outer ring: Mahadasha progress (accurate)
+        let fullStart = -90.0
+        let fullEnd = 270.0
+        var mahaTrack = Path()
+        mahaTrack.addArc(
+            center: center,
+            radius: layout.mahaRadius,
+            startAngle: .degrees(fullStart),
+            endAngle: .degrees(fullEnd),
+            clockwise: false
+        )
+        context.stroke(
+            mahaTrack,
+            with: .color(mahaColor.opacity(0.18)),
+            style: StrokeStyle(lineWidth: layout.mahaWidth, lineCap: .round)
+        )
 
-            // Segment arc
-            let arcRadius = radius
-            let thickness: CGFloat = isMahaLord ? 18 : (isAntarLord ? 14 : 10)
+        let mahaProgressEnd = fullStart + 360.0 * snapshot.currentDasha.mahadashaProgress
+        if mahaProgressEnd > fullStart {
+            var mahaProgress = Path()
+            mahaProgress.addArc(
+                center: center,
+                radius: layout.mahaRadius,
+                startAngle: .degrees(fullStart),
+                endAngle: .degrees(mahaProgressEnd),
+                clockwise: false
+            )
+            context.stroke(
+                mahaProgress,
+                with: .color(mahaColor.opacity(0.95)),
+                style: StrokeStyle(lineWidth: layout.mahaWidth, lineCap: .round)
+            )
+            context.stroke(
+                mahaProgress,
+                with: .color(mahaColor.opacity(0.35)),
+                style: StrokeStyle(lineWidth: layout.mahaWidth + 6, lineCap: .round)
+            )
+        }
 
-            var arcPath = Path()
-            arcPath.addArc(center: center, radius: arcRadius,
-                          startAngle: .degrees(Double(startAngle)),
-                          endAngle: .degrees(Double(endAngle)),
-                          clockwise: false)
+        // Inner ring: Antardasha segments (accurate durations when server provides timeline)
+        let segments = antardashaSegments()
+        for segment in segments {
+            let isCurrent = segment.lord == antarLord
+            let isSelected = selectedElement == .dashaLord(segment.lord)
+            let baseColor = planetColors[segment.lord.lowercased()] ?? .gray
 
-            // Color based on state
-            let baseColor = planetColors[lord.lowercased()] ?? .gray
-            var opacity: Double = 0.3
-            if isMahaLord { opacity = 0.9 }
-            else if isAntarLord { opacity = 0.7 }
-            if isSelected { opacity = 1.0 }
+            let opacity: Double = {
+                if isSelected { return 1.0 }
+                if isCurrent { return 0.9 }
+                return 0.35
+            }()
+            let width: CGFloat = {
+                if isSelected { return layout.antarWidth + 4 }
+                if isCurrent { return layout.antarWidth + 2 }
+                return layout.antarWidth
+            }()
 
-            context.stroke(arcPath, with: .color(baseColor.opacity(opacity)),
-                          style: StrokeStyle(lineWidth: thickness, lineCap: .round))
-
-            // Glow for active lords
-            if isMahaLord || isAntarLord {
-                context.stroke(arcPath, with: .color(baseColor.opacity(0.3)),
-                              style: StrokeStyle(lineWidth: thickness + 6, lineCap: .round))
-            }
-
-            // Label
-            let labelRadians = midAngle * .pi / 180
-            let labelRadius = radius + (isMahaLord ? 28 : 22)
-            let labelPos = CGPoint(
-                x: center.x + labelRadius * cos(labelRadians),
-                y: center.y + labelRadius * sin(labelRadians)
+            var arc = Path()
+            arc.addArc(
+                center: center,
+                radius: layout.antarRadius,
+                startAngle: .degrees(segment.startAngleDeg),
+                endAngle: .degrees(segment.endAngleDeg),
+                clockwise: false
             )
 
-            let labelText = Text(String(lord.prefix(3)))
-                .font(.system(size: isMahaLord ? 10 : 8, weight: isMahaLord ? .bold : .medium))
-                .foregroundStyle(baseColor.opacity(opacity))
+            context.stroke(
+                arc,
+                with: .color(baseColor.opacity(opacity)),
+                style: StrokeStyle(lineWidth: width, lineCap: .butt)
+            )
 
-            context.draw(labelText, at: labelPos, anchor: .center)
+            if isSelected {
+                context.stroke(
+                    arc,
+                    with: .color(baseColor.opacity(0.3)),
+                    style: StrokeStyle(lineWidth: width + 6, lineCap: .butt)
+                )
+            }
 
+            // Antardasha progress overlay
+            if isCurrent {
+                let progressEnd = segment.startAngleDeg + segment.spanDeg * snapshot.currentDasha.antardashaProgress
+                if progressEnd > segment.startAngleDeg {
+                    var progressArc = Path()
+                    progressArc.addArc(
+                        center: center,
+                        radius: layout.antarRadius,
+                        startAngle: .degrees(segment.startAngleDeg),
+                        endAngle: .degrees(progressEnd),
+                        clockwise: false
+                    )
+                    context.stroke(
+                        progressArc,
+                        with: .color(baseColor.opacity(0.98)),
+                        style: StrokeStyle(lineWidth: width + 2, lineCap: .round)
+                    )
+                }
+            }
+
+            // Labels
+            let midRad = segment.midAngleRad
+            let labelPos = CGPoint(
+                x: center.x + layout.labelRadius * cos(midRad),
+                y: center.y + layout.labelRadius * sin(midRad)
+            )
+
+            let labelText = Text(String(segment.lord.prefix(3)))
+                .font(.system(size: isCurrent ? 10 : 8, weight: isCurrent ? .bold : .medium))
+                .foregroundStyle(.white.opacity(isCurrent || isSelected ? 0.95 : 0.8))
+
+            drawTextPill(
+                &context,
+                text: labelText,
+                at: labelPos,
+                paddingX: 5,
+                paddingY: 3,
+                background: Color.black.opacity(0.35),
+                border: baseColor.opacity(isCurrent || isSelected ? 0.65 : 0.28)
+            )
         }
     }
 
@@ -366,19 +459,38 @@ struct CosmicMapView: View {
 
             // Planet body
             let planetGradient = Gradient(colors: [color, color.opacity(0.6)])
+            let bodyRect = CGRect(
+                x: pos.x - planetSize / 2,
+                y: pos.y - planetSize / 2,
+                width: planetSize,
+                height: planetSize
+            )
+            let bodyPath = Path(ellipseIn: bodyRect)
             context.fill(
-                Path(ellipseIn: CGRect(x: pos.x - planetSize/2, y: pos.y - planetSize/2,
-                                      width: planetSize, height: planetSize)),
+                bodyPath,
                 with: .radialGradient(planetGradient, center: CGPoint(x: pos.x - 2, y: pos.y - 2),
                                      startRadius: 0, endRadius: planetSize)
             )
 
-            // Planet symbol
+            // Edge definition (improves contrast across light/dark planet colors)
+            context.stroke(bodyPath, with: .color(.black.opacity(0.55)), lineWidth: 1.5)
+            context.stroke(bodyPath, with: .color(.white.opacity(0.18)), lineWidth: 0.75)
+
+            // Planet symbol label
+            let labelPoint = CGPoint(x: pos.x, y: pos.y - planetSize - 10)
             let symbolText = Text(planet.symbol)
-                .font(.system(size: isSelected ? 14 : 10, weight: .bold))
+                .font(.system(size: isSelected ? 13 : 10, weight: .bold))
                 .foregroundStyle(.white)
 
-            context.draw(symbolText, at: CGPoint(x: pos.x, y: pos.y - planetSize - 8), anchor: .center)
+            drawTextPill(
+                &context,
+                text: symbolText,
+                at: labelPoint,
+                paddingX: 5,
+                paddingY: 3,
+                background: Color.black.opacity(0.45),
+                border: color.opacity(isSelected || isDashaLord ? 0.8 : 0.35)
+            )
 
             // Retrograde indicator
             if planet.isRetrograde {
@@ -454,5 +566,107 @@ struct CosmicMapView: View {
         case "rahu", "ketu": return 0.98
         default: return 0.7
         }
+    }
+
+    private struct DashaRingLayout {
+        let mahaRadius: CGFloat
+        let mahaWidth: CGFloat
+        let antarRadius: CGFloat
+        let antarWidth: CGFloat
+        let labelRadius: CGFloat
+    }
+
+    private struct DashaSegment {
+        let lord: String
+        let startAngleDeg: Double
+        let endAngleDeg: Double
+
+        var spanDeg: Double { endAngleDeg - startAngleDeg }
+        var midAngleDeg: Double { (startAngleDeg + endAngleDeg) / 2 }
+        var midAngleRad: CGFloat { CGFloat(midAngleDeg) * .pi / 180 }
+    }
+
+    private func dashaRingLayout(baseRadius: CGFloat) -> DashaRingLayout {
+        let mahaWidth: CGFloat = 12
+        let antarWidth: CGFloat = 10
+        let separation: CGFloat = 10
+        let mahaRadius = baseRadius + separation
+        let antarRadius = baseRadius - separation
+        let labelRadius = mahaRadius + 22
+        return DashaRingLayout(
+            mahaRadius: mahaRadius,
+            mahaWidth: mahaWidth,
+            antarRadius: antarRadius,
+            antarWidth: antarWidth,
+            labelRadius: labelRadius
+        )
+    }
+
+    private func antardashaSegments() -> [DashaSegment] {
+        let periods = snapshot.currentDasha.antardashaTimeline
+        let sorted = periods.sorted { $0.startDate < $1.startDate }
+        let durations: [TimeInterval] = sorted.map { max(0.0, $0.endDate.timeIntervalSince($0.startDate)) }
+        let total = durations.reduce(0.0, +)
+
+        let startDeg = -90.0
+        let endDeg = 270.0
+
+        if total > 0, sorted.count == durations.count {
+            var cursor = startDeg
+            var segments: [DashaSegment] = []
+            for (index, period) in sorted.enumerated() {
+                let duration = durations[index]
+                let span = 360.0 * duration / total
+                let start = cursor
+                let end = (index == sorted.count - 1) ? endDeg : (cursor + span)
+                segments.append(DashaSegment(lord: period.lord, startAngleDeg: start, endAngleDeg: end))
+                cursor = end
+            }
+            return segments
+        }
+
+        // Fallback: Vimshottari proportions (year-based), starting at current mahadasha lord.
+        let mahaLord = snapshot.currentDasha.mahadasha.lord
+        let startIndex = dashaLords.firstIndex(of: mahaLord) ?? 0
+        let ordered = (0..<dashaLords.count).map { dashaLords[(startIndex + $0) % dashaLords.count] }
+
+        let totalYears = ordered.reduce(0.0) { $0 + (vimshottariYears[$1] ?? 0.0) }
+        guard totalYears > 0 else { return [] }
+
+        var cursor = startDeg
+        var segments: [DashaSegment] = []
+        for (index, lord) in ordered.enumerated() {
+            let years = vimshottariYears[lord] ?? 0.0
+            let span = 360.0 * years / totalYears
+            let start = cursor
+            let end = (index == ordered.count - 1) ? endDeg : (cursor + span)
+            segments.append(DashaSegment(lord: lord, startAngleDeg: start, endAngleDeg: end))
+            cursor = end
+        }
+        return segments
+    }
+
+    private func drawTextPill(
+        _ context: inout GraphicsContext,
+        text: Text,
+        at point: CGPoint,
+        paddingX: CGFloat,
+        paddingY: CGFloat,
+        background: Color,
+        border: Color
+    ) {
+        let resolved = context.resolve(text)
+        let measured = resolved.measure(in: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+        let rect = CGRect(
+            x: point.x - measured.width / 2 - paddingX,
+            y: point.y - measured.height / 2 - paddingY,
+            width: measured.width + paddingX * 2,
+            height: measured.height + paddingY * 2
+        )
+
+        let shape = Path(roundedRect: rect, cornerRadius: rect.height / 2)
+        context.fill(shape, with: .color(background))
+        context.stroke(shape, with: .color(border), lineWidth: 0.75)
+        context.draw(resolved, at: point, anchor: .center)
     }
 }

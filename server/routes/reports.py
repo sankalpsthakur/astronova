@@ -255,7 +255,7 @@ def generate_report():
 def _get_report_title(report_type: str) -> str:
     """Get a user-friendly title for a report type."""
     titles = {
-        "birth_chart": "Your Birth Chart Analysis",
+        "birth_chart": "Your Detailed Birth Chart Report",
         "love_forecast": "Love & Relationship Forecast",
         "career_forecast": "Career & Professional Guidance",
         "year_ahead": "Your Year Ahead Forecast",

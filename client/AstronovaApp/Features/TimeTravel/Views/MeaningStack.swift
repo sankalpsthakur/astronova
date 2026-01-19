@@ -1,16 +1,13 @@
 import SwiftUI
 
 // MARK: - Meaning Stack
-// Three cards answering: What energy am I in? What's changing? What should I do?
+// Two cards answering: What energy am I in? What's changing?
 
 struct MeaningStack: View {
     let snapshot: TimeTravelSnapshot
     let isCompact: Bool
     let onNowTapped: () -> Void
     let onNextTapped: () -> Void
-    let onActTapped: () -> Void
-
-    @State private var expandedWhySection: Bool = false
 
     private var nextTransition: NextTransition? {
         snapshot.nextTransitions.first
@@ -24,13 +21,12 @@ struct MeaningStack: View {
         }
     }
 
-    // MARK: - Full Stack (3 cards)
+    // MARK: - Full Stack (2 cards)
 
     private var fullStack: some View {
         VStack(spacing: Cosmic.Spacing.sm) {
             nowCard
             nextCard
-            actCard
         }
     }
 
@@ -167,93 +163,6 @@ struct MeaningStack: View {
         }
     }
 
-    // MARK: - ACT Card
-
-    private var actCard: some View {
-        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-            // Header
-            HStack {
-                Text("ACT")
-                    .font(.cosmicCaptionEmphasis)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-
-                Spacer()
-
-                Button(action: onActTapped) {
-                    Image(systemName: "arrow.up.right.circle")
-                        .font(.cosmicTitle2)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                }
-            }
-
-            // Do this
-            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.cosmicBody)
-                    .foregroundStyle(Color.cosmicSuccess)
-
-                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                    Text("Do")
-                        .font(.cosmicCaptionEmphasis)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                    Text(snapshot.act.doThis)
-                        .font(.cosmicCallout)
-                }
-            }
-
-            // Avoid this
-            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.cosmicBody)
-                    .foregroundStyle(Color.cosmicError)
-
-                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                    Text("Avoid")
-                        .font(.cosmicCaptionEmphasis)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                    Text(snapshot.act.avoidThis)
-                        .font(.cosmicCallout)
-                }
-            }
-
-            // Why expandable
-            Button {
-                withAnimation(.cosmicSpring) {
-                    expandedWhySection.toggle()
-                }
-                CosmicHaptics.light()
-            } label: {
-                HStack {
-                    Image(systemName: "info.circle")
-                        .font(.cosmicCaption)
-                    Text("Why")
-                        .font(.cosmicCaptionEmphasis)
-                    Spacer()
-                    Image(systemName: expandedWhySection ? "chevron.up" : "chevron.down")
-                        .font(.cosmicMicro)
-                }
-                .foregroundStyle(Color.cosmicTextSecondary)
-                .padding(.top, 4)
-            }
-            .buttonStyle(.plain)
-
-            if expandedWhySection {
-                Text(snapshot.act.whyExplanation)
-                    .font(.cosmicCaption)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-                    .padding(.top, 4)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .top)),
-                        removal: .opacity
-                    ))
-            }
-        }
-        .padding()
-        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Action guidance. Do: \(snapshot.act.doThis). Avoid: \(snapshot.act.avoidThis)")
-    }
-
     // MARK: - Compact Bar (for sticky header)
 
     private var compactBar: some View {
@@ -277,11 +186,7 @@ struct MeaningStack: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
 
-            Divider()
-                .frame(height: 16)
-
-            // Quick action
-            Text("Do: \(String(snapshot.act.doThis.prefix(20)))...")
+            Text(snapshot.now.opportunity.isEmpty ? "Growth available" : snapshot.now.opportunity)
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .lineLimit(1)

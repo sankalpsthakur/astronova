@@ -370,8 +370,7 @@ struct RelationshipDetailView: View {
                 next: data.next,
                 isCompact: false,
                 onNowTapped: { showInsightSheet = true },
-                onNextTapped: { selectedTab = .journey },
-                onActionTapped: { showInsightSheet = true }
+                onNextTapped: { selectedTab = .journey }
             )
             .padding(.horizontal)
 
@@ -770,10 +769,7 @@ struct ChartsComparisonView: View {
             if viewMode == .table {
                 chartTable
             } else {
-                Text("Circle view coming soon")
-                    .font(.cosmicCaption)
-                    .foregroundStyle(Color.cosmicTextTertiary)
-                    .frame(maxWidth: .infinity, minHeight: 200)
+                ChartsComparisonCircleView(natalA: natalA, natalB: natalB, pair: pair)
             }
         }
         .padding()
@@ -819,6 +815,131 @@ struct ChartsComparisonView: View {
                 Divider().background(Color.cosmicNebula.opacity(0.5))
             }
         }
+    }
+}
+
+private struct ChartsComparisonCircleView: View {
+    let natalA: NatalPlacements
+    let natalB: NatalPlacements
+    let pair: RelationshipPair
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: Cosmic.Spacing.md) {
+                chart(natalA, title: pair.nameA, color: .cosmicGold)
+                chart(natalB, title: pair.nameB, color: .planetVenus)
+            }
+
+            VStack(spacing: Cosmic.Spacing.md) {
+                chart(natalA, title: pair.nameA, color: .cosmicGold)
+                chart(natalB, title: pair.nameB, color: .planetVenus)
+            }
+        }
+    }
+
+    private func chart(_ natal: NatalPlacements, title: String, color: Color) -> some View {
+        VStack(spacing: Cosmic.Spacing.xs) {
+            Text(title)
+                .font(.cosmicCaptionEmphasis)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .lineLimit(1)
+
+            ChartWheelView(natal: natal, accentColor: color)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(Cosmic.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.soft, style: .continuous)
+                .fill(Color.cosmicSurface.opacity(0.5))
+        )
+    }
+}
+
+private struct ChartWheelView: View {
+    struct WheelBody: Identifiable {
+        let id: String
+        let planet: Planet
+        let placement: Placement
+    }
+
+    let natal: NatalPlacements
+    let accentColor: Color
+
+    private var bodies: [WheelBody] {
+        natal.allPlacements.compactMap { name, placement in
+            guard let planet = Planet(rawValue: name) else { return nil }
+            return WheelBody(id: name, planet: planet, placement: placement)
+        }
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = min(proxy.size.width, proxy.size.height)
+            let center = CGPoint(x: size / 2, y: size / 2)
+            let radius = size / 2
+
+            ZStack {
+                Circle()
+                    .stroke(Color.cosmicGold.opacity(0.18), lineWidth: 1)
+                    .frame(width: size, height: size)
+
+                // Zodiac wedges + glyphs
+                ForEach(0..<12, id: \.self) { i in
+                    let startAngle = Angle.degrees(Double(i) * 30 - 90)
+                    let midAngle = Angle.degrees(Double(i) * 30 - 75)
+
+                    Path { path in
+                        path.move(to: center)
+                        path.addLine(to: point(center: center, radius: radius, angle: startAngle))
+                    }
+                    .stroke(Color.cosmicNebula.opacity(0.35), lineWidth: 0.5)
+
+                    Text(ZodiacSign.allCases[i].glyph)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .position(point(center: center, radius: radius * 0.86, angle: midAngle))
+                }
+
+                // Planet bodies
+                ForEach(bodies) { body in
+                    let angle = Angle.degrees(body.placement.longitude - 90)
+                    let orbitRadius = radius * (0.18 + body.planet.orbitRadius * 0.72)
+
+                    Text(body.planet.glyph)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accentColor)
+                        .padding(6)
+                        .background(
+                            Circle()
+                                .fill(Color.cosmicSurface.opacity(0.95))
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(accentColor.opacity(0.25), lineWidth: 1)
+                        )
+                        .position(point(center: center, radius: orbitRadius, angle: angle))
+                        .accessibilityLabel("\(body.planet.rawValue) in \(body.placement.sign) \(body.placement.formattedDegree)")
+                }
+
+                Circle()
+                    .fill(Color.cosmicGold.opacity(0.25))
+                    .frame(width: 4, height: 4)
+                    .position(x: center.x, y: center.y)
+            }
+            .frame(width: size, height: size)
+            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .frame(minHeight: 220)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Chart wheel")
+    }
+
+    private func point(center: CGPoint, radius: CGFloat, angle: Angle) -> CGPoint {
+        CGPoint(
+            x: center.x + Foundation.cos(angle.radians) * radius,
+            y: center.y + Foundation.sin(angle.radians) * radius
+        )
     }
 }
 
@@ -883,29 +1004,6 @@ struct AspectDetailSheet: View {
                         Text(aspect.interpretation.deepDive)
                             .font(.cosmicBody)
                             .foregroundStyle(Color.cosmicTextSecondary)
-                    }
-
-                    Divider().background(Color.cosmicNebula)
-
-                    // Actions
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-                        Text("Aligning With This Frequency")
-                            .font(.cosmicHeadline)
-                            .foregroundStyle(Color.cosmicTextPrimary)
-
-                        ActionRow(
-                            icon: "checkmark.circle.fill",
-                            iconColor: .cosmicSuccess,
-                            label: "Do",
-                            text: aspect.interpretation.suggestedAction
-                        )
-
-                        ActionRow(
-                            icon: "xmark.circle.fill",
-                            iconColor: .cosmicError.opacity(0.8),
-                            label: "Avoid",
-                            text: aspect.interpretation.avoidAction
-                        )
                     }
 
                     // Technical details

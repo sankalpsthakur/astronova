@@ -73,10 +73,14 @@ class SelfDataService: ObservableObject {
         }
 
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(identifier: timezone) ?? .current
 
         let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
         timeFormatter.dateFormat = "HH:mm"
+        timeFormatter.timeZone = TimeZone(identifier: timezone) ?? .current
 
         let birthData = DashaCompleteRequest.BirthDataPayload(
             date: dateFormatter.string(from: profile.birthDate),
@@ -89,6 +93,7 @@ class SelfDataService: ObservableObject {
         return DashaCompleteRequest(
             birthData: birthData,
             targetDate: dateFormatter.string(from: Date()),
+            targetTime: timeFormatter.string(from: Date()),
             includeTransitions: true,
             includeEducation: true
         )

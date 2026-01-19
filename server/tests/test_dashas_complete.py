@@ -1,5 +1,15 @@
 from datetime import date
 
+import pytest
+
+
+try:  # pragma: no cover - optional dependency in some environments
+    import swisseph as _swe  # noqa: F401
+
+    _SWE_OK = True
+except Exception:  # pragma: no cover
+    _SWE_OK = False
+
 
 def _base_payload():
     return {
@@ -18,6 +28,12 @@ def _base_payload():
 
 def test_dashas_complete_success(client):
     response = client.post("/api/v1/astrology/dashas/complete", json=_base_payload())
+
+    if not _SWE_OK:
+        assert response.status_code == 503
+        data = response.get_json()
+        assert data["code"] == "SWISS_EPHEMERIS_UNAVAILABLE"
+        return
 
     assert response.status_code == 200
 
@@ -67,4 +83,4 @@ def test_dashas_complete_rejects_bad_target_date(client):
 
     assert response.status_code == 400
     data = response.get_json()
-    assert data["error"] == "Invalid targetDate format, use YYYY-MM-DD"
+    assert data["error"] == "Invalid targetDate/targetTime format, use YYYY-MM-DD and optional HH:MM"

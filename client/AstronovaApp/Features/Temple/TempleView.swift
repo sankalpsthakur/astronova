@@ -15,6 +15,10 @@ struct TempleView: View {
     @State private var showingOracleSheet = false
     @State private var selectedPooja: PoojaItem?
     @State private var selectedAstrologer: Astrologer?
+    @State private var astrologers: [Astrologer] = Astrologer.samples
+    @State private var isLoadingPandits = false
+    @State private var panditLoadError: String?
+    @State private var didLoadPandits = false
 
     enum TempleSection: CaseIterable {
         case astrologers
@@ -55,10 +59,40 @@ struct TempleView: View {
                         // Content based on selection
                         switch selectedSection {
                         case .astrologers:
-                            AstrologersSection(
-                                astrologers: Astrologer.samples,
-                                onSelect: { selectedAstrologer = $0 }
-                            )
+                            VStack(spacing: Cosmic.Spacing.md) {
+                                if isLoadingPandits {
+                                    HStack(spacing: Cosmic.Spacing.xs) {
+                                        ProgressView()
+                                            .tint(Color.cosmicGold)
+                                        Text("Loading pandits…")
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, Cosmic.Spacing.screen)
+                                } else if let panditLoadError {
+                                    HStack(spacing: Cosmic.Spacing.xs) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicCopper)
+                                        Text(panditLoadError)
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
+                                        Spacer()
+                                        Button("Retry") {
+                                            Task { await loadPandits(force: true) }
+                                        }
+                                        .font(.cosmicCaptionEmphasis)
+                                        .foregroundStyle(Color.cosmicGold)
+                                    }
+                                    .padding(.horizontal, Cosmic.Spacing.screen)
+                                }
+
+                                AstrologersSection(
+                                    astrologers: astrologers,
+                                    onSelect: { selectedAstrologer = $0 }
+                                )
+                            }
                         case .pooja:
                             PoojaSection(
                                 muhurats: Muhurat.sampleMuhurats(),
@@ -80,6 +114,9 @@ struct TempleView: View {
                     TempleNavTitle()
                 }
             }
+        }
+        .task {
+            await loadPandits()
         }
         .onAppear {
             // Check if we should show Oracle with chat packages (triggered from PaywallView)
@@ -106,6 +143,45 @@ struct TempleView: View {
             AstrologerDetailSheet(astrologer: astrologer)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+    }
+
+    @MainActor
+    private func loadPandits(force: Bool = false) async {
+        if isLoadingPandits {
+            return
+        }
+        if didLoadPandits && !force {
+            return
+        }
+
+        isLoadingPandits = true
+        panditLoadError = nil
+
+        defer {
+            isLoadingPandits = false
+            didLoadPandits = true
+        }
+
+        do {
+            let pandits = try await APIServices.shared.listPandits(availableOnly: false)
+            let mapped = pandits.map(Astrologer.fromPandit)
+            if !mapped.isEmpty {
+                astrologers = mapped
+            }
+        } catch let error as NetworkError {
+            switch error {
+            case .offline:
+                panditLoadError = L10n.Errors.noInternet
+            case .timeout:
+                panditLoadError = L10n.Errors.timeout
+            case .authenticationFailed, .tokenExpired:
+                panditLoadError = L10n.Errors.generic
+            default:
+                panditLoadError = L10n.Errors.generic
+            }
+        } catch {
+            panditLoadError = L10n.Errors.generic
         }
     }
 }
@@ -1343,17 +1419,36 @@ struct ConsultationBookingSheet: View {
 
     @State private var selectedDate = Date().addingTimeInterval(86400)
     @State private var selectedTimeSlot: String = "10:00"
-    @State private var durationMinutes: Int = 30
     @State private var topic: String = ""
     @State private var isLoading = false
     @State private var showSuccess = false
     @State private var errorMessage: String?
+    @State private var bookingResponse: PoojaBookingResponse?
+    @State private var consultationType: PoojaType?
+    @State private var isLoadingConsultationType = false
+    @State private var availableTimeSlots: [String] = []
+    @State private var isLoadingAvailability = false
+    @State private var availabilityError: String?
 
-    private let timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "18:00", "19:00"]
-    private let durations = [15, 30, 60]
+    private let fallbackTimeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "18:00", "19:00"]
+
+    private var displayedTimeSlots: [String] {
+        astrologer.apiPanditId == nil ? fallbackTimeSlots : availableTimeSlots
+    }
+
+    private var durationMinutes: Int {
+        consultationType?.durationMinutes ?? 30
+    }
 
     private var totalPrice: Int {
-        durationMinutes * astrologer.pricePerMinute
+        consultationType?.basePrice ?? (durationMinutes * astrologer.pricePerMinute)
+    }
+
+    private var canBook: Bool {
+        if astrologer.apiPanditId != nil {
+            return !isLoading && !isLoadingAvailability && availabilityError == nil && !selectedTimeSlot.isEmpty
+        }
+        return !isLoading && !selectedTimeSlot.isEmpty
     }
 
     var body: some View {
@@ -1403,7 +1498,6 @@ struct ConsultationBookingSheet: View {
                                 )
                                 .datePickerStyle(.graphical)
                                 .tint(Color.cosmicGold)
-                                .colorScheme(.dark)
                                 .accessibilityLabel(L10n.Temple.Consultation.consultationDateLabel)
                                 .accessibilityHint(L10n.Temple.Consultation.consultationDateHint)
                             }
@@ -1414,8 +1508,19 @@ struct ConsultationBookingSheet: View {
                                     .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextSecondary)
 
+                                if isLoadingAvailability {
+                                    HStack(spacing: Cosmic.Spacing.xs) {
+                                        ProgressView()
+                                            .tint(Color.cosmicGold)
+                                        Text("Loading availability…")
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
+                                    }
+                                    .padding(.vertical, Cosmic.Spacing.xs)
+                                }
+
                                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: Cosmic.Spacing.s) {
-                                    ForEach(timeSlots, id: \.self) { slot in
+                                    ForEach(displayedTimeSlots, id: \.self) { slot in
                                         Button {
                                             CosmicHaptics.light()
                                             selectedTimeSlot = slot
@@ -1439,6 +1544,23 @@ struct ConsultationBookingSheet: View {
                                         .accessibilityAddTraits(selectedTimeSlot == slot ? [.isSelected] : [])
                                     }
                                 }
+
+                                if let availabilityError {
+                                    HStack(spacing: Cosmic.Spacing.xs) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicCopper)
+                                        Text(availabilityError)
+                                            .font(.cosmicCaption)
+                                            .foregroundStyle(Color.cosmicTextSecondary)
+                                    }
+                                    .padding(.vertical, Cosmic.Spacing.xs)
+                                } else if astrologer.apiPanditId != nil && !isLoadingAvailability && availableTimeSlots.isEmpty {
+                                    Text("No slots available for this date.")
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                        .padding(.vertical, Cosmic.Spacing.xs)
+                                }
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
@@ -1448,14 +1570,16 @@ struct ConsultationBookingSheet: View {
                                     .foregroundStyle(Color.cosmicTextSecondary)
                                     .accessibilityAddTraits(.isHeader)
 
-                                Picker(L10n.Temple.Consultation.duration, selection: $durationMinutes) {
-                                    ForEach(durations, id: \.self) { minutes in
-                                        Text(L10n.Temple.Consultation.minutes(minutes)).tag(minutes)
+                                HStack(spacing: Cosmic.Spacing.s) {
+                                    Text(L10n.Temple.Consultation.minutes(durationMinutes))
+                                        .font(.cosmicCalloutEmphasis)
+                                        .foregroundStyle(Color.cosmicTextPrimary)
+                                    Spacer()
+                                    if isLoadingConsultationType {
+                                        ProgressView()
+                                            .tint(Color.cosmicGold)
                                     }
                                 }
-                                .pickerStyle(.segmented)
-                                .accessibilityLabel(L10n.Temple.Consultation.durationLabel)
-                                .accessibilityHint(L10n.Temple.Consultation.durationHint)
                             }
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
@@ -1490,7 +1614,7 @@ struct ConsultationBookingSheet: View {
                                         .foregroundStyle(Color.cosmicGold)
                                 }
 
-                                Text("Payment will be collected securely during consultation")
+                                Text("Session link appears after your booking is confirmed.")
                                     .font(.cosmicMicro)
                                     .foregroundStyle(Color.cosmicTextSecondary)
                                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -1514,7 +1638,7 @@ struct ConsultationBookingSheet: View {
                                             .tint(Color.cosmicVoid)
                                     } else {
                                         Image(systemName: "calendar.badge.checkmark")
-                                        Text("Schedule Consultation")
+                                        Text(L10n.Temple.Consultation.bookConsultation)
                                     }
                                 }
                                 .font(.cosmicHeadline)
@@ -1524,9 +1648,9 @@ struct ConsultationBookingSheet: View {
                                 .background(LinearGradient.cosmicAntiqueGold)
                                 .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.prominent))
                             }
-                            .disabled(isLoading)
-                            .accessibilityLabel("Schedule consultation for \(formattedDate(selectedDate)) at \(selectedTimeSlot)")
-                            .accessibilityHint("Schedules a \(durationMinutes)-minute consultation with \(astrologer.name)")
+                            .disabled(!canBook)
+                            .accessibilityLabel(L10n.Temple.Consultation.bookConsultationLabel)
+                            .accessibilityHint(L10n.Temple.Consultation.bookConsultationHint)
                             .padding(.horizontal, Cosmic.Spacing.screen)
 
                             Spacer().frame(height: 40)
@@ -1566,21 +1690,35 @@ struct ConsultationBookingSheet: View {
         .alert(L10n.Temple.Consultation.bookedTitle, isPresented: $showSuccess) {
             Button(L10n.Actions.ok) { dismiss() }
         } message: {
-            Text(L10n.Temple.Consultation.bookedMessage(
+            let message = L10n.Temple.Consultation.bookedMessage(
                 date: formattedDate(selectedDate),
                 time: selectedTimeSlot
-            ))
+            )
+            if let response = bookingResponse {
+                Text("\(message)\n\nBooking ID: \(response.bookingId)")
+            } else {
+                Text(message)
+            }
+        }
+        .task {
+            await loadConsultationType()
+            await loadAvailability()
+        }
+        .onChange(of: selectedDate) { _, _ in
+            Task { await loadAvailability() }
         }
     }
 
     private func bookConsultation() async {
+        guard !selectedTimeSlot.isEmpty else { return }
+
         isLoading = true
         errorMessage = nil
 
         do {
             let response = try await APIServices.shared.createPoojaBooking(
                 poojaTypeId: "pooja_consultation",
-                panditId: nil,
+                panditId: astrologer.apiPanditId,
                 scheduledDate: selectedDate,
                 scheduledTime: selectedTimeSlot,
                 timezone: TimeZone.current.identifier,
@@ -1590,8 +1728,9 @@ struct ConsultationBookingSheet: View {
                 specialRequests: topic.isEmpty ? nil : topic
             )
 
-            _ = response
+            bookingResponse = response
             showSuccess = true
+            CosmicHaptics.success()
         } catch {
             if let networkError = error as? NetworkError {
                 switch networkError {
@@ -1609,6 +1748,7 @@ struct ConsultationBookingSheet: View {
             } else {
                 errorMessage = L10n.Temple.Errors.consultationFailed
             }
+            CosmicHaptics.error()
         }
 
         isLoading = false
@@ -1616,6 +1756,57 @@ struct ConsultationBookingSheet: View {
 
     private func formattedDate(_ date: Date) -> String {
         LocaleFormatter.shared.mediumDate.string(from: date)
+    }
+
+    @MainActor
+    private func loadConsultationType() async {
+        guard !isLoadingConsultationType, consultationType == nil else { return }
+        isLoadingConsultationType = true
+        defer { isLoadingConsultationType = false }
+
+        do {
+            consultationType = try await APIServices.shared.getPoojaType(poojaId: "pooja_consultation")
+        } catch {
+            // Non-blocking: keep UI functional with local fallback pricing/duration.
+        }
+    }
+
+    @MainActor
+    private func loadAvailability() async {
+        guard let panditId = astrologer.apiPanditId else {
+            availableTimeSlots = []
+            availabilityError = nil
+            return
+        }
+        guard !isLoadingAvailability else { return }
+
+        isLoadingAvailability = true
+        availabilityError = nil
+        defer { isLoadingAvailability = false }
+
+        do {
+            let slots = try await APIServices.shared.getPanditAvailability(panditId: panditId, date: selectedDate)
+            let times = slots.filter(\.available).map(\.time).sorted()
+            availableTimeSlots = times
+            if !times.contains(selectedTimeSlot) {
+                selectedTimeSlot = times.first ?? ""
+            }
+        } catch {
+            availableTimeSlots = []
+            selectedTimeSlot = ""
+            if let networkError = error as? NetworkError {
+                switch networkError {
+                case .offline:
+                    availabilityError = L10n.Errors.noInternet
+                case .timeout:
+                    availabilityError = L10n.Errors.timeout
+                default:
+                    availabilityError = L10n.Errors.generic
+                }
+            } else {
+                availabilityError = L10n.Errors.generic
+            }
+        }
     }
 }
 

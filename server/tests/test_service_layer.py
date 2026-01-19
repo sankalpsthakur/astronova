@@ -16,6 +16,13 @@ from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
 from services.planetary_strength_service import PlanetaryStrengthService
 
+try:  # pragma: no cover - optional dependency in some environments
+    import swisseph as _swe  # noqa: F401
+
+    _SWE_OK = True
+except Exception:  # pragma: no cover
+    _SWE_OK = False
+
 
 class TestDashaService:
     """Test DashaService core calculations."""
@@ -100,6 +107,7 @@ class TestDashaService:
         assert result["mahadasha"]["lord"] is not None
 
 
+@pytest.mark.skipif(not _SWE_OK, reason="pyswisseph not installed")
 class TestEphemerisService:
     """Test EphemerisService planetary calculations."""
 
@@ -377,6 +385,7 @@ class TestDashaInterpretationService:
 class TestServiceIntegration:
     """Test integration between services."""
 
+    @pytest.mark.skipif(not _SWE_OK, reason="pyswisseph not installed")
     def test_full_dasha_interpretation_pipeline(self):
         """Test complete pipeline from calculation to interpretation."""
         dasha_service = DashaService()

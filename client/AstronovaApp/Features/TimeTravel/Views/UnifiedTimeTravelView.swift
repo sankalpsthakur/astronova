@@ -10,7 +10,6 @@ struct UnifiedTimeTravelView: View {
 
     @State private var showNowSheet = false
     @State private var showNextSheet = false
-    @State private var showActSheet = false
     @State private var showPlanetSheet = false
     @State private var showDashaSheet = false
 
@@ -91,8 +90,7 @@ struct UnifiedTimeTravelView: View {
                                     snapshot: snapshot,
                                     isCompact: false,
                                     onNowTapped: { showNowSheet = true },
-                                    onNextTapped: { showNextSheet = true },
-                                    onActTapped: { showActSheet = true }
+                                    onNextTapped: { showNextSheet = true }
                                 )
                                 .padding(.horizontal)
                             } else {
@@ -155,11 +153,6 @@ struct UnifiedTimeTravelView: View {
             .sheet(isPresented: $showNextSheet) {
                 if let snapshot = state.displaySnapshot {
                     NextDetailSheet(snapshot: snapshot)
-                }
-            }
-            .sheet(isPresented: $showActSheet) {
-                if let snapshot = state.displaySnapshot {
-                    ActDetailSheet(snapshot: snapshot)
                 }
             }
             .sheet(isPresented: $showPlanetSheet) {
@@ -499,12 +492,19 @@ class TimeTravelViewState: ObservableObject {
                 longitude: longitude
             ),
             targetDate: dateFormatter.string(from: date),
+            targetTime: timeFormatter.string(from: date),
             includeTransitions: true,
             includeEducation: true
         )
 
         do {
-            async let planetsTask = api.getPlanetaryPositions(for: date, latitude: latitude, longitude: longitude, system: systemQuery)
+            async let planetsTask = api.getPlanetaryPositions(
+                for: date,
+                latitude: latitude,
+                longitude: longitude,
+                system: systemQuery,
+                timezone: timezone
+            )
             async let dashaTask = api.fetchCompleteDasha(request: request)
 
             let (planetPositions, dashaResponse) = try await (planetsTask, dashaTask)
@@ -526,7 +526,7 @@ class TimeTravelViewState: ObservableObject {
                 selectedElement = nil
             }
 
-            prefetchPlanets(around: date, latitude: latitude, longitude: longitude)
+            prefetchPlanets(around: date, latitude: latitude, longitude: longitude, timezone: timezone)
         } catch is CancellationError {
             // Ignore cancellations from rapid scrubbing.
         } catch let networkError as NetworkError {
@@ -538,7 +538,7 @@ class TimeTravelViewState: ObservableObject {
         isLoading = false
     }
 
-    private func prefetchPlanets(around date: Date, latitude: Double, longitude: Double) {
+    private func prefetchPlanets(around date: Date, latitude: Double, longitude: Double, timezone: String) {
         let calendar = Calendar.current
 
         let offsets = [-3, -2, -1, 1, 2, 3]
@@ -551,7 +551,13 @@ class TimeTravelViewState: ObservableObject {
                 if alreadyCached { continue }
 
                 do {
-                    let positions = try await self.api.getPlanetaryPositions(for: d, latitude: latitude, longitude: longitude, system: self.systemQuery)
+                    let positions = try await self.api.getPlanetaryPositions(
+                        for: d,
+                        latitude: latitude,
+                        longitude: longitude,
+                        system: self.systemQuery,
+                        timezone: timezone
+                    )
                     let states = self.sortPlanets(positions.map(TimeTravelSnapshot.planetState(from:)))
                     self.cachePlanets(states, for: key)
                 } catch {
@@ -596,7 +602,7 @@ class TimeTravelViewState: ObservableObject {
         guard let timezone = profile.timezone else { return nil }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm"
         formatter.timeZone = TimeZone(identifier: timezone) ?? .current
         return formatter.string(from: date)
     }
@@ -855,98 +861,6 @@ struct NextDetailSheet: View {
                 }
             }
         }
-    }
-}
-
-struct ActDetailSheet: View {
-    let snapshot: TimeTravelSnapshot
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
-                    // Do
-                    ActionCard(
-                        type: .do,
-                        content: snapshot.act.doThis
-                    )
-
-                    // Avoid
-                    ActionCard(
-                        type: .avoid,
-                        content: snapshot.act.avoidThis
-                    )
-
-                    // Why
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
-                        Text("Why This Guidance")
-                            .font(.cosmicHeadline)
-                        Text(snapshot.act.whyExplanation)
-                            .foregroundStyle(Color.cosmicTextSecondary)
-                    }
-                    .padding()
-                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
-                }
-                .padding()
-            }
-            .navigationTitle("Action Guidance")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
-struct ActionCard: View {
-    enum ActionType {
-        case `do`, avoid
-
-        var icon: String {
-            switch self {
-            case .do: return "checkmark.circle.fill"
-            case .avoid: return "xmark.circle.fill"
-            }
-        }
-
-        var color: Color {
-            switch self {
-            case .do: return .cosmicSuccess
-            case .avoid: return .cosmicError
-            }
-        }
-
-        var label: String {
-            switch self {
-            case .do: return "Do This"
-            case .avoid: return "Avoid This"
-            }
-        }
-    }
-
-    let type: ActionType
-    let content: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
-            Image(systemName: type.icon)
-                .font(.title)
-                .foregroundStyle(type.color)
-
-            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                Text(type.label)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color.cosmicTextSecondary)
-                Text(content)
-                    .font(.cosmicBody)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(type.color.opacity(0.1), in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
     }
 }
 

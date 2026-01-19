@@ -78,7 +78,7 @@ All endpoints use the `/api/v1/` prefix.
 | **Chat** | `POST /chat` |
 | **Auth** | `POST /auth/apple`, `GET /auth/validate` |
 
-See [CLAUDE.md](./CLAUDE.md) for complete API documentation.
+See `docs/claude/CLAUDE_FULL.md` for complete API documentation (root `CLAUDE.md` is a short index for Claude Code).
 
 ## Testing
 
@@ -128,7 +128,7 @@ xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp \
 
 ## Documentation
 
-- [CLAUDE.md](./CLAUDE.md) — Development guide for AI assistants and contributors
+- `CLAUDE.md` — Short index for Claude Code (full guide: `docs/claude/CLAUDE_FULL.md`)
 - [docs/](./docs/) — Feature specifications and technical documentation
 
 ## CI/CD

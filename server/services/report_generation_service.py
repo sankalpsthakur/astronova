@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import json
+import logging
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
 from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
-from services.ephemeris_service import SWE_AVAILABLE
+from services.vedic import VedicAnalysisService
 from utils.birth_data import parse_birth_data
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -34,10 +38,11 @@ class ReportGenerationService:
         return parse_birth_data(birth_data, key=None, require_coords=False, include_timezone=False)
 
     def generate(self, report_type: str, birth_data: Optional[dict[str, Any]] = None) -> GeneratedReport:
+        start = time.perf_counter()
         report_type = (report_type or "birth_chart").strip()
 
         title = {
-            "birth_chart": "Your Complete Birth Chart",
+            "birth_chart": "Your Detailed Birth Chart Report",
             "love_forecast": "Your Love & Relationship Blueprint",
             "career_forecast": "Your Career & Professional Blueprint",
             "wealth_forecast": "Your Wealth & Abundance Blueprint",
@@ -49,6 +54,11 @@ class ReportGenerationService:
 
         dt, lat, lon = self._parse_birth_data(birth_data)
         if not dt:
+            logger.info(
+                "Report generate fallback report_type=%s has_birth_data=%s",
+                report_type,
+                bool(birth_data),
+            )
             summary = f"Personalized {report_type.replace('_', ' ')} based on provided details."
             key_insights = [
                 "Add full birth date, time, and location for a detailed reading",
@@ -65,7 +75,7 @@ class ReportGenerationService:
                 "dashas": None,
                 "westernPlanets": None,
                 "vedicPlanets": None,
-                "meta": {"ephemerisEngine": "swisseph" if SWE_AVAILABLE else "fallback"},
+                "meta": {"ephemerisEngine": None},
             }
             return GeneratedReport(
                 report_type=report_type,
@@ -75,8 +85,19 @@ class ReportGenerationService:
                 content=json.dumps(payload, ensure_ascii=False),
             )
 
-        western = self._ephemeris.get_positions_for_date(dt, lat, lon, system="western").get("planets", {})
-        vedic = self._ephemeris.get_positions_for_date(dt, lat, lon, system="vedic").get("planets", {})
+        logger.info(
+            "Report generate start report_type=%s has_coords=%s engine=%s",
+            report_type,
+            lat is not None and lon is not None,
+            "swisseph",
+        )
+
+        western_positions = self._ephemeris.get_positions_for_date(dt, lat, lon, system="western")
+        vedic_positions = self._ephemeris.get_positions_for_date(dt, lat, lon, system="vedic")
+
+        western = western_positions.get("planets", {}) if isinstance(western_positions, dict) else {}
+        vedic = vedic_positions.get("planets", {}) if isinstance(vedic_positions, dict) else {}
+        ayanamsha = vedic_positions.get("ayanamsha") if isinstance(vedic_positions, dict) else None
 
         def fmt_position(info: dict[str, Any]) -> str:
             sign = info.get("sign", "Unknown")
@@ -113,7 +134,22 @@ class ReportGenerationService:
                     "antardasha": dasha_info.get("antardasha"),
                 }
         except Exception:
+            logger.exception("Report dasha calculation failed report_type=%s", report_type)
             dashas = None
+
+        vedic_analysis = None
+        if report_type == "birth_chart" and lat is not None and lon is not None:
+            try:
+                tz = str((birth_data or {}).get("timezone") or "UTC")
+                vedic_analysis = VedicAnalysisService(ephemeris=self._ephemeris, dashas=self._dasha).analyze(
+                    birth_dt_utc=dt,
+                    latitude=float(lat),
+                    longitude=float(lon),
+                    timezone=tz,
+                )
+            except Exception:
+                logger.exception("Report vedic analysis failed report_type=%s", report_type)
+                vedic_analysis = None
 
         if report_type == "love_forecast":
             summary = f"Love themes are highlighted through Venus and the current dasha influences. Zodiac: {zodiac['sun']}. Kundali: {kundali['sun']}."
@@ -134,7 +170,10 @@ class ReportGenerationService:
                 f"Lagna (kundali): {kundali.get('lagna')}",
             ]
         else:
-            summary = f"Your core blueprint blends Zodiac (tropical) and Kundali (sidereal). Zodiac Sun: {zodiac['sun']}. Kundali Sun: {kundali['sun']}."
+            summary = (
+                f"Your detailed blueprint blends Zodiac (tropical) and Kundali (sidereal). "
+                f"Zodiac Sun: {zodiac['sun']}. Kundali Sun: {kundali['sun']}."
+            )
             key_insights = [
                 f"Zodiac Moon: {zodiac['moon']}",
                 f"Kundali Moon: {kundali['moon']}",
@@ -152,6 +191,8 @@ class ReportGenerationService:
                 birth_info["location"] = birth_data.get("location_name") or birth_data.get("locationName")
             elif lat is not None and lon is not None:
                 birth_info["coordinates"] = f"{lat:.2f}, {lon:.2f}"
+                birth_info["latitude"] = round(float(lat), 6)
+                birth_info["longitude"] = round(float(lon), 6)
             if birth_data.get("timezone"):
                 birth_info["timezone"] = birth_data["timezone"]
 
@@ -167,13 +208,23 @@ class ReportGenerationService:
             "dashas": dashas,
             "westernPlanets": western,
             "vedicPlanets": vedic,
-            "meta": {"ephemerisEngine": "swisseph" if SWE_AVAILABLE else "fallback"},
+            "vedicAnalysis": vedic_analysis,
+            "meta": {"ephemerisEngine": "swisseph", "ayanamsha": ayanamsha},
         }
+
+        content = json.dumps(payload, ensure_ascii=False)
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        logger.info(
+            "Report generate complete report_type=%s duration_ms=%.2f content_bytes=%d",
+            report_type,
+            elapsed_ms,
+            len(content.encode("utf-8")),
+        )
 
         return GeneratedReport(
             report_type=report_type,
             title=title,
             summary=summary,
             key_insights=key_insights,
-            content=json.dumps(payload, ensure_ascii=False),
+            content=content,
         )

@@ -52,6 +52,9 @@ struct DashaContext: Equatable {
     let antardasha: DashaPeriodInfo
     let pratyantardasha: DashaPeriodInfo?
 
+    /// Full antardasha timeline within the current mahadasha, sorted by start date.
+    let antardashaTimeline: [DashaPeriodInfo]
+
     /// Progress through current periods (0.0 - 1.0).
     let mahadashaProgress: Double
     let antardashaProgress: Double
@@ -292,6 +295,18 @@ private extension TimeTravelSnapshot {
             )
         }()
 
+        let antardashaTimeline: [DashaPeriodInfo] = (response.dasha.allAntardashas ?? [])
+            .map { period in
+                DashaPeriodInfo(
+                    lord: period.lord,
+                    symbol: symbol(for: period.lord),
+                    startDate: parseDate(period.start) ?? targetDate,
+                    endDate: parseDate(period.end) ?? targetDate,
+                    theme: shortPlanetTheme(for: period.lord)
+                )
+            }
+            .sorted { $0.startDate < $1.startDate }
+
         return DashaContext(
             mahadasha: DashaPeriodInfo(
                 lord: maha.lord,
@@ -308,6 +323,7 @@ private extension TimeTravelSnapshot {
                 theme: antarTheme
             ),
             pratyantardasha: pratyInfo,
+            antardashaTimeline: antardashaTimeline,
             mahadashaProgress: progress(targetDate, start: mahaStart, end: mahaEnd),
             antardashaProgress: progress(targetDate, start: antarStart, end: antarEnd)
         )

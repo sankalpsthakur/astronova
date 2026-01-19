@@ -8,7 +8,9 @@ This service creates context-aware chat responses based on:
 - Astrological context as system prompt
 """
 
+import logging
 import os
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -24,6 +26,8 @@ except Exception:  # pragma: no cover
     OpenAI = None  # type: ignore
 
 from services.ephemeris_service import EphemerisService
+
+logger = logging.getLogger(__name__)
 
 
 class ChatServiceError(RuntimeError):
@@ -52,14 +56,21 @@ class ChatResponseService:
             self.client = None
             self.model = None
 
+        if self.client_type:
+            logger.info("ChatResponseService initialized provider=%s model=%s", self.client_type, self.model)
+        else:
+            logger.warning("ChatResponseService initialized without AI provider configured")
+
         self._transit_cache: Optional[tuple[Dict[str, Any], datetime]] = None
 
     def _get_current_transits(self) -> Dict[str, Any]:
         """Get current planetary positions."""
         now = datetime.utcnow()
         if self._transit_cache and self._transit_cache[1] > now:
+            logger.debug("Transit cache hit")
             return self._transit_cache[0]
 
+        logger.debug("Transit cache miss; computing current transits")
         positions = self.ephem.get_positions_for_date(now)
         transits = positions.get("planets", {})
         self._transit_cache = (transits, now + timedelta(seconds=60))
@@ -83,6 +94,7 @@ class ChatResponseService:
             positions = self.ephem.get_positions_for_date(dt)
             return positions.get("planets", {})
         except Exception:
+            logger.exception("Failed to compute natal positions from birth data")
             return None
 
     def _build_system_prompt(
@@ -235,6 +247,15 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
         """
         # Classify the question
         category = self._classify_question(message)
+        message_len = len(message or "")
+
+        logger.info(
+            "Chat request provider=%s category=%s message_len=%d has_birth_data=%s",
+            self.client_type,
+            category,
+            message_len,
+            bool(birth_data),
+        )
 
         # Get current transits
         transits = self._get_current_transits()
@@ -247,9 +268,11 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
         system_prompt = self._build_system_prompt(transits, natal, category)
 
         if not self.client:
+            logger.error("Chat request rejected: AI client not configured")
             raise ChatServiceError("AI client not configured - set GEMINI_API_KEY or OPENAI_API_KEY")
 
         try:
+            start = time.perf_counter()
             if self.client_type == "gemini":
                 # Call Gemini API
                 full_prompt = f"{system_prompt}\n\nUser Question: {message}\n\nOracle Response:"
@@ -278,7 +301,21 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
             else:
                 raise ChatServiceError("No AI provider configured")
 
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            logger.info(
+                "Chat response generated provider=%s category=%s duration_ms=%.2f",
+                self.client_type,
+                category,
+                elapsed_ms,
+            )
+
         except Exception as e:
+            logger.exception(
+                "AI request failed provider=%s category=%s message_len=%d",
+                self.client_type,
+                category,
+                message_len,
+            )
             raise ChatServiceError(f"AI request failed ({self.client_type})") from e
 
         # Generate follow-ups

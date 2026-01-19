@@ -847,10 +847,14 @@ class TimeTravelViewModel: ObservableObject {
         }
 
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(identifier: timezone) ?? .current
 
         let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
         timeFormatter.dateFormat = "HH:mm"
+        timeFormatter.timeZone = TimeZone(identifier: timezone) ?? .current
 
         let request = DashaCompleteRequest(
             birthData: .init(
@@ -861,6 +865,7 @@ class TimeTravelViewModel: ObservableObject {
                 longitude: longitude
             ),
             targetDate: dateFormatter.string(from: date),
+            targetTime: timeFormatter.string(from: date),
             includeTransitions: true,
             includeEducation: true
         )
@@ -892,7 +897,8 @@ class TimeTravelViewModel: ObservableObject {
                 for: date,
                 latitude: profile?.birthLatitude,
                 longitude: profile?.birthLongitude,
-                system: systemQuery
+                system: systemQuery,
+                timezone: profile?.timezone
             )
             planetaryPositions = planets
         } catch let networkError as NetworkError {

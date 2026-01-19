@@ -12,6 +12,13 @@ import pytest
 
 from services.dasha_service import DashaService
 
+try:  # pragma: no cover - optional dependency in some environments
+    import swisseph as _swe  # noqa: F401
+
+    _SWE_OK = True
+except Exception:  # pragma: no cover
+    _SWE_OK = False
+
 
 class TestDashaTimezoneConsistency:
     """Test that timezone handling is consistent across all dasha calculations."""
@@ -132,6 +139,8 @@ class TestDashaEndpointTimezoneConsistency:
 
     def test_get_dashas_with_timezone(self, client):
         """GET /dashas with timezone parameter."""
+        if not _SWE_OK:
+            pytest.skip("pyswisseph not installed")
         response = client.get(
             "/api/v1/astrology/dashas",
             query_string={
@@ -150,6 +159,8 @@ class TestDashaEndpointTimezoneConsistency:
 
     def test_post_dashas_complete_with_timezone(self, client):
         """POST /dashas/complete with timezone in body."""
+        if not _SWE_OK:
+            pytest.skip("pyswisseph not installed")
         response = client.post(
             "/api/v1/astrology/dashas/complete",
             json={
@@ -172,6 +183,8 @@ class TestDashaEndpointTimezoneConsistency:
 
     def test_get_post_endpoints_match(self, client):
         """GET and POST endpoints should return identical dasha periods."""
+        if not _SWE_OK:
+            pytest.skip("pyswisseph not installed")
         # GET request
         get_response = client.get(
             "/api/v1/astrology/dashas",

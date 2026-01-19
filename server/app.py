@@ -3,13 +3,15 @@ from __future__ import annotations
 import logging
 import os
 
-from flask import Flask, Response, jsonify, redirect, request
+from flask import Flask, Response, jsonify, redirect, request, g
 from flask_babel import Babel
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.exceptions import HTTPException
 
 from db import get_user_preferred_language, init_db
+from errors import SwissEphemerisUnavailableError
 from middleware import add_request_id, log_request_response, setup_logging
 from routes import (
     admin_bp,
@@ -100,6 +102,29 @@ def create_app():
             "message": str(e.description),
             "code": "RATE_LIMIT_EXCEEDED"
         }), 429
+
+    @app.errorhandler(SwissEphemerisUnavailableError)
+    def swiss_ephemeris_unavailable(e):
+        request_id = getattr(g, "request_id", None)
+        return jsonify({
+            "error": "Swiss Ephemeris unavailable",
+            "message": str(e),
+            "code": "SWISS_EPHEMERIS_UNAVAILABLE",
+            "requestId": request_id,
+        }), 503
+
+    @app.errorhandler(Exception)
+    def handle_unhandled_exception(e):
+        # Preserve default handling for HTTP errors (404, 400, etc).
+        if isinstance(e, HTTPException):
+            return e
+
+        request_id = getattr(g, "request_id", None)
+        logger.exception("Unhandled exception")
+        return jsonify({
+            "error": "Internal server error",
+            "requestId": request_id,
+        }), 500
 
     # Add request logging middleware
     app.before_request(add_request_id)

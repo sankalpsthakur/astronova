@@ -6,6 +6,7 @@
 /Packages
 xcuserdata/
 DerivedData/
+client/DerivedDataCodex/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 *.xcworkspace/xcuserdata/
@@ -61,6 +62,7 @@ coverage.xml
 
 # Local PDF artifacts
 *_report.pdf
+/reports/
 test_output.log
 test_results*.log
 

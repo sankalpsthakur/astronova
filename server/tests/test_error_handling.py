@@ -35,40 +35,32 @@ if str(SERVER_ROOT) not in sys.path:
 
 
 class TestSwissEphemerisFailures:
-    """Test graceful degradation when Swiss Ephemeris calculations fail."""
+    """Test clear failures when Swiss Ephemeris is unavailable or misconfigured."""
 
-    def test_ephemeris_service_falls_back_when_swe_unavailable(self, client):
-        """Test that ephemeris service uses fallback calculations when SWE is unavailable."""
+    def test_ephemeris_service_returns_503_when_swe_unavailable(self, client):
+        """Swiss Ephemeris must be present; no silent fallback is allowed."""
         with patch("services.ephemeris_service.SWE_AVAILABLE", False):
             response = client.get("/api/v1/astrology/positions")
-            assert response.status_code == 200
+            assert response.status_code == 503
             data = response.get_json()
-            # Should still return positions using fallback
-            assert "Sun" in data
-            assert "Moon" in data
-            assert "sign" in data["Sun"]
-            assert "degree" in data["Sun"]
+            assert data["code"] == "SWISS_EPHEMERIS_UNAVAILABLE"
 
-    def test_ephemeris_calculation_exception_returns_unknown(self, client):
-        """Test that calculation exceptions return 'Unknown' rather than crashing."""
+    def test_ephemeris_calculation_exception_returns_503(self, client):
+        """Calculation errors should fail loudly rather than returning misleading values."""
         from services.ephemeris_service import EphemerisService
+        from errors import SwissEphemerisUnavailableError
 
         with patch("services.ephemeris_service.swe") as mock_swe:
             # Make calc_ut raise an exception
             mock_swe.calc_ut.side_effect = Exception("Swiss Ephemeris calculation failed")
+            mock_swe.julday.return_value = 2451545.0
             mock_swe.SUN = 0
             mock_swe.MOON = 1
 
             with patch("services.ephemeris_service.SWE_AVAILABLE", True):
                 service = EphemerisService()
-                result = service.get_current_positions()
-
-                # Should return positions with 'Unknown' sign instead of crashing
-                planets = result.get("planets", {})
-                for planet_data in planets.values():
-                    # Either has valid data (from fallback) or Unknown
-                    assert "sign" in planet_data
-                    assert "degree" in planet_data
+                with pytest.raises(SwissEphemerisUnavailableError):
+                    service.get_current_positions()
 
     def test_chart_generation_with_ephemeris_failure(self, client):
         """Test chart generation handles ephemeris failures gracefully."""
@@ -79,33 +71,30 @@ class TestSwissEphemerisFailures:
         with patch("services.ephemeris_service.swe") as mock_swe:
             mock_swe.calc_ut.side_effect = RuntimeError("Ephemeris data corrupted")
             mock_swe.houses.side_effect = RuntimeError("House calculation failed")
+            mock_swe.julday.return_value = 2451545.0
             mock_swe.SUN = 0
 
             with patch("services.ephemeris_service.SWE_AVAILABLE", True):
                 response = client.post("/api/v1/chart/generate", json=payload)
 
-                # Should still return 200 with fallback data
-                assert response.status_code == 200
+                assert response.status_code == 503
                 data = response.get_json()
-                assert "chartId" in data
-                assert "westernChart" in data
+                assert data["code"] == "SWISS_EPHEMERIS_UNAVAILABLE"
 
     def test_dasha_calculation_with_moon_longitude_error(self, client):
         """Test dasha calculation when Moon position calculation fails."""
         with patch("services.ephemeris_service.swe") as mock_swe:
             mock_swe.calc_ut.side_effect = Exception("Moon position calculation failed")
             mock_swe.MOON = 1
+            mock_swe.julday.return_value = 2451545.0
 
             with patch("services.ephemeris_service.SWE_AVAILABLE", True):
                 params = {"birth_date": "1990-01-15", "birth_time": "14:30", "timezone": "UTC", "target_date": "2025-01-01"}
                 response = client.get("/api/v1/astrology/dashas", query_string=params)
 
-                # Should fall back to tropical Moon and still calculate dashas
-                # May return 200 with fallback or 500 depending on fallback strategy
-                assert response.status_code in [200, 500]
-                if response.status_code == 200:
-                    data = response.get_json()
-                    assert "mahadasha" in data or "error" in data
+                assert response.status_code == 503
+                data = response.get_json()
+                assert data["code"] == "SWISS_EPHEMERIS_UNAVAILABLE"
 
 
 # =============================================================================

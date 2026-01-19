@@ -287,6 +287,13 @@ def list_pandits():
         })
 
     conn.close()
+    logger.info(
+        "Temple list_pandits available_only=%s specialization=%s language=%s count=%d",
+        available_only,
+        specialization,
+        language,
+        len(pandits),
+    )
     return jsonify({"pandits": pandits})
 
 
@@ -398,6 +405,14 @@ def get_pandit_availability(pandit_id: str):
 
         current += timedelta(days=1)
 
+    logger.info(
+        "Temple pandit_availability pandit_id=%s date_range=%s..%s slots=%d booked=%d",
+        pandit_id,
+        start_date,
+        end_date,
+        len(slots),
+        len(booked_slots),
+    )
     return jsonify({"slots": slots})
 
 
@@ -440,7 +455,8 @@ def create_booking():
     if not scheduled_date or not scheduled_time:
         return jsonify({"error": _("scheduledDate and scheduledTime are required")}), 400
 
-    pandit_id = data.get("panditId")
+    requested_pandit_id = data.get("panditId")
+    pandit_id = requested_pandit_id
 
     conn = get_connection()
     cur = conn.cursor()
@@ -463,6 +479,16 @@ def create_booking():
         pandit_row = cur.fetchone()
         if pandit_row:
             pandit_id = pandit_row["id"]
+
+    logger.info(
+        "Temple booking_create user_id=%s pooja_type=%s requested_pandit=%s assigned_pandit=%s scheduled=%s %s",
+        user_id,
+        pooja_type_id,
+        requested_pandit_id,
+        pandit_id,
+        scheduled_date,
+        scheduled_time,
+    )
 
     # Create booking
     booking_id = str(uuid.uuid4())
@@ -496,6 +522,13 @@ def create_booking():
     conn.commit()
     conn.close()
 
+    logger.info(
+        "Temple booking_created booking_id=%s status=pending user_id=%s pooja_type=%s pandit_id=%s",
+        booking_id,
+        user_id,
+        pooja_type_id,
+        pandit_id,
+    )
     return jsonify({
         "bookingId": booking_id,
         "status": "pending",
@@ -770,6 +803,7 @@ def generate_session_link(booking_id: str):
     user_id = request.headers.get("X-User-Id")
     if not user_id:
         return jsonify({"error": _("Authentication required")}), 401
+    logger.info("Temple generate_session_link booking_id=%s user_id=%s", booking_id, user_id)
 
     conn = get_connection()
     cur = conn.cursor()
@@ -810,6 +844,11 @@ def generate_session_link(booking_id: str):
     conn.commit()
     conn.close()
 
+    logger.info(
+        "Temple session_link_generated booking_id=%s session_id=%s status=confirmed",
+        booking_id,
+        session_id,
+    )
     return jsonify({
         "sessionId": session_id,
         "sessionLink": session_link,

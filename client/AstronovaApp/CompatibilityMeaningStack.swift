@@ -10,9 +10,6 @@ struct CompatibilityMeaningStack: View {
     let isCompact: Bool
     let onNowTapped: () -> Void
     let onNextTapped: () -> Void
-    let onActionTapped: () -> Void
-
-    @State private var isWhyExpanded = false
 
     var body: some View {
         if isCompact {
@@ -49,8 +46,7 @@ struct CompatibilityMeaningStack: View {
                 .frame(height: 16)
                 .background(Color.cosmicNebula)
 
-            // Quick action
-            Text(now.sharedInsight.suggestedAction.prefix(20) + "...")
+            Text(now.sharedInsight.title)
                 .font(.cosmicMicro)
                 .foregroundStyle(Color.cosmicGold)
                 .lineLimit(1)
@@ -74,9 +70,6 @@ struct CompatibilityMeaningStack: View {
 
             // NEXT Card
             nextCard
-
-            // ACT Card
-            actCard
         }
     }
 
@@ -208,83 +201,6 @@ struct CompatibilityMeaningStack: View {
         }
     }
 
-    // MARK: - Act Card
-
-    private var actCard: some View {
-        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-            Label("ALIGN", systemImage: "dot.radiowaves.right")
-                .font(.cosmicCaption)
-                .fontWeight(.bold)
-                .foregroundStyle(Color.cosmicGold)
-
-            // Do
-            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.cosmicSuccess)
-                    .font(.cosmicBody)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Do")
-                        .font(.cosmicCaptionEmphasis)
-                        .foregroundStyle(Color.cosmicTextTertiary)
-                    Text(now.sharedInsight.suggestedAction)
-                        .font(.cosmicCallout)
-                        .foregroundStyle(Color.cosmicTextPrimary)
-                }
-            }
-
-            // Avoid
-            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(Color.cosmicError.opacity(0.8))
-                    .font(.cosmicBody)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Avoid")
-                        .font(.cosmicCaptionEmphasis)
-                        .foregroundStyle(Color.cosmicTextTertiary)
-                    Text(now.sharedInsight.avoidAction)
-                        .font(.cosmicCallout)
-                        .foregroundStyle(Color.cosmicTextPrimary)
-                }
-            }
-
-            // Why (expandable)
-            Button(action: {
-                withAnimation(.spring(response: 0.3)) {
-                    isWhyExpanded.toggle()
-                }
-                CosmicHaptics.light()
-            }) {
-                HStack {
-                    Image(systemName: "info.circle")
-                        .foregroundStyle(Color.cosmicGold.opacity(0.7))
-                    Text("Why?")
-                        .font(.cosmicCaptionEmphasis)
-                        .foregroundStyle(Color.cosmicGold.opacity(0.7))
-                    Spacer()
-                    Image(systemName: isWhyExpanded ? "chevron.up" : "chevron.down")
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextTertiary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            if isWhyExpanded {
-                Text(now.sharedInsight.whyExpanded)
-                    .font(.cosmicCaption)
-                    .foregroundStyle(Color.cosmicTextTertiary)
-                    .padding(.leading, Cosmic.Spacing.lg)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(Cosmic.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardBackground(accent: Color.cosmicGold.opacity(0.5)))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Alignment guidance. Do: \(now.sharedInsight.suggestedAction). Avoid: \(now.sharedInsight.avoidAction)")
-    }
-
     // MARK: - Card Background
 
     private func cardBackground(accent: Color) -> some View {
@@ -330,30 +246,6 @@ struct SharedInsightDetailSheet: View {
                     Divider()
                         .background(Color.cosmicNebula)
 
-                    // Actions
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
-                        Text("Alignment Actions")
-                            .font(.cosmicHeadline)
-                            .foregroundStyle(Color.cosmicTextPrimary)
-
-                        ActionRow(
-                            icon: "checkmark.circle.fill",
-                            iconColor: .green,
-                            label: "Do",
-                            text: insight.suggestedAction
-                        )
-
-                        ActionRow(
-                            icon: "xmark.circle.fill",
-                            iconColor: .red.opacity(0.8),
-                            label: "Avoid",
-                            text: insight.avoidAction
-                        )
-                    }
-
-                    Divider()
-                        .background(Color.cosmicNebula)
-
                     // Why
                     VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                         Text("Vibrational Source")
@@ -393,37 +285,6 @@ struct SharedInsightDetailSheet: View {
                 }
             }
         }
-    }
-}
-
-struct ActionRow: View {
-    let icon: String
-    let iconColor: Color
-    let label: String
-    let text: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
-            Image(systemName: icon)
-                .foregroundStyle(iconColor)
-                .font(.cosmicHeadline)
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
-                Text(label)
-                    .font(.cosmicCaptionEmphasis)
-                    .foregroundStyle(Color.cosmicTextTertiary)
-                Text(text)
-                    .font(.cosmicBody)
-                    .foregroundStyle(Color.cosmicTextPrimary)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
-                .fill(iconColor.opacity(0.1))
-        )
     }
 }
 
@@ -485,8 +346,7 @@ struct LinkedAspectRow: View {
                 next: .mock,
                 isCompact: false,
                 onNowTapped: {},
-                onNextTapped: {},
-                onActionTapped: {}
+                onNextTapped: {}
             )
             .padding()
         }
@@ -503,8 +363,7 @@ struct LinkedAspectRow: View {
                 next: .mock,
                 isCompact: true,
                 onNowTapped: {},
-                onNextTapped: {},
-                onActionTapped: {}
+                onNextTapped: {}
             )
 
             Spacer()

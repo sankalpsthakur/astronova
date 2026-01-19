@@ -72,11 +72,11 @@ UX analysis, journey mapping, and issue tracking.
 
 ## 📚 Related Documentation
 
-Key documentation files located in the project root:
+Key documentation files:
 
 - [README.md](../README.md) — Project overview and quick start guide
-- [CLAUDE.md](../CLAUDE.md) — Comprehensive AI assistant development guide (code conventions, patterns, architecture)
-- [CONTRIBUTING.md](../CONTRIBUTING.md) — Contribution guidelines and PR process
+- [CLAUDE.md](../CLAUDE.md) — Short index for AI assistants (full guide: `docs/claude/CLAUDE_FULL.md`)
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — Contribution guidelines and PR process
 
 ## 🏁 Getting Started
 
@@ -85,7 +85,7 @@ Key documentation files located in the project root:
 1. **Start here**: [Development Guide](./development.md) for environment setup and build instructions
 2. **Understand the system**: [Architecture](./architecture/architecture.md) for system design overview
 3. **API development**: [API Reference](./architecture/api-reference.md) when working on endpoints
-4. **Code conventions**: [CLAUDE.md](../CLAUDE.md) for coding standards, patterns, and best practices
+4. **Code conventions**: `docs/claude/CLAUDE_FULL.md`
 5. **Testing**: [Test Report](./testing/TEST_REPORT.md) to understand test coverage and approach
 
 **For product/design:**

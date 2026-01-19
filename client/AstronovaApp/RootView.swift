@@ -196,7 +196,7 @@ struct FloatingStarsView: View {
         ForEach(0..<count, id: \.self) { i in
             Image(systemName: ["star.fill", "sparkles", "star.circle.fill"].randomElement()!)
                 .font(.system(size: CGFloat.random(in: 12...24)))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(Color.cosmicGold.opacity(0.18))
                 .position(
                     x: CGFloat.random(in: 50...350),
                     y: CGFloat.random(in: 100...600)
@@ -471,7 +471,7 @@ struct SimpleProfileSetupView: View {
     }
     
     private func setupAnimations() {
-        let lean = true // default to lean onboarding for speed
+        let lean = true // keep motion subtle by default
         if !lean && !reduceMotion {
             withAnimation(.easeInOut(duration: 0.3).delay(0.4)) {
                 animateGradient = true
@@ -482,7 +482,7 @@ struct SimpleProfileSetupView: View {
             animateStars = false
         }
         restoreProfileProgress()
-        if currentStep == 0 { currentStep = 2 }
+        currentStep = min(max(0, currentStep), totalSteps - 1)
     }
     
     private var canContinue: Bool {
@@ -726,11 +726,11 @@ struct EnhancedWelcomeStepView: View {
         VStack(spacing: 0) {
             Spacer()
             
-            VStack(spacing: 32) {
+            VStack(spacing: Cosmic.Spacing.xl) {
                 // Animated cosmic icon
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.1))
+                        .fill(Color.cosmicGold.opacity(0.12))
                         .frame(width: 120, height: 120)
                         .scaleEffect(animateIcon ? 1.1 : 1.0)
                     
@@ -738,12 +738,12 @@ struct EnhancedWelcomeStepView: View {
                         if !reduceMotion {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 50, weight: .light))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                                 .symbolEffect(.variableColor, options: .repeating)
                         } else {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 50, weight: .light))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                         }
                     }
                 }
@@ -753,25 +753,25 @@ struct EnhancedWelcomeStepView: View {
                     VStack(spacing: 8) {
                         Text(L10n.Onboarding.Welcome.title)
                             .font(.title2.weight(.light))
-                            .foregroundStyle(.white.opacity(0.95))
-                            .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                            .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 1)
 
                         Text(L10n.Brand.name)
                             .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 2)
                     }
 
                     Text(L10n.Onboarding.Welcome.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
                         .padding(.horizontal, 8)
-                        .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
+                        .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 1)
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Cosmic.Spacing.lg)
             
             Spacer()
         }
@@ -790,11 +790,11 @@ struct EnhancedNameStepView: View {
         VStack(spacing: 0) {
             Spacer()
             
-            VStack(spacing: 32) {
+            VStack(spacing: Cosmic.Spacing.xl) {
                 // Elegant person icon
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.1))
+                        .fill(Color.cosmicGold.opacity(0.12))
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
@@ -802,12 +802,12 @@ struct EnhancedNameStepView: View {
                         if !reduceMotion {
                             Image(systemName: "person.circle.fill")
                                 .font(.system(size: 45))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                                 .symbolEffect(.pulse, options: .repeating)
                         } else {
                             Image(systemName: "person.circle.fill")
                                 .font(.system(size: 45))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                         }
                     }
                 }
@@ -816,24 +816,27 @@ struct EnhancedNameStepView: View {
                 VStack(spacing: 16) {
                     Text(L10n.Onboarding.Name.title)
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.cosmicTextPrimary)
                         .multilineTextAlignment(.center)
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
 
                     Text(L10n.Onboarding.Name.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
-                .padding(.vertical, 20)
-                .padding(.horizontal, 24)
+                .padding(.vertical, Cosmic.Spacing.screen)
+                .padding(.horizontal, Cosmic.Spacing.lg)
                 .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(.black.opacity(0.35))
-                        .blur(radius: 20)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                        .fill(Color.cosmicSurface.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                                .stroke(Color.cosmicTextTertiary.opacity(0.25), lineWidth: Cosmic.Border.hairline)
+                        )
                 )
                 
                 // Enhanced text field with validation
@@ -841,19 +844,19 @@ struct EnhancedNameStepView: View {
                     TextField(
                         "",
                         text: $fullName,
-                        prompt: Text(L10n.Onboarding.Name.placeholder).foregroundColor(.white.opacity(0.6))
+                        prompt: Text(L10n.Onboarding.Name.placeholder).foregroundColor(.cosmicTextTertiary)
                     )
                         .font(.title3.weight(.medium))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .padding(.horizontal, Cosmic.Spacing.screen)
+                        .padding(.vertical, Cosmic.Spacing.md)
                         .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(.white.opacity(0.15))
+                            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                                .fill(Color.cosmicSurface)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
+                                    RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
                                         .stroke(
-                                            validationError != nil ? .red.opacity(0.6) : .white.opacity(0.3), 
+                                            validationError != nil ? Color.cosmicError.opacity(0.9) : Color.cosmicTextTertiary.opacity(0.3),
                                             lineWidth: validationError != nil ? 2 : 1
                                         )
                                 )
@@ -881,16 +884,16 @@ struct EnhancedNameStepView: View {
                         HStack {
                             Image(systemName: "star.fill")
                                 .font(.cosmicCaption)
-                                .foregroundStyle(.yellow)
+                                .foregroundStyle(Color.cosmicGold)
                             Text(L10n.Onboarding.Name.success(fullName.components(separatedBy: " ").first ?? fullName))
                                 .font(.cosmicCaption)
-                                .foregroundStyle(.white.opacity(0.8))
+                                .foregroundStyle(Color.cosmicTextSecondary)
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, Cosmic.Spacing.lg)
             }
             
             Spacer()
@@ -961,11 +964,11 @@ struct EnhancedBirthDateStepView: View {
         VStack(spacing: 0) {
             Spacer()
             
-            VStack(spacing: 32) {
+            VStack(spacing: Cosmic.Spacing.xl) {
                 // Animated calendar icon
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.1))
+                        .fill(Color.cosmicGold.opacity(0.12))
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
@@ -973,12 +976,12 @@ struct EnhancedBirthDateStepView: View {
                         if !reduceMotion {
                             Image(systemName: "calendar")
                                 .font(.system(size: 45))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                                 .symbolEffect(.pulse, options: .repeating)
                         } else {
                             Image(systemName: "calendar")
                                 .font(.system(size: 45))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                         }
                     }
                 }
@@ -987,24 +990,27 @@ struct EnhancedBirthDateStepView: View {
                 VStack(spacing: 16) {
                     Text(L10n.Onboarding.BirthDate.title)
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.cosmicTextPrimary)
                         .multilineTextAlignment(.center)
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
 
                     Text(L10n.Onboarding.BirthDate.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
-                .padding(.vertical, 20)
-                .padding(.horizontal, 24)
+                .padding(.vertical, Cosmic.Spacing.screen)
+                .padding(.horizontal, Cosmic.Spacing.lg)
                 .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(.black.opacity(0.35))
-                        .blur(radius: 20)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                        .fill(Color.cosmicSurface.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                                .stroke(Color.cosmicTextTertiary.opacity(0.25), lineWidth: Cosmic.Border.hairline)
+                        )
                 )
                 
                 // Enhanced date picker with validation
@@ -1018,18 +1024,18 @@ struct EnhancedBirthDateStepView: View {
                     .datePickerStyle(.wheel)
                     .accessibilityIdentifier(AccessibilityID.birthDatePicker)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(.white.opacity(0.1))
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                            .fill(Color.cosmicSurface)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
+                                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
                                     .stroke(
-                                        validationError != nil ? .red.opacity(0.6) : .clear, 
+                                        validationError != nil ? Color.cosmicError.opacity(0.9) : .clear,
                                         lineWidth: 2
                                     )
                             )
                     )
-                    .colorScheme(.dark)
-                    .padding(.horizontal, 24)
+                    .tint(Color.cosmicGold)
+                    .padding(.horizontal, Cosmic.Spacing.lg)
                     .onChange(of: birthDate) { _, newValue in
                         validateBirthDate(newValue)
                     }
@@ -1046,16 +1052,16 @@ struct EnhancedBirthDateStepView: View {
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, Cosmic.Spacing.lg)
                     } else {
                         Text(L10n.Onboarding.BirthDate.selected(formatSelectedDate()))
                             .font(.caption.weight(.medium))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(Color.cosmicTextSecondary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(
                                 Capsule()
-                                    .fill(.white.opacity(0.15))
+                                    .fill(Color.cosmicSurface.opacity(0.9))
                             )
                     }
                 }
@@ -1064,8 +1070,8 @@ struct EnhancedBirthDateStepView: View {
                 if validationError == nil {
                     VStack(spacing: 12) {
                         Divider()
-                            .background(.white.opacity(0.3))
-                            .padding(.horizontal, 24)
+                            .background(Color.cosmicTextTertiary.opacity(0.3))
+                            .padding(.horizontal, Cosmic.Spacing.lg)
                         
                         Button {
                             onQuickStart?()
@@ -1082,25 +1088,25 @@ struct EnhancedBirthDateStepView: View {
                                 Image(systemName: "arrow.right")
                                     .font(.cosmicCaption)
                             }
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 16)
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                            .padding(.horizontal, Cosmic.Spacing.lg)
+                            .padding(.vertical, Cosmic.Spacing.md)
                             .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(.white.opacity(0.1))
+                                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                                    .fill(Color.cosmicSurface)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(.white.opacity(0.2), lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                                            .stroke(Color.cosmicTextTertiary.opacity(0.25), lineWidth: Cosmic.Border.hairline)
                                     )
                             )
                         }
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, Cosmic.Spacing.lg)
                         
                         Text(L10n.Onboarding.BirthDate.quickStartHint)
                             .font(.cosmicCaption)
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(Color.cosmicTextTertiary)
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, Cosmic.Spacing.xl)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: validationError == nil)
@@ -1164,11 +1170,11 @@ struct EnhancedBirthTimeStepView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 32) {
+            VStack(spacing: Cosmic.Spacing.xl) {
                 // Animated clock icon
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.1))
+                        .fill(Color.cosmicGold.opacity(0.12))
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
 
@@ -1176,12 +1182,12 @@ struct EnhancedBirthTimeStepView: View {
                         if !reduceMotion {
                             Image(systemName: "clock.badge.fill")
                                 .font(.system(size: 45))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                                 .symbolEffect(.pulse, options: .repeating)
                         } else {
                             Image(systemName: "clock.badge.fill")
                                 .font(.system(size: 45))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicGold)
                         }
                     }
                 }
@@ -1190,24 +1196,27 @@ struct EnhancedBirthTimeStepView: View {
                 VStack(spacing: 16) {
                     Text(L10n.Onboarding.BirthTime.title)
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.cosmicTextPrimary)
                         .multilineTextAlignment(.center)
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
 
                     Text(L10n.Onboarding.BirthTime.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
-                .padding(.vertical, 20)
-                .padding(.horizontal, 24)
+                .padding(.vertical, Cosmic.Spacing.screen)
+                .padding(.horizontal, Cosmic.Spacing.lg)
                 .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(.black.opacity(0.35))
-                        .blur(radius: 20)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                        .fill(Color.cosmicSurface.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                                .stroke(Color.cosmicTextTertiary.opacity(0.25), lineWidth: Cosmic.Border.hairline)
+                        )
                 )
 
                 // Time picker with unknown toggle
@@ -1215,14 +1224,14 @@ struct EnhancedBirthTimeStepView: View {
                     HStack(spacing: 12) {
                         Toggle(isOn: $unknownTime) {
                             Text(L10n.Onboarding.BirthTime.unknownToggle)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color.cosmicTextPrimary)
                         }
-                        .toggleStyle(SwitchToggleStyle(tint: .white))
-                        .tint(.white)
+                        .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+                        .tint(.cosmicGold)
 
                         Button(action: { showWhy = true }) {
                             Image(systemName: "questionmark.circle")
-                                .foregroundStyle(.white.opacity(0.8))
+                                .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         .alert(L10n.Onboarding.BirthTime.whyTitle, isPresented: $showWhy) {
                             Button(L10n.Actions.gotIt, role: .cancel) {}
@@ -1239,11 +1248,11 @@ struct EnhancedBirthTimeStepView: View {
                     .datePickerStyle(.wheel)
                     .accessibilityIdentifier(AccessibilityID.birthTimePicker)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(.white.opacity(0.1))
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                            .fill(Color.cosmicSurface)
                     )
-                    .colorScheme(.dark)
-                    .padding(.horizontal, 24)
+                    .tint(Color.cosmicGold)
+                    .padding(.horizontal, Cosmic.Spacing.lg)
                     .disabled(unknownTime)
                     .opacity(unknownTime ? 0.5 : 1.0)
 
@@ -1251,12 +1260,12 @@ struct EnhancedBirthTimeStepView: View {
                          ? L10n.Onboarding.BirthTime.assumedNoon
                          : L10n.Onboarding.BirthTime.selected(formatSelectedTime()))
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
                             Capsule()
-                                .fill(.white.opacity(0.15))
+                                .fill(Color.cosmicSurface.opacity(0.9))
                         )
                         .onChange(of: unknownTime) { _, newValue in
                             if newValue {
@@ -1295,17 +1304,17 @@ struct EnhancedBirthPlaceStepView: View {
         VStack(spacing: 0) {
             Spacer()
             
-            VStack(spacing: 32) {
+            VStack(spacing: Cosmic.Spacing.xl) {
                 // Animated location icon
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.1))
+                        .fill(Color.cosmicGold.opacity(0.12))
                         .frame(width: 100, height: 100)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
                     Image(systemName: "location.magnifyingglass")
                         .font(.system(size: 45))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.cosmicGold)
                         .scaleEffect(animateIcon ? 1.1 : 1.0)
                 }
                 .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
@@ -1313,24 +1322,27 @@ struct EnhancedBirthPlaceStepView: View {
                 VStack(spacing: 16) {
                     Text(L10n.Onboarding.BirthPlace.title)
                         .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.cosmicTextPrimary)
                         .multilineTextAlignment(.center)
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 2)
 
                     Text(L10n.Onboarding.BirthPlace.subtitle)
                         .font(.cosmicBody)
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
-                .padding(.vertical, 20)
-                .padding(.horizontal, 24)
+                .padding(.vertical, Cosmic.Spacing.screen)
+                .padding(.horizontal, Cosmic.Spacing.lg)
                 .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(.black.opacity(0.35))
-                        .blur(radius: 20)
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                        .fill(Color.cosmicSurface.opacity(0.9))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                                .stroke(Color.cosmicTextTertiary.opacity(0.25), lineWidth: Cosmic.Border.hairline)
+                        )
                 )
                 
                 // Enhanced text field with autocomplete
@@ -1339,19 +1351,19 @@ struct EnhancedBirthPlaceStepView: View {
                         TextField(
                             "",
                             text: $birthPlace,
-                            prompt: Text(L10n.Onboarding.BirthPlace.placeholder).foregroundColor(.white.opacity(0.6))
+                            prompt: Text(L10n.Onboarding.BirthPlace.placeholder).foregroundColor(.cosmicTextTertiary)
                         )
                             .font(.title3.weight(.medium))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.cosmicTextPrimary)
                             .accessibilityIdentifier(AccessibilityID.locationSearchField)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
+                            .padding(.horizontal, Cosmic.Spacing.screen)
+                            .padding(.vertical, Cosmic.Spacing.md)
                             .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(.white.opacity(0.15))
+                                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                                    .fill(Color.cosmicSurface)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                                            .stroke(Color.cosmicTextTertiary.opacity(0.3), lineWidth: 1)
                                     )
                             )
                             .focused($isTextFieldFocused)
@@ -1363,8 +1375,8 @@ struct EnhancedBirthPlaceStepView: View {
                         
                         if isSearching {
                             ProgressView()
-                                .foregroundStyle(.white)
-                                .padding(.trailing, 20)
+                                .foregroundStyle(Color.cosmicGold)
+                                .padding(.trailing, Cosmic.Spacing.screen)
                         }
                     }
                     
@@ -1379,33 +1391,33 @@ struct EnhancedBirthPlaceStepView: View {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(location.name)
                                                 .font(.body.weight(.medium))
-                                                .foregroundStyle(.white)
+                                                .foregroundStyle(Color.cosmicTextPrimary)
                                             Text(location.fullName)
                                                 .font(.cosmicCaption)
-                                                .foregroundStyle(.white.opacity(0.7))
+                                                .foregroundStyle(Color.cosmicTextSecondary)
                                         }
                                         Spacer()
                                         Image(systemName: "mappin.and.ellipse")
                                             .font(.cosmicCaption)
-                                            .foregroundStyle(.white.opacity(0.6))
+                                            .foregroundStyle(Color.cosmicTextTertiary)
                                     }
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 12)
                                 }
-                                .background(.white.opacity(0.1))
+                                .background(Color.cosmicSurface)
                                 
                                 if location.name != searchResults.prefix(5).last?.name {
                                     Divider()
-                                        .background(.white.opacity(0.2))
+                                        .background(Color.cosmicTextTertiary.opacity(0.25))
                                 }
                             }
                         }
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(.white.opacity(0.1))
+                                .fill(Color.cosmicSurface)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(.white.opacity(0.2), lineWidth: 1)
+                                        .stroke(Color.cosmicTextTertiary.opacity(0.25), lineWidth: 1)
                                 )
                         )
                         .transition(.scale.combined(with: .opacity))
@@ -1416,17 +1428,17 @@ struct EnhancedBirthPlaceStepView: View {
                             if auth.profileManager.profile.birthCoordinates != nil && auth.profileManager.profile.timezone != nil {
                                 Image(systemName: "checkmark.seal.fill")
                                     .font(.cosmicCaption)
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(Color.cosmicSuccess)
                                 Text(L10n.Onboarding.BirthPlace.validated)
                                     .font(.cosmicCaption)
-                                    .foregroundStyle(.white.opacity(0.8))
+                                    .foregroundStyle(Color.cosmicTextSecondary)
                             } else {
                                 Image(systemName: "exclamationmark.diamond.fill")
                                     .font(.cosmicCaption)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(Color.cosmicCopper)
                                 Text(L10n.Onboarding.BirthPlace.dropdownHint)
                                     .font(.cosmicCaption)
-                                    .foregroundStyle(.orange.opacity(0.9))
+                                    .foregroundStyle(Color.cosmicCopper)
                             }
                             Spacer()
                         }
@@ -1439,17 +1451,17 @@ struct EnhancedBirthPlaceStepView: View {
                         HStack {
                             Image(systemName: "questionmark.bubble.fill")
                                 .font(.cosmicCaption)
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(Color.cosmicTextTertiary)
                             Text(L10n.Onboarding.BirthPlace.optionalHint)
                                 .font(.cosmicCaption)
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(Color.cosmicTextTertiary)
                             Spacer()
                         }
                         .transition(.scale.combined(with: .opacity))
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: birthPlace.isEmpty)
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, Cosmic.Spacing.lg)
             }
             
             Spacer()
@@ -1812,6 +1824,7 @@ struct SimpleTabBarView: View {
     @State private var selectedTab = 0
     @State private var showTabGuide = false
     @State private var guideStep = 0
+    private let tabGuideSteps = 5
     @AppStorage("app_launch_count") private var appLaunchCount = 0
     @AppStorage("has_seen_tab_guide") private var hasSeenTabGuide = false
     @State private var keyboardHeight: CGFloat = 0
@@ -1875,7 +1888,8 @@ struct SimpleTabBarView: View {
                     TabGuideOverlay(
                         step: guideStep,
                         onNext: {
-                            if guideStep < 3 {
+                            let lastStep = tabGuideSteps - 1
+                            if guideStep < lastStep {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     guideStep += 1
                                     selectedTab = guideStep
@@ -7943,33 +7957,39 @@ struct TabGuideOverlay: View {
     @State private var animateContent = false
     
     private var safeStep: Int {
-        min(max(0, step), 3)
+        min(max(0, step), guides.count - 1)
     }
     
     private let guides = [
         TabGuideContent(
-            title: "Welcome to Today",
-            description: "Your daily cosmic insights and personalized guidance start here. Check your horoscope, lucky elements, and planetary influences.",
+            title: "Discover",
+            description: "Start with your daily horoscope — personal, love, career, wealth, and health — plus planetary highlights and lucky elements.",
             icon: "sun.and.horizon.circle.fill",
-            color: .orange
+            color: .cosmicGold
         ),
         TabGuideContent(
-            title: "Connect with Friends",
-            description: "Discover compatibility with friends, family, or that special someone. Explore cosmic connections and relationships.",
-            icon: "heart.circle.fill",
-            color: .pink
+            title: "Time Travel",
+            description: "Explore timelines and meanings across dates — see how energies shift and what stays consistent.",
+            icon: "clock.arrow.circlepath",
+            color: .cosmicAmethyst
         ),
         TabGuideContent(
-            title: "Enter the Cosmic Nexus",
-            description: "Ask questions for insights about love, career, and life decisions in a minimal interface.",
-            icon: "brain.head.profile",
-            color: .blue
+            title: "Temple",
+            description: "Book a consultation or a pooja, and connect with trusted pandits when you want deeper guidance.",
+            icon: "building.columns.fill",
+            color: .cosmicCopper
         ),
         TabGuideContent(
-            title: "Your Cosmic Essence",
-            description: "Explore birth charts, save favorite readings, and track your spiritual journey through the stars over time.",
+            title: "Connect",
+            description: "Check compatibility and relationship insights — compare charts and explore your dynamic with someone.",
+            icon: "person.2.square.stack.fill",
+            color: .cosmicSuccess
+        ),
+        TabGuideContent(
+            title: "Self",
+            description: "Your saved readings, profile details, and long‑term journey — everything about you in one place.",
             icon: "person.crop.circle.badge.moon",
-            color: .purple
+            color: .cosmicBrass
         )
     ]
     
@@ -7993,7 +8013,7 @@ struct TabGuideOverlay: View {
                         VStack(spacing: 8) {
                             Text(guides[safeStep].title)
                                 .font(.title2.weight(.bold))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(Color.cosmicTextPrimary)
                             
                             Text(guides[safeStep].description)
                                 .font(.callout)
@@ -8004,7 +8024,7 @@ struct TabGuideOverlay: View {
                     }
                     
                     HStack(spacing: 8) {
-                        ForEach(0..<4, id: \.self) { index in
+                        ForEach(guides.indices, id: \.self) { index in
                             Circle()
                                 .fill(index <= safeStep ? guides[safeStep].color : .gray.opacity(0.3))
                                 .frame(width: 8, height: 8)
@@ -8016,7 +8036,7 @@ struct TabGuideOverlay: View {
                     VStack(spacing: 12) {
                         Button(action: onNext) {
                             HStack {
-                                if safeStep == 3 {
+                                if safeStep == guides.count - 1 {
                                     Text("Start Your Journey")
                                         .font(.headline.weight(.semibold))
                                     Image(systemName: "arrow.forward.circle.fill")

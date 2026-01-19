@@ -38,9 +38,26 @@ protocol APIServicesProtocol: ObservableObject {
     func getDetailedReport(birthData: BirthData, reportType: String) async throws -> DetailedReportResponse
     func searchLocations(query: String) async throws -> [LocationResult]
     func getCurrentTransits() async throws -> TransitsResponse
-    func getPlanetaryPositions(for date: Date, latitude: Double?, longitude: Double?, system: String) async throws -> [DetailedPlanetaryPosition]
+    func getPlanetaryPositions(
+        for date: Date,
+        latitude: Double?,
+        longitude: Double?,
+        system: String,
+        timezone: String?
+    ) async throws -> [DetailedPlanetaryPosition]
     func getChatResponse(messages: [ProtocolChatMessage]) async throws -> ProtocolChatResponse
     func fetchCompleteDasha(request: DashaCompleteRequest) async throws -> DashaCompleteResponse
+}
+
+extension APIServicesProtocol {
+    func getPlanetaryPositions(
+        for date: Date,
+        latitude: Double? = nil,
+        longitude: Double? = nil,
+        system: String = "western"
+    ) async throws -> [DetailedPlanetaryPosition] {
+        try await getPlanetaryPositions(for: date, latitude: latitude, longitude: longitude, system: system, timezone: nil)
+    }
 }
 
 /// Main API service class that handles all backend communication
@@ -463,30 +480,45 @@ class APIServices: ObservableObject, APIServicesProtocol {
 
     /// Get planetary positions for a specific date.
     /// - Parameters:
-    ///   - date: Date to compute positions for (interpreted in UTC day).
+    ///   - date: Date to compute positions for.
     ///   - latitude: Optional latitude (enables rising sign / houses if supported server-side).
     ///   - longitude: Optional longitude (enables rising sign / houses if supported server-side).
     ///   - system: "western" or "vedic".
+    ///   - timezone: If provided, the backend interprets `date` in this IANA timezone (using the exact time-of-day).
     func getPlanetaryPositions(
         for date: Date,
         latitude: Double? = nil,
         longitude: Double? = nil,
-        system: String = "western"
+        system: String = "western",
+        timezone: String? = nil
     ) async throws -> [DetailedPlanetaryPosition] {
         struct EphemerisResponse: Codable {
             let planets: [DetailedPlanetaryPosition]
         }
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        timeFormatter.dateFormat = "HH:mm"
 
         var components = URLComponents()
         components.path = "/api/v1/ephemeris/at"
         var queryItems: [URLQueryItem] = [
-            .init(name: "date", value: formatter.string(from: date)),
             .init(name: "system", value: system),
         ]
+        if let timezone, let tz = TimeZone(identifier: timezone) {
+            dateFormatter.timeZone = tz
+            timeFormatter.timeZone = tz
+            queryItems.append(.init(name: "date", value: dateFormatter.string(from: date)))
+            queryItems.append(.init(name: "time", value: timeFormatter.string(from: date)))
+            queryItems.append(.init(name: "tz", value: timezone))
+        } else {
+            dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+            queryItems.append(.init(name: "date", value: dateFormatter.string(from: date)))
+        }
         if let latitude { queryItems.append(.init(name: "lat", value: String(latitude))) }
         if let longitude { queryItems.append(.init(name: "lon", value: String(longitude))) }
         components.queryItems = queryItems

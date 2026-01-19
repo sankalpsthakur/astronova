@@ -10,6 +10,13 @@ from services.transit_service import (
     _check_aspect,
 )
 
+try:  # pragma: no cover - optional dependency in some environments
+    import swisseph as _swe  # noqa: F401
+
+    _SWE_OK = True
+except Exception:  # pragma: no cover
+    _SWE_OK = False
+
 
 class TestAngularDistance:
     """Tests for the _angular_distance helper function."""
@@ -352,6 +359,7 @@ class TestTransitService:
 class TestTransitServiceIntegration:
     """Integration tests using real ephemeris calculations."""
 
+    @pytest.mark.skipif(not _SWE_OK, reason="pyswisseph not installed")
     def test_real_ephemeris_calculation(self):
         """Test with real ephemeris service (no mocking)."""
         from services.ephemeris_service import EphemerisService

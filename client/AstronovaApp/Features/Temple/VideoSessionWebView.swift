@@ -138,7 +138,7 @@ struct VideoWebView: UIViewRepresentable {
 
         // Load the session page
         let baseURL = AppConfig.shared.apiBaseURL
-        guard let url = URL(string: "\(baseURL)/temple/session/\(sessionId)") else {
+        guard let url = URL(string: "\(baseURL)/api/v1/temple/session/\(sessionId)") else {
             DispatchQueue.main.async {
                 loadError = "Invalid session URL"
                 isLoading = false

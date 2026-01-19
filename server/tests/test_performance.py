@@ -21,6 +21,11 @@ from datetime import datetime
 import pytest
 from memory_profiler import memory_usage
 
+try:  # pragma: no cover - optional dependency in some environments
+    import swisseph as _swe  # noqa: F401
+except Exception:  # pragma: no cover
+    pytest.skip("pyswisseph not installed", allow_module_level=True)
+
 
 class TestChartGenerationPerformance:
     """Test chart generation performance benchmarks."""

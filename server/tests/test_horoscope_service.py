@@ -11,6 +11,11 @@ import pytest
 
 from routes.horoscope import SIGN_TRAITS, VALID_SIGNS, _generate_horoscope
 
+try:  # pragma: no cover - optional dependency in some environments
+    import swisseph as _swe  # noqa: F401
+except Exception:  # pragma: no cover
+    pytest.skip("pyswisseph not installed", allow_module_level=True)
+
 
 # Update all calls to _generate_horoscope to include None for natal_data
 def _gen_horoscope(sign, dt, period):

@@ -1,8 +1,10 @@
 from datetime import datetime
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from flask import Blueprint, jsonify, request
 
+from errors import SwissEphemerisUnavailableError
 from services.ephemeris_service import EphemerisService
 
 ephemeris_bp = Blueprint("ephemeris", __name__)
@@ -82,6 +84,8 @@ def current_positions():
             }
         )
 
+    except SwissEphemerisUnavailableError:
+        raise
     except Exception as e:
         return jsonify({"error": f"Failed to get current positions: {str(e)}"}), 500
 
@@ -89,9 +93,11 @@ def current_positions():
 @ephemeris_bp.route("/at", methods=["GET"])
 def positions_at_date():
     """
-    Get planetary positions for a specific date (UTC).
+    Get planetary positions for a specific instant.
     Query parameters:
     - date: YYYY-MM-DD (required)
+    - time: HH:MM (optional; defaults to 00:00)
+    - tz: IANA timezone (optional; if provided, date/time are interpreted in this timezone)
     - lat: optional latitude
     - lon: optional longitude
     """
@@ -99,10 +105,27 @@ def positions_at_date():
         date_str = request.args.get("date")
         if not date_str:
             return jsonify({"error": "date parameter required (YYYY-MM-DD)"}), 400
+
+        time_str = request.args.get("time")
+        tz_str = request.args.get("tz")
+
         try:
-            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            if time_str:
+                dt_local = datetime.strptime(f"{date_str}T{time_str}", "%Y-%m-%dT%H:%M")
+            else:
+                dt_local = datetime.strptime(f"{date_str}T00:00", "%Y-%m-%dT%H:%M")
         except ValueError:
-            return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
+            return jsonify({"error": "Invalid date/time format, use YYYY-MM-DD and optional HH:MM"}), 400
+
+        if tz_str:
+            try:
+                tz = ZoneInfo(tz_str)
+            except Exception:
+                return jsonify({"error": "Invalid tz; expected IANA timezone"}), 400
+            dt = dt_local.replace(tzinfo=tz).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        else:
+            # Backward-compatible: interpret as UTC day/time.
+            dt = dt_local
 
         lat = request.args.get("lat", type=float)
         lon = request.args.get("lon", type=float)
@@ -128,6 +151,8 @@ def positions_at_date():
             {"planets": planets, "timestamp": dt.isoformat(), "has_rising_sign": lat is not None and lon is not None}
         )
 
+    except SwissEphemerisUnavailableError:
+        raise
     except Exception as e:
         return jsonify({"error": f"Failed to get positions: {str(e)}"}), 500
 

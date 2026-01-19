@@ -191,6 +191,7 @@ def dashas_complete():
             "longitude": float
         },
         "targetDate": "YYYY-MM-DD",  // optional, defaults to today
+        "targetTime": "HH:MM",       // optional, defaults to 00:00 in birthData.timezone
         "includeTransitions": true,  // optional
         "includeEducation": true     // optional
     }
@@ -208,15 +209,28 @@ def dashas_complete():
     if not birth_date or lat is None or lon is None:
         return jsonify({"error": "birthData with date, latitude, and longitude required"}), 400
 
-    # Parse target date (defaults to today)
+    # Parse target date/time (defaults to now, interpreted in the provided timezone)
     target_date_str = payload.get("targetDate")
+    target_time_str = payload.get("targetTime")
     if target_date_str:
         try:
-            target_date = datetime.strptime(target_date_str, "%Y-%m-%d")
+            target_dt_local = datetime.strptime(
+                f"{target_date_str}T{target_time_str or '00:00'}",
+                "%Y-%m-%dT%H:%M",
+            )
         except ValueError:
-            return jsonify({"error": "Invalid targetDate format, use YYYY-MM-DD"}), 400
+            return jsonify({"error": "Invalid targetDate/targetTime format, use YYYY-MM-DD and optional HH:MM"}), 400
+        try:
+            target_date = (
+                target_dt_local.replace(tzinfo=ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+            )
+        except Exception as e:
+            return jsonify({"error": f"Invalid timezone for targetDate: {str(e)}"}), 400
     else:
-        target_date = datetime.now()
+        try:
+            target_date = datetime.now(ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        except Exception as e:
+            return jsonify({"error": f"Invalid timezone: {str(e)}"}), 400
 
     # Parse birth datetime
     try:

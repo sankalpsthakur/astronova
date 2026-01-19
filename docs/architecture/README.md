@@ -31,4 +31,4 @@ Complete REST API endpoint documentation with:
 ## Related Documentation
 
 - [Development Guide](../development.md) — Setup and build instructions
-- [CLAUDE.md](../../CLAUDE.md) — Code conventions and patterns
+- `docs/claude/CLAUDE_FULL.md` — Code conventions and patterns

@@ -101,8 +101,18 @@ def require_auth(f):
 def setup_logging():
     """Configure structured logging for the application"""
     logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] [req:%(request_id)s user:%(user_id)s] %(name)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+    from utils.logging_utils import RequestContextFilter
+
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        if any(isinstance(existing, RequestContextFilter) for existing in handler.filters):
+            continue
+        handler.addFilter(RequestContextFilter())
 
 
 def add_request_id():
@@ -141,5 +151,4 @@ def log_request_response(response):
         logger.error(f"Error in logging middleware: {e}")
 
     return response
-
 

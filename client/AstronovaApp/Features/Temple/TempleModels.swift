@@ -22,6 +22,12 @@ struct Astrologer: Identifiable {
     let languages: [String]
     let expertise: [String]
 
+    /// When this `Astrologer` was created from a real pandit profile, `id` is the API `panditId`.
+    /// Sample astrologers use `ast_...` IDs and should not be passed to booking endpoints.
+    var apiPanditId: String? {
+        id.hasPrefix("ast_") ? nil : id
+    }
+
     static let samples: [Astrologer] = [
         Astrologer(
             id: "ast_001",
@@ -76,6 +82,25 @@ struct Astrologer: Identifiable {
             expertise: ["Lal Kitab", "Vastu", "Remedies"]
         )
     ]
+}
+
+extension Astrologer {
+    static func fromPandit(_ pandit: PanditProfile) -> Astrologer {
+        let pricePerMinute = max(1, pandit.pricePerSession / 30)
+        return Astrologer(
+            id: pandit.id,
+            name: pandit.name,
+            specialization: pandit.primarySpecialization,
+            experience: pandit.experienceString,
+            rating: pandit.rating,
+            reviewCount: pandit.reviewCount,
+            pricePerMinute: pricePerMinute,
+            avatarURL: pandit.avatarUrl,
+            isOnline: pandit.isAvailable,
+            languages: pandit.languages,
+            expertise: pandit.specializations
+        )
+    }
 }
 
 // MARK: - API Response Models
@@ -214,9 +239,39 @@ struct CancelBookingResponse: Codable {
 /// Session link response
 struct SessionLinkResponse: Codable {
     let sessionId: String
-    let userLink: String
+    let sessionLink: String
     let status: String
     let message: String
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionId
+        case sessionLink
+        case userLink
+        case status
+        case message
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        sessionId = try container.decode(String.self, forKey: .sessionId)
+        status = try container.decodeIfPresent(String.self, forKey: .status) ?? "confirmed"
+        message = try container.decodeIfPresent(String.self, forKey: .message) ?? ""
+        if let link = try container.decodeIfPresent(String.self, forKey: .sessionLink) {
+            sessionLink = link
+        } else if let link = try container.decodeIfPresent(String.self, forKey: .userLink) {
+            sessionLink = link
+        } else {
+            sessionLink = ""
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(sessionId, forKey: .sessionId)
+        try container.encode(sessionLink, forKey: .sessionLink)
+        try container.encode(status, forKey: .status)
+        try container.encode(message, forKey: .message)
+    }
 }
 
 /// Booking status enum

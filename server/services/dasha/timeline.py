@@ -87,33 +87,33 @@ class TimelineCalculator:
         maha_start: datetime,
         maha_end: datetime,
     ) -> List[Dict[str, Any]]:
-        total_months = (maha_end.year - maha_start.year) * 12 + (maha_end.month - maha_start.month)
-        if maha_end.day < maha_start.day:
-            total_months -= 1
-        total_months = max(total_months, 1)
+        total_seconds = int((maha_end - maha_start).total_seconds())
+        total_seconds = max(total_seconds, 1)
 
         start_idx = self.lord_order.index(mahadasha_lord)
         antar_sequence = self.lord_order[start_idx:] + self.lord_order[:start_idx]
 
-        raw_months = [self.duration_map[lord] / TOTAL_CYCLE_YEARS * total_months for lord in antar_sequence]
-        months_alloc = self._distribute_via_largest_remainder(raw_months, total_months)
+        raw_seconds = [self.duration_map[lord] / TOTAL_CYCLE_YEARS * total_seconds for lord in antar_sequence]
+        seconds_alloc = self._distribute_via_largest_remainder(raw_seconds, total_seconds)
 
         antardashas: List[Dict[str, Any]] = []
         current = maha_start
-        for lord, months in zip(antar_sequence, months_alloc):
-            next_date = self._add_years_months(current, 0, months)
+        for lord, seconds in zip(antar_sequence, seconds_alloc):
+            next_date = current + timedelta(seconds=seconds)
             antardashas.append(
                 {
                     "lord": lord,
                     "start": current,
                     "end": next_date,
-                    "duration_months": months,
+                    "duration_months": round(seconds / 86400 / 30.4375, 4),
                 }
             )
             current = next_date
 
         if antardashas:
             antardashas[-1]["end"] = maha_end
+            last_seconds = max(int((maha_end - antardashas[-1]["start"]).total_seconds()), 0)
+            antardashas[-1]["duration_months"] = round(last_seconds / 86400 / 30.4375, 4)
         return antardashas
 
     def calculate_pratyantardasha(

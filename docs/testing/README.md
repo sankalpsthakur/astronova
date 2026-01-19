@@ -75,5 +75,5 @@ xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp -destination '
 ## Related Documentation
 
 - [Development Guide](../development.md) — Test setup and execution
-- [CLAUDE.md](../../CLAUDE.md) — Test writing guidelines
-- [CONTRIBUTING.md](../../CONTRIBUTING.md) — PR test requirements
+- `docs/claude/CLAUDE_FULL.md` — Test writing guidelines
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — PR test requirements

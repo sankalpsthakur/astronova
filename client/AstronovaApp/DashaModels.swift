@@ -12,17 +12,20 @@ struct DashaCompleteRequest: Encodable {
 
     let birthData: BirthDataPayload
     let targetDate: String?
+    let targetTime: String?
     let includeTransitions: Bool
     let includeEducation: Bool
 
     init(
         birthData: BirthDataPayload,
         targetDate: String? = nil,
+        targetTime: String? = nil,
         includeTransitions: Bool = true,
         includeEducation: Bool = true
     ) {
         self.birthData = birthData
         self.targetDate = targetDate
+        self.targetTime = targetTime
         self.includeTransitions = includeTransitions
         self.includeEducation = includeEducation
     }

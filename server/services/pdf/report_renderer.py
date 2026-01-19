@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import zlib
 from dataclasses import dataclass
 from typing import Any
@@ -14,6 +15,8 @@ from .interpretations import (
 )
 from .pdf_writer import PDFDocument
 from .themes import ReportTheme, theme_for_report
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -33,6 +36,7 @@ class ReportData:
     vedic_planets: dict[str, Any] | None
     western_houses: dict[str, Any] | None
     vedic_houses: dict[str, Any] | None
+    vedic_analysis: dict[str, Any] | None
     meta: dict[str, Any] | None
 
 
@@ -59,6 +63,7 @@ def _parse_report_content(report: dict[str, Any] | None, report_id: str) -> Repo
     vedic_planets: dict[str, Any] | None = None
     western_houses: dict[str, Any] | None = None
     vedic_houses: dict[str, Any] | None = None
+    vedic_analysis: dict[str, Any] | None = None
     birth: dict[str, Any] | None = None
     meta: dict[str, Any] | None = None
 
@@ -77,6 +82,7 @@ def _parse_report_content(report: dict[str, Any] | None, report_id: str) -> Repo
                 vedic_planets = parsed.get("vedicPlanets") if isinstance(parsed.get("vedicPlanets"), dict) else None
                 western_houses = parsed.get("westernHouses") if isinstance(parsed.get("westernHouses"), dict) else None
                 vedic_houses = parsed.get("vedicHouses") if isinstance(parsed.get("vedicHouses"), dict) else None
+                vedic_analysis = parsed.get("vedicAnalysis") if isinstance(parsed.get("vedicAnalysis"), dict) else None
                 birth = parsed.get("birth") if isinstance(parsed.get("birth"), dict) else None
                 meta = parsed.get("meta") if isinstance(parsed.get("meta"), dict) else None
                 report_type = _safe_str(parsed.get("reportType"), report_type)
@@ -85,6 +91,7 @@ def _parse_report_content(report: dict[str, Any] | None, report_id: str) -> Repo
                 if isinstance(parsed.get("domain"), str):
                     domain = parsed["domain"].strip().lower() or None
         except Exception:
+            logger.exception("Failed to parse report content JSON report_id=%s", report_id)
             summary = _safe_str(content_raw, summary)
 
     if not key_insights:
@@ -109,6 +116,7 @@ def _parse_report_content(report: dict[str, Any] | None, report_id: str) -> Repo
         vedic_planets=vedic_planets,
         western_houses=western_houses,
         vedic_houses=vedic_houses,
+        vedic_analysis=vedic_analysis,
         meta=meta,
     )
 
@@ -277,6 +285,277 @@ def _draw_highlights(canvas: PDFCanvas, data: ReportData, theme: ReportTheme) ->
 
     canvas.text(48, y2 - 14, "Reflection Prompts", font="F2", size=12, color=fg)
     canvas.bullets(56, y2 - 34, theme.prompts, font="F1", size=12, color=muted, max_width=508)
+
+
+def _draw_vedic_details_page(canvas: PDFCanvas, *, data: ReportData, theme: ReportTheme, page_num: int, total_pages: int) -> None:
+    bg = RGB(0.04, 0.06, 0.12)
+    fg = RGB(0.92, 0.94, 0.98)
+    muted = RGB(0.65, 0.70, 0.78)
+
+    canvas.set_fill(bg)
+    canvas.rect(0, 0, 612, 792, fill=True, stroke=False)
+    seed = zlib.crc32((data.report_id + ":vedic").encode("utf-8")) & 0xFFFFFFFF
+    canvas.starfield(seed=seed, count=80)
+
+    canvas.set_fill(theme.accent_soft)
+    canvas.rect(0, 760, 612, 32, fill=True, stroke=False)
+    canvas.text(48, 770, "Kundali Essentials", font="F2", size=16, color=fg)
+
+    va = data.vedic_analysis or {}
+    ayanamsha = va.get("ayanamsha") or (data.meta or {}).get("ayanamsha")
+    if isinstance(ayanamsha, (int, float)):
+        canvas.text(48, 732, f"Ayanamsha (Lahiri): {ayanamsha:.6f}°", font="F1", size=10, color=muted)
+    canvas.text(48, 714, _engine_label(data), font="F1", size=10, color=muted)
+
+    lagna = va.get("lagna") if isinstance(va.get("lagna"), dict) else {}
+    moon = (va.get("planets") or {}).get("moon") if isinstance(va.get("planets"), dict) else None
+    moon_nak = (moon or {}).get("nakshatra") if isinstance(moon, dict) else None
+
+    canvas.set_fill(RGB(0.08, 0.10, 0.16))
+    canvas.rect(48, 560, 516, 132, fill=True, stroke=False)
+    canvas.text(64, 676, "Your Anchors", font="F2", size=12, color=fg)
+    canvas.text(
+        64,
+        650,
+        f"Lagna: {_safe_str(lagna.get('sign'), '—')}  {_safe_str(lagna.get('degree'), '—')}°  (lord: {_safe_str(lagna.get('lord'), '—')})",
+        font="F1",
+        size=10,
+        color=muted,
+    )
+    if isinstance(moon_nak, dict):
+        canvas.text(
+            64,
+            632,
+            f"Moon Nakshatra: {_safe_str(moon_nak.get('name'), '—')}  (lord: {_safe_str(moon_nak.get('lord'), '—')}, pada: {_safe_str(moon_nak.get('pada'), '—')})",
+            font="F1",
+            size=10,
+            color=muted,
+        )
+    canvas.wrapped_text(
+        64,
+        610,
+        "Lagna sets your house system (life areas). Moon Nakshatra sets your dasha timing. Both are foundational for Vedic readings.",
+        font="F1",
+        size=10,
+        color=muted,
+        max_width=488,
+    )
+
+    panchang = va.get("panchang") if isinstance(va.get("panchang"), dict) else {}
+    tithi = panchang.get("tithi") if isinstance(panchang.get("tithi"), dict) else {}
+    yoga = panchang.get("yoga") if isinstance(panchang.get("yoga"), dict) else {}
+    karana = panchang.get("karana") if isinstance(panchang.get("karana"), dict) else {}
+
+    canvas.set_fill(RGB(0.08, 0.10, 0.16))
+    canvas.rect(48, 404, 516, 132, fill=True, stroke=False)
+    canvas.text(64, 520, "Panchang (Birth Moment)", font="F2", size=12, color=fg)
+    canvas.text(64, 494, f"Tithi: {_safe_str(tithi.get('name'), '—')}", font="F1", size=10, color=muted)
+    canvas.text(64, 476, f"Karana: {_safe_str(karana.get('name'), '—')}", font="F1", size=10, color=muted)
+    canvas.text(64, 458, f"Yoga: {_safe_str(yoga.get('name'), '—')}", font="F1", size=10, color=muted)
+    canvas.wrapped_text(
+        64,
+        438,
+        "These are traditional ‘time quality’ markers based on Sun–Moon geometry. They’re used for fine-grained timing and ritual calendars.",
+        font="F1",
+        size=10,
+        color=muted,
+        max_width=488,
+    )
+
+    avakhada = va.get("avakhada") if isinstance(va.get("avakhada"), dict) else {}
+    canvas.set_fill(RGB(0.08, 0.10, 0.16))
+    canvas.rect(48, 220, 516, 160, fill=True, stroke=False)
+    canvas.text(64, 364, "Traditional Archetypes (Avakhada-style)", font="F2", size=12, color=fg)
+    lines = [
+        f"Varna: {_safe_str(avakhada.get('varna'), '—')}   Tatva: {_safe_str(avakhada.get('tatva'), '—')}",
+        f"Vashya: {_safe_str(avakhada.get('vashya'), '—')}",
+        f"Gana: {_safe_str(avakhada.get('gana'), '—')}   Nadi: {_safe_str(avakhada.get('nadi'), '—')}   Yoni: {_safe_str(avakhada.get('yoni'), '—')}",
+    ]
+    y = 338
+    for line in lines:
+        canvas.wrapped_text(64, y, line, font="F1", size=10, color=muted, max_width=488)
+        y -= 18
+    canvas.wrapped_text(
+        64,
+        280,
+        "These labels are traditionally used in compatibility scoring. We show them as symbolic archetypes—not as deterministic judgments.",
+        font="F1",
+        size=10,
+        color=muted,
+        max_width=488,
+    )
+
+    _stamp_footer(canvas, data, color=muted, page_num=page_num, total_pages=total_pages)
+
+
+def _draw_dasha_timeline_page(canvas: PDFCanvas, *, data: ReportData, theme: ReportTheme, page_num: int, total_pages: int) -> None:
+    bg = RGB(0.04, 0.06, 0.12)
+    fg = RGB(0.92, 0.94, 0.98)
+    muted = RGB(0.65, 0.70, 0.78)
+
+    canvas.set_fill(bg)
+    canvas.rect(0, 0, 612, 792, fill=True, stroke=False)
+    seed = zlib.crc32((data.report_id + ":dasha").encode("utf-8")) & 0xFFFFFFFF
+    canvas.starfield(seed=seed, count=70)
+
+    canvas.set_fill(theme.accent_soft)
+    canvas.rect(0, 760, 612, 32, fill=True, stroke=False)
+    canvas.text(48, 770, "Vimshottari Dasha Timeline", font="F2", size=16, color=fg)
+
+    va = data.vedic_analysis or {}
+    dashas = va.get("dashas") if isinstance(va.get("dashas"), dict) else {}
+    current = dashas.get("current") if isinstance(dashas.get("current"), dict) else {}
+    maha = current.get("mahadasha") if isinstance(current.get("mahadasha"), dict) else {}
+    antar = current.get("antardasha") if isinstance(current.get("antardasha"), dict) else {}
+
+    canvas.text(
+        48,
+        732,
+        f"Current: {_safe_str(maha.get('lord'), '—')} Mahadasha ({_safe_str(maha.get('start'), '—')} -> {_safe_str(maha.get('end'), '—')})",
+        font="F1",
+        size=10,
+        color=muted,
+    )
+    canvas.text(
+        48,
+        714,
+        f"Sub-period: {_safe_str(antar.get('lord'), '—')} Antardasha ({_safe_str(antar.get('start'), '—')} -> {_safe_str(antar.get('end'), '—')})",
+        font="F1",
+        size=10,
+        color=muted,
+    )
+    canvas.wrapped_text(
+        48,
+        692,
+        "Dashas are like long ‘chapters’ of life. Mahadasha is the main chapter, Antardasha is the sub-chapter. They’re used for timing themes.",
+        font="F1",
+        size=10,
+        color=muted,
+        max_width=516,
+    )
+
+    timeline = dashas.get("mahadashaTimeline") if isinstance(dashas.get("mahadashaTimeline"), list) else []
+    canvas.text(48, 650, "Mahadasha Timeline (from birth)", font="F2", size=12, color=fg)
+    y = 632
+    for row in timeline[:9]:
+        if not isinstance(row, dict):
+            continue
+        line = f"{_safe_str(row.get('lord'), '—')}: {_safe_str(row.get('start'), '—')} -> {_safe_str(row.get('end'), '—')}"
+        canvas.text(64, y, line, font="F1", size=10, color=muted)
+        y -= 16
+
+    antars = dashas.get("currentAntardashas") if isinstance(dashas.get("currentAntardashas"), list) else []
+    canvas.text(48, y - 10, "Antardashas (current Mahadasha)", font="F2", size=12, color=fg)
+    y2 = y - 32
+    for row in antars[:12]:
+        if not isinstance(row, dict):
+            continue
+        line = f"{_safe_str(row.get('lord'), '—')}: {_safe_str(row.get('start'), '—')} -> {_safe_str(row.get('end'), '—')}"
+        canvas.text(64, y2, line, font="F1", size=10, color=muted)
+        y2 -= 16
+
+    _stamp_footer(canvas, data, color=muted, page_num=page_num, total_pages=total_pages)
+
+
+def _draw_vedic_advanced_page(canvas: PDFCanvas, *, data: ReportData, theme: ReportTheme, page_num: int, total_pages: int) -> None:
+    bg = RGB(0.04, 0.06, 0.12)
+    fg = RGB(0.92, 0.94, 0.98)
+    muted = RGB(0.65, 0.70, 0.78)
+
+    canvas.set_fill(bg)
+    canvas.rect(0, 0, 612, 792, fill=True, stroke=False)
+    seed = zlib.crc32((data.report_id + ":advanced").encode("utf-8")) & 0xFFFFFFFF
+    canvas.starfield(seed=seed, count=70)
+
+    canvas.set_fill(theme.accent_soft)
+    canvas.rect(0, 760, 612, 32, fill=True, stroke=False)
+    canvas.text(48, 770, "Vedic Deep Dive", font="F2", size=16, color=fg)
+
+    va = data.vedic_analysis or {}
+    divisional = va.get("divisionalCharts") if isinstance(va.get("divisionalCharts"), dict) else {}
+    d9 = divisional.get("D9") if isinstance(divisional.get("D9"), dict) else {}
+    d10 = divisional.get("D10") if isinstance(divisional.get("D10"), dict) else {}
+
+    canvas.set_fill(RGB(0.08, 0.10, 0.16))
+    canvas.rect(48, 560, 516, 180, fill=True, stroke=False)
+    canvas.text(64, 724, "Divisional Charts (Vargas)", font="F2", size=12, color=fg)
+    canvas.wrapped_text(
+        64,
+        706,
+        "D9 (Navamsa) is often read for relationship patterns and inner strength. D10 (Dasamsa) is often read for career/public contribution.",
+        font="F1",
+        size=10,
+        color=muted,
+        max_width=488,
+    )
+
+    key_planets = ["sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu"]
+    y = 662
+    for p in key_planets:
+        d9s = _safe_str((d9.get(p) or {}).get("sign") if isinstance(d9.get(p), dict) else None, "—")
+        d10s = _safe_str((d10.get(p) or {}).get("sign") if isinstance(d10.get(p), dict) else None, "—")
+        canvas.text(64, y, f"{p.title():<8}  D9: {d9s:<10}  D10: {d10s}", font="F1", size=10, color=muted)
+        y -= 16
+
+    doshas = va.get("doshas") if isinstance(va.get("doshas"), dict) else {}
+    manglik = doshas.get("manglik") if isinstance(doshas.get("manglik"), dict) else {}
+    kalsarpa = doshas.get("kalsarpa") if isinstance(doshas.get("kalsarpa"), dict) else {}
+    sadesati = va.get("sadesati") if isinstance(va.get("sadesati"), dict) else {}
+
+    canvas.set_fill(RGB(0.08, 0.10, 0.16))
+    canvas.rect(48, 340, 516, 196, fill=True, stroke=False)
+    canvas.text(64, 520, "Yogas & Checks", font="F2", size=12, color=fg)
+
+    yogas = va.get("yogas") if isinstance(va.get("yogas"), list) else []
+    if yogas:
+        canvas.text(64, 496, "Yogas detected:", font="F1", size=10, color=muted)
+        y3 = 478
+        for item in yogas[:6]:
+            if not isinstance(item, dict):
+                continue
+            canvas.wrapped_text(
+                76,
+                y3,
+                f"{_safe_str(item.get('name'), 'Yoga')}: {_safe_str(item.get('description'), '')}",
+                font="F1",
+                size=9,
+                color=muted,
+                max_width=476,
+            )
+            y3 -= 28
+    else:
+        canvas.wrapped_text(64, 496, "No major yogas detected in the current subset.", font="F1", size=10, color=muted, max_width=488)
+
+    canvas.text(64, 420, f"Manglik: {_safe_str(manglik.get('label'), '—')}", font="F1", size=10, color=muted)
+    canvas.text(
+        64,
+        402,
+        f"Kalsarpa: {'Present' if bool(kalsarpa.get('present')) else 'Not present'}"
+        + (f" ({_safe_str(kalsarpa.get('type'), '')})" if kalsarpa.get("type") else ""),
+        font="F1",
+        size=10,
+        color=muted,
+    )
+    canvas.text(
+        64,
+        384,
+        f"Sade Sati: {'Active' if bool(sadesati.get('active')) else 'Not active'}"
+        + (f" ({_safe_str(sadesati.get('phase'), '')})" if sadesati.get("phase") else ""),
+        font="F1",
+        size=10,
+        color=muted,
+    )
+    canvas.wrapped_text(
+        64,
+        360,
+        "These checks are traditional pattern labels. Use them as prompts for reflection rather than strict verdicts.",
+        font="F1",
+        size=10,
+        color=muted,
+        max_width=488,
+    )
+
+    _stamp_footer(canvas, data, color=muted, page_num=page_num, total_pages=total_pages)
 
 
 def _engine_label(data: ReportData) -> str:
@@ -996,7 +1275,8 @@ def render_report_pdf(report_id: str, report: dict[str, Any] | None, *, domain: 
     theme = theme_for_report(data.report_type, domain=(domain or data.domain))
 
     doc = PDFDocument()
-    total_pages = 7
+    include_vedic_extras = data.report_type == "birth_chart" and isinstance(data.vedic_analysis, dict)
+    total_pages = 10 if include_vedic_extras else 7
 
     cover = PDFCanvas()
     _draw_cover(cover, data, theme)
@@ -1017,6 +1297,21 @@ def render_report_pdf(report_id: str, report: dict[str, Any] | None, *, domain: 
     _draw_domain_deep_dive(deep_dive, data=data, theme=theme, page_num=4, total_pages=total_pages)
     doc.add_page(deep_dive.build())
 
+    page_offset = 0
+    if include_vedic_extras:
+        vedic_details = PDFCanvas()
+        _draw_vedic_details_page(vedic_details, data=data, theme=theme, page_num=5, total_pages=total_pages)
+        doc.add_page(vedic_details.build())
+
+        dasha_timeline = PDFCanvas()
+        _draw_dasha_timeline_page(dasha_timeline, data=data, theme=theme, page_num=6, total_pages=total_pages)
+        doc.add_page(dasha_timeline.build())
+
+        vedic_advanced = PDFCanvas()
+        _draw_vedic_advanced_page(vedic_advanced, data=data, theme=theme, page_num=7, total_pages=total_pages)
+        doc.add_page(vedic_advanced.build())
+        page_offset = 3
+
     western = PDFCanvas()
     _draw_chart_page(
         western,
@@ -1027,7 +1322,7 @@ def render_report_pdf(report_id: str, report: dict[str, Any] | None, *, domain: 
         signs=WESTERN_SIGNS,
         vedic=False,
         include_aspects=True,
-        page_num=5,
+        page_num=5 + page_offset,
         total_pages=total_pages,
     )
     doc.add_page(western.build())
@@ -1042,13 +1337,13 @@ def render_report_pdf(report_id: str, report: dict[str, Any] | None, *, domain: 
         signs=VEDIC_SIGNS,
         vedic=True,
         include_aspects=False,
-        page_num=6,
+        page_num=6 + page_offset,
         total_pages=total_pages,
     )
     doc.add_page(vedic_page.build())
 
     action = PDFCanvas()
-    _draw_action_page(action, data=data, theme=theme, page_num=7, total_pages=total_pages)
+    _draw_action_page(action, data=data, theme=theme, page_num=7 + page_offset, total_pages=total_pages)
     doc.add_page(action.build())
 
     return doc.build()
