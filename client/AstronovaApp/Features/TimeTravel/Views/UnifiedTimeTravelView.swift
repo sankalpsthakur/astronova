@@ -36,7 +36,7 @@ struct UnifiedTimeTravelView: View {
                         .background(Color.cosmicBackground.ignoresSafeArea())
                 } else {
                     ScrollView {
-                        VStack(spacing: Cosmic.Spacing.lg) {
+                        VStack(spacing: Cosmic.Spacing.sm) {
                             TimeSeeker(
                                 selectedDate: $state.targetDate,
                                 onDateChanged: { state.onDateScrubbing() },
@@ -51,6 +51,7 @@ struct UnifiedTimeTravelView: View {
                                 summary: state.scrubFeedback.summary
                             )
                             .padding(.horizontal)
+                            .padding(.bottom, Cosmic.Spacing.xl)
 
                             if let error = state.errorMessage {
                                 Text(error)
@@ -85,10 +86,26 @@ struct UnifiedTimeTravelView: View {
                                         loadingOverlay
                                     }
                                 }
+                                .overlay(alignment: .bottom) {
+                                    LinearGradient(
+                                        colors: [
+                                            Color.cosmicBackground.opacity(0),
+                                            Color.cosmicBackground.opacity(0.4),
+                                            Color.cosmicBackground.opacity(0.85),
+                                            Color.cosmicBackground
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                    .frame(height: 60)
+                                    .allowsHitTesting(false)
+                                }
+                                .cosmicElevation(.medium)
 
                                 if let selected = state.selectedElement {
                                     tooltipView(for: selected, snapshot: snapshot)
                                         .padding(.horizontal)
+                                        .offset(y: -16)
                                         .transition(.asymmetric(
                                             insertion: .scale(scale: 0.9).combined(with: .opacity),
                                             removal: .opacity
@@ -275,7 +292,9 @@ struct UnifiedTimeTravelView: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
             .padding()
-            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+            .background(Color.cosmicVoid.opacity(0.6), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+            .cosmicElevation(.low)
         }
         .buttonStyle(.plain)
     }
@@ -312,7 +331,9 @@ struct UnifiedTimeTravelView: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
             .padding()
-            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+            .background(Color.cosmicVoid.opacity(0.6), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+            .cosmicElevation(.low)
         }
         .buttonStyle(.plain)
     }
@@ -340,7 +361,9 @@ struct UnifiedTimeTravelView: View {
             }
         }
         .padding()
-        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+        .background(Color.cosmicVoid.opacity(0.6), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+        .cosmicElevation(.low)
     }
 
     // MARK: - Actions
