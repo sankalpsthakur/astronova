@@ -213,7 +213,7 @@ struct PersonalizedInsightOverlay: View {
     let fullName: String
     let personalizedInsight: String
     let clearProfileSetupProgress: () -> Void
-    let completeProfileSetup: () -> Void
+    let onJourneyStart: () -> Void
     
     var body: some View {
         Group {
@@ -228,9 +228,7 @@ struct PersonalizedInsightOverlay: View {
                             showingPersonalizedInsight = false
                             showingConfetti = true
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            completeProfileSetup()
-                        }
+                        onJourneyStart()
                     }
                 )
                 .transition(.opacity)
@@ -383,6 +381,7 @@ struct AuthRequiredView: View {
 /// Beautiful, delightful onboarding with instant value and smooth animations
 struct SimpleProfileSetupView: View {
     @EnvironmentObject private var auth: AuthState
+    @EnvironmentObject private var gamification: GamificationManager
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("profile_setup_step") private var currentStep = 0
     @AppStorage("profile_setup_name") private var fullName = ""
@@ -404,6 +403,7 @@ struct SimpleProfileSetupView: View {
     @State private var animateGradient = false
     @State private var saveError: String?
     @State private var showingSaveError = false
+    @State private var showingIdentityQuiz = false
     
     // Computed properties for date binding
     private var birthDate: Binding<Date> {
@@ -450,6 +450,17 @@ struct SimpleProfileSetupView: View {
         .overlay(personalizedInsightOverlay)
         .overlay(confettiOverlay)
         .onAppear(perform: setupAnimations)
+        .sheet(isPresented: $showingIdentityQuiz) {
+            IdentityQuizView(
+                onComplete: { archetype in
+                    gamification.setArchetype(archetype)
+                    showingIdentityQuiz = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        auth.completeProfileSetup()
+                    }
+                }
+            )
+        }
     }
     
     @ViewBuilder
@@ -460,7 +471,18 @@ struct SimpleProfileSetupView: View {
             fullName: fullName,
             personalizedInsight: personalizedInsight,
             clearProfileSetupProgress: clearProfileSetupProgress,
-            completeProfileSetup: { auth.completeProfileSetup() }
+            onJourneyStart: {
+                // Phase 5: identity quiz + archetype assignment is part of onboarding funnel.
+                if (gamification.archetype ?? "").isEmpty {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                        showingIdentityQuiz = true
+                    }
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        auth.completeProfileSetup()
+                    }
+                }
+            }
         )
     }
     
@@ -1906,6 +1928,7 @@ struct SimpleTabBarView: View {
         .onAppear {
             trackAppLaunch()
             showFirstRunGuideIfNeeded()
+            applyUITestStartTabIfRequested()
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToTab)) { notification in
             if let tabIndex = notification.object as? Int {
@@ -1958,6 +1981,15 @@ struct SimpleTabBarView: View {
             showTabGuide = false
         }
         hasSeenTabGuide = true
+    }
+
+    private func applyUITestStartTabIfRequested() {
+        // Used for screenshotting and UI validation from `xcrun simctl launch`.
+        guard TestEnvironment.shared.isUITest else { return }
+        guard let raw = ProcessInfo.processInfo.environment["UITEST_START_TAB_INDEX"],
+              let idx = Int(raw) else { return }
+        let clamped = min(4, max(0, idx))
+        selectedTab = clamped
     }
 }
 
@@ -3513,8 +3545,8 @@ final class OracleViewModel: ObservableObject {
         L10n.Oracle.Prompts.focusNow
     ]
 
-    init(quotaManager: OracleQuotaManager = .shared) {
-        self.quotaManager = quotaManager
+    init(quotaManager: OracleQuotaManager? = nil) {
+        self.quotaManager = quotaManager ?? OracleQuotaManager.shared
         addWelcomeMessage()
     }
 
@@ -7146,6 +7178,7 @@ struct InlineReportsStoreSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var auth: AuthState
     @ObservedObject private var storeKitManager = StoreKitManager.shared
+    @AppStorage("hasAstronovaPro") private var hasProSubscription = false
     @State private var isPurchasing: String? = nil
     @State private var activeAlert: AlertState?
 
@@ -7201,6 +7234,7 @@ struct InlineReportsStoreSheet: View {
                 Section("Detailed Reports") {
                     ForEach(offers) { offer in
                         let purchased = isPurchased(offer)
+                        let isEntitled = hasProSubscription || purchased
                         HStack(spacing: 12) {
                             Circle().fill(offer.color.opacity(0.15)).frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
@@ -7213,15 +7247,19 @@ struct InlineReportsStoreSheet: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     if isPurchasing == offer.productId { ProgressView().tint(.white) }
-                                    if purchased {
+                                    if isEntitled {
                                         Image(systemName: "checkmark.circle.fill")
                                             .font(.system(size: 12))
                                     }
-                                    Text(purchased ? "Purchased" : (isPurchasing == offer.productId ? "Processing…" : priceLabel(for: offer)))
+                                    Text(
+                                        hasProSubscription
+                                            ? "Included"
+                                            : (purchased ? "Purchased" : (isPurchasing == offer.productId ? "Processing…" : priceLabel(for: offer)))
+                                    )
                                 }
                             }
                             .buttonStyle(.borderedProminent)
-                            .disabled(isPurchasing != nil || purchased)
+                            .disabled(isPurchasing != nil || isEntitled)
                             .accessibilityIdentifier(AccessibilityID.reportBuyButton(offer.productId))
                         }
                     }
@@ -7975,7 +8013,7 @@ struct TabGuideOverlay: View {
         ),
         TabGuideContent(
             title: "Temple",
-            description: "Book a consultation or a pooja, and connect with trusted pandits when you want deeper guidance.",
+            description: "Book a consultation or a pooja, and connect with trusted astrologers when you want deeper guidance.",
             icon: "building.columns.fill",
             color: .cosmicCopper
         ),
@@ -8603,6 +8641,145 @@ struct VoiceModeView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Identity Quiz (Onboarding)
+
+private struct IdentityQuizView: View {
+    enum Choice: String, CaseIterable, Identifiable {
+        case seeker = "Seeker"
+        case builder = "Builder"
+        case healer = "Healer"
+        case strategist = "Strategist"
+
+        var id: String { rawValue }
+    }
+
+    private struct Question: Identifiable {
+        let id: String
+        let text: String
+        let options: [(title: String, choice: Choice)]
+    }
+
+    let onComplete: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var step: Int = 0
+    @State private var scores: [Choice: Int] = [:]
+
+    private let questions: [Question] = [
+        Question(
+            id: "q1",
+            text: "When you feel stuck, what helps most?",
+            options: [
+                ("A new perspective", .seeker),
+                ("A concrete plan", .strategist),
+                ("A small win", .builder),
+                ("A calming ritual", .healer),
+            ]
+        ),
+        Question(
+            id: "q2",
+            text: "What do you want guidance to improve first?",
+            options: [
+                ("Clarity and meaning", .seeker),
+                ("Execution and habits", .builder),
+                ("Peace and balance", .healer),
+                ("Decisions and timing", .strategist),
+            ]
+        ),
+        Question(
+            id: "q3",
+            text: "Pick a weekly theme that fits you right now.",
+            options: [
+                ("Focus", .builder),
+                ("Career", .strategist),
+                ("Calm", .healer),
+                ("Love", .seeker),
+            ]
+        ),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: Cosmic.Spacing.lg) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                    Text("Identity Quiz")
+                        .font(.cosmicTitle2)
+                    Text("Answer 3 quick questions to set your archetype.")
+                        .font(.cosmicBody)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+
+                let q = questions[min(step, questions.count - 1)]
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                    Text("Question \(step + 1) of \(questions.count)")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                    Text(q.text)
+                        .font(.cosmicHeadline)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+
+                VStack(spacing: Cosmic.Spacing.sm) {
+                    ForEach(q.options, id: \.title) { opt in
+                        Button {
+                            CosmicHaptics.light()
+                            scores[opt.choice, default: 0] += 1
+
+                            if step < questions.count - 1 {
+                                withAnimation(.cosmicSpring) { step += 1 }
+                            } else {
+                                let archetype = resolveArchetype()
+                                onComplete(archetype)
+                                dismiss()
+                            }
+                        } label: {
+                            HStack {
+                                Text(opt.title)
+                                    .font(.cosmicBodyEmphasis)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            }
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                            .padding()
+                            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                                    .stroke(Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.hairline)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal)
+
+                Spacer()
+            }
+            .padding(.top, Cosmic.Spacing.m)
+            .navigationTitle("Archetype")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Skip") {
+                        onComplete(Choice.seeker.rawValue)
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func resolveArchetype() -> String {
+        let best = scores.max(by: { $0.value < $1.value })?.key ?? .seeker
+        return best.rawValue
     }
 }
 

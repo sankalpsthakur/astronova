@@ -144,10 +144,7 @@ struct ChatPackagesSheet: View {
         // Production: Use StoreKit
         let ok = await storeKitManager.purchaseProduct(productId: pack.productId)
         if ok {
-            // Update credits after successful StoreKit purchase
-            await MainActor.run {
-                chatCredits += pack.credits
-            }
+            // Credits are updated by StoreKitManager.handleSuccessfulPurchase via AppStorage.
             handlePurchaseSuccess(credits: pack.credits)
         } else {
             await MainActor.run { showPurchaseError = true }

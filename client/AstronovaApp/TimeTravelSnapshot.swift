@@ -261,6 +261,101 @@ extension TimeTravelSnapshot {
     }
 }
 
+// MARK: - UI Test / Preview Helpers
+
+extension TimeTravelSnapshot {
+    static func sample(targetDate: Date = Date()) -> TimeTravelSnapshot {
+        let calendar = Calendar.current
+        let start = calendar.date(byAdding: .year, value: -2, to: targetDate) ?? targetDate
+        let end = calendar.date(byAdding: .year, value: 18, to: targetDate) ?? targetDate
+
+        let maha = DashaPeriodInfo(
+            lord: "Jupiter",
+            symbol: "♃",
+            startDate: start,
+            endDate: end,
+            theme: "Expansion, teachers, and long-range luck."
+        )
+        let antarStart = calendar.date(byAdding: .month, value: -6, to: targetDate) ?? targetDate
+        let antarEnd = calendar.date(byAdding: .month, value: 10, to: targetDate) ?? targetDate
+        let antar = DashaPeriodInfo(
+            lord: "Venus",
+            symbol: "♀",
+            startDate: antarStart,
+            endDate: antarEnd,
+            theme: "Relationships, beauty, and alignment."
+        )
+
+        let dasha = DashaContext(
+            mahadasha: maha,
+            antardasha: antar,
+            pratyantardasha: nil,
+            antardashaTimeline: [antar],
+            mahadashaProgress: 0.42,
+            antardashaProgress: 0.33
+        )
+
+        let planets: [PlanetState] = [
+            PlanetState(id: "sun", name: "Sun", symbol: "☉", longitude: 128.2, sign: "Leo", degree: 8.2, house: nil, significance: "Vitality, visibility.", isRetrograde: false, speed: 0.98),
+            PlanetState(id: "moon", name: "Moon", symbol: "☾", longitude: 242.1, sign: "Sagittarius", degree: 2.1, house: nil, significance: "Emotions, instincts.", isRetrograde: false, speed: 13.1),
+            PlanetState(id: "mercury", name: "Mercury", symbol: "☿", longitude: 101.7, sign: "Cancer", degree: 11.7, house: nil, significance: "Mind, messages.", isRetrograde: true, speed: -0.2),
+            PlanetState(id: "venus", name: "Venus", symbol: "♀", longitude: 312.4, sign: "Aquarius", degree: 12.4, house: nil, significance: "Love, values.", isRetrograde: false, speed: 1.1, isAntardashaLord: true),
+            PlanetState(id: "mars", name: "Mars", symbol: "♂", longitude: 20.6, sign: "Aries", degree: 20.6, house: nil, significance: "Drive, courage.", isRetrograde: false, speed: 0.7),
+            PlanetState(id: "jupiter", name: "Jupiter", symbol: "♃", longitude: 55.0, sign: "Taurus", degree: 25.0, house: nil, significance: "Growth, mentors.", isRetrograde: false, speed: 0.08, isDashaLord: true),
+            PlanetState(id: "saturn", name: "Saturn", symbol: "♄", longitude: 305.2, sign: "Aquarius", degree: 5.2, house: nil, significance: "Structure, time.", isRetrograde: true, speed: -0.02),
+            PlanetState(id: "rahu", name: "Rahu", symbol: "☊", longitude: 185.0, sign: "Libra", degree: 5.0, house: nil, significance: "Desire, hunger.", isRetrograde: true, speed: -0.05),
+            PlanetState(id: "ketu", name: "Ketu", symbol: "☋", longitude: 5.0, sign: "Aries", degree: 5.0, house: nil, significance: "Release, clarity.", isRetrograde: true, speed: -0.05),
+            PlanetState(id: "ascendant", name: "Ascendant", symbol: "↑", longitude: 90.0, sign: "Cancer", degree: 0.0, house: 1, significance: "Approach, presence.", isRetrograde: false, speed: 0.0),
+        ]
+
+        let aspects: [ActiveAspect] = [
+            ActiveAspect(
+                planet1: "sun",
+                planet2: "moon",
+                type: .trine,
+                orb: 1.8,
+                isApplying: true,
+                significance: "Head and heart cooperate; decisions land cleanly."
+            )
+        ]
+
+        let now = NowInsight(
+            theme: "Build the next chapter with calm conviction.",
+            risk: "Overcommitting to someone else’s timeline.",
+            opportunity: "Make one decisive move that simplifies the week.",
+            expandedDetail: "Your current dasha emphasis supports steady growth. If you pick a direction and remove noise, progress accelerates."
+        )
+
+        let transitionDate = calendar.date(byAdding: .day, value: 23, to: targetDate) ?? targetDate
+        let nextTransitions: [NextTransition] = [
+            NextTransition(
+                transitionType: .antardasha,
+                targetDate: transitionDate,
+                daysUntil: 23,
+                whatShifts: "Near-term focus shifts from Venus to Mercury themes.",
+                fromLord: "Venus",
+                toLord: "Mercury"
+            )
+        ]
+
+        let act = ActionGuidance(
+            doThis: "Write down your next 3 moves. Execute the first today.",
+            avoidThis: "Starting new commitments without an end date.",
+            whyExplanation: "This phase rewards clean priorities and bounded effort."
+        )
+
+        return TimeTravelSnapshot(
+            targetDate: targetDate,
+            planets: planets,
+            currentDasha: dasha,
+            aspects: aspects,
+            now: now,
+            nextTransitions: nextTransitions,
+            act: act
+        )
+    }
+}
+
 // MARK: - Builder Helpers
 
 private extension TimeTravelSnapshot {

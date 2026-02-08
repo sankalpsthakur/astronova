@@ -24,7 +24,7 @@ struct MeaningStack: View {
     // MARK: - Full Stack (2 cards)
 
     private var fullStack: some View {
-        VStack(spacing: Cosmic.Spacing.sm) {
+        VStack(spacing: Cosmic.Spacing.md) {
             nowCard
             nextCard
         }
@@ -34,68 +34,103 @@ struct MeaningStack: View {
 
     private var nowCard: some View {
         Button(action: onNowTapped) {
-            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-                // Header
-                HStack {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
+                // Header: NOW label + dasha lords as cause
+                HStack(alignment: .center) {
                     Text("NOW")
-                        .font(.cosmicCaptionEmphasis)
-                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .cosmicUppercaseLabel()
+                        .foregroundStyle(Color.cosmicGold)
 
                     Spacer()
 
-                    // Dasha lords with symbols
-                    HStack(spacing: Cosmic.Spacing.xxs) {
+                    // Dasha lords as a glowing pairing
+                    HStack(spacing: Cosmic.Spacing.xs) {
                         Text(snapshot.currentDasha.mahadasha.symbol)
+                            .font(.cosmicTitle1)
+                            .cosmicFloat(amount: 3)
+                        Text("·")
                             .font(.cosmicTitle2)
-                        Text("•")
-                            .foregroundStyle(Color.cosmicTextSecondary)
+                            .foregroundStyle(Color.cosmicTextTertiary)
                         Text(snapshot.currentDasha.antardasha.symbol)
-                            .font(.cosmicTitle2)
+                            .font(.cosmicTitle1)
+                            .cosmicFloat(amount: 3)
                     }
                 }
 
-                // Theme - with fallback to ensure visibility
-                Text(snapshot.now.theme.isEmpty ? "\(snapshot.currentDasha.mahadasha.lord) • \(snapshot.currentDasha.antardasha.lord) Period" : snapshot.now.theme)
-                    .font(.cosmicHeadline)
-                    .foregroundStyle(Color.cosmicTextPrimary)
+                // Theme headline -- the revelation
+                Text(snapshot.now.theme.isEmpty
+                     ? "\(snapshot.currentDasha.mahadasha.lord) \u{00B7} \(snapshot.currentDasha.antardasha.lord) Period"
+                     : snapshot.now.theme)
+                    .font(.cosmicTitle1)
+                    .tracking(CosmicTypography.Tracking.title)
+                    .cosmicCelestialGradient()
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
+                    .cosmicBreathingGlow(color: .cosmicGold)
 
-                // Risk & Opportunity
-                HStack(spacing: Cosmic.Spacing.md) {
+                // Risk & Opportunity -- vertically stacked with accent bars
+                VStack(spacing: Cosmic.Spacing.xs) {
                     // Risk
                     HStack(spacing: Cosmic.Spacing.xs) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicWarning)
-                        Text(snapshot.now.risk.isEmpty ? "Be mindful" : snapshot.now.risk)
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicTextSecondary)
-                    }
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.cosmicError)
+                            .frame(width: Cosmic.Border.accent, height: 20)
 
-                    Spacer()
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.cosmicCallout)
+                            .foregroundStyle(Color.cosmicError)
+
+                        Text(snapshot.now.risk.isEmpty ? "Be mindful" : snapshot.now.risk)
+                            .font(.cosmicCalloutEmphasis)
+                            .foregroundStyle(Color.cosmicError)
+
+                        Spacer()
+                    }
+                    .padding(.vertical, Cosmic.Spacing.xs)
+                    .padding(.horizontal, Cosmic.Spacing.sm)
+                    .background(
+                        Color.cosmicError.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: Cosmic.Radius.subtle)
+                    )
 
                     // Opportunity
                     HStack(spacing: Cosmic.Spacing.xs) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.cosmicSuccess)
+                            .frame(width: Cosmic.Border.accent, height: 20)
+
                         Image(systemName: "sparkles")
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicGold)
+                            .font(.cosmicCallout)
+                            .foregroundStyle(Color.cosmicSuccess)
+
                         Text(snapshot.now.opportunity.isEmpty ? "Growth available" : snapshot.now.opportunity)
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicTextSecondary)
+                            .font(.cosmicCalloutEmphasis)
+                            .foregroundStyle(Color.cosmicSuccess)
+
+                        Spacer()
                     }
+                    .padding(.vertical, Cosmic.Spacing.xs)
+                    .padding(.horizontal, Cosmic.Spacing.sm)
+                    .background(
+                        Color.cosmicSuccess.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: Cosmic.Radius.subtle)
+                    )
                 }
             }
-            .padding()
-            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+            .padding(Cosmic.Spacing.screen)
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(LinearGradient(
-                        colors: [.cosmicGold.opacity(0.3), .cosmicGold.opacity(0.1)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ), lineWidth: 1)
+                RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.cosmicGold, .cosmicGold.opacity(0.3)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: Cosmic.Border.thick
+                    )
             )
+            .cosmicElevation(.medium)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -109,53 +144,114 @@ struct MeaningStack: View {
     private var nextCard: some View {
         if let soonest = nextTransition {
             Button(action: onNextTapped) {
-                VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-                    // Header with countdown
-                    HStack {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
+                    // Header with hero countdown
+                    HStack(alignment: .top) {
                         Text("NEXT")
-                            .font(.cosmicCaptionEmphasis)
+                            .cosmicUppercaseLabel()
                             .foregroundStyle(Color.cosmicTextSecondary)
 
                         Spacer()
 
-                        Text("\(soonest.transitionType.shortLabel) in \(soonest.countdownShort)")
-                            .font(.cosmicCaptionEmphasis)
-                            .foregroundStyle(Color.cosmicInfo)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.cosmicInfo.opacity(0.15), in: Capsule())
+                        // Hero countdown for soonest transition
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(countdownNumber(soonest))
+                                .font(.cosmicMonoLarge)
+                                .cosmicGoldGradient()
+                            Text(countdownUnit(soonest))
+                                .font(.cosmicMicro)
+                                .foregroundStyle(Color.cosmicTextTertiary)
+                        }
                     }
 
-                    // High-density timeline: praty / antar / maha
-                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-                        ForEach(snapshot.nextTransitions.prefix(3)) { transition in
-                            HStack(spacing: Cosmic.Spacing.sm) {
-                                Text(transition.transitionType.shortLabel)
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(transitionColor(for: transition.transitionType))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(transitionColor(for: transition.transitionType).opacity(0.14), in: Capsule())
+                    // Timeline visualization
+                    VStack(alignment: .leading, spacing: 0) {
+                        let transitions = Array(snapshot.nextTransitions.prefix(3))
+                        ForEach(Array(transitions.enumerated()), id: \.element.id) { index, transition in
+                            HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
+                                // Timeline node + connector
+                                VStack(spacing: 0) {
+                                    // Node circle -- size escalates with transition importance
+                                    Circle()
+                                        .fill(transitionColor(for: transition.transitionType))
+                                        .frame(
+                                            width: nodeSize(for: transition.transitionType),
+                                            height: nodeSize(for: transition.transitionType)
+                                        )
+                                        .overlay(
+                                            // Outer ring for antardasha+
+                                            Circle()
+                                                .stroke(
+                                                    transitionColor(for: transition.transitionType).opacity(0.4),
+                                                    lineWidth: transition.transitionType == .pratyantardasha ? 0 : 1.5
+                                                )
+                                                .frame(
+                                                    width: nodeSize(for: transition.transitionType) + 6,
+                                                    height: nodeSize(for: transition.transitionType) + 6
+                                                )
+                                        )
 
-                                Text("\(transition.fromLord) → \(transition.toLord)")
-                                    .font(.cosmicCalloutEmphasis)
+                                    // Connector line (except last)
+                                    if index < transitions.count - 1 {
+                                        Rectangle()
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [
+                                                        transitionColor(for: transition.transitionType).opacity(0.4),
+                                                        transitionColor(for: transitions[index + 1].transitionType).opacity(0.4)
+                                                    ],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
+                                            )
+                                            .frame(width: 2)
+                                            .frame(maxHeight: .infinity)
+                                    }
+                                }
+                                .frame(width: 22)
 
-                                Spacer()
+                                // Transition content
+                                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                                    HStack(spacing: Cosmic.Spacing.xs) {
+                                        Text(transition.transitionType.shortLabel)
+                                            .font(transitionLabelFont(for: transition.transitionType))
+                                            .foregroundStyle(transitionColor(for: transition.transitionType))
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
+                                            .background(
+                                                transitionColor(for: transition.transitionType).opacity(0.14),
+                                                in: Capsule()
+                                            )
 
-                                Text(transition.countdownShort)
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(Color.cosmicTextSecondary)
+                                        Text("\(transition.fromLord) \u{2192} \(transition.toLord)")
+                                            .font(transitionBodyFont(for: transition.transitionType))
+                                            .foregroundStyle(Color.cosmicTextPrimary)
+
+                                        Spacer()
+
+                                        Text(transition.countdownShort)
+                                            .font(transitionCountdownFont(for: transition.transitionType))
+                                            .foregroundStyle(urgencyColor(daysUntil: transition.daysUntil))
+                                    }
+
+                                    // Inline whatShifts description
+                                    Text(transition.whatShifts)
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextTertiary)
+                                        .lineLimit(2)
+                                }
+                                .padding(.bottom, index < transitions.count - 1 ? Cosmic.Spacing.md : 0)
                             }
                         }
-
-                        Text(soonest.whatShifts)
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicTextSecondary)
-                            .lineLimit(2)
                     }
                 }
-                .padding()
-                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                .padding(Cosmic.Spacing.screen)
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                        .stroke(Color.cosmicTextTertiary.opacity(0.15), lineWidth: Cosmic.Border.thin)
+                )
+                .cosmicElevation(.low)
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
@@ -170,7 +266,7 @@ struct MeaningStack: View {
             // Dasha summary
             HStack(spacing: Cosmic.Spacing.xxs) {
                 Text(snapshot.currentDasha.mahadasha.symbol)
-                Text("•")
+                Text("\u{00B7}")
                     .foregroundStyle(Color.cosmicTextSecondary)
                 Text(snapshot.currentDasha.antardasha.symbol)
             }
@@ -208,6 +304,8 @@ struct MeaningStack: View {
     }
 }
 
+// MARK: - Helpers
+
 private extension MeaningStack {
     func transitionColor(for type: TransitionType) -> Color {
         switch type {
@@ -215,5 +313,58 @@ private extension MeaningStack {
         case .antardasha: return .cosmicInfo
         case .mahadasha: return .cosmicGold
         }
+    }
+
+    func nodeSize(for type: TransitionType) -> CGFloat {
+        switch type {
+        case .pratyantardasha: return 8
+        case .antardasha: return 12
+        case .mahadasha: return 16
+        }
+    }
+
+    func transitionLabelFont(for type: TransitionType) -> Font {
+        switch type {
+        case .pratyantardasha: return .caption2.weight(.bold)
+        case .antardasha: return .caption.weight(.bold)
+        case .mahadasha: return .callout.weight(.bold)
+        }
+    }
+
+    func transitionBodyFont(for type: TransitionType) -> Font {
+        switch type {
+        case .pratyantardasha: return .cosmicCalloutEmphasis
+        case .antardasha: return .cosmicBodyEmphasis
+        case .mahadasha: return .cosmicHeadline
+        }
+    }
+
+    func transitionCountdownFont(for type: TransitionType) -> Font {
+        switch type {
+        case .pratyantardasha: return .caption.monospacedDigit()
+        case .antardasha: return .callout.monospacedDigit()
+        case .mahadasha: return .body.weight(.semibold).monospacedDigit()
+        }
+    }
+
+    func urgencyColor(daysUntil: Int) -> Color {
+        if daysUntil < 7 { return .cosmicCopper }
+        if daysUntil < 30 { return .cosmicAmethyst }
+        return .cosmicTextSecondary
+    }
+
+    func countdownNumber(_ transition: NextTransition) -> String {
+        if transition.daysUntil < 30 { return "\(transition.daysUntil)" }
+        let months = max(1, transition.daysUntil / 30)
+        if months < 24 { return "\(months)" }
+        return "\(max(1, months / 12))"
+    }
+
+    func countdownUnit(_ transition: NextTransition) -> String {
+        if transition.daysUntil < 30 { return transition.daysUntil == 1 ? "day" : "days" }
+        let months = max(1, transition.daysUntil / 30)
+        if months < 24 { return months == 1 ? "month" : "months" }
+        let years = max(1, months / 12)
+        return years == 1 ? "year" : "years"
     }
 }

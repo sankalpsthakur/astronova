@@ -60,26 +60,26 @@ struct PaywallView: View {
     private var heroTitle: String {
         switch context {
         case .chatLimit:
-            return "Keep Chatting"
+            return "Continue Your Journey"
         case .report:
-            return "Unlock Your Report"
+            return "Deeper Journeys"
         case .home:
-            return "Unlock Everything"
+            return "Deeper Journeys"
         case .general:
-            return "Unlock Everything"
+            return "Deeper Journeys"
         }
     }
 
     private var heroSubtitle: String {
         switch (context, paywallVariant) {
         case (.chatLimit, _):
-            return "You’ve hit today’s free limit. Go Pro for unlimited Ask."
+            return "You’ve hit today’s free limit. Unlock deeper journeys for unlimited guidance."
         case (.report, _):
-            return "Go Pro to access all detailed reports — saved to your library."
+            return "Unlock deeper journeys: full reports, saved chapters, and unlimited guidance."
         case (.home, "B"):
-            return "Premium guidance + unlimited chat, every day."
+            return "Your next chapter: premium guidance and unlimited chat."
         default:
-            return "Unlimited chat + all detailed reports"
+            return "Unlimited chat, full reports, and deeper journeys."
         }
     }
 
@@ -123,7 +123,7 @@ struct PaywallView: View {
     }
     
     private var purchaseButtonTitle: String {
-        isPurchasing ? "Purchasing..." : "Start Pro for \(subscriptionPrice)/month"
+        isPurchasing ? "Purchasing..." : "Begin deeper journeys for \(subscriptionPrice)/month"
     }
 
     // MARK: - App Store Compliance URLs

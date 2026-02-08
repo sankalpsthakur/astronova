@@ -168,6 +168,13 @@ class StoreKitManager: ObservableObject {
     @discardableResult
     func restorePurchases() async -> Bool {
         let hadProBefore = hasProSubscription
+        do {
+            try await AppStore.sync()
+        } catch {
+            #if DEBUG
+            debugPrint("[StoreKit] AppStore sync failed: \(error.localizedDescription)")
+            #endif
+        }
         await checkCurrentEntitlements()
         return hasProSubscription || hadProBefore
     }

@@ -40,6 +40,24 @@ enum AnalyticsEvent: String {
     case compatibilityAnalyzed = "compatibility_analyzed"
     case chartGenerated = "chart_generated"
 
+    // GAMIFICATION / PROGRESSION
+    case streakCheckIn = "streak_check_in"
+    case cardUnlocked = "card_unlocked"
+    case insightShared = "insight_shared"
+    case journeyMilestoneUnlocked = "journey_milestone_unlocked"
+    case oracleActionCompleted = "oracle_action_completed"
+    case activationOracleAction = "activation_oracle_action"
+    case timeTravelSnapshotViewed = "time_travel_snapshot_viewed"
+    case templeEngagementCompleted = "temple_engagement_completed"
+    case weeklyChapterCompleted = "weekly_chapter_completed"
+    case templeBellRung = "temple_bell_rung"
+    case templeBellStreakBonus = "temple_bell_streak_bonus"
+    case diyPoojaStarted = "diy_pooja_started"
+    case diyPoojaStepCompleted = "diy_pooja_step_completed"
+    case diyPoojaCompleted = "diy_pooja_completed"
+    case muhuratChecked = "muhurat_checked"
+    case vedicEntryRead = "vedic_entry_read"
+
     // NEW ERROR TRACKING EVENTS
     case networkError = "network_error"
     case apiError = "api_error"

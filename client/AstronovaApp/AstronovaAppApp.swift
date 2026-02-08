@@ -13,6 +13,7 @@ import SmartlookAnalytics
 @main
 struct AstronovaAppApp: App {
     @StateObject private var authState: AuthState
+    @StateObject private var gamification = GamificationManager()
 
     init() {
         // Initialize Smartlook BEFORE any UI state
@@ -61,6 +62,7 @@ struct AstronovaAppApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(authState)
+                .environmentObject(gamification)
                 .onAppear {
                     if !TestEnvironment.shared.isUITest {
                         Analytics.shared.track(.appLaunched, properties: nil)

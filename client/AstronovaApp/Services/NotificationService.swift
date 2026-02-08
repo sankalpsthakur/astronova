@@ -23,7 +23,7 @@ final class NotificationService: ObservableObject {
 
     func scheduleDailyReminder(at hour: Int) async {
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["daily_reminder"]) 
+        center.removePendingNotificationRequests(withIdentifiers: ["daily_reminder"])
 
         var date = DateComponents()
         date.hour = hour
@@ -36,5 +36,29 @@ final class NotificationService: ObservableObject {
         let trigger = UNCalendarNotificationTrigger(dateMatching: date, repeats: true)
         let request = UNNotificationRequest(identifier: "daily_reminder", content: content, trigger: trigger)
         try? await center.add(request)
+    }
+
+    // MARK: - Temple Bell Reminder
+
+    func scheduleTempleBellReminder(at hour: Int) async {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["temple_bell_daily_reminder"])
+
+        var date = DateComponents()
+        date.hour = hour
+
+        let content = UNMutableNotificationContent()
+        content.title = "Ring Your Temple Bell"
+        content.body = "Maintain your streak! Tap to ring the bell and continue your spiritual practice."
+        content.sound = .default
+
+        let trigger = UNCalendarNotificationTrigger(dateMatching: date, repeats: true)
+        let request = UNNotificationRequest(identifier: "temple_bell_daily_reminder", content: content, trigger: trigger)
+        try? await center.add(request)
+    }
+
+    func cancelTempleBellReminder() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["temple_bell_daily_reminder"])
     }
 }

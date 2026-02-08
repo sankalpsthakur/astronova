@@ -135,7 +135,7 @@
 /* Temple */
 "temple.title" = "Temple";
 "temple.selectPooja" = "Select Pooja Type";
-"temple.selectPandit" = "Select Pandit";
+"temple.selectPandit" = "Select Astrologer";
 "temple.sections.astrologers" = "Astrologers";
 "temple.sections.pooja" = "Pooja";
 "temple.sections.astrologersHint" = "Shows available astrologers";
@@ -158,11 +158,55 @@
 "temple.astrologers.expertiseTitle" = "Expertise";
 "temple.astrologers.status.available" = "Available now.";
 "temple.astrologers.status.offline" = "Currently offline.";
-"temple.astrologers.cardAccessibilityLabel" = "Pandit %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@";
+"temple.astrologers.cardAccessibilityLabel" = "Astrologer %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@";
 "temple.astrologers.cardAccessibilityHint" = "Double tap to view astrologer details";
-"temple.muhurat.title" = "Today's Muhurat";
-"temple.muhurat.subtitle" = "Auspicious timings for the day";
-"temple.muhurat.accessibilityLabel" = "%@. %@ timing. %@. %@";
+/* Temple - Bell */
+"temple.bell.ringTheBell" = "ঘণ্টা বাজান";
+"temple.bell.rungToday" = "আজ বাজানো হয়েছে";
+"temple.bell.dayStreak" = "দিনের ধারা";
+"temple.bell.longestStreak" = "দীর্ঘতম";
+"temple.bell.reminderTitle" = "দৈনিক স্মারক";
+"temple.bell.reminderSubtitle" = "মন্দিরের ঘণ্টা বাজাতে দৈনিক বিজ্ঞপ্তি পান";
+
+/* Temple - DIY Pooja */
+"temple.diyPooja.sectionTitle" = "DIY পূজা গাইড";
+"temple.diyPooja.sectionSubtitle" = "ধাপে ধাপে পবিত্র অনুষ্ঠান";
+"temple.diyPooja.startPooja" = "পূজা শুরু করুন";
+"temple.diyPooja.ingredients" = "উপকরণ";
+"temple.diyPooja.steps" = "ধাপ";
+"temple.diyPooja.significance" = "তাৎপর্য";
+"temple.diyPooja.mantra" = "মন্ত্র";
+"temple.diyPooja.meaning" = "অর্থ";
+"temple.diyPooja.transliteration" = "লিপ্যন্তর";
+"temple.diyPooja.optional" = "ঐচ্ছিক";
+"temple.diyPooja.required" = "আবশ্যক";
+"temple.diyPooja.stepOf" = "ধাপ %d / %d";
+"temple.diyPooja.complete" = "সম্পন্ন";
+"temple.diyPooja.timer" = "টাইমার";
+"temple.diyPooja.xpAwarded" = "+%d XP";
+"temple.diyPooja.completionTitle" = "পূজা সম্পন্ন!";
+"temple.diyPooja.completionSubtitle" = "দিব্য আশীর্বাদ আপনার সাথে থাকুক";
+"temple.diyPooja.returnToTemple" = "মন্দিরে ফিরে যান";
+
+/* Temple - Muhurat */
+"temple.muhurat.title" = "আজকের মুহূর্ত";
+"temple.muhurat.subtitle" = "দিনের শুভ সময়";
+"temple.muhurat.calculatorTitle" = "ক্যালকুলেটর";
+"temple.muhurat.selectDate" = "তারিখ নির্বাচন করুন";
+"temple.muhurat.panchang" = "পঞ্চাঙ্গ";
+"temple.muhurat.tithi" = "তিথি";
+"temple.muhurat.nakshatra" = "নক্ষত্র";
+"temple.muhurat.yoga" = "যোগ";
+"temple.muhurat.karana" = "করণ";
+"temple.muhurat.accessibilityLabel" = "%@. %@ সময়. %@. %@";
+
+/* Temple - Vedic Library */
+"temple.library.sectionTitle" = "বৈদিক জ্ঞান";
+"temple.library.sectionSubtitle" = "আধুনিক সাধকদের জন্য প্রাচীন জ্ঞান";
+"temple.library.browseAll" = "সব দেখুন";
+"temple.library.searchPlaceholder" = "বৈদিক গ্রন্থ খুঁজুন...";
+"temple.library.noResults" = "কোনো এন্ট্রি পাওয়া যায়নি";
+"temple.library.source" = "উৎস:";
 "temple.pooja.ritualsTitle" = "Sacred Rituals";
 "temple.pooja.ritualsSubtitle" = "Perform poojas with complete ingredients";
 "temple.pooja.itemsCount" = "%d items";
@@ -192,7 +236,7 @@
 "temple.booking.sankalpNakshatraTitle" = "Nakshatra (optional)";
 "temple.booking.sankalpNakshatraPlaceholder" = "Birth star";
 "temple.booking.specialRequestsLabel" = "Special requests";
-"temple.booking.specialRequestsHint" = "Optional. Add any special instructions for the pandit";
+"temple.booking.specialRequestsHint" = "Optional. Add any special instructions for your astrologer";
 "temple.booking.poojaDateLabel" = "Pooja date";
 "temple.booking.poojaDateHint" = "Select the date for your pooja ceremony";
 "temple.booking.timeSlotLabel" = "Time slot %@";
@@ -203,7 +247,7 @@
 "temple.booking.confirmedTitle" = "Booking Confirmed!";
 "temple.booking.confirmedMessage" = "Your pooja is scheduled for %@ at %@. You will receive a session link before the scheduled time.";
 "temple.booking.signInTitle" = "Sign in to book a pooja";
-"temple.booking.signInMessage" = "Confirm your details and reserve a pandit time slot.";
+"temple.booking.signInMessage" = "Confirm your details and reserve a time slot.";
 "temple.consultation.selectDate" = "Select Date";
 "temple.consultation.selectTime" = "Select Time";
 "temple.consultation.duration" = "Duration";

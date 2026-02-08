@@ -6,6 +6,7 @@ import SwiftUI
 
 struct SelfTabView: View {
     @EnvironmentObject private var auth: AuthState
+    @EnvironmentObject private var gamification: GamificationManager
     @StateObject private var dataService = SelfDataService()
     @AppStorage("hasAstronovaPro") private var hasProSubscription = false
 
@@ -27,6 +28,7 @@ struct SelfTabView: View {
         case settings
         case paywall
         case dashaDetail
+        case journeyMap
         case reportDetail(DetailedReport)
         case reportShop
         case reportsLibrary
@@ -41,6 +43,8 @@ struct SelfTabView: View {
                 return "paywall"
             case .dashaDetail:
                 return "dashaDetail"
+            case .journeyMap:
+                return "journeyMap"
             case .reportDetail(let report):
                 return "reportDetail-\(report.reportId)"
             case .reportShop:
@@ -70,6 +74,15 @@ struct SelfTabView: View {
 
                     // HERO: Cosmic Pulse (Dasha)
                     cosmicPulseSection
+
+                    // Journey Map (gamified progression)
+                    JourneyMapCard(
+                        levelTitle: gamification.level.title,
+                        streak: gamification.streak,
+                        milestones: gamification.milestones
+                    ) {
+                        activeSheet = .journeyMap
+                    }
 
                     // Essence Bar (Nakshatra + Lagna) - requires full data for lagna
                     if completeness.canCalculateLagna && (dataService.moonNakshatra != nil || dataService.lagna != nil) {
@@ -162,6 +175,11 @@ struct SelfTabView: View {
                 NavigationStack {
                     EnhancedTimeTravelView()
                         .environmentObject(auth)
+                }
+            case .journeyMap:
+                NavigationStack {
+                    JourneyMapView()
+                        .environmentObject(gamification)
                 }
             case .reportDetail(let report):
                 ReportDetailView(report: report)
@@ -340,6 +358,121 @@ struct SelfTabView: View {
             currentYear: 1,
             totalYears: 7
         )
+    }
+}
+
+private struct JourneyMapCard: View {
+    let levelTitle: String
+    let streak: Int
+    let milestones: Set<JourneyMilestone>
+    let onOpen: () -> Void
+
+    var body: some View {
+        Button {
+            CosmicHaptics.light()
+            onOpen()
+        } label: {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Journey Map")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                        Text(levelTitle)
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Streak")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                        Text("\(streak)")
+                            .font(.cosmicCalloutEmphasis)
+                            .foregroundStyle(Color.cosmicGold)
+                            .monospacedDigit()
+                    }
+                }
+
+                let completed = milestones.count
+                Text("\(completed) milestone\(completed == 1 ? "" : "s") completed")
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+
+                HStack(spacing: 6) {
+                    ForEach(JourneyMilestone.allCases.prefix(5), id: \.self) { m in
+                        Circle()
+                            .fill(milestones.contains(m) ? Color.cosmicGold : Color.cosmicSurface)
+                            .frame(width: 8, height: 8)
+                            .overlay(
+                                Circle().stroke(Color.cosmicGold.opacity(0.25), lineWidth: 1)
+                            )
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+            }
+            .padding()
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                    .stroke(Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.hairline)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct JourneyMapView: View {
+    @EnvironmentObject private var gamification: GamificationManager
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                    Text("Seeker Level")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                    Text(gamification.level.title)
+                        .font(.cosmicTitle1)
+                }
+                .padding()
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                    Text("Milestones")
+                        .font(.cosmicHeadline)
+                    ForEach(JourneyMilestone.allCases, id: \.self) { m in
+                        HStack(spacing: Cosmic.Spacing.sm) {
+                            Image(systemName: gamification.milestones.contains(m) ? "checkmark.seal.fill" : "circle")
+                                .foregroundStyle(gamification.milestones.contains(m) ? Color.cosmicGold : Color.cosmicTextSecondary)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(m.title)
+                                    .font(.cosmicCalloutEmphasis)
+                                Text(m.subtitle)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
+                .padding()
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+            }
+            .padding()
+        }
+        .navigationTitle("Journey Map")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") { dismiss() }
+            }
+        }
     }
 }
 

@@ -15,9 +15,9 @@ final class AppConfig {
         }
 
         #if DEBUG
-        // Debug + Simulator: use localhost
+        // Debug + Simulator: use production (local server not running)
         #if targetEnvironment(simulator)
-        apiBaseURL = "http://127.0.0.1:8080"
+        apiBaseURL = "https://astronova.onrender.com"
         #else
         // Debug + Real device: use production (for testing)
         apiBaseURL = "https://astronova.onrender.com"

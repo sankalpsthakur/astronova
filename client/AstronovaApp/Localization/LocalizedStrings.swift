@@ -543,10 +543,10 @@ enum L10n {
         }
     }
 
-    enum Temple {
-        static let title = tr("temple.title", "Temple", "Temple feature title")
-        static let selectPooja = tr("temple.selectPooja", "Select Pooja Type", "Select pooja section header")
-        static let selectPandit = tr("temple.selectPandit", "Select Pandit", "Select pandit section header")
+        enum Temple {
+            static let title = tr("temple.title", "Temple", "Temple feature title")
+            static let selectPooja = tr("temple.selectPooja", "Select Pooja Type", "Select pooja section header")
+            static let selectPandit = tr("temple.selectPandit", "Select Astrologer", "Select astrologer section header")
 
         enum Sections {
             static let astrologers = tr("temple.sections.astrologers", "Astrologers", "Temple section")
@@ -662,7 +662,7 @@ enum L10n {
                     : tr("temple.astrologers.status.offline", "Currently offline.", "Astrologer status")
                 let format = tr(
                     "temple.astrologers.cardAccessibilityLabel",
-                    "Pandit %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@",
+                    "Astrologer %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@",
                     "Astrologer card accessibility label"
                 )
                 return String.localizedStringWithFormat(format, name, experience, rating, specialization, pricePerMinute, status)
@@ -674,6 +674,58 @@ enum L10n {
             )
         }
 
+        enum Bell {
+            static let ringTheBell = tr("temple.bell.ringTheBell", "Ring the Bell", "Bell CTA")
+            static let rungToday = tr("temple.bell.rungToday", "Rung Today", "Bell already rung")
+            static let dayStreak = tr("temple.bell.dayStreak", "Day Streak", "Bell streak label")
+            static let longestStreak = tr("temple.bell.longestStreak", "Longest", "Bell longest streak")
+            static let reminderTitle = tr("temple.bell.reminderTitle", "Daily Reminder", "Bell reminder title")
+            static let reminderSubtitle = tr(
+                "temple.bell.reminderSubtitle",
+                "Get a daily notification to ring your temple bell",
+                "Bell reminder subtitle"
+            )
+        }
+
+        enum DIYPooja {
+            static let sectionTitle = tr("temple.diyPooja.sectionTitle", "DIY Pooja Guides", "DIY pooja section title")
+            static let sectionSubtitle = tr(
+                "temple.diyPooja.sectionSubtitle",
+                "Step-by-step sacred rituals",
+                "DIY pooja section subtitle"
+            )
+            static let startPooja = tr("temple.diyPooja.startPooja", "Start Pooja", "Start pooja CTA")
+            static let ingredients = tr("temple.diyPooja.ingredients", "Ingredients", "Ingredients section")
+            static let steps = tr("temple.diyPooja.steps", "Steps", "Steps section")
+            static let significance = tr("temple.diyPooja.significance", "Significance", "Significance section")
+            static let mantra = tr("temple.diyPooja.mantra", "Mantra", "Mantra label")
+            static let meaning = tr("temple.diyPooja.meaning", "Meaning", "Meaning label")
+            static let transliteration = tr("temple.diyPooja.transliteration", "Transliteration", "Transliteration label")
+            static let optional = tr("temple.diyPooja.optional", "Optional", "Optional item label")
+            static let required = tr("temple.diyPooja.required", "Required", "Required item label")
+            static func stepOf(_ step: Int, _ total: Int) -> String {
+                let format = tr("temple.diyPooja.stepOf", "Step %d of %d", "Step counter")
+                return String.localizedStringWithFormat(format, step, total)
+            }
+            static func step(_ step: Int, _ total: Int) -> String {
+                let format = tr("temple.diyPooja.stepOf", "Step %d of %d", "Step counter")
+                return String.localizedStringWithFormat(format, step, total)
+            }
+            static let complete = tr("temple.diyPooja.complete", "Complete", "Complete step CTA")
+            static let timer = tr("temple.diyPooja.timer", "Timer", "Timer label")
+            static func xpAwarded(_ xp: Int) -> String {
+                let format = tr("temple.diyPooja.xpAwarded", "+%d XP", "XP awarded format")
+                return String.localizedStringWithFormat(format, xp)
+            }
+            static let completionTitle = tr("temple.diyPooja.completionTitle", "Pooja Complete!", "Completion title")
+            static let completionSubtitle = tr(
+                "temple.diyPooja.completionSubtitle",
+                "May the divine blessings be with you",
+                "Completion subtitle"
+            )
+            static let returnToTemple = tr("temple.diyPooja.returnToTemple", "Return to Temple", "Return CTA")
+        }
+
         enum Muhurat {
             static let title = tr("temple.muhurat.title", "Today's Muhurat", "Muhurat section title")
             static let subtitle = tr(
@@ -681,6 +733,13 @@ enum L10n {
                 "Auspicious timings for the day",
                 "Muhurat section subtitle"
             )
+            static let calculatorTitle = tr("temple.muhurat.calculatorTitle", "Calculator", "Muhurat calculator link")
+            static let selectDate = tr("temple.muhurat.selectDate", "Select Date", "Muhurat date picker title")
+            static let panchang = tr("temple.muhurat.panchang", "Panchang", "Panchang section label")
+            static let tithi = tr("temple.muhurat.tithi", "Tithi", "Panchang tithi label")
+            static let nakshatra = tr("temple.muhurat.nakshatra", "Nakshatra", "Panchang nakshatra label")
+            static let yoga = tr("temple.muhurat.yoga", "Yoga", "Panchang yoga label")
+            static let karana = tr("temple.muhurat.karana", "Karana", "Panchang karana label")
             static func accessibilityLabel(
                 name: String,
                 quality: String,
@@ -694,6 +753,19 @@ enum L10n {
                 )
                 return String.localizedStringWithFormat(format, name, quality, timeRange, description)
             }
+        }
+
+        enum Library {
+            static let sectionTitle = tr("temple.library.sectionTitle", "Vedic Wisdom", "Library section title")
+            static let sectionSubtitle = tr(
+                "temple.library.sectionSubtitle",
+                "Ancient knowledge for modern seekers",
+                "Library section subtitle"
+            )
+            static let browseAll = tr("temple.library.browseAll", "Browse All", "Browse all link")
+            static let searchPlaceholder = tr("temple.library.searchPlaceholder", "Search Vedic texts...", "Library search placeholder")
+            static let noResults = tr("temple.library.noResults", "No entries found", "Library no results")
+            static let source = tr("temple.library.source", "Source:", "Library source label")
         }
 
         enum Pooja {
@@ -810,7 +882,7 @@ enum L10n {
             )
             static let specialRequestsHint = tr(
                 "temple.booking.specialRequestsHint",
-                "Optional. Add any special instructions for the pandit",
+                "Optional. Add any special instructions for your astrologer",
                 "Special requests accessibility hint"
             )
             static let poojaDateLabel = tr(
@@ -867,7 +939,7 @@ enum L10n {
             )
             static let signInMessage = tr(
                 "temple.booking.signInMessage",
-                "Confirm your details and reserve a pandit time slot.",
+                "Confirm your details and reserve a time slot.",
                 "Sign in required message"
             )
         }

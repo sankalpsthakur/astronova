@@ -1274,4 +1274,79 @@ class APIServices: ObservableObject, APIServicesProtocol {
             responseType: SessionLinkResponse.self
         )
     }
+
+    // MARK: - Temple Redesign (DIY Pooja, Muhurat, Vedic Library, Bell)
+
+    /// Fetch muhurat times and panchang data for a given date
+    func fetchMuhurats(date: Date = Date(), latitude: Double? = nil, longitude: Double? = nil) async throws -> MuhuratResponse {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        var endpoint = "/api/v1/temple/muhurats?date=\(formatter.string(from: date))"
+        if let lat = latitude { endpoint += "&lat=\(lat)" }
+        if let lon = longitude { endpoint += "&lon=\(lon)" }
+
+        return try await networkClient.request(
+            endpoint: endpoint,
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: MuhuratResponse.self
+        )
+    }
+
+    /// Fetch DIY pooja guides with steps and mantras
+    func fetchDIYPoojas() async throws -> [DIYPooja] {
+        let response: DIYPoojasResponse = try await networkClient.request(
+            endpoint: "/api/v1/temple/diy-poojas",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: DIYPoojasResponse.self
+        )
+        return response.poojas
+    }
+
+    /// Fetch vedic library entries with optional category/search filters
+    func fetchVedicLibrary(category: String? = nil, search: String? = nil) async throws -> VedicLibraryResponse {
+        var queryItems: [String] = []
+        if let cat = category { queryItems.append("category=\(cat)") }
+        if let q = search { queryItems.append("search=\(q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q)") }
+        let queryString = queryItems.isEmpty ? "" : "?" + queryItems.joined(separator: "&")
+
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/vedic-library\(queryString)",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: VedicLibraryResponse.self
+        )
+    }
+
+    /// Record a temple bell ring (fire-and-forget, non-blocking)
+    func recordBellRing(streak: Int, totalRings: Int) async {
+        struct BellRingRequest: Codable {
+            let streak: Int
+            let totalRings: Int
+        }
+        do {
+            let body = try JSONEncoder().encode(BellRingRequest(streak: streak, totalRings: totalRings))
+            let _: EmptyResponse = try await networkClient.request(
+                endpoint: "/api/v1/temple/bell/ring",
+                method: HTTPMethod.POST,
+                body: body,
+                responseType: EmptyResponse.self
+            )
+        } catch {
+            // Fire and forget - don't fail the bell ring if server is down
+        }
+    }
+}
+
+/// Empty response for fire-and-forget API calls
+private struct EmptyResponse: Codable {
+    let success: Bool?
+    let message: String?
+
+    init(from decoder: Decoder) throws {
+        let container = try? decoder.container(keyedBy: CodingKeys.self)
+        success = try? container?.decodeIfPresent(Bool.self, forKey: .success)
+        message = try? container?.decodeIfPresent(String.self, forKey: .message)
+    }
 }

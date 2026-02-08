@@ -6,12 +6,14 @@ import Combine
 
 struct UnifiedTimeTravelView: View {
     @EnvironmentObject private var auth: AuthState
+    @EnvironmentObject private var gamification: GamificationManager
     @StateObject private var state = TimeTravelViewState()
 
     @State private var showNowSheet = false
     @State private var showNextSheet = false
     @State private var showPlanetSheet = false
     @State private var showDashaSheet = false
+    @State private var showGuideSheet = false
 
     private var timeTravelLockMessage: String? {
         let profile = auth.profileManager.profile
@@ -71,6 +73,13 @@ struct UnifiedTimeTravelView: View {
                                 )
                                 .frame(height: 350)
                                 .padding(.horizontal)
+                                .overlay {
+                                    TimeTravelSwarmOverlay(
+                                        mode: state.isLoading ? .loading : (state.isScrubbing ? .scrubbing : .idle),
+                                        tone: state.scrubFeedback.insights.first?.tone
+                                    )
+                                    .padding(.horizontal)
+                                }
                                 .overlay(alignment: .top) {
                                     if state.isLoading {
                                         loadingOverlay
@@ -134,15 +143,24 @@ struct UnifiedTimeTravelView: View {
                     .onChange(of: auth.profileManager.profile.birthDate) { _, _ in
                         Task { await state.bootstrap(profile: auth.profileManager.profile) }
                     }
+                    .onChange(of: state.lastCommittedSnapshotKey) { _, newKey in
+                        guard newKey != nil else { return }
+                        gamification.markTimeTravelSnapshot()
+                    }
                 }
             }
             .navigationTitle("Time Travel")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { } label: {
+                    Button { showGuideSheet = true } label: {
                         Image(systemName: "book.fill")
                     }
+                }
+            }
+            .sheet(isPresented: $showGuideSheet) {
+                NavigationStack {
+                    TimeTravelGuideSheet()
                 }
             }
             .sheet(isPresented: $showNowSheet) {
@@ -341,6 +359,43 @@ struct UnifiedTimeTravelView: View {
     }
 }
 
+private struct TimeTravelGuideSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                    Text("How to use Time Travel")
+                        .font(.cosmicTitle2)
+                    Text("Scrub to any month or year. Tap a planet or dasha for details.")
+                        .font(.cosmicBody)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+                .padding()
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                    Text("Pro tip")
+                        .font(.cosmicHeadline)
+                    Text("Look for the short feedback chips while you scrub. They tell you what actually changed and why it matters.")
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+                .padding()
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+            }
+            .padding()
+        }
+        .navigationTitle("Guide")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Done") { dismiss() }
+            }
+        }
+    }
+}
+
 // MARK: - View State
 
 @MainActor
@@ -348,6 +403,8 @@ class TimeTravelViewState: ObservableObject {
     @Published var targetDate: Date = Date()
     @Published var selectedElement: CosmicElement?
     @Published var isLoading: Bool = false
+    @Published var isScrubbing: Bool = false
+    @Published var lastCommittedSnapshotKey: String?
 
     // Display snapshot (shows cached/interpolated data while loading)
     @Published var displaySnapshot: TimeTravelSnapshot?
@@ -371,6 +428,23 @@ class TimeTravelViewState: ObservableObject {
     private let systemQuery: String = "vedic"
 
     func bootstrap(profile: UserProfile) async {
+        if TestEnvironment.shared.isUITest,
+           ProcessInfo.processInfo.environment["UITEST_TIME_TRAVEL_SAMPLE"] == "1" {
+            self.profile = profile
+            let snap = TimeTravelSnapshot.sample(targetDate: targetDate)
+            displaySnapshot = snap
+            scrubFeedback = ScrubFeedback(
+                insights: [
+                    ScrubInsight(id: "sample-1", tone: .supportive, text: "Venus focus: harmony grows faster.", element: .dashaLord("Venus")),
+                    ScrubInsight(id: "sample-2", tone: .review, text: "Mercury Rx: double-check commitments.", element: .planet("mercury")),
+                ],
+                summary: "This is sample data for UI testing."
+            )
+            errorMessage = nil
+            isLoading = false
+            return
+        }
+
         let shouldRefresh = profileDidChange(from: self.profile, to: profile)
         self.profile = profile
         if shouldRefresh {
@@ -387,6 +461,7 @@ class TimeTravelViewState: ObservableObject {
         debounceTask?.cancel()
         fetchTask?.cancel()
         errorMessage = nil
+        isScrubbing = true
 
         guard let previous = displaySnapshot else { return }
         guard let key = dateKey(for: targetDate) else { return }
@@ -444,6 +519,7 @@ class TimeTravelViewState: ObservableObject {
     }
 
     func onDateCommit() {
+        isScrubbing = false
         // Debounce: wait before fetching
         debounceTask?.cancel()
         debounceTask = Task {
@@ -524,6 +600,7 @@ class TimeTravelViewState: ObservableObject {
 
                 displaySnapshot = snapshot
                 selectedElement = nil
+                lastCommittedSnapshotKey = key
             }
 
             prefetchPlanets(around: date, latitude: latitude, longitude: longitude, timezone: timezone)

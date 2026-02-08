@@ -135,7 +135,7 @@
 /* Temple */
 "temple.title" = "Temple";
 "temple.selectPooja" = "Select Pooja Type";
-"temple.selectPandit" = "Select Pandit";
+"temple.selectPandit" = "Select Astrologer";
 "temple.sections.astrologers" = "Astrologers";
 "temple.sections.pooja" = "Pooja";
 "temple.sections.astrologersHint" = "Shows available astrologers";
@@ -158,11 +158,55 @@
 "temple.astrologers.expertiseTitle" = "Expertise";
 "temple.astrologers.status.available" = "Available now.";
 "temple.astrologers.status.offline" = "Currently offline.";
-"temple.astrologers.cardAccessibilityLabel" = "Pandit %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@";
+"temple.astrologers.cardAccessibilityLabel" = "Astrologer %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@";
 "temple.astrologers.cardAccessibilityHint" = "Double tap to view astrologer details";
-"temple.muhurat.title" = "Today's Muhurat";
-"temple.muhurat.subtitle" = "Auspicious timings for the day";
-"temple.muhurat.accessibilityLabel" = "%@. %@ timing. %@. %@";
+/* Temple - Bell */
+"temple.bell.ringTheBell" = "Toca la Campana";
+"temple.bell.rungToday" = "Tocada Hoy";
+"temple.bell.dayStreak" = "Racha Diaria";
+"temple.bell.longestStreak" = "Más Larga";
+"temple.bell.reminderTitle" = "Recordatorio Diario";
+"temple.bell.reminderSubtitle" = "Recibe una notificación diaria para tocar la campana del templo";
+
+/* Temple - DIY Pooja */
+"temple.diyPooja.sectionTitle" = "Guías de Pooja";
+"temple.diyPooja.sectionSubtitle" = "Rituales sagrados paso a paso";
+"temple.diyPooja.startPooja" = "Iniciar Pooja";
+"temple.diyPooja.ingredients" = "Ingredientes";
+"temple.diyPooja.steps" = "Pasos";
+"temple.diyPooja.significance" = "Significado";
+"temple.diyPooja.mantra" = "Mantra";
+"temple.diyPooja.meaning" = "Significado";
+"temple.diyPooja.transliteration" = "Transliteración";
+"temple.diyPooja.optional" = "Opcional";
+"temple.diyPooja.required" = "Requerido";
+"temple.diyPooja.stepOf" = "Paso %d de %d";
+"temple.diyPooja.complete" = "Completar";
+"temple.diyPooja.timer" = "Temporizador";
+"temple.diyPooja.xpAwarded" = "+%d XP";
+"temple.diyPooja.completionTitle" = "¡Pooja Completada!";
+"temple.diyPooja.completionSubtitle" = "Que las bendiciones divinas te acompañen";
+"temple.diyPooja.returnToTemple" = "Volver al Templo";
+
+/* Temple - Muhurat */
+"temple.muhurat.title" = "Muhurat de Hoy";
+"temple.muhurat.subtitle" = "Horarios auspiciosos del día";
+"temple.muhurat.calculatorTitle" = "Calculadora";
+"temple.muhurat.selectDate" = "Seleccionar Fecha";
+"temple.muhurat.panchang" = "Panchang";
+"temple.muhurat.tithi" = "Tithi";
+"temple.muhurat.nakshatra" = "Nakshatra";
+"temple.muhurat.yoga" = "Yoga";
+"temple.muhurat.karana" = "Karana";
+"temple.muhurat.accessibilityLabel" = "%@. Tiempo %@. %@. %@";
+
+/* Temple - Vedic Library */
+"temple.library.sectionTitle" = "Sabiduría Védica";
+"temple.library.sectionSubtitle" = "Conocimiento antiguo para buscadores modernos";
+"temple.library.browseAll" = "Ver Todo";
+"temple.library.searchPlaceholder" = "Buscar textos védicos...";
+"temple.library.noResults" = "No se encontraron entradas";
+"temple.library.source" = "Fuente:";
 "temple.pooja.ritualsTitle" = "Sacred Rituals";
 "temple.pooja.ritualsSubtitle" = "Perform poojas with complete ingredients";
 "temple.pooja.itemsCount" = "%d items";
@@ -192,7 +236,7 @@
 "temple.booking.sankalpNakshatraTitle" = "Nakshatra (optional)";
 "temple.booking.sankalpNakshatraPlaceholder" = "Birth star";
 "temple.booking.specialRequestsLabel" = "Special requests";
-"temple.booking.specialRequestsHint" = "Optional. Add any special instructions for the pandit";
+"temple.booking.specialRequestsHint" = "Optional. Add any special instructions for your astrologer";
 "temple.booking.poojaDateLabel" = "Pooja date";
 "temple.booking.poojaDateHint" = "Select the date for your pooja ceremony";
 "temple.booking.timeSlotLabel" = "Time slot %@";
@@ -203,7 +247,7 @@
 "temple.booking.confirmedTitle" = "Booking Confirmed!";
 "temple.booking.confirmedMessage" = "Your pooja is scheduled for %@ at %@. You will receive a session link before the scheduled time.";
 "temple.booking.signInTitle" = "Sign in to book a pooja";
-"temple.booking.signInMessage" = "Confirm your details and reserve a pandit time slot.";
+"temple.booking.signInMessage" = "Confirm your details and reserve a time slot.";
 "temple.consultation.selectDate" = "Select Date";
 "temple.consultation.selectTime" = "Select Time";
 "temple.consultation.duration" = "Duration";

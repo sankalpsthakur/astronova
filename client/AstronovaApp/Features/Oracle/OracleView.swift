@@ -6,6 +6,7 @@ import SwiftUI
 struct OracleView: View {
     @StateObject private var viewModel = OracleViewModel(quotaManager: OracleQuotaManager.shared)
     @EnvironmentObject private var auth: AuthState
+    @EnvironmentObject private var gamification: GamificationManager
     @AppStorage("trigger_show_chat_packages") private var triggerShowChatPackages: Bool = false
 
     var body: some View {
@@ -86,7 +87,13 @@ struct OracleView: View {
                             depth: $viewModel.selectedDepth,
                             prompts: viewModel.contextualPrompts,
                             isDisabled: viewModel.isLoading || viewModel.quotaManager.isLimited,
-                            onSend: { viewModel.sendMessage() },
+                            onSend: {
+                                let before = viewModel.messages.count
+                                viewModel.sendMessage()
+                                if viewModel.messages.count > before {
+                                    gamification.markOracleAction()
+                                }
+                            },
                             onPromptTap: { viewModel.selectPrompt($0) }
                         )
                     }

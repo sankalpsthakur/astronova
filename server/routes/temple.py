@@ -1115,3 +1115,282 @@ def serve_session_page(session_id: str):
 
     static_dir = os.path.join(current_app.root_path, "static", "temple")
     return send_from_directory(static_dir, "session.html")
+
+
+# =============================================================================
+# Temple Redesign Endpoints
+# =============================================================================
+
+
+@temple_bp.route("/muhurats", methods=["GET"])
+def get_muhurats():
+    """
+    GET /api/v1/temple/muhurats?date=YYYY-MM-DD&lat=...&lon=...
+
+    Returns muhurat times and panchang data for a given date.
+    Uses calculated sample data based on the date.
+    """
+    from math import sin, cos, pi
+
+    date_str = request.args.get("date")
+    if not date_str:
+        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+
+    try:
+        target_date = datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
+    # Day-of-year seed for deterministic but varying data
+    doy = target_date.timetuple().tm_yday
+
+    # Calculate muhurat windows (approximate, based on sunrise/sunset)
+    # In reality these come from a panchang API; we generate plausible times.
+    sunrise_hour = 6 + (sin(doy * pi / 182.5) * 0.5)  # ~5:30-6:30
+    sunset_hour = 18 - (sin(doy * pi / 182.5) * 0.5)   # ~17:30-18:30
+    day_dur = sunset_hour - sunrise_hour
+
+    def _fmt(h):
+        hh = int(h)
+        mm = int((h - hh) * 60)
+        return f"{hh:02d}:{mm:02d}"
+
+    abhijit_start = sunrise_hour + day_dur * 0.4583  # ~11:30
+    brahma_start = sunrise_hour + day_dur * 0.375    # ~10:30
+
+    # Rahu Kalam varies by day of week
+    rahu_offsets = [7, 1, 6, 4, 5, 3, 2]  # Sun-Sat segment number
+    rk_segment = rahu_offsets[target_date.weekday()]
+    rk_start = sunrise_hour + (rk_segment - 1) * (day_dur / 8)
+    rk_end = rk_start + day_dur / 8
+
+    godhuli_start = sunset_hour - 0.4  # ~24 min before sunset
+
+    muhurats = [
+        {
+            "name": "Abhijit Muhurat",
+            "description": "The victorious muhurat, ideal for all auspicious activities",
+            "startTime": _fmt(abhijit_start),
+            "endTime": _fmt(abhijit_start + day_dur / 15),
+            "isAuspicious": True,
+        },
+        {
+            "name": "Brahma Muhurat",
+            "description": "Sacred time for meditation and spiritual practices",
+            "startTime": _fmt(sunrise_hour - 1.6),
+            "endTime": _fmt(sunrise_hour - 0.8),
+            "isAuspicious": True,
+        },
+        {
+            "name": "Rahu Kalam",
+            "description": "Inauspicious period ruled by Rahu, avoid new beginnings",
+            "startTime": _fmt(rk_start),
+            "endTime": _fmt(rk_end),
+            "isAuspicious": False,
+        },
+        {
+            "name": "Godhuli Muhurat",
+            "description": "Twilight muhurat, auspicious for weddings and prayers",
+            "startTime": _fmt(godhuli_start),
+            "endTime": _fmt(sunset_hour),
+            "isAuspicious": True,
+        },
+    ]
+
+    # Panchang data (deterministic from day-of-year)
+    tithis = [
+        "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
+        "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami",
+        "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", "Purnima",
+        "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
+        "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami",
+        "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", "Amavasya",
+    ]
+    nakshatras = [
+        "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira",
+        "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha",
+        "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati",
+        "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha",
+        "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
+        "Purva Bhadrapada", "Uttara Bhadrapada", "Revati",
+    ]
+    yogas = [
+        "Vishkumbha", "Preeti", "Ayushman", "Saubhagya", "Shobhana",
+        "Atiganda", "Sukarma", "Dhriti", "Shoola", "Ganda",
+        "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra",
+        "Siddhi", "Vyatipata", "Variyan", "Parigha", "Shiva",
+        "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma",
+        "Indra", "Vaidhriti",
+    ]
+    karanas = [
+        "Bava", "Balava", "Kaulava", "Taitila", "Gara",
+        "Vanija", "Vishti", "Shakuni", "Chatushpada", "Naga", "Kimstughna",
+    ]
+
+    panchang = {
+        "tithi": tithis[doy % len(tithis)],
+        "nakshatra": nakshatras[doy % len(nakshatras)],
+        "yoga": yogas[doy % len(yogas)],
+        "karana": karanas[(doy * 2) % len(karanas)],
+        "sunrise": _fmt(sunrise_hour),
+        "sunset": _fmt(sunset_hour),
+    }
+
+    return jsonify({
+        "date": date_str,
+        "muhurats": muhurats,
+        "panchang": panchang,
+    })
+
+
+@temple_bp.route("/diy-poojas", methods=["GET"])
+def list_diy_poojas():
+    """
+    GET /api/v1/temple/diy-poojas
+
+    Returns enriched pooja data with DIY steps, mantras, and ingredients.
+    Only returns poojas that have steps populated.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, name, description, deity, duration_minutes, base_price,
+               icon_name, benefits, ingredients, mantras, steps,
+               deity_description, significance, sort_order
+        FROM pooja_types
+        WHERE is_active = 1 AND steps IS NOT NULL
+        ORDER BY sort_order ASC
+    """)
+
+    poojas = []
+    for row in cur.fetchall():
+        poojas.append({
+            "id": row["id"],
+            "name": row["name"],
+            "description": row["description"],
+            "deity": row["deity"],
+            "durationMinutes": row["duration_minutes"],
+            "basePrice": row["base_price"],
+            "iconName": row["icon_name"],
+            "benefits": json.loads(row["benefits"]) if row["benefits"] else [],
+            "ingredients": json.loads(row["ingredients"]) if row["ingredients"] else [],
+            "mantras": json.loads(row["mantras"]) if row["mantras"] else [],
+            "steps": json.loads(row["steps"]) if row["steps"] else [],
+            "deityDescription": row["deity_description"],
+            "significance": row["significance"],
+        })
+
+    conn.close()
+    return jsonify({"poojas": poojas})
+
+
+@temple_bp.route("/vedic-library", methods=["GET"])
+def get_vedic_library():
+    """
+    GET /api/v1/temple/vedic-library?category=X&search=Y
+
+    Browse and search vedic entries.
+    Returns entries grouped by category with counts.
+    """
+    category = request.args.get("category")
+    search = request.args.get("search")
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    query = """
+        SELECT id, category, title, sanskrit_text, transliteration,
+               translation, source, tags, sort_order
+        FROM vedic_entries
+        WHERE is_active = 1
+    """
+    params = []
+
+    if category:
+        query += " AND category = ?"
+        params.append(category)
+
+    if search:
+        query += " AND (title LIKE ? OR translation LIKE ? OR tags LIKE ?)"
+        search_term = f"%{search}%"
+        params.extend([search_term, search_term, search_term])
+
+    query += " ORDER BY category, sort_order ASC"
+
+    cur.execute(query, params)
+
+    # Group by category
+    categories_map: dict[str, list] = {}
+    for row in cur.fetchall():
+        cat = row["category"]
+        if cat not in categories_map:
+            categories_map[cat] = []
+        categories_map[cat].append({
+            "id": row["id"],
+            "title": row["title"],
+            "sanskritText": row["sanskrit_text"],
+            "transliteration": row["transliteration"],
+            "translation": row["translation"],
+            "source": row["source"],
+            "tags": json.loads(row["tags"]) if row["tags"] else [],
+        })
+
+    conn.close()
+
+    categories_list = [
+        {"name": name, "count": len(entries), "entries": entries}
+        for name, entries in categories_map.items()
+    ]
+
+    return jsonify({
+        "categories": categories_list,
+        "totalEntries": sum(c["count"] for c in categories_list),
+    })
+
+
+@temple_bp.route("/bell/ring", methods=["POST"])
+def record_bell_ring():
+    """
+    POST /api/v1/temple/bell/ring
+
+    Record a bell ring for the authenticated user.
+    Body: { "streak": 5, "totalRings": 42 }
+    """
+    user_id = request.headers.get("X-User-Id")
+    if not user_id:
+        return jsonify({"error": "Authentication required"}), 401
+
+    data = request.get_json() or {}
+
+    activity_id = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+
+    activity_data = json.dumps({
+        "streak": data.get("streak", 0),
+        "totalRings": data.get("totalRings", 0),
+    })
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO user_temple_activity
+        (id, user_id, activity_type, data, created_at)
+        VALUES (?, ?, ?, ?, ?)
+    """, (activity_id, user_id, "bell_ring", activity_data, now))
+
+    conn.commit()
+    conn.close()
+
+    logger.info(
+        "Temple bell_ring user_id=%s streak=%s total=%s",
+        user_id,
+        data.get("streak", 0),
+        data.get("totalRings", 0),
+    )
+
+    return jsonify({
+        "success": True,
+        "message": "Bell ring recorded. Om Shanti!",
+    })

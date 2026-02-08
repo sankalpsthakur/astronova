@@ -301,6 +301,41 @@ final class MonetizationJourneyTests: XCTestCase {
         XCTAssertTrue(profileEditAppeared, "Profile edit view should open with birth time picker")
     }
 
+    // MARK: - Journey E: Pro Users Should See Reports Included
+
+    @MainActor
+    func testJourneyE_ProReportsAreIncluded() throws {
+        launchSignedIn(arguments: [
+            "UITEST_RESET",
+            "UITEST_SEED_PROFILE_FULL",
+            "UITEST_SKIP_ONBOARDING",
+            "UITEST_SET_PRO_SUBSCRIBED",
+            "UITEST_MOCK_PURCHASES",
+            "UITEST_ENABLE_LOGGING"
+        ])
+
+        tapTab("manageTab")
+
+        let reportsShopButton = anyElement("reportsShopButton")
+        if reportsShopButton.waitForExistence(timeout: 10) {
+            scrollToElement(reportsShopButton)
+            reportsShopButton.tap()
+        } else {
+            let reportsShopLink = app.staticTexts["Reports Shop"]
+            XCTAssertTrue(reportsShopLink.waitForExistence(timeout: 5), "Reports Shop entry should exist in Manage")
+            reportsShopLink.tap()
+        }
+
+        XCTAssertTrue(
+            anyElement("reportsStoreView").waitForExistence(timeout: 8) || app.navigationBars["Reports Shop"].waitForExistence(timeout: 8),
+            "Reports shop should open"
+        )
+
+        let reportBuyButton = firstElement(withIdentifierPrefix: "reportBuyButton_")
+        XCTAssertTrue(reportBuyButton.waitForExistence(timeout: 8), "A report buy button should exist")
+        XCTAssertFalse(reportBuyButton.isEnabled, "Report buy buttons should be disabled for Pro users")
+    }
+
     // MARK: - Smoke Test: App Launch and Basic Navigation
 
     @MainActor

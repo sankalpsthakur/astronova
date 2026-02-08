@@ -4,6 +4,7 @@ import UserNotifications
 /// Main Discover tab view - daily check-in hub with life domain cards
 struct DiscoverView: View {
     @EnvironmentObject private var auth: AuthState
+    @EnvironmentObject private var gamification: GamificationManager
     @StateObject private var viewModel = DiscoverViewModel()
     @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
 
@@ -19,6 +20,7 @@ struct DiscoverView: View {
     @State private var shareContent: String = ""
     @State private var showingReminderConfirmation = false
     @State private var reminderMessage = ""
+    @State private var showingDailySignal = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -51,6 +53,13 @@ struct DiscoverView: View {
             if triggerShowReportShop {
                 triggerShowReportShop = false
                 showingReportShop = true
+            }
+
+            // Screenshot helper (UI test harness): auto-present daily signal.
+            if TestEnvironment.shared.isUITest,
+               ProcessInfo.processInfo.environment["UITEST_PRESENT_DAILY_SIGNAL"] == "1" {
+                _ = gamification.drawTodaysSignal()
+                showingDailySignal = true
             }
         }
         .onAppear {
@@ -121,6 +130,21 @@ struct DiscoverView: View {
     private func contentView(_ snapshot: DiscoverSnapshot) -> some View {
         ScrollView {
             VStack(spacing: Cosmic.Spacing.lg) {
+                SeekerProgressHeader(
+                    levelTitle: gamification.level.title,
+                    streak: gamification.streak,
+                    xpProgress: gamification.xpProgressToNextLevel,
+                    weeklyTheme: gamification.weeklyTheme()
+                ) {
+                    let result = gamification.drawTodaysSignal()
+                    if result.isNewCheckIn {
+                        // Streak reward UX: light haptic already covered elsewhere; keep simple.
+                    }
+                    showingDailySignal = true
+                }
+                .padding(.horizontal, Cosmic.Spacing.m)
+                .padding(.top, Cosmic.Spacing.m)
+
                 // Life Domain Grid with Cosmic Weather header
                 DomainGridView(
                     insights: viewModel.domainInsights,
@@ -210,6 +234,16 @@ struct DiscoverView: View {
             }
         }
         .scrollIndicators(.hidden)
+        .sheet(isPresented: $showingDailySignal) {
+            DailySignalSheet(
+                card: gamification.currentDailyCard ?? gamification.drawTodaysSignal().card,
+                theme: gamification.weeklyTheme(),
+                archetype: gamification.archetype,
+                onShare: {
+                    gamification.markShared()
+                }
+            )
+        }
     }
 
     // MARK: - Keywords View
@@ -481,6 +515,52 @@ class DiscoverViewModel: ObservableObject {
             // Get sign from profile or default
             let sign = profile?.sunSign?.lowercased() ?? "aries"
 
+            if TestEnvironment.shared.isUITest,
+               ProcessInfo.processInfo.environment["UITEST_DISCOVER_SAMPLE"] == "1" {
+                // Deterministic snapshot for simulator screenshots (no network dependency).
+                snapshot = DiscoverSnapshot(
+                    date: "2026-02-06",
+                    sign: sign,
+                    personalized: true,
+                    now: DiscoverNow(
+                        theme: "Clarity through small decisions",
+                        narrativeTiles: [
+                            NarrativeTile(id: "tile_1", text: "Energy peaks mid-day; schedule the hardest task first.", domain: "work", weight: 0.8, driver: nil),
+                            NarrativeTile(id: "tile_2", text: "A simple message can soften tension today.", domain: "love", weight: 0.6, driver: nil),
+                            NarrativeTile(id: "tile_3", text: "One short walk resets your mind.", domain: "mind", weight: 0.5, driver: nil),
+                        ],
+                        actions: [
+                            DiscoverAction(id: "act_1", text: "Choose one priority and finish it.", type: "do"),
+                            DiscoverAction(id: "act_2", text: "Avoid doomscrolling after 9pm.", type: "avoid"),
+                        ]
+                    ),
+                    lens: CosmicLens(
+                        energyState: EnergyState(id: "focused", label: "Focused", description: "Steady, forward energy.", icon: "bolt.fill"),
+                        domainWeights: DomainWeights(self: 0.35, love: 0.22, work: 0.28, mind: 0.15),
+                        activations: nil
+                    ),
+                    next: DiscoverNext(
+                        shift: DiscoverNextShift(date: "2026-02-10", daysUntil: 4, level: "Antardasha", from: "Venus", to: "Mercury", summary: "Near-term focus sharpens; communication matters more."),
+                        markers: nil
+                    ),
+                    lucky: nil,
+                    keywords: ["focus", "calm", "momentum"],
+                    cacheHints: CacheHints(ttlSeconds: 3600, nextRefresh: nil)
+                )
+
+                domainInsights = DomainInsight.samples
+                dailyHoroscope = "Sample data (UI test mode)."
+                hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
+                if shouldLoadReports {
+                    await loadUserReports()
+                } else {
+                    userReports = []
+                }
+                loadConnections()
+                isLoading = false
+                return
+            }
+
             // Fetch snapshot and domain insights in parallel
             async let snapshotTask = apiServices.getDiscoverSnapshot(sign: sign)
             async let domainTask = apiServices.getDomainInsights()
@@ -639,5 +719,157 @@ class DiscoverSnapshotCache {
     NavigationStack {
         DiscoverView()
             .environmentObject(AuthState())
+            .environmentObject(GamificationManager())
+    }
+}
+
+// MARK: - Gamification UI
+
+private struct SeekerProgressHeader: View {
+    let levelTitle: String
+    let streak: Int
+    let xpProgress: Double
+    let weeklyTheme: WeeklyTheme
+    let onDrawSignal: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Seeker Level")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                    Text(levelTitle)
+                        .font(.cosmicTitle2)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Streak")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                    Text("\(streak) day\(streak == 1 ? "" : "s")")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicGold)
+                        .monospacedDigit()
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Weekly theme: \(weeklyTheme.title)")
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.cosmicSurface)
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.cosmicGold.opacity(0.8))
+                            .frame(width: max(10, geo.size.width * xpProgress))
+                    }
+                }
+                .frame(height: 10)
+                .accessibilityLabel("Level progress")
+                .accessibilityValue("\(Int(xpProgress * 100)) percent")
+            }
+
+            Button {
+                CosmicHaptics.light()
+                onDrawSignal()
+            } label: {
+                HStack(spacing: Cosmic.Spacing.xs) {
+                    Image(systemName: "sparkles")
+                    Text("Draw today's signal")
+                        .font(.cosmicCalloutEmphasis)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                        .stroke(Color.cosmicGold.opacity(0.18), lineWidth: Cosmic.Border.hairline)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .background(Color.cosmicBackground, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                .stroke(Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.hairline)
+        )
+    }
+}
+
+private struct DailySignalSheet: View {
+    let card: ArcanaCard
+    let theme: WeeklyTheme
+    let archetype: String?
+    let onShare: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: Cosmic.Spacing.lg) {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                    Text("Today's Signal")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+
+                    Text(card.title)
+                        .font(.cosmicTitle1)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+
+                    Text(card.subtitle)
+                        .font(.cosmicBody)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                    Text("Weekly theme: \(theme.title)")
+                        .font(.cosmicCaptionEmphasis)
+                    if let archetype, !archetype.isEmpty {
+                        Text("Archetype: \(archetype)")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                    }
+                    Text(card.prompt)
+                        .font(.cosmicBody)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+
+                ShareLink(item: card.shareText(archetype: archetype, theme: theme)) {
+                    Text("Share your daily insight card")
+                        .font(.cosmicCalloutEmphasis)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.cosmicGold, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                        .foregroundStyle(Color.cosmicVoid)
+                }
+                .simultaneousGesture(TapGesture().onEnded { onShare() })
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Signal")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }

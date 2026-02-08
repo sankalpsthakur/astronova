@@ -88,11 +88,11 @@ Connect with the divine through authentic Vedic traditions:
 **Expert Astrologers**
 • Consult with verified Vedic astrology specialists
 • Multiple traditions: Vedic, Nadi, Lal Kitab, KP Astrology
-• Video consultations with experienced pandits
+• Video consultations with experienced astrologers
 • Ratings and reviews from real users
 
 **Sacred Pooja Bookings**
-• Book authentic poojas performed by experienced pandits
+• Book authentic poojas performed by experienced temple priests
 • Ganesh Puja, Lakshmi Puja, Navagraha Shanti, and more
 • Complete with ingredients, mantras, and proper rituals
 • Live streaming of your pooja ceremony
@@ -170,12 +170,13 @@ Privacy: https://astronova.onrender.com/privacy
 **Current:** 99 characters
 
 ```
-astrology,vedic,horoscope,birth chart,dasha,pooja,pandit,kundli,jyotish,transit,compatibility,natal
+astrology,vedic,horoscope,birth chart,dasha,pooja,kundli,jyotish,transit,compatibility,natal
+
 ```
 
 **Alternative Focus (Spiritual Services):**
 ```
-astrology,vedic,pooja,pandit,horoscope,jyotish,temple,puja,kundli,birth chart,spiritual,muhurat
+astrology,vedic,pooja,horoscope,jyotish,temple,puja,kundli,birth chart,spiritual,muhurat
 ```
 
 ---
@@ -244,7 +245,7 @@ SUBSCRIPTIONS:
 
 THIRD-PARTY SERVICES:
 - Backend API: Hosted on Render (https://astronova.onrender.com)
-- Video consultations: WebRTC video service (for pandit consultations)
+- Video consultations: WebRTC video service (for astrologer consultations)
 - Ephemeris calculations: Swiss Ephemeris library
 - AI guidance: OpenAI API (optional, degrades gracefully)
 - Analytics: Smartlook (session diagnostics and usage analytics)
@@ -303,7 +304,7 @@ Before submitting, ensure:
 
 1. **Screenshots Matter:** Your first screenshot is the most important—it appears in search results. Use the Discover tab hero shot.
 
-2. **Keywords Strategy:** Focus on core terms: "astrology", "vedic", "horoscope", "pooja", "pandit". These have high search volume.
+2. **Keywords Strategy:** Focus on core terms: "astrology", "vedic", "horoscope", "pooja". These have high search volume.
 
 3. **Description First 170 Characters:** This appears in search results without "more" click. Front-load your value proposition.
 

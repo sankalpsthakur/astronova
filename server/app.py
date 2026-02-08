@@ -438,7 +438,7 @@ def create_app():
         <div class="faq-question">How do I book a pooja or consult an astrologer?</div>
         <p>Go to the <strong>Temple</strong> tab to browse:</p>
         <ul>
-            <li><strong>Expert Astrologers:</strong> Book video consultations with verified pandits</li>
+            <li><strong>Expert Astrologers:</strong> Book video consultations with verified astrologers</li>
             <li><strong>Sacred Rituals:</strong> Schedule authentic poojas performed on your behalf</li>
         </ul>
         <p>Select a service, choose a time slot, and complete the booking. You'll receive a confirmation with session details.</p>
