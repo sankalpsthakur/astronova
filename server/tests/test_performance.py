@@ -15,8 +15,9 @@ Benchmarks:
 from __future__ import annotations
 
 import gc
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from memory_profiler import memory_usage
@@ -25,6 +26,22 @@ try:  # pragma: no cover - optional dependency in some environments
     import swisseph as _swe  # noqa: F401
 except Exception:  # pragma: no cover
     pytest.skip("pyswisseph not installed", allow_module_level=True)
+
+
+def _make_auth_client(client):
+    """Helper to add JWT auth to a test client."""
+    import jwt as pyjwt
+
+    secret = os.environ.get("JWT_SECRET", "astronova-dev-secret-change-in-production")
+    payload = {
+        "sub": "perf-test-user",
+        "email": "perf@test.com",
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(days=1),
+    }
+    token = pyjwt.encode(payload, secret, algorithm="HS256")
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {token}"
+    return client
 
 
 class TestChartGenerationPerformance:
@@ -40,6 +57,10 @@ class TestChartGenerationPerformance:
             yield client
 
     @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    @pytest.fixture
     def valid_chart_data(self):
         return {
             "birthData": {
@@ -51,7 +72,7 @@ class TestChartGenerationPerformance:
             }
         }
 
-    def test_chart_generation_latency(self, client, valid_chart_data, benchmark):
+    def test_chart_generation_latency(self, authenticated_client, valid_chart_data, benchmark):
         """Benchmark chart generation (target: <500ms)."""
 
         def generate_chart():
@@ -68,7 +89,7 @@ class TestChartGenerationPerformance:
         mean_time = stats.mean
         assert mean_time < 0.5, f"Chart generation too slow: {mean_time*1000:.2f}ms > 500ms"
 
-    def test_chart_aspects_calculation_latency(self, client, valid_chart_data, benchmark):
+    def test_chart_aspects_calculation_latency(self, authenticated_client, valid_chart_data, benchmark):
         """Benchmark chart aspects calculation (target: <500ms)."""
 
         def calculate_aspects():
@@ -83,7 +104,7 @@ class TestChartGenerationPerformance:
         mean_time = stats.mean
         assert mean_time < 0.5, f"Aspects calculation too slow: {mean_time*1000:.2f}ms > 500ms"
 
-    def test_chart_generation_memory_stability(self, client, valid_chart_data):
+    def test_chart_generation_memory_stability(self, authenticated_client, valid_chart_data):
         """Test for memory leaks in repeated chart generation."""
         gc.collect()
 
@@ -116,10 +137,14 @@ class TestDashaPerformance:
             yield client
 
     @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    @pytest.fixture
     def dasha_birth_data(self):
         return {"date": "1990-01-15", "time": "14:30", "timezone": "Asia/Kolkata", "latitude": 19.0760, "longitude": 72.8777}
 
-    def test_dasha_timeline_120_years(self, client, dasha_birth_data, benchmark):
+    def test_dasha_timeline_120_years(self, authenticated_client, dasha_birth_data, benchmark):
         """Benchmark dasha timeline for 120 years (target: <1s)."""
 
         def calculate_full_timeline():
@@ -137,7 +162,7 @@ class TestDashaPerformance:
         mean_time = stats.mean
         assert mean_time < 1.0, f"Dasha timeline too slow: {mean_time*1000:.2f}ms > 1000ms"
 
-    def test_dasha_get_endpoint_latency(self, client, benchmark):
+    def test_dasha_get_endpoint_latency(self, authenticated_client, benchmark):
         """Benchmark GET dasha endpoint (target: <500ms)."""
 
         def get_dasha():
@@ -160,7 +185,7 @@ class TestDashaPerformance:
         mean_time = stats.mean
         assert mean_time < 0.5, f"Dasha GET too slow: {mean_time*1000:.2f}ms > 500ms"
 
-    def test_dasha_with_boundaries_performance(self, client, benchmark):
+    def test_dasha_with_boundaries_performance(self, authenticated_client, benchmark):
         """Benchmark dasha with antardasha boundaries (target: <1s)."""
 
         def get_dasha_boundaries():
@@ -198,6 +223,10 @@ class TestCompatibilityPerformance:
             yield client
 
     @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    @pytest.fixture
     def compatibility_data(self):
         return {
             "person1": {
@@ -216,7 +245,7 @@ class TestCompatibilityPerformance:
             },
         }
 
-    def test_compatibility_scoring_latency(self, client, compatibility_data, benchmark):
+    def test_compatibility_scoring_latency(self, authenticated_client, compatibility_data, benchmark):
         """Benchmark compatibility scoring (target: <1s)."""
 
         def calculate_compatibility():
@@ -244,7 +273,11 @@ class TestHoroscopePerformance:
         with app.test_client() as client:
             yield client
 
-    def test_horoscope_generation_latency(self, client, benchmark):
+    @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    def test_horoscope_generation_latency(self, authenticated_client, benchmark):
         """Benchmark horoscope generation (target: <200ms)."""
 
         def generate_horoscope():
@@ -276,7 +309,7 @@ class TestHoroscopePerformance:
             "pisces",
         ],
     )
-    def test_all_signs_horoscope_performance(self, client, sign, benchmark):
+    def test_all_signs_horoscope_performance(self, authenticated_client, sign, benchmark):
         """Benchmark horoscope for all zodiac signs (target: <200ms each)."""
 
         def generate_horoscope():
@@ -305,7 +338,11 @@ class TestDatabasePerformance:
         with app.test_client() as client:
             yield client
 
-    def test_user_reports_query_latency(self, client, benchmark):
+    @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    def test_user_reports_query_latency(self, authenticated_client, benchmark):
         """Benchmark user reports query (target: <50ms)."""
         # First create some reports
         report_data = {
@@ -335,7 +372,7 @@ class TestDatabasePerformance:
         mean_time = stats.mean
         assert mean_time < 0.05, f"DB query too slow: {mean_time*1000:.2f}ms > 50ms"
 
-    def test_subscription_status_query_latency(self, client, benchmark):
+    def test_subscription_status_query_latency(self, authenticated_client, benchmark):
         """Benchmark subscription status query (target: <50ms)."""
 
         def query_subscription():
@@ -448,6 +485,10 @@ class TestLargePayloadHandling:
         with app.test_client() as client:
             yield client
 
+    @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
     def test_max_birth_data_size(self, authenticated_client):
         """Test maximum reasonable birth data payload."""
         large_birth_data = {
@@ -514,6 +555,10 @@ class TestMemoryLeakDetection:
         with app.test_client() as client:
             yield client
 
+    @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
     def test_repeated_horoscope_calls_no_leak(self, authenticated_client):
         """Test that repeated horoscope calls don't leak memory."""
         gc.collect()
@@ -571,7 +616,11 @@ class TestEphemerisPerformance:
         with app.test_client() as client:
             yield client
 
-    def test_current_positions_latency(self, client, benchmark):
+    @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    def test_current_positions_latency(self, authenticated_client, benchmark):
         """Benchmark current planetary positions (target: <100ms)."""
 
         def get_positions():
@@ -586,7 +635,7 @@ class TestEphemerisPerformance:
         mean_time = stats.mean
         assert mean_time < 0.1, f"Ephemeris too slow: {mean_time*1000:.2f}ms > 100ms"
 
-    def test_positions_at_date_latency(self, client, benchmark):
+    def test_positions_at_date_latency(self, authenticated_client, benchmark):
         """Benchmark planetary positions at specific date (target: <100ms)."""
 
         def get_positions_at_date():
@@ -615,6 +664,10 @@ class TestReportGenerationPerformance:
             yield client
 
     @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    @pytest.fixture
     def report_data(self):
         return {
             "birthData": {
@@ -628,7 +681,7 @@ class TestReportGenerationPerformance:
             "userId": "report-perf-test",
         }
 
-    def test_report_generation_latency(self, client, report_data, benchmark):
+    def test_report_generation_latency(self, authenticated_client, report_data, benchmark):
         """Benchmark report generation (target: <1s)."""
 
         def generate_report():
@@ -657,7 +710,11 @@ class TestAuthenticationPerformance:
         with app.test_client() as client:
             yield client
 
-    def test_apple_auth_latency(self, client, benchmark):
+    @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    def test_apple_auth_latency(self, authenticated_client, benchmark):
         """Benchmark Apple authentication (target: <200ms)."""
 
         def authenticate():
@@ -672,7 +729,7 @@ class TestAuthenticationPerformance:
         mean_time = stats.mean
         assert mean_time < 0.2, f"Auth too slow: {mean_time*1000:.2f}ms > 200ms"
 
-    def test_token_validation_latency(self, client, benchmark):
+    def test_token_validation_latency(self, authenticated_client, benchmark):
         """Benchmark token validation (target: <50ms)."""
 
         def validate_token():
@@ -700,7 +757,11 @@ class TestLocationSearchPerformance:
         with app.test_client() as client:
             yield client
 
-    def test_location_search_latency(self, client, benchmark):
+    @pytest.fixture
+    def authenticated_client(self, client):
+        return _make_auth_client(client)
+
+    def test_location_search_latency(self, authenticated_client, benchmark):
         """Benchmark location search (target: <500ms)."""
 
         def search_location():
