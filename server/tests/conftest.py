@@ -209,10 +209,20 @@ def sample_user(clean_db):
 def authenticated_client(client, sample_user):
     """
     Flask test client with valid JWT token in headers.
-    Uses the demo token from auth.py for testing.
+    Generates a real JWT signed with the test SECRET_KEY.
     """
-    # Add authorization header to all requests
-    client.environ_base["HTTP_AUTHORIZATION"] = "Bearer demo-token"
+    import os
+    import jwt as pyjwt
+
+    secret = os.environ.get("JWT_SECRET", "astronova-dev-secret-change-in-production")
+    payload = {
+        "sub": sample_user["id"],
+        "email": sample_user["email"],
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(days=30),
+    }
+    token = pyjwt.encode(payload, secret, algorithm="HS256")
+    client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {token}"
     return client
 
 

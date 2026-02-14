@@ -53,21 +53,21 @@ jobs:
         # CloudKit CI test validates code structure without requiring live CloudKit connection
 
   swift-ios:
-    runs-on: macos-latest
-    
+    runs-on: macos-14
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Select Xcode version
       run: |
-        XCODE_PATH=$(ls -d /Applications/Xcode_16*.app /Applications/Xcode_15*.app /Applications/Xcode.app 2>/dev/null | head -1)
-        sudo xcode-select -s "${XCODE_PATH}/Contents/Developer"
+        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
         xcodebuild -version
 
     - name: Build iOS app
       run: |
-        DEST=$(xcodebuild -showdestinations -project client/astronova.xcodeproj -scheme AstronovaApp 2>/dev/null | grep 'iOS Simulator' | head -1 | sed 's/.*{ //' | sed 's/ }$//')
-        xcodebuild -project client/astronova.xcodeproj -scheme AstronovaApp -destination "platform=iOS Simulator,name=iPhone 16,OS=latest" CODE_SIGNING_ALLOWED=NO build
+        xcodebuild -project client/astronova.xcodeproj -scheme AstronovaApp \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+          CODE_SIGNING_ALLOWED=NO build
 
   cloudkit-integration:
     runs-on: ubuntu-latest

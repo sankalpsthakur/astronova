@@ -77,6 +77,7 @@ def create_app():
         app=app,
         default_limits=["2000 per day", "500 per hour"],
         storage_uri="memory://",
+        enabled=not app.config.get("TESTING", False),
     )
 
     # Apply stricter limits to expensive endpoints

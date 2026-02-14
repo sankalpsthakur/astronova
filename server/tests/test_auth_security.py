@@ -373,82 +373,57 @@ class TestDeleteAccount:
 
 
 class TestProtectedEndpoints:
-    """Test protected endpoints for authentication requirements."""
+    """Test protected endpoints require authentication."""
 
-    def test_reports_endpoint_no_auth_required(self, client):
-        """Test reports endpoint - currently no auth required."""
-        # Note: This endpoint doesn't validate auth, which is a security issue
+    def test_reports_endpoint_requires_auth(self, client):
+        """Test reports endpoint requires authentication."""
         response = client.get("/api/v1/reports/user/some-user-id")
+        assert response.status_code == 401
 
-        # Currently allows access without auth
-        assert response.status_code == 200
-
-    def test_chat_endpoint_no_auth_required(self, client):
-        """Test chat endpoint - currently no auth required."""
+    def test_chat_endpoint_requires_auth(self, client):
+        """Test chat endpoint requires authentication."""
         response = client.post("/api/v1/chat", json={"message": "test message"}, content_type="application/json")
+        assert response.status_code == 401
 
-        # Currently allows access without auth
-        assert response.status_code == 200
-
-    def test_birth_data_endpoint_requires_user_id(self, client):
-        """Test birth data endpoint requires userId."""
+    def test_birth_data_endpoint_requires_auth(self, client):
+        """Test birth data endpoint requires authentication."""
         response = client.get("/api/v1/chat/birth-data")
+        assert response.status_code == 401
 
-        assert response.status_code == 400
-        data = response.get_json()
-        assert "error" in data
-
-    def test_save_birth_data_requires_user_id(self, client):
-        """Test save birth data requires userId."""
+    def test_save_birth_data_requires_auth(self, client):
+        """Test save birth data requires authentication."""
         response = client.post(
             "/api/v1/chat/birth-data", json={"birthData": {"date": "1990-01-15"}}, content_type="application/json"
         )
-
-        assert response.status_code == 400
-        data = response.get_json()
-        assert "error" in data
+        assert response.status_code == 401
 
 
 class TestCrossUserAccess:
-    """Test cross-user data access attempts."""
+    """Test cross-user data access is prevented by auth."""
 
     def test_user_cannot_access_another_users_reports(self, client, test_user_id, another_user_id):
-        """Test that one user cannot access another user's reports."""
-        # Create a report for user A
+        """Test that unauthenticated access to reports is blocked."""
         from db import insert_report
 
         report_id = "test-report-001"
         insert_report(report_id, test_user_id, "birth_chart", "Test Report", "Test content")
 
-        # Try to access user A's reports as user B (no auth check currently)
-        # This demonstrates a security vulnerability
         response = client.get(f"/api/v1/reports/user/{test_user_id}")
-
-        # Currently this succeeds, which is a security issue
-        assert response.status_code == 200
-        # In a secure system, this should require auth and validate user identity
+        assert response.status_code == 401
 
     def test_user_cannot_access_another_users_birth_data(self, client, test_user_id, another_user_id):
-        """Test that one user cannot access another user's birth data."""
-        # Save birth data for user A
+        """Test that unauthenticated access to birth data is blocked."""
         from db import upsert_user_birth_data
 
         upsert_user_birth_data(test_user_id, "1990-01-15", "14:30", "America/New_York", 40.7128, -74.0060, "New York")
 
-        # Try to access user A's birth data as user B (using query param)
         response = client.get(f"/api/v1/chat/birth-data?userId={test_user_id}")
+        assert response.status_code == 401
 
-        # Currently this succeeds, which is a security issue
-        assert response.status_code == 200
-        # In a secure system, userId should come from authenticated session
-
-    def test_user_id_header_not_validated(self, client):
-        """Test that X-User-Id header is accepted without validation."""
-        # This demonstrates that user identity can be spoofed
+    def test_user_id_header_spoofing_blocked(self, client):
+        """Test that X-User-Id header alone is insufficient without valid JWT."""
         response = client.post("/api/v1/chat", json={"message": "test"}, headers={"X-User-Id": "spoofed-user-id"})
-
-        # Currently accepts any user ID from header
-        assert response.status_code == 200
+        assert response.status_code == 401
 
 
 class TestSQLInjection:
@@ -486,25 +461,22 @@ class TestSQLInjection:
         assert response.status_code == 200
 
     def test_sql_injection_in_user_id_query(self, client):
-        """Test SQL injection in userId query parameter."""
+        """Test SQL injection in userId query parameter is blocked by auth."""
         malicious_id = "' OR '1'='1"
 
         response = client.get(f"/api/v1/reports/user/{malicious_id}")
 
-        # Should return empty results, not expose all users
-        assert response.status_code == 200
-        data = response.get_json()
-        # Due to parameterized queries, should not match any records
-        assert isinstance(data, list)
+        # Auth required before any query is executed
+        assert response.status_code == 401
 
     def test_sql_injection_in_chat_birth_data(self, client):
-        """Test SQL injection in birth data query."""
+        """Test SQL injection in birth data query is blocked by auth."""
         malicious_id = "' OR '1'='1; --"
 
         response = client.get(f"/api/v1/chat/birth-data?userId={malicious_id}")
 
-        # Should handle safely
-        assert response.status_code == 200
+        # Auth required before any query is executed
+        assert response.status_code == 401
 
 
 class TestInvalidTokenFormats:
@@ -649,9 +621,9 @@ class TestSecurityHeaders:
 class TestDataValidation:
     """Test input validation and sanitization."""
 
-    def test_birth_data_requires_date(self, client):
+    def test_birth_data_requires_date(self, authenticated_client):
         """Test that birth data requires date field."""
-        response = client.post(
+        response = authenticated_client.post(
             "/api/v1/chat/birth-data", json={"userId": "test-user", "birthData": {"time": "14:30"}}  # Missing date
         )
 
@@ -659,9 +631,9 @@ class TestDataValidation:
         data = response.get_json()
         assert "error" in data
 
-    def test_birth_data_validates_presence(self, client):
+    def test_birth_data_validates_presence(self, authenticated_client):
         """Test that birth data field is required."""
-        response = client.post("/api/v1/chat/birth-data", json={"userId": "test-user"})  # Missing birthData
+        response = authenticated_client.post("/api/v1/chat/birth-data", json={"userId": "test-user"})  # Missing birthData
 
         assert response.status_code == 400
 
