@@ -7,6 +7,10 @@ on:
     branches: [ main, dev ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   test-python:
     name: Python Tests (Python ${{ matrix.python-version }})

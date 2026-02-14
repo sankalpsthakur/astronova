@@ -348,6 +348,23 @@ def get_subscription(user_id: Optional[str]) -> dict:
     }
 
 
+def set_subscription(user_id: str, is_active: bool, product_id: Optional[str] = None) -> None:
+    """Create or update a user's subscription status."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO subscription_status (user_id, is_active, product_id, updated_at)
+           VALUES (?, ?, ?, datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET
+             is_active = excluded.is_active,
+             product_id = excluded.product_id,
+             updated_at = excluded.updated_at""",
+        (user_id, int(is_active), product_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 # Birth data helpers
 def get_user_birth_data(user_id: Optional[str]) -> Optional[dict]:
     """Get user's birth data for personalized astrology."""
