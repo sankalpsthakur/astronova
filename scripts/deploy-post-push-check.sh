@@ -110,6 +110,8 @@ record_result() {
     fi
 }
 
+LAST_OUTPUT_FILE=""
+
 check_endpoint() {
     local name=$1
     local method=$2
@@ -117,19 +119,17 @@ check_endpoint() {
     local expected=$4
     local body=$5
     shift 5
-    local output_file
-    local status
 
     local -a headers=()
     if [[ $# -gt 0 ]]; then headers=("$@"); fi
 
-    output_file="$(mktemp)"
+    LAST_OUTPUT_FILE="$(mktemp)"
     local -a curl_args=(
         -sS
         --max-time
         "$REQUEST_TIMEOUT"
         -o
-        "$output_file"
+        "$LAST_OUTPUT_FILE"
         -w
         "%{http_code}"
         -X
@@ -147,12 +147,12 @@ check_endpoint() {
         done
     fi
 
+    local status
     status="$(curl "${curl_args[@]}" || true)"
     local status_code="${status//$'\n'/}"
 
     if [[ ",${expected}," == *",${status_code},"* ]]; then
         record_result "$name" 1 "HTTP ${status_code}"
-        echo "$output_file"
         return 0
     fi
 
@@ -161,9 +161,8 @@ check_endpoint() {
     fi
 
     local snippet
-    snippet="$(head -c 200 "$output_file" | tr '\n' ' ')"
+    snippet="$(head -c 200 "$LAST_OUTPUT_FILE" | tr '\n' ' ')"
     record_result "$name" 0 "expected ${expected}, got ${status_code}, body=${snippet}"
-    echo "$output_file"
     return 1
 }
 
@@ -235,111 +234,82 @@ fi
 record_result "Initial Health Check" 1 "healthy"
 
 # Public endpoint checks
-out_file="$(check_endpoint "System status" "GET" "/api/v1/system-status" "200" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "System status" "GET" "/api/v1/system-status" "200" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "OpenAPI spec" "GET" "/api/v1/openapi.yaml" "200" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "OpenAPI spec" "GET" "/api/v1/openapi.yaml" "200" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Docs page" "GET" "/api/v1/docs" "200,301,302" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Docs page" "GET" "/api/v1/docs" "200,301,302" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Horoscope" "GET" "/api/v1/horoscope?sign=aries&type=daily" "200" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Horoscope" "GET" "/api/v1/horoscope?sign=aries&type=daily" "200" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Ephemeris current" "GET" "/api/v1/ephemeris/current" "200" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Ephemeris current" "GET" "/api/v1/ephemeris/current" "200" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Planetary positions" "GET" "/api/v1/astrology/positions" "200" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Planetary positions" "GET" "/api/v1/astrology/positions" "200" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Temple poojas" "GET" "/api/v1/temple/poojas" "200" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Temple poojas" "GET" "/api/v1/temple/poojas" "200" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Compatibility" "POST" "/api/v1/compatibility" "200" '{"person1":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"person2":{"date":"1988-03-20","time":"18:15","timezone":"America/Los_Angeles","latitude":34.0522,"longitude":-118.2437}}' || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Compatibility" "POST" "/api/v1/compatibility" "200" '{"person1":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"person2":{"date":"1988-03-20","time":"18:15","timezone":"America/Los_Angeles","latitude":34.0522,"longitude":-118.2437}}' || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Chart generation" "POST" "/api/v1/chart/generate" "200" '{"systems":["western","vedic"],"chartType":"natal","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Chart generation" "POST" "/api/v1/chart/generate" "200" '{"systems":["western","vedic"],"chartType":"natal","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Dasha calculation" "POST" "/api/v1/astrology/dashas/complete" "200" '{"birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"targetDate":"2026-02-14","includeTransitions":true,"includeEducation":true}' || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Dasha calculation" "POST" "/api/v1/astrology/dashas/complete" "200" '{"birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"targetDate":"2026-02-14","includeTransitions":true,"includeEducation":true}' || true
+rm -f "$LAST_OUTPUT_FILE"
 
-out_file="$(check_endpoint "Location search" "GET" "/api/v1/location/search?q=New%20York" "200" "__NO_BODY__" || true)"
-if [[ -f "$out_file" ]]; then
-    rm -f "$out_file"
-fi
+check_endpoint "Location search" "GET" "/api/v1/location/search?q=New%20York" "200" "__NO_BODY__" || true
+rm -f "$LAST_OUTPUT_FILE"
 
 # Auth + protected endpoints
-out_file="$(check_endpoint "Auth (Apple fallback)" "POST" "/api/v1/auth/apple" "200" '{"userIdentifier":"astronova-deploy-check","email":"deploy-check@astronova.app","firstName":"Deploy","lastName":"Checker"}' || true)"
-if [[ -f "$out_file" ]]; then
-    AUTH_TOKEN="$(extract_json_field "$out_file" "jwtToken" || true)"
-    AUTH_USER_ID="$(extract_json_field "$out_file" "user.id" || true)"
+check_endpoint "Auth (Apple fallback)" "POST" "/api/v1/auth/apple" "200" '{"userIdentifier":"astronova-deploy-check","email":"deploy-check@astronova.app","firstName":"Deploy","lastName":"Checker"}' || true
+if [[ -f "$LAST_OUTPUT_FILE" ]]; then
+    AUTH_TOKEN="$(extract_json_field "$LAST_OUTPUT_FILE" "jwtToken" || true)"
+    AUTH_USER_ID="$(extract_json_field "$LAST_OUTPUT_FILE" "user.id" || true)"
+    rm -f "$LAST_OUTPUT_FILE"
     if [[ -n "$AUTH_TOKEN" && -n "$AUTH_USER_ID" ]]; then
         AUTH_HEADERS=(
             "Authorization: Bearer ${AUTH_TOKEN}"
             "X-User-Id: ${AUTH_USER_ID}"
         )
         record_result "Auth payload parse" 1 "user_id=${AUTH_USER_ID}"
-        out_file2="$(check_endpoint "Auth validate" "GET" "/api/v1/auth/validate" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true)"
-        if [[ -f "$out_file2" ]]; then
-            rm -f "$out_file2"
-        fi
 
-        out_file2="$(check_endpoint "Subscription status" "GET" "/api/v1/subscription/status?userId=${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true)"
-        if [[ -f "$out_file2" ]]; then
-            rm -f "$out_file2"
-        fi
+        check_endpoint "Auth validate" "GET" "/api/v1/auth/validate" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
+        rm -f "$LAST_OUTPUT_FILE"
+
+        check_endpoint "Subscription status" "GET" "/api/v1/subscription/status?userId=${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
+        rm -f "$LAST_OUTPUT_FILE"
 
         if (( SKIP_CHAT == 0 )); then
             expected_chat="200"
             if (( ALLOW_CHAT_503 == 1 )); then
                 expected_chat="200,503"
             fi
-            out_file2="$(check_endpoint "Protected chat" "POST" "/api/v1/chat" "${expected_chat}" '{"message":"What is my cosmic trend today?","userId":"'"${AUTH_USER_ID}"'"}' "${AUTH_HEADERS[@]}" || true)"
-            if [[ -f "$out_file2" ]]; then
-                rm -f "$out_file2"
-            fi
+            check_endpoint "Protected chat" "POST" "/api/v1/chat" "${expected_chat}" '{"message":"What is my cosmic trend today?","userId":"'"${AUTH_USER_ID}"'"}' "${AUTH_HEADERS[@]}" || true
+            rm -f "$LAST_OUTPUT_FILE"
         fi
 
         if (( SKIP_CHARGED_REPORTS == 0 )); then
-            out_file2="$(check_endpoint "Generate report" "POST" "/api/v1/reports/generate" "200,201" '{"reportType":"birth_chart","userId":"'"${AUTH_USER_ID}"'","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' "${AUTH_HEADERS[@]}" || true)"
-            if [[ -f "$out_file2" ]]; then
-                REPORT_ID="$(extract_json_field "$out_file2" "reportId" || true)"
-                if [[ -n "$REPORT_ID" ]]; then
-                    record_result "Report id extraction" 1 "${REPORT_ID}"
-                    out_file3="$(check_endpoint "Reports list" "GET" "/api/v1/reports/user/${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true)"
-                    if [[ -f "$out_file3" ]]; then
-                        rm -f "$out_file3"
-                    fi
-                    out_file3="$(check_endpoint "Report PDF" "GET" "/api/v1/reports/${REPORT_ID}/pdf" "200" "__NO_BODY__" || true)"
-                    if [[ -f "$out_file3" ]]; then
-                        rm -f "$out_file3"
-                    fi
-                else
-                    rm -f "$out_file2"
-                    record_result "Report id extraction" 0 "missing reportId"
-                fi
+            check_endpoint "Generate report" "POST" "/api/v1/reports/generate" "200,201" '{"reportType":"birth_chart","userId":"'"${AUTH_USER_ID}"'","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' "${AUTH_HEADERS[@]}" || true
+            REPORT_ID="$(extract_json_field "$LAST_OUTPUT_FILE" "reportId" || true)"
+            if [[ -n "$REPORT_ID" ]]; then
+                record_result "Report id extraction" 1 "${REPORT_ID}"
+                rm -f "$LAST_OUTPUT_FILE"
+
+                check_endpoint "Reports list" "GET" "/api/v1/reports/user/${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
+                rm -f "$LAST_OUTPUT_FILE"
+
+                check_endpoint "Report PDF" "GET" "/api/v1/reports/${REPORT_ID}/pdf" "200" "__NO_BODY__" || true
+                rm -f "$LAST_OUTPUT_FILE"
+            else
+                rm -f "$LAST_OUTPUT_FILE"
+                record_result "Report id extraction" 0 "missing reportId"
             fi
         else
             record_result "Reports checks skipped" 1 "by flag"
@@ -347,7 +317,6 @@ if [[ -f "$out_file" ]]; then
     else
         record_result "Auth payload parse" 0 "jwtToken or user.id missing"
     fi
-    rm -f "$out_file"
 fi
 
 if (( FAILED_CHECKS > 0 )); then
