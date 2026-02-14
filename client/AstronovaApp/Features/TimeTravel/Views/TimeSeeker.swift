@@ -3,10 +3,19 @@ import SwiftUI
 // MARK: - Time Seeker
 // Primary control: scrub month/year with inertia + “Now” snap.
 
+struct TimeTravelScrubMotion: Equatable {
+    let direction: CGFloat
+    let speed: CGFloat
+    let isScrubbing: Bool
+
+    static let idle = TimeTravelScrubMotion(direction: 0, speed: 0, isScrubbing: false)
+}
+
 struct TimeSeeker: View {
     @Binding var selectedDate: Date
     let onDateChanged: () -> Void
     let onDragEnded: () -> Void
+    let onScrubMotion: (TimeTravelScrubMotion) -> Void
     let onInsightTapped: (ScrubInsight) -> Void
     let insights: [ScrubInsight]
     let summary: String?
@@ -24,6 +33,7 @@ struct TimeSeeker: View {
         selectedDate: Binding<Date>,
         onDateChanged: @escaping () -> Void,
         onDragEnded: @escaping () -> Void,
+        onScrubMotion: @escaping (TimeTravelScrubMotion) -> Void = { _ in },
         onInsightTapped: @escaping (ScrubInsight) -> Void = { _ in },
         insights: [ScrubInsight] = [],
         summary: String? = nil
@@ -31,6 +41,7 @@ struct TimeSeeker: View {
         _selectedDate = selectedDate
         self.onDateChanged = onDateChanged
         self.onDragEnded = onDragEnded
+        self.onScrubMotion = onScrubMotion
         self.onInsightTapped = onInsightTapped
         self.insights = insights
         self.summary = summary
@@ -244,6 +255,7 @@ struct TimeSeeker: View {
 
     private func adjustMonth(by offset: Int) {
         guard let newDate = calendar.date(byAdding: .month, value: offset, to: selectedDate) else { return }
+        onScrubMotion(TimeTravelScrubMotion(direction: offset >= 0 ? 1 : -1, speed: 0.32, isScrubbing: true))
         emitHapticsIfBoundaryCrossed(newDate: newDate)
         withAnimation(.cosmicSpring) { selectedDate = newDate }
         onDateChanged()
@@ -254,6 +266,8 @@ struct TimeSeeker: View {
         var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
         components.year = year
         guard let newDate = calendar.date(from: components) else { return }
+        let direction = Calendar.current.component(.year, from: newDate) >= Calendar.current.component(.year, from: selectedDate) ? 1 : -1
+        onScrubMotion(TimeTravelScrubMotion(direction: CGFloat(direction), speed: 0.28, isScrubbing: true))
         emitHapticsIfBoundaryCrossed(newDate: newDate)
         withAnimation(.cosmicSpring) { selectedDate = newDate }
         onDateChanged()
@@ -262,6 +276,8 @@ struct TimeSeeker: View {
 
     private func snapToNow() {
         CosmicHaptics.light()
+        let direction = isToday ? 0 : (calendar.compare(selectedDate, to: Date(), toGranularity: .month) == .orderedAscending ? 1 : -1)
+        onScrubMotion(TimeTravelScrubMotion(direction: CGFloat(direction), speed: 0.5, isScrubbing: true))
         withAnimation(.cosmicBounce) { selectedDate = Date() }
         onDateChanged()
         onDragEnded()
@@ -275,6 +291,10 @@ struct TimeSeeker: View {
         }
 
         guard let dragStartDate else { return }
+
+        let direction: CGFloat = translation > 0 ? 1 : (translation < 0 ? -1 : 0)
+        let normalized = min(1.0, abs(translation) / (monthWidth * 2.5))
+        onScrubMotion(TimeTravelScrubMotion(direction: direction, speed: normalized, isScrubbing: true))
 
         let monthsDelta = Int(translation / monthWidth)
         guard monthsDelta != lastScrubbedMonthsDelta else { return }
@@ -299,6 +319,9 @@ struct TimeSeeker: View {
                 let delay = Double(i) * 0.05
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                     guard let newDate = calendar.date(byAdding: .month, value: inertiaMonths > 0 ? 1 : -1, to: selectedDate) else { return }
+                    let remaining = CGFloat(abs(inertiaMonths) - (i - 1))
+                    let intensity = min(1.0, 0.18 + remaining / 3.0)
+                    onScrubMotion(TimeTravelScrubMotion(direction: inertiaMonths > 0 ? 1 : -1, speed: intensity, isScrubbing: true))
                     emitHapticsIfBoundaryCrossed(newDate: newDate)
                     withAnimation(.cosmicQuick) { selectedDate = newDate }
                     onDateChanged()

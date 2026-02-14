@@ -26,6 +26,9 @@ i18n/L10n implementation plan including:
 
 **Status**: Planning phase
 
+### [Growth Loop Execution Board](./growth-loop-execution-board.md)
+Phased rollout for gamified core flows + funnel + measurement mechanics (Phases 4-6), including parallel subagent task execution.
+
 ### [Compatibility Implementation Backlog](./compatibility-implementation-backlog.md)
 Detailed task breakdown for compatibility feature enhancements:
 - Phase 1: Core synastry calculations ✅

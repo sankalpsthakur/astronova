@@ -21,10 +21,12 @@ struct UnifiedTimeTravelView: View {
         if profile.timezone == nil || profile.birthLatitude == nil || profile.birthLongitude == nil {
             return "Add your birth location and timezone to unlock Time Travel insights."
         }
-        if profile.birthTime == nil {
-            return "Add your birth time in profile settings to calculate dashas."
-        }
         return nil
+    }
+
+    private var birthTimeApproximationMessage: String {
+        guard auth.profileManager.profile.birthTime == nil else { return "" }
+        return "Birth time is missing. We’re using 12:00 local time for approximate calculations."
     }
 
     var body: some View {
@@ -41,6 +43,7 @@ struct UnifiedTimeTravelView: View {
                                 selectedDate: $state.targetDate,
                                 onDateChanged: { state.onDateScrubbing() },
                                 onDragEnded: { state.onDateCommit() },
+                                onScrubMotion: { state.onScrubMotion($0) },
                                 onInsightTapped: { insight in
                                     guard let element = insight.element else { return }
                                     withAnimation(.cosmicSpring) {
@@ -52,6 +55,11 @@ struct UnifiedTimeTravelView: View {
                             )
                             .padding(.horizontal)
                             .padding(.bottom, Cosmic.Spacing.xl)
+
+                            if state.birthTimeWarning != nil {
+                                birthTimeAssumptionBanner
+                                    .padding(.horizontal)
+                            }
 
                             if let error = state.errorMessage {
                                 Text(error)
@@ -72,12 +80,17 @@ struct UnifiedTimeTravelView: View {
                                         handleElementTapped(element)
                                     }
                                 )
+                                .scaleEffect(1 + (state.scrubMotion.speed * 0.02))
+                                .rotationEffect(.degrees(2 * state.scrubMotion.direction * state.scrubMotion.speed))
+                                .offset(x: state.scrubMotion.direction * state.scrubMotion.speed * 10)
+                                .animation(.cosmicSmooth, value: state.scrubMotion)
                                 .frame(height: 350)
                                 .padding(.horizontal)
                                 .overlay {
                                     TimeTravelSwarmOverlay(
                                         mode: state.isLoading ? .loading : (state.isScrubbing ? .scrubbing : .idle),
-                                        tone: state.scrubFeedback.insights.first?.tone
+                                        tone: state.scrubFeedback.insights.first?.tone,
+                                        scrubMotion: state.scrubMotion
                                     )
                                     .padding(.horizontal)
                                 }
@@ -204,6 +217,21 @@ struct UnifiedTimeTravelView: View {
                 }
             }
         }
+    }
+
+    private var birthTimeAssumptionBanner: some View {
+        HStack(spacing: Cosmic.Spacing.sm) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.cosmicTitle3)
+                .foregroundStyle(Color.cosmicWarning)
+
+            Text(birthTimeApproximationMessage)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .multilineTextAlignment(.leading)
+        }
+        .padding()
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
     }
 
     // MARK: - Loading Overlay
@@ -427,12 +455,14 @@ class TimeTravelViewState: ObservableObject {
     @Published var selectedElement: CosmicElement?
     @Published var isLoading: Bool = false
     @Published var isScrubbing: Bool = false
+    @Published var scrubMotion: TimeTravelScrubMotion = .idle
     @Published var lastCommittedSnapshotKey: String?
 
     // Display snapshot (shows cached/interpolated data while loading)
     @Published var displaySnapshot: TimeTravelSnapshot?
     @Published var scrubFeedback: ScrubFeedback = ScrubFeedback(insights: [], summary: nil)
     @Published var errorMessage: String?
+    @Published var birthTimeWarning: String?
 
     private let api = APIServices.shared
     private var profile: UserProfile?
@@ -522,6 +552,16 @@ class TimeTravelViewState: ObservableObject {
         }
     }
 
+    func onScrubMotion(_ motion: TimeTravelScrubMotion) {
+        let normalizedDirection = motion.direction >= 0 ? (motion.direction > 0 ? 1 : 0) : -1
+        scrubMotion = TimeTravelScrubMotion(
+            direction: CGFloat(normalizedDirection),
+            speed: min(1, max(0, motion.speed)),
+            isScrubbing: motion.isScrubbing
+        )
+        isScrubbing = scrubMotion.isScrubbing
+    }
+
     private func profileDidChange(from oldProfile: UserProfile?, to newProfile: UserProfile) -> Bool {
         guard let oldProfile else { return true }
         return oldProfile.birthDate != newProfile.birthDate ||
@@ -543,6 +583,7 @@ class TimeTravelViewState: ObservableObject {
 
     func onDateCommit() {
         isScrubbing = false
+        scrubMotion = .idle
         // Debounce: wait before fetching
         debounceTask?.cancel()
         debounceTask = Task {
@@ -566,11 +607,13 @@ class TimeTravelViewState: ObservableObject {
         guard let profile else { return }
         guard let timezone = profile.timezone,
               let latitude = profile.birthLatitude,
-              let longitude = profile.birthLongitude,
-              let birthTime = profile.birthTime else { return }
+              let longitude = profile.birthLongitude else { return }
 
         isLoading = true
         errorMessage = nil
+        let usesNoonFallback = profile.birthTime == nil
+        birthTimeWarning = usesNoonFallback ? "Birth time is missing. We’re using 12:00 local time for approximate calculations." : nil
+        let birthTime = profile.birthTime ?? Self.defaultNoonDate(for: profile.birthDate, timezone: timezone)
 
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -636,6 +679,14 @@ class TimeTravelViewState: ObservableObject {
         }
 
         isLoading = false
+    }
+
+    private static func defaultNoonDate(for birthDate: Date, timezone: String) -> Date {
+        var calendar = Calendar.current
+        if let tz = TimeZone(identifier: timezone) {
+            calendar.timeZone = tz
+        }
+        return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: birthDate) ?? birthDate
     }
 
     private func prefetchPlanets(around date: Date, latitude: Double, longitude: Double, timezone: String) {

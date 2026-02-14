@@ -10,15 +10,18 @@ struct MapKitAutocompleteView: View {
     @FocusState private var isSearchFocused: Bool
     
     let onLocationSelected: (LocationResult) -> Void
+    let onSearchTextChanged: ((String) -> Void)?
     let placeholder: String
     
     init(
         selectedLocation: Binding<LocationResult?>,
         placeholder: String = "Search for a location...",
+        onSearchTextChanged: ((String) -> Void)? = nil,
         onLocationSelected: @escaping (LocationResult) -> Void
     ) {
         self._selectedLocation = selectedLocation
         self.placeholder = placeholder
+        self.onSearchTextChanged = onSearchTextChanged
         self.onLocationSelected = onLocationSelected
         
         // Initialize search text with placeholder if it contains existing location
@@ -36,12 +39,13 @@ struct MapKitAutocompleteView: View {
                     .font(.system(size: 16))
                 
                 TextField(placeholder, text: $searchText)
-                    .focused($isSearchFocused)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .onChange(of: searchText) { _, newValue in
-                        debounceAutocomplete(newValue)
-                    }
+                .focused($isSearchFocused)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .onChange(of: searchText) { _, newValue in
+                    onSearchTextChanged?(newValue)
+                    debounceAutocomplete(newValue)
+                }
                 
                 if isSearching {
                     ProgressView()
@@ -90,6 +94,7 @@ struct MapKitAutocompleteView: View {
         selectedLocation = nil
         isSearchFocused = false
         searchTask?.cancel()
+        onSearchTextChanged?("")
     }
     
     private func selectSuggestion(_ suggestion: LocationResult) {
@@ -99,6 +104,7 @@ struct MapKitAutocompleteView: View {
 
         selectedLocation = suggestion
         onLocationSelected(suggestion)
+        onSearchTextChanged?(searchText)
     }
     
     private func debounceAutocomplete(_ query: String) {
@@ -202,7 +208,8 @@ struct LocationResultRow: View {
     VStack {
         MapKitAutocompleteView(
             selectedLocation: .constant(nil),
-            placeholder: "Where were you born?"
+            placeholder: "Where were you born?",
+            onSearchTextChanged: nil
         ) { location in
             print("Selected: \(location)")
         }

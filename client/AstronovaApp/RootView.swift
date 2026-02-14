@@ -2376,7 +2376,7 @@ struct TodayTab: View {
                     } label: {
                         HStack {
                             Image(systemName: "doc.text.magnifyingglass")
-                            Text("Explore all 7 detailed reports (from $12.99)")
+                            Text("Explore all journeys (from $12.99)")
                             Spacer()
                         }
                     }
@@ -2661,7 +2661,12 @@ struct TodayTab: View {
     }
 
     private var shouldShowWelcome: Bool {
-        return !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        return !hasCompletedOnboarding
+    }
+
+    private var hasCompletedOnboarding: Bool {
+        UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") ||
+        UserDefaults.standard.bool(forKey: "onboarding_complete")
     }
 }
 
@@ -2985,7 +2990,7 @@ struct DiscoveryCTASection: View {
     
     private func switchToTimeTravelTab() {
         HapticFeedbackService.shared.lightImpact()
-        NotificationCenter.default.post(name: .switchToTab, object: 2)
+        NotificationCenter.default.post(name: .switchToTab, object: 1)
     }
 
     private func switchToProfileBookmarks() {
@@ -5179,12 +5184,17 @@ struct ProfileEditView: View {
     @State private var editedProfile: UserProfile
     @State private var hasBirthTime: Bool
     @State private var birthTimeValue: Date
+    @State private var isSaving = false
+    @State private var selectedLocation: LocationResult?
+    @State private var typedBirthPlace: String
 
     init(profileManager: UserProfileManager) {
         self.profileManager = profileManager
         _editedProfile = State(initialValue: profileManager.profile)
         _hasBirthTime = State(initialValue: profileManager.profile.birthTime != nil)
         _birthTimeValue = State(initialValue: profileManager.profile.birthTime ?? Self.defaultBirthTime(for: profileManager.profile.birthDate))
+        _selectedLocation = State(initialValue: Self.locationResult(from: profileManager.profile))
+        _typedBirthPlace = State(initialValue: profileManager.profile.birthPlace ?? "")
     }
     
     var body: some View {
@@ -5230,18 +5240,19 @@ struct ProfileEditView: View {
                         Spacer()
                         Button(isEditing ? "Save" : "Edit") {
                             if isEditing {
-                                // Set birthTime based on toggle state before saving
-                                editedProfile.birthTime = hasBirthTime ? birthTimeValue : nil
-                                profileManager.updateProfile(editedProfile)
+                                Task { await saveProfile() }
                             } else {
                                 editedProfile = profileManager.profile
                                 hasBirthTime = profileManager.profile.birthTime != nil
                                 birthTimeValue = profileManager.profile.birthTime ?? Self.defaultBirthTime(for: profileManager.profile.birthDate)
+                                selectedLocation = Self.locationResult(from: profileManager.profile)
+                                typedBirthPlace = profileManager.profile.birthPlace ?? ""
                             }
                             isEditing.toggle()
                         }
                         .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicGold)
+                        .disabled(isSaving)
                     }
                     .padding(.horizontal, Cosmic.Spacing.lg)
                     .padding(.top, Cosmic.Spacing.lg)
@@ -5314,14 +5325,22 @@ struct ProfileEditView: View {
                                     .foregroundStyle(Color.cosmicTextTertiary)
 
                                 MapKitAutocompleteView(
-                                    selectedLocation: .constant(nil),
-                                    placeholder: editedProfile.birthPlace ?? "City, State/Country"
+                                    selectedLocation: $selectedLocation,
+                                    placeholder: editedProfile.birthPlace ?? "City, State/Country",
+                                    onSearchTextChanged: { text in
+                                        typedBirthPlace = text
+                                        if selectedLocation?.fullName != text {
+                                            selectedLocation = nil
+                                        }
+                                    }
                                 ) { location in
                                     // Update profile when location is selected
                                     editedProfile.birthPlace = location.fullName
+                                    selectedLocation = location
                                     editedProfile.birthLatitude = location.coordinate.latitude
                                     editedProfile.birthLongitude = location.coordinate.longitude
                                     editedProfile.timezone = location.timezone
+                                    typedBirthPlace = location.fullName
                                 }
                             }
                         }
@@ -5419,6 +5438,77 @@ struct ProfileEditView: View {
 
     private static func defaultBirthTime(for date: Date) -> Date {
         Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
+    }
+
+    @MainActor
+    private func saveProfile() async {
+        guard !isSaving else { return }
+        isSaving = true
+
+        var updatedProfile = editedProfile
+        updatedProfile.fullName = editedProfile.fullName
+        updatedProfile.birthDate = editedProfile.birthDate
+        updatedProfile.birthTime = hasBirthTime ? birthTimeValue : nil
+
+        let rawPlace = typedBirthPlace.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !rawPlace.isEmpty {
+            updatedProfile.birthPlace = rawPlace
+        }
+
+        if let selected = selectedLocation {
+            apply(location: selected, to: &updatedProfile)
+        } else if !rawPlace.isEmpty {
+            let resolved = await resolveLocation(for: rawPlace)
+            if let resolved {
+                apply(location: resolved, to: &updatedProfile)
+            }
+        }
+
+        profileManager.updateProfile(updatedProfile)
+        editedProfile = updatedProfile
+        isSaving = false
+    }
+
+    private func apply(location: LocationResult, to profile: inout UserProfile) {
+        profile.birthPlace = location.fullName
+        profile.birthLatitude = location.coordinate.latitude
+        profile.birthLongitude = location.coordinate.longitude
+        profile.timezone = location.timezone
+    }
+
+    private func resolveLocation(for query: String) async -> LocationResult? {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let locations = await profileManager.searchLocations(query: trimmed)
+        if let first = locations.first {
+            return first
+        }
+
+        do {
+            let fallback = try await MapKitLocationService.shared.searchPlaces(query: trimmed)
+            return fallback.first
+        } catch {
+            #if DEBUG
+            print("[ProfileEditView] Failed to resolve location '\(trimmed)': \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    private static func locationResult(from profile: UserProfile) -> LocationResult? {
+        guard
+            let lat = profile.birthLatitude,
+            let lon = profile.birthLongitude
+        else {
+            return nil
+        }
+
+        return LocationResult(
+            fullName: profile.birthPlace ?? "Saved Location",
+            coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+            timezone: profile.timezone ?? ""
+        )
     }
 }
 
@@ -6341,11 +6431,11 @@ struct DailySynopsisCard: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Want deeper insights?")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.primary)
-                                Text("Get personalized reports starting from $4.99")
-                                    .font(.cosmicCaption)
-                                    .foregroundStyle(Color.cosmicTextSecondary)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.primary)
+                                Text("Get a deeper journey from $4.99")
+                                .font(.cosmicCaption)
+                                .foregroundStyle(Color.cosmicTextSecondary)
                             }
                             Spacer()
                             Image(systemName: "arrow.forward.circle.fill")
@@ -6841,7 +6931,7 @@ struct ReportGenerationSheet: View {
                                         HStack {
                                             Image(systemName: "checkmark.circle.fill")
                                                 .foregroundStyle(.green)
-                                            Text("All 7 detailed reports included")
+                                            Text("All 7 deeper journeys included")
                                                 .font(.cosmicCallout)
                                         }
                                         HStack {
@@ -6885,7 +6975,7 @@ struct ReportGenerationSheet: View {
                                             Text("Single Report Only")
                                                 .font(.cosmicCaption)
                                                 .foregroundStyle(Color.cosmicTextSecondary)
-                                            Text("Purchase \(reportInfo.title)")
+                                            Text("Open \(reportInfo.title)")
                                                 .font(.subheadline.weight(.medium))
                                             Text("from $12.99")
                                                 .font(.headline.weight(.bold))
@@ -6904,7 +6994,7 @@ struct ReportGenerationSheet: View {
                         }
                     }
                     
-                    Text("All reports are saved to your profile for future reference")
+                    Text("All journeys are saved to your profile for future reference")
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
@@ -7109,7 +7199,7 @@ struct PaymentOptionsSheet: View {
                                     .foregroundStyle(.yellow)
                             }
                             
-                            Text("Unlock all reports + unlimited features")
+                                Text("Unlock all journeys + unlimited features")
                                 .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextSecondary)
                         }
@@ -8013,7 +8103,7 @@ struct TabGuideOverlay: View {
         ),
         TabGuideContent(
             title: "Temple",
-            description: "Book a consultation or a pooja, and connect with trusted astrologers when you want deeper guidance.",
+            description: "Book poojas, explore guidance options, and align with trusted Vedic traditions when you want deeper support.",
             icon: "building.columns.fill",
             color: .cosmicCopper
         ),

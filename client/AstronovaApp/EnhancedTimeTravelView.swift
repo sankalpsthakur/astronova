@@ -36,6 +36,11 @@ struct EnhancedTimeTravelView: View {
                         Task { await viewModel.loadAll(for: selectedDate, zodiacSystem: zodiacSystem, profileManager: auth.profileManager) }
                     }
 
+                    if let warning = viewModel.birthTimeWarning {
+                        birthTimeWarningBanner(warning)
+                            .padding(.horizontal)
+                    }
+
                     // Planetary motion seeker (moves with the selected date)
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
@@ -320,6 +325,21 @@ struct EnhancedTimeTravelView: View {
         case .pratyantardasha:
             return data.currentPeriod.pratyantardasha ?? data.currentPeriod.mahadasha
         }
+    }
+
+    private func birthTimeWarningBanner(_ message: String) -> some View {
+        HStack(spacing: Cosmic.Spacing.sm) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.cosmicTitle3)
+                .foregroundStyle(Color.cosmicWarning)
+
+            Text(message)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .multilineTextAlignment(.leading)
+        }
+        .padding()
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
     }
 
     private func strengthForPeriod(_ period: DashaPeriod, in data: DashaCompleteResponse) -> DashaCompleteResponse.ImpactAnalysis.StrengthData? {
@@ -780,6 +800,7 @@ class TimeTravelViewModel: ObservableObject {
     @Published var dashaData: DashaCompleteResponse?
     @Published var isLoading = false
     @Published var error: String?
+    @Published var birthTimeWarning: String?
     @Published var comparisonScores: DashaCompleteResponse.ImpactScores?
     @Published var isProfileIncomplete = false
     @Published var planetaryPositions: [DetailedPlanetaryPosition] = []
@@ -817,6 +838,7 @@ class TimeTravelViewModel: ObservableObject {
         isLoading = true
         self.error = nil
         self.isProfileIncomplete = false
+        self.birthTimeWarning = nil
         comparisonScores = nil
 
         guard let profileManager = profileManager else {
@@ -838,8 +860,14 @@ class TimeTravelViewModel: ObservableObject {
             return
         }
 
-        guard let birthTime = profile.birthTime else {
-            self.error = "Add your birth time in profile settings to calculate dashas."
+        let usesNoonFallback = profile.birthTime == nil
+        let birthTime = profile.birthTime ?? Self.defaultNoonDate(for: profile.birthDate, timezone: timezone)
+        birthTimeWarning = usesNoonFallback
+            ? "Birth time is missing. We’re using 12:00 local time for approximate calculations."
+            : nil
+
+        guard !timezone.isEmpty else {
+            self.error = "Invalid timezone provided."
             self.isProfileIncomplete = true
             dashaData = nil
             isLoading = false
@@ -883,6 +911,14 @@ class TimeTravelViewModel: ObservableObject {
         }
 
         isLoading = false
+    }
+
+    private static func defaultNoonDate(for birthDate: Date, timezone: String) -> Date {
+        var calendar = Calendar.current
+        if let tz = TimeZone(identifier: timezone) {
+            calendar.timeZone = tz
+        }
+        return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: birthDate) ?? birthDate
     }
 
     private func loadPlanetaryPositions(for date: Date, zodiacSystem: ZodiacSystem, profileManager: UserProfileManager?) async {

@@ -58,7 +58,8 @@ Automated deployment workflow for staging and production environments.
 - Pre-deployment validation (tests, code quality)
 - Staging deployment on main branch
 - Production deployment on version tags
-- Health checks and smoke tests
+- 5-minute delayed post-deploy verification via `scripts/deploy-post-push-check.sh`
+- Health check + endpoint smoke coverage for public and auth-protected routes
 - Automatic rollback on failure
 - GitHub release creation for production
 
@@ -72,6 +73,34 @@ Automated deployment workflow for staging and production environments.
 - `deploy-staging`: Deploys to staging environment
 - `deploy-production`: Deploys to production environment
 - `post-deploy-monitor`: Monitors deployment health
+
+### Post-Deployment Verification
+
+The `deploy-post-push-check.sh` script performs comprehensive endpoint validation after deployment:
+
+**Validation Steps:**
+1. **Health endpoint** - Retries with backoff to confirm service is live
+2. **Authentication** - Validates `auth/apple` endpoint
+3. **Core astrology endpoints** - Tests `horoscope`, `ephemeris`, `positions`
+4. **Chart generation** - Verifies Western + Vedic chart rendering
+5. **Report generation** - Tests report creation + PDF download
+6. **Temple poojas** - Validates temple services endpoint
+7. **Chat endpoint** - Tests chat API (503 acceptable without AI key)
+
+**Timing:** 300-second wait for Render cold start, then sequential endpoint validation.
+
+**Exit codes:** 0 = all pass, non-zero = failures found.
+
+**Usage:**
+```bash
+bash scripts/deploy-post-push-check.sh \
+  --base-url https://astronova.onrender.com \
+  --wait-seconds 300 \
+  --health-retries 30 \
+  --health-delay 10
+```
+
+Use the staging URL for staging runs.
 
 ### 4. CI (`ci.yml`)
 

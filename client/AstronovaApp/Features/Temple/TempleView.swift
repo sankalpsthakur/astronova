@@ -13,6 +13,7 @@ struct TempleView: View {
     @EnvironmentObject private var gamification: GamificationManager
     @State private var muhurats: [Muhurat] = Muhurat.sampleMuhurats()
     @State private var diyPoojas: [DIYPooja] = DIYPooja.samples
+    @State private var planetPositions: [DetailedPlanetaryPosition] = []
     @State private var panchang: PanchangData = PanchangData(
         tithi: "Shukla Panchami",
         nakshatra: "Rohini",
@@ -37,7 +38,10 @@ struct TempleView: View {
                         // 3. Today's Muhurats
                         muhuratSection
 
-                        // 4. Vedic Wisdom Section
+                        // 4. Navagraha — Live Planetary Positions
+                        navagrahaSection
+
+                        // 5. Vedic Wisdom Section
                         vedicWisdomSection
 
                         // Bottom padding for tab bar
@@ -115,6 +119,111 @@ struct TempleView: View {
         }
     }
 
+    // MARK: - Navagraha Section
+
+    private var navagrahaSection: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                    Text("Navagraha")
+                        .font(.cosmicTitle3)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("Live planetary positions")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+                Spacer()
+                NavigationLink {
+                    VedicLibraryView(initialCategory: "Planets")
+                        .environmentObject(gamification)
+                } label: {
+                    HStack(spacing: Cosmic.Spacing.xxs) {
+                        Text("Mantras")
+                            .font(.cosmicCaptionEmphasis)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundStyle(Color.cosmicGold)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, Cosmic.Spacing.screen)
+
+            // Planet orbs
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Cosmic.Spacing.sm) {
+                    ForEach(navagrahaOrbs, id: \.name) { planet in
+                        VStack(spacing: Cosmic.Spacing.xxs) {
+                            ZStack {
+                                Circle()
+                                    .fill(planet.color.opacity(0.15))
+                                    .frame(width: 48, height: 48)
+                                Circle()
+                                    .stroke(planet.color.opacity(0.4), lineWidth: 1.5)
+                                    .frame(width: 48, height: 48)
+                                Text(planet.symbol)
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(planet.color)
+                            }
+
+                            Text(planet.name)
+                                .font(.cosmicCaptionEmphasis)
+                                .foregroundStyle(Color.cosmicTextPrimary)
+                                .lineLimit(1)
+
+                            Text(planet.sign)
+                                .font(.cosmicMicro)
+                                .foregroundStyle(Color.cosmicTextSecondary)
+                                .lineLimit(1)
+                        }
+                        .frame(width: 64)
+                    }
+                }
+                .padding(.horizontal, Cosmic.Spacing.screen)
+            }
+        }
+    }
+
+    private struct NavagrahaOrb {
+        let name: String
+        let apiName: String
+        let symbol: String
+        let color: Color
+        var sign: String
+    }
+
+    private var navagrahaOrbs: [NavagrahaOrb] {
+        let defaults: [(String, String, String, Color)] = [
+            ("Surya", "Sun", "☉", .planetSun),
+            ("Chandra", "Moon", "☽", .planetMoon),
+            ("Mangala", "Mars", "♂", .planetMars),
+            ("Budha", "Mercury", "☿", .planetMercury),
+            ("Guru", "Jupiter", "♃", .planetJupiter),
+            ("Shukra", "Venus", "♀", .planetVenus),
+            ("Shani", "Saturn", "♄", .planetSaturn),
+            ("Rahu", "Rahu", "☊", .planetRahu),
+            ("Ketu", "Ketu", "☋", .planetKetu),
+        ]
+
+        return defaults.map { name, apiName, symbol, color in
+            let position = planetPositions.first { $0.name == apiName }
+            let sign = position.map { abbreviateSign($0.sign) } ?? "—"
+            return NavagrahaOrb(name: name, apiName: apiName, symbol: symbol, color: color, sign: sign)
+        }
+    }
+
+    private func abbreviateSign(_ sign: String) -> String {
+        let map = [
+            "Aries": "Ari", "Taurus": "Tau", "Gemini": "Gem",
+            "Cancer": "Can", "Leo": "Leo", "Virgo": "Vir",
+            "Libra": "Lib", "Scorpio": "Sco", "Sagittarius": "Sag",
+            "Capricorn": "Cap", "Aquarius": "Aqu", "Pisces": "Pis"
+        ]
+        return map[sign] ?? String(sign.prefix(3))
+    }
+
     // MARK: - Vedic Wisdom Section
 
     private var vedicWisdomSection: some View {
@@ -153,9 +262,9 @@ struct TempleView: View {
                 GridItem(.flexible(), spacing: Cosmic.Spacing.md),
                 GridItem(.flexible(), spacing: Cosmic.Spacing.md)
             ], spacing: Cosmic.Spacing.md) {
-                ForEach(VedicCategory.samples) { category in
+                ForEach(VedicCategory.samples.filter { $0.name != "Planets" }) { category in
                     NavigationLink {
-                        VedicLibraryView()
+                        VedicLibraryView(initialCategory: category.name)
                             .environmentObject(gamification)
                     } label: {
                         VStack(spacing: Cosmic.Spacing.xs) {
@@ -203,6 +312,13 @@ struct TempleView: View {
             }
         } catch {
             // Keep sample data
+        }
+
+        // Load planetary positions
+        do {
+            planetPositions = try await APIServices.shared.getDetailedPlanetaryPositions()
+        } catch {
+            // Show dashes for signs
         }
     }
 }

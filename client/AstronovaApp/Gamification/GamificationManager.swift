@@ -14,11 +14,17 @@ final class GamificationManager: ObservableObject {
     @Published private(set) var lastTimeTravelXPDay: String?
     @Published private(set) var weeklyChapterKey: String?
     @Published private(set) var weeklyChapterCheckIns: Int
+    @Published private(set) var completedWeeklyChallengeWeeks: Set<String>
+    @Published private(set) var firstLaunchDay: String?
+    @Published private(set) var retentionDay7Tracked: Bool
 
     @Published var currentDailyCard: ArcanaCard?
 
     private let storageKey = "gamification_state_v1"
     private let calendar = Calendar.current
+    private let weeklyChallengeRewardXP = 12
+    private let retentionDayThreshold = 7
+    private let maxChallengeHistory = 12
 
     private struct PersistedState: Codable {
         var xp: Int
@@ -30,6 +36,9 @@ final class GamificationManager: ObservableObject {
         var unlockedCardIds: [String]
         var milestones: [JourneyMilestone]
         var archetype: String?
+        var completedWeeklyChallengeWeeks: [String] = []
+        var firstLaunchDay: String?
+        var retentionDay7Tracked: Bool = false
     }
 
     init() {
@@ -43,6 +52,9 @@ final class GamificationManager: ObservableObject {
             unlockedCardIds = Set(loaded.unlockedCardIds)
             milestones = Set(loaded.milestones)
             archetype = loaded.archetype
+            completedWeeklyChallengeWeeks = Set(loaded.completedWeeklyChallengeWeeks)
+            firstLaunchDay = loaded.firstLaunchDay
+            retentionDay7Tracked = loaded.retentionDay7Tracked
         } else {
             xp = 0
             streak = 0
@@ -53,7 +65,13 @@ final class GamificationManager: ObservableObject {
             unlockedCardIds = []
             milestones = []
             archetype = nil
+            completedWeeklyChallengeWeeks = []
+            firstLaunchDay = Self.dayKey(Date())
+            retentionDay7Tracked = false
         }
+
+        migrateChallengeHistory()
+        ensureRetentionTracking()
     }
 
     var level: SeekerLevel {
@@ -78,10 +96,30 @@ final class GamificationManager: ObservableObject {
         return min(1.0, max(0.0, Double(xp - start) / Double(end - start)))
     }
 
+    var allArcanaCards: [ArcanaCard] {
+        Self.arcanaDeck
+    }
+
+    var unlockedArcanaCardCount: Int {
+        unlockedCardIds.count
+    }
+
+    var isCurrentWeeklyChallengeComplete: Bool {
+        isWeeklyChallengeCompleted(for: Date())
+    }
+
     func weeklyTheme(for date: Date = Date()) -> WeeklyTheme {
         let week = calendar.component(.weekOfYear, from: date)
         let themes = WeeklyTheme.allCases
         return themes[abs(week) % themes.count]
+    }
+
+    func isWeeklyChallengeCompleted(for date: Date) -> Bool {
+        completedWeeklyChallengeWeeks.contains(Self.weekKey(date))
+    }
+
+    func isCardUnlocked(_ card: ArcanaCard) -> Bool {
+        unlockedCardIds.contains(card.id)
     }
 
     // MARK: - Onboarding
@@ -123,6 +161,7 @@ final class GamificationManager: ObservableObject {
             }
         }
 
+        ensureRetentionTracking(now: now)
         persist()
         return (card, isNew)
     }
@@ -130,6 +169,8 @@ final class GamificationManager: ObservableObject {
     func markShared() {
         awardXP(5, event: .insightShared, properties: nil)
         unlockMilestone(.firstShare)
+        unlockActionCard(for: .love)
+        markWeeklyChallengeIfNeeded(for: .love)
         persist()
     }
 
@@ -138,6 +179,8 @@ final class GamificationManager: ObservableObject {
     func markOracleAction() {
         awardXP(20, event: .oracleActionCompleted, properties: nil)
         unlockMilestone(.firstOracleAction)
+        unlockActionCard(for: .career)
+        markWeeklyChallengeIfNeeded(for: .career)
         persist()
     }
 
@@ -148,6 +191,8 @@ final class GamificationManager: ObservableObject {
             awardXP(10, event: .timeTravelSnapshotViewed, properties: ["day": dayKey])
         }
         unlockMilestone(.firstTimeTravelSnapshot)
+        unlockActionCard(for: .focus)
+        markWeeklyChallengeIfNeeded(for: .focus)
         persist()
     }
 
@@ -173,26 +218,114 @@ final class GamificationManager: ObservableObject {
             awardXP(200, event: .templeBellStreakBonus, properties: ["streak": "30"])
             unlockMilestone(.templeBellStreak30)
         }
+        unlockActionCard(for: .calm)
+        markWeeklyChallengeIfNeeded(for: .calm)
+        markTempleEngagementSessionCompleted(stage: "temple_bell", properties: ["streak": "\(streak)"])
         persist()
     }
 
     func markDIYPoojaCompleted(poojaName: String) {
         awardXP(25, event: .diyPoojaCompleted, properties: ["pooja_name": poojaName])
         unlockMilestone(.firstDIYPooja)
+        markTempleEngagementSessionCompleted(
+            stage: "diy_pooja",
+            properties: ["pooja_name": poojaName]
+        )
         persist()
     }
 
     func markMuhuratChecked() {
         awardXP(5, event: .muhuratChecked, properties: nil)
+        markTempleEngagementSessionCompleted(stage: "muhurat_check", properties: nil)
         persist()
     }
 
     func markVedicEntryRead(entryId: String) {
         awardXP(5, event: .vedicEntryRead, properties: ["entry_id": entryId])
+        markTempleEngagementSessionCompleted(
+            stage: "vedic_entry_read",
+            properties: ["entry_id": entryId]
+        )
         persist()
     }
 
     // MARK: - Internals
+
+    private func ensureRetentionTracking(now: Date = Date()) {
+        let firstDay = firstLaunchDay ?? {
+            let launchDay = Self.dayKey(now)
+            firstLaunchDay = launchDay
+            return launchDay
+        }()
+
+        if retentionDay7Tracked {
+            return
+        }
+
+        guard let launchDate = Self.dayDate(firstDay) else { return }
+        let daysSinceLaunch = calendar.dateComponents([.day], from: launchDate, to: now).day ?? 0
+        if daysSinceLaunch >= retentionDayThreshold {
+            retentionDay7Tracked = true
+            Analytics.shared.track(
+                .retentionDay7,
+                properties: ["days_since_launch": "\(daysSinceLaunch)", "launch_day": firstDay]
+            )
+            persist()
+        }
+    }
+
+    private func unlockActionCard(for theme: WeeklyTheme) {
+        let key = "\(Self.dayKey(Date()))-\(theme.rawValue)"
+        let idx = abs(key.hashValue) % Self.arcanaDeck.count
+        unlockCardIfNeeded(Self.arcanaDeck[idx])
+    }
+
+    private func markTempleEngagementSessionCompleted(
+        stage: String,
+        properties: [String: String]? = nil
+    ) {
+        var payload: [String: String] = ["stage": stage]
+        properties?.forEach { payload[$0.key] = $0.value }
+        awardXP(0, event: .templeEngagementCompleted, properties: payload)
+    }
+
+    private func markWeeklyChallengeIfNeeded(for theme: WeeklyTheme, date: Date = Date()) {
+        guard weeklyTheme(for: date) == theme else { return }
+
+        let key = Self.weekKey(date)
+        let inserted = completedWeeklyChallengeWeeks.insert(key).inserted
+        if inserted {
+            awardXP(
+                weeklyChallengeRewardXP,
+                event: .weeklyChallengeCompleted,
+                properties: ["theme": theme.rawValue, "week": key]
+            )
+            unlockMilestone(.weeklyChallengeComplete)
+            pruneChallengeHistoryIfNeeded()
+            persist()
+        }
+    }
+
+    private func pruneChallengeHistoryIfNeeded() {
+        guard completedWeeklyChallengeWeeks.count > maxChallengeHistory else { return }
+        let overflow = completedWeeklyChallengeWeeks.count - maxChallengeHistory
+        let sorted = completedWeeklyChallengeWeeks.sorted()
+        for key in sorted.prefix(overflow) {
+            completedWeeklyChallengeWeeks.remove(key)
+        }
+    }
+
+    private func migrateChallengeHistory() {
+        if firstLaunchDay == nil {
+            firstLaunchDay = Self.dayKey(Date())
+        }
+        if completedWeeklyChallengeWeeks.count > maxChallengeHistory {
+            pruneChallengeHistoryIfNeeded()
+        }
+        if !retentionDay7Tracked {
+            ensureRetentionTracking()
+        }
+    }
 
     private func unlockCardIfNeeded(_ card: ArcanaCard) {
         let inserted = unlockedCardIds.insert(card.id).inserted
@@ -226,7 +359,10 @@ final class GamificationManager: ObservableObject {
             weeklyChapterCheckIns: weeklyChapterCheckIns,
             unlockedCardIds: Array(unlockedCardIds),
             milestones: Array(milestones),
-            archetype: archetype
+            archetype: archetype,
+            completedWeeklyChallengeWeeks: Array(completedWeeklyChallengeWeeks),
+            firstLaunchDay: firstLaunchDay,
+            retentionDay7Tracked: retentionDay7Tracked
         )
         Self.save(state, storageKey: storageKey)
     }
@@ -237,6 +373,14 @@ final class GamificationManager: ObservableObject {
         formatter.timeZone = .current
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
+    }
+
+    private static func dayDate(_ dayKey: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: dayKey)
     }
 
     private static func weekKey(_ date: Date) -> String {

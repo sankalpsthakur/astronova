@@ -546,14 +546,14 @@ enum L10n {
         enum Temple {
             static let title = tr("temple.title", "Temple", "Temple feature title")
             static let selectPooja = tr("temple.selectPooja", "Select Pooja Type", "Select pooja section header")
-            static let selectPandit = tr("temple.selectPandit", "Select Astrologer", "Select astrologer section header")
+            static let selectPandit = tr("temple.selectPandit", "Select Wisdom Guide", "Select guide section header")
 
         enum Sections {
-            static let astrologers = tr("temple.sections.astrologers", "Astrologers", "Temple section")
+            static let astrologers = tr("temple.sections.astrologers", "Guidance", "Temple section")
             static let pooja = tr("temple.sections.pooja", "Pooja", "Temple section")
             static let astrologersHint = tr(
                 "temple.sections.astrologersHint",
-                "Shows available astrologers",
+                "Shows available guidance sessions",
                 "Temple section hint"
             )
             static let poojaHint = tr(
@@ -585,12 +585,12 @@ enum L10n {
         enum Astrologers {
             static let headerTitle = tr(
                 "temple.astrologers.headerTitle",
-                "Expert Astrologers",
+                "Expert Guidance",
                 "Astrologers section title"
             )
             static let headerSubtitle = tr(
                 "temple.astrologers.headerSubtitle",
-                "Connect with verified Vedic experts",
+                "Connect with verified tradition experts",
                 "Astrologers section subtitle"
             )
             static let availableNow = tr(
@@ -631,7 +631,7 @@ enum L10n {
             }
             static let startConsultation = tr(
                 "temple.astrologers.startConsultation",
-                "Start Consultation",
+                "Start Guidance Session",
                 "Start consultation CTA"
             )
             static let notifyWhenAvailable = tr(
@@ -662,14 +662,14 @@ enum L10n {
                     : tr("temple.astrologers.status.offline", "Currently offline.", "Astrologer status")
                 let format = tr(
                     "temple.astrologers.cardAccessibilityLabel",
-                    "Astrologer %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@",
+                    "Guide %@. %@ experience. Rating %@ out of 5. Specializes in %@. Price %@ per minute. %@",
                     "Astrologer card accessibility label"
                 )
                 return String.localizedStringWithFormat(format, name, experience, rating, specialization, pricePerMinute, status)
             }
             static let cardAccessibilityHint = tr(
                 "temple.astrologers.cardAccessibilityHint",
-                "Double tap to view astrologer details",
+                "Double tap to view guide details",
                 "Astrologer card accessibility hint"
             )
         }
@@ -679,6 +679,7 @@ enum L10n {
             static let rungToday = tr("temple.bell.rungToday", "Rung Today", "Bell already rung")
             static let dayStreak = tr("temple.bell.dayStreak", "Day Streak", "Bell streak label")
             static let longestStreak = tr("temple.bell.longestStreak", "Longest", "Bell longest streak")
+            static let totalRings = tr("temple.bell.totalRings", "Total", "Bell total rings label")
             static let reminderTitle = tr("temple.bell.reminderTitle", "Daily Reminder", "Bell reminder title")
             static let reminderSubtitle = tr(
                 "temple.bell.reminderSubtitle",
@@ -882,7 +883,7 @@ enum L10n {
             )
             static let specialRequestsHint = tr(
                 "temple.booking.specialRequestsHint",
-                "Optional. Add any special instructions for your astrologer",
+                "Optional. Add any special instructions for your guide",
                 "Special requests accessibility hint"
             )
             static let poojaDateLabel = tr(
@@ -964,47 +965,47 @@ enum L10n {
             static let total = tr("temple.consultation.total", "Total", "Consultation total label")
             static let bookConsultation = tr(
                 "temple.consultation.bookConsultation",
-                "Book Consultation",
+                "Book Guidance Session",
                 "Book consultation CTA"
             )
             static let bookConsultationLabel = tr(
                 "temple.consultation.bookConsultationLabel",
-                "Book consultation",
+                "Book guidance session",
                 "Book consultation accessibility label"
             )
             static let bookConsultationHint = tr(
                 "temple.consultation.bookConsultationHint",
-                "Confirm your consultation booking",
+                "Confirm your guidance session booking",
                 "Book consultation accessibility hint"
             )
             static let consultationDateLabel = tr(
                 "temple.consultation.dateLabel",
-                "Consultation date",
+                "Session date",
                 "Consultation date accessibility label"
             )
             static let consultationDateHint = tr(
                 "temple.consultation.dateHint",
-                "Select a date for your consultation",
+                "Select a date for your session",
                 "Consultation date accessibility hint"
             )
             static let consultationTopicLabel = tr(
                 "temple.consultation.topicLabel",
-                "Consultation topic",
+                "Session focus",
                 "Consultation topic accessibility label"
             )
             static let consultationTopicHint = tr(
                 "temple.consultation.topicHint",
-                "Optional. Add a topic for the consultation",
+                "Optional. Add a focus topic for the session",
                 "Consultation topic accessibility hint"
             )
             static let durationLabel = tr(
                 "temple.consultation.durationLabel",
-                "Consultation duration",
+                "Session duration",
                 "Consultation duration accessibility label"
             )
             static let durationHint = tr(
                 "temple.consultation.durationHint",
-                "Select the consultation length",
+                "Select the session length",
                 "Consultation duration accessibility hint"
             )
             static func minutes(_ minutes: Int) -> String {
@@ -1017,25 +1018,25 @@ enum L10n {
             }
             static let navTitle = tr(
                 "temple.consultation.navTitle",
-                "Book Consultation",
+                "Book Guidance Session",
                 "Consultation navigation title"
             )
             static let bookedTitle = tr(
                 "temple.consultation.bookedTitle",
-                "Consultation Booked!",
+                "Guidance Session Booked!",
                 "Consultation booked alert title"
             )
             static func bookedMessage(date: String, time: String) -> String {
                 let format = tr(
                     "temple.consultation.bookedMessage",
-                    "Your consultation is scheduled for %@ at %@.",
+                    "Your guidance session is scheduled for %@ at %@.",
                     "Consultation booked alert message"
                 )
                 return String.localizedStringWithFormat(format, date, time)
             }
             static let signInTitle = tr(
                 "temple.consultation.signInTitle",
-                "Sign in to book a consultation",
+                "Sign in to book a guidance session",
                 "Consultation sign in title"
             )
             static let signInMessage = tr(
@@ -1063,7 +1064,7 @@ enum L10n {
             )
             static let signInConsultation = tr(
                 "temple.errors.signInConsultation",
-                "Sign in to book a consultation.",
+                "Sign in to book a guidance session.",
                 "Consultation booking auth error"
             )
             static let bookingFailed = tr(
@@ -1073,7 +1074,7 @@ enum L10n {
             )
             static let consultationFailed = tr(
                 "temple.errors.consultationFailed",
-                "Unable to book consultation. Please try again.",
+                "Unable to book guidance session. Please try again.",
                 "Consultation booking failed"
             )
         }

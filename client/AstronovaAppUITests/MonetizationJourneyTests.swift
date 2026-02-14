@@ -37,7 +37,9 @@ final class MonetizationJourneyTests: XCTestCase {
 
     private func launchSignedIn(arguments: [String], environment: [String: String] = [:]) {
         app.launchArguments = arguments
-        app.launchEnvironment = environment
+        var mergedEnvironment = ["UITEST_TIME_TRAVEL_SAMPLE": "1"]
+        for (key, value) in environment { mergedEnvironment[key] = value }
+        app.launchEnvironment = mergedEnvironment
         app.launch()
         let homeTabButton = app.buttons["homeTab"]
         if homeTabButton.waitForExistence(timeout: 20) {
@@ -89,6 +91,12 @@ final class MonetizationJourneyTests: XCTestCase {
         let askOracle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ask the Oracle")).firstMatch
         if askOracle.waitForExistence(timeout: 8) {
             askOracle.tap()
+            return
+        }
+
+        let askOracleRow = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ask the Oracle")).firstMatch
+        if askOracleRow.waitForExistence(timeout: 4) {
+            askOracleRow.tap()
             return
         }
 

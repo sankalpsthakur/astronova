@@ -31,6 +31,9 @@ Feature specifications and implementation status.
 |----------|-------------|
 | [Compatibility Design Spec](./features/compatibility-design-spec.md) | Relationship compatibility feature design and algorithms |
 | [Temple Feature Status](./features/TEMPLE_FEATURE_STATUS.md) | Pooja booking and video session feature implementation status |
+| **Gamification System** (Phase 4) | Seeker progression (Seeker → Alchemist → Oracle), XP economy, daily streaks, Sigils/Arcana cards, weekly challenges (Love/Career/Calm/Focus), journey milestones |
+| **Time Travel Swarm Overlay** | Motion-reactive particle system with scrub-velocity feedback and dark-to-light visual bridge for immersive page transitions |
+| **Temple Redesign** (Feb 2026) | Self-service spiritual tools: Temple Bell (rings with haptics), DIY Pooja builder, Muhurat calculator, Vedic Library. Replaced astrologer consultation/booking model |
 
 ## 📋 Planning & Backlogs
 
@@ -69,6 +72,12 @@ UX analysis, journey mapping, and issue tracking.
 | Document | Description |
 |----------|-------------|
 | [Development Guide](./development.md) | Setup instructions, testing procedures, and contribution guidelines |
+
+## 🔧 Operations
+
+| Document | Description |
+|----------|-------------|
+| **Post-Deploy Verification** | Automated deployment health check via `scripts/deploy-post-push-check.sh` — validates API, auth, and core endpoints after Render deploy |
 
 ## 📚 Related Documentation
 

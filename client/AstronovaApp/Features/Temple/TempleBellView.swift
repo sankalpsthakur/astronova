@@ -14,7 +14,7 @@ struct TempleBellView: View {
     @State private var showSettings = false
 
     var body: some View {
-        VStack(spacing: Cosmic.Spacing.lg) {
+        VStack(spacing: Cosmic.Spacing.sm) {
             // Bell Animation
             TempleBellAnimationView(
                 isAnimating: $isAnimating,
@@ -52,7 +52,7 @@ struct TempleBellView: View {
 
                 Rectangle()
                     .fill(Color.cosmicTextTertiary.opacity(0.3))
-                    .frame(width: 1, height: 40)
+                    .frame(width: 1, height: 28)
 
                 VStack(spacing: Cosmic.Spacing.xxs) {
                     Text("\(bellState.longestStreak)")
@@ -65,13 +65,13 @@ struct TempleBellView: View {
 
                 Rectangle()
                     .fill(Color.cosmicTextTertiary.opacity(0.3))
-                    .frame(width: 1, height: 40)
+                    .frame(width: 1, height: 28)
 
                 VStack(spacing: Cosmic.Spacing.xxs) {
                     Text("\(bellState.totalRings)")
                         .font(.cosmicTitle2)
                         .foregroundStyle(Color.cosmicTextPrimary)
-                    Text("Total")
+                    Text(L10n.Temple.Bell.totalRings)
                         .font(.cosmicMicro)
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
@@ -91,7 +91,7 @@ struct TempleBellView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding(.vertical, Cosmic.Spacing.xl)
+        .padding(.vertical, Cosmic.Spacing.md)
         .padding(.horizontal, Cosmic.Spacing.screen)
         .background {
             RoundedRectangle(cornerRadius: Cosmic.Radius.prominent)
@@ -108,7 +108,6 @@ struct TempleBellView: View {
                         )
                 }
         }
-        .padding(.horizontal, Cosmic.Spacing.screen)
         .sheet(isPresented: $showSettings) {
             BellSettingsSheet(bellState: $bellState)
                 .presentationDetents([.medium])

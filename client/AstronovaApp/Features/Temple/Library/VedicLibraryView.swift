@@ -10,10 +10,19 @@ import SwiftUI
 struct VedicLibraryView: View {
     @EnvironmentObject private var gamification: GamificationManager
     @State private var categories: [VedicCategory] = VedicCategory.samples
-    @State private var entries: [VedicEntry] = []
+    @State private var entries: [VedicEntry] = VedicEntry.samples
     @State private var selectedCategory: String?
     @State private var searchText = ""
     @State private var isLoading = false
+
+    var initialCategory: String?
+
+    init(initialCategory: String? = nil) {
+        self.initialCategory = initialCategory
+        if let cat = initialCategory {
+            _selectedCategory = State(initialValue: cat)
+        }
+    }
 
     private var filteredEntries: [VedicEntry] {
         var result = entries
@@ -127,7 +136,10 @@ struct VedicLibraryView: View {
                 .padding(.top, Cosmic.Spacing.xl)
             } else {
                 ForEach(filteredEntries) { entry in
-                    NavigationLink(value: entry) {
+                    NavigationLink {
+                        VedicEntryDetailView(entry: entry)
+                            .environmentObject(gamification)
+                    } label: {
                         VedicEntryCardView(entry: entry)
                     }
                     .buttonStyle(.plain)
@@ -147,7 +159,7 @@ struct VedicLibraryView: View {
             categories = response.categories
             entries = response.entries
         } catch {
-            // Keep sample data
+            entries = VedicEntry.samples
         }
     }
 }

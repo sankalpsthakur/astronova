@@ -59,6 +59,28 @@ enum WeeklyTheme: String, Codable, CaseIterable {
         case .focus: return "Focus"
         }
     }
+
+    var weeklyChallenge: String {
+        switch self {
+        case .love:
+            return "Share your daily insight card with someone."
+        case .career:
+            return "Take one meaningful guidance action in Oracle."
+        case .calm:
+            return "Ring the Temple Bell to complete one calm session."
+        case .focus:
+            return "Open Time Travel and review one snapshot."
+        }
+    }
+
+    var weeklyChallengeRewardText: String {
+        switch self {
+        case .love: return "Love +12 XP"
+        case .career: return "Career +12 XP"
+        case .calm: return "Calm +12 XP"
+        case .focus: return "Focus +12 XP"
+        }
+    }
 }
 
 enum JourneyMilestone: String, Codable, CaseIterable {
@@ -68,6 +90,7 @@ enum JourneyMilestone: String, Codable, CaseIterable {
     case firstTempleBooking
     case firstShare
     case weeklyChapterComplete
+    case weeklyChallengeComplete
     case firstTempleBellRing
     case templeBellStreak7
     case templeBellStreak30
@@ -81,6 +104,7 @@ enum JourneyMilestone: String, Codable, CaseIterable {
         case .firstTempleBooking: return "First Temple Booking"
         case .firstShare: return "First Share"
         case .weeklyChapterComplete: return "Weekly Chapter"
+        case .weeklyChallengeComplete: return "Weekly Challenge"
         case .firstTempleBellRing: return "First Bell Ring"
         case .templeBellStreak7: return "7-Day Bell Streak"
         case .templeBellStreak30: return "30-Day Bell Streak"
@@ -95,6 +119,7 @@ enum JourneyMilestone: String, Codable, CaseIterable {
         case .firstTimeTravelSnapshot: return "Generate a snapshot."
         case .firstTempleBooking: return "Start a booking."
         case .firstShare: return "Share an insight card."
+        case .weeklyChallengeComplete: return "Complete this week's challenge."
         case .weeklyChapterComplete: return "Complete a week of practice."
         case .firstTempleBellRing: return "Ring the temple bell for the first time."
         case .templeBellStreak7: return "Ring the bell 7 days in a row."

@@ -356,6 +356,12 @@ lsof -i :8080
 kill -9 <PID>
 ```
 
+### Post-Deploy Verification
+
+```bash
+bash scripts/deploy-post-push-check.sh --base-url https://astronova.onrender.com --wait-seconds 300
+```
+
 **iOS can't connect to backend:**
 - Ensure backend running on `0.0.0.0:8080` (not `127.0.0.1`)
 - Check simulator network settings

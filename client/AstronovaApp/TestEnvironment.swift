@@ -34,6 +34,8 @@ final class TestEnvironment {
 
     private let processInfo = ProcessInfo.processInfo
     private let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
+    private let onboardingCompletedKey = "hasCompletedOnboarding"
+    private let legacyOnboardingCompletedKey = "onboarding_complete"
 
     /// Whether the app is running in UI test mode
     var isUITest: Bool {
@@ -136,7 +138,8 @@ final class TestEnvironment {
             "daily_message_count",
             "last_message_date",
             "is_pro_subscriber",
-            "onboarding_complete",
+            onboardingCompletedKey,
+            legacyOnboardingCompletedKey,
             "user_profile",
             "mock_reports",
             "trigger_show_report_shop",
@@ -202,6 +205,7 @@ final class TestEnvironment {
         UserDefaults.standard.set(true, forKey: "has_signed_in")
         UserDefaults.standard.set(true, forKey: "is_anonymous_user")
         UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+        markOnboardingCompleted()
         seedMockJWTToken()
         UserDefaults.standard.synchronize()
     }
@@ -221,6 +225,7 @@ final class TestEnvironment {
         UserDefaults.standard.set(true, forKey: "has_signed_in")
         UserDefaults.standard.set(true, forKey: "is_anonymous_user")
         UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+        markOnboardingCompleted()
         seedMockJWTToken()
         UserDefaults.standard.synchronize()
     }
@@ -255,7 +260,13 @@ final class TestEnvironment {
         UserDefaults.standard.set(true, forKey: "has_signed_in")
         UserDefaults.standard.set(true, forKey: "is_anonymous_user")
         UserDefaults.standard.set(true, forKey: "has_seen_tab_guide")
+        markOnboardingCompleted()
         UserDefaults.standard.synchronize()
+    }
+
+    private func markOnboardingCompleted() {
+        UserDefaults.standard.set(true, forKey: onboardingCompletedKey)
+        UserDefaults.standard.set(true, forKey: legacyOnboardingCompletedKey)
     }
 
     private func enableMockPurchases() {

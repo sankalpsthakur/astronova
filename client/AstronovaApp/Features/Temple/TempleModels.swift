@@ -8,7 +8,7 @@
 
 import Foundation
 
-// MARK: - Astrologer Models (Local/Sample)
+// MARK: - Guide Models (Local/Sample)
 
 struct Astrologer: Identifiable {
     let id: String
@@ -23,9 +23,9 @@ struct Astrologer: Identifiable {
     let languages: [String]
     let expertise: [String]
 
-    /// When this `Astrologer` was created from a real pandit profile, `id` is the API `panditId`.
+    /// When this `Astrologer` is sourced from a real guide profile, `id` is the API guide ID.
     /// Sample astrologers use `ast_...` IDs and should not be passed to booking endpoints.
-    var apiPanditId: String? {
+    var apiGuideId: String? {
         id.hasPrefix("ast_") ? nil : id
     }
 
@@ -86,20 +86,20 @@ struct Astrologer: Identifiable {
 }
 
 extension Astrologer {
-    static func fromPandit(_ pandit: PanditProfile) -> Astrologer {
-        let pricePerMinute = max(1, pandit.pricePerSession / 30)
+    static func fromGuideProfile(_ guide: GuideProfile) -> Astrologer {
+        let pricePerMinute = max(1, guide.pricePerSession / 30)
         return Astrologer(
-            id: pandit.id,
-            name: pandit.name,
-            specialization: pandit.primarySpecialization,
-            experience: pandit.experienceString,
-            rating: pandit.rating,
-            reviewCount: pandit.reviewCount,
+            id: guide.id,
+            name: guide.name,
+            specialization: guide.primarySpecialization,
+            experience: guide.experienceString,
+            rating: guide.rating,
+            reviewCount: guide.reviewCount,
             pricePerMinute: pricePerMinute,
-            avatarURL: pandit.avatarUrl,
-            isOnline: pandit.isAvailable,
-            languages: pandit.languages,
-            expertise: pandit.specializations
+            avatarURL: guide.avatarUrl,
+            isOnline: guide.isAvailable,
+            languages: guide.languages,
+            expertise: guide.specializations
         )
     }
 }
@@ -134,8 +134,8 @@ struct PoojaType: Codable, Identifiable {
     }
 }
 
-/// Pandit profile from API
-struct PanditProfile: Codable, Identifiable {
+/// Guide profile from API
+struct GuideProfile: Codable, Identifiable {
     let id: String
     let name: String
     let specializations: [String]
@@ -198,6 +198,14 @@ struct PoojaBooking: Codable, Identifiable {
     var statusDisplay: BookingStatus {
         BookingStatus(rawValue: status) ?? .pending
     }
+
+    var guideId: String? {
+        panditId
+    }
+
+    var guideName: String? {
+        panditName
+    }
 }
 
 /// Detailed booking
@@ -227,6 +235,14 @@ struct PoojaBookingDetail: Codable, Identifiable {
 
     var statusDisplay: BookingStatus {
         BookingStatus(rawValue: status) ?? .pending
+    }
+
+    var guideId: String? {
+        panditId
+    }
+
+    var guideName: String? {
+        panditName
     }
 }
 
@@ -840,12 +856,12 @@ struct VedicCategory: Codable, Identifiable {
     let entryCount: Int
 
     static let samples: [VedicCategory] = [
-        VedicCategory(id: "vc_001", name: "Dharma", iconName: "scale.3d", entryCount: 10),
+        VedicCategory(id: "vc_001", name: "Dharma", iconName: "scale.3d", entryCount: 8),
         VedicCategory(id: "vc_002", name: "Karma", iconName: "arrow.triangle.2.circlepath", entryCount: 8),
         VedicCategory(id: "vc_003", name: "Rituals", iconName: "flame.fill", entryCount: 8),
         VedicCategory(id: "vc_004", name: "Planets", iconName: "moon.stars.fill", entryCount: 9),
-        VedicCategory(id: "vc_005", name: "Deities", iconName: "sparkles", entryCount: 9),
-        VedicCategory(id: "vc_006", name: "Life Events", iconName: "calendar.badge.clock", entryCount: 6)
+        VedicCategory(id: "vc_005", name: "Deities", iconName: "sparkles", entryCount: 8),
+        VedicCategory(id: "vc_006", name: "Life Events", iconName: "calendar.badge.clock", entryCount: 8)
     ]
 }
 
@@ -860,6 +876,461 @@ struct VedicEntry: Codable, Identifiable, Hashable {
     let translation: String
     let source: String?
     let tags: [String]
+
+    static let samples: [VedicEntry] = [
+        // MARK: Dharma
+        VedicEntry(
+            id: "ve_001", category: "Dharma",
+            title: "Right to Action, Not Fruits",
+            sanskritText: "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन । मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि ॥",
+            transliteration: "karmaṇy evādhikāras te mā phaleṣu kadācana | mā karma-phala-hetur bhūr mā te saṅgo 'stv akarmaṇi ||",
+            translation: "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions. Never consider yourself the cause of the results, and never be attached to inaction.",
+            source: "Bhagavad Gita 2.47",
+            tags: ["dharma", "duty", "gita", "nishkama-karma"]
+        ),
+        VedicEntry(
+            id: "ve_002", category: "Dharma",
+            title: "Dharma Protects the Righteous",
+            sanskritText: "धर्म एव हतो हन्ति धर्मो रक्षति रक्षितः । तस्माद्धर्मो न हन्तव्यो मा नो धर्मो हतोऽवधीत् ॥",
+            transliteration: "dharma eva hato hanti dharmo rakṣati rakṣitaḥ | tasmād dharmo na hantavyo mā no dharmo hato 'vadhīt ||",
+            translation: "Dharma destroys those who destroy it; dharma protects those who protect it. Therefore dharma should never be violated, lest violated dharma destroy us.",
+            source: "Manusmriti 8.15",
+            tags: ["dharma", "righteousness", "manu", "protection"]
+        ),
+        VedicEntry(
+            id: "ve_003", category: "Dharma",
+            title: "The Self Is Not the Slayer",
+            sanskritText: "न जायते म्रियते वा कदाचिन्नायं भूत्वा भविता वा न भूयः । अजो नित्यः शाश्वतोऽयं पुराणो न हन्यते हन्यमाने शरीरे ॥",
+            transliteration: "na jāyate mriyate vā kadācin nāyaṃ bhūtvā bhavitā vā na bhūyaḥ | ajo nityaḥ śāśvato 'yaṃ purāṇo na hanyate hanyamāne śarīre ||",
+            translation: "The soul is never born nor does it die; nor having once existed, does it ever cease to be. Unborn, eternal, ever-existing, and primeval -- it is not slain when the body is slain.",
+            source: "Bhagavad Gita 2.20",
+            tags: ["dharma", "atman", "soul", "gita", "immortality"]
+        ),
+        VedicEntry(
+            id: "ve_004", category: "Dharma",
+            title: "Isha Upanishad -- The Lord Pervades All",
+            sanskritText: "ईशा वास्यमिदं सर्वं यत्किञ्च जगत्यां जगत् । तेन त्यक्तेन भुञ्जीथा मा गृधः कस्यस्विद्धनम् ॥",
+            transliteration: "īśā vāsyam idaṃ sarvaṃ yat kiñca jagatyāṃ jagat | tena tyaktena bhuñjīthā mā gṛdhaḥ kasya svid dhanam ||",
+            translation: "All this -- whatever moves in this moving world -- is pervaded by the Lord. Enjoy through renunciation. Do not covet, for whose is wealth?",
+            source: "Isha Upanishad 1",
+            tags: ["dharma", "upanishad", "renunciation", "ishavasyam"]
+        ),
+        VedicEntry(
+            id: "ve_024", category: "Dharma",
+            title: "Speak Truth, Walk the Dharma",
+            sanskritText: "सत्यं वद । धर्मं चर । स्वाध्यायान्मा प्रमदः ।",
+            transliteration: "satyaṃ vada | dharmaṃ cara | svādhyāyān mā pramadaḥ |",
+            translation: "Speak the truth. Practice dharma. Never neglect self-study of the scriptures.",
+            source: "Taittiriya Upanishad 1.11.1",
+            tags: ["dharma", "truth", "upanishad", "taittiriya", "study"]
+        ),
+        VedicEntry(
+            id: "ve_025", category: "Dharma",
+            title: "One's Own Dharma Is Supreme",
+            sanskritText: "श्रेयान्स्वधर्मो विगुणः परधर्मात्स्वनुष्ठितात् । स्वधर्मे निधनं श्रेयः परधर्मो भयावहः ॥",
+            transliteration: "śreyān sva-dharmo viguṇaḥ para-dharmāt sv-anuṣṭhitāt | sva-dharme nidhanaṃ śreyaḥ para-dharmo bhayāvahaḥ ||",
+            translation: "Better is one's own dharma, though imperfectly performed, than the dharma of another well performed. Death in one's own dharma is preferable; the dharma of another invites danger.",
+            source: "Bhagavad Gita 3.35",
+            tags: ["dharma", "svadharma", "gita", "duty"]
+        ),
+        VedicEntry(
+            id: "ve_026", category: "Dharma",
+            title: "Surrender to the Supreme",
+            sanskritText: "सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज । अहं त्वा सर्वपापेभ्यो मोक्षयिष्यामि मा शुचः ॥",
+            transliteration: "sarva-dharmān parityajya mām ekaṃ śaraṇaṃ vraja | ahaṃ tvā sarva-pāpebhyo mokṣayiṣyāmi mā śucaḥ ||",
+            translation: "Abandoning all varieties of dharma, surrender unto Me alone. I shall deliver you from all sinful reactions; do not grieve.",
+            source: "Bhagavad Gita 18.66",
+            tags: ["dharma", "surrender", "gita", "moksha", "sharanagati"]
+        ),
+        VedicEntry(
+            id: "ve_027", category: "Dharma",
+            title: "From Unreal to Real",
+            sanskritText: "असतो मा सद्गमय । तमसो मा ज्योतिर्गमय । मृत्योर्मा अमृतं गमय ॥",
+            transliteration: "asato mā sad gamaya | tamaso mā jyotir gamaya | mṛtyor mā amṛtaṃ gamaya ||",
+            translation: "Lead me from the unreal to the real. Lead me from darkness to light. Lead me from death to immortality.",
+            source: "Brihadaranyaka Upanishad 1.3.28",
+            tags: ["dharma", "prayer", "upanishad", "brihadaranyaka", "light"]
+        ),
+
+        // MARK: Karma
+        VedicEntry(
+            id: "ve_005", category: "Karma",
+            title: "Steadfast in Yoga, Perform Action",
+            sanskritText: "योगस्थः कुरु कर्माणि सङ्गं त्यक्त्वा धनञ्जय । सिद्ध्यसिद्ध्योः समो भूत्वा समत्वं योग उच्यते ॥",
+            transliteration: "yoga-sthaḥ kuru karmāṇi saṅgaṃ tyaktvā dhanañjaya | siddhy-asiddhyoḥ samo bhūtvā samatvaṃ yoga ucyate ||",
+            translation: "Steadfast in yoga, O Arjuna, perform actions abandoning attachment, remaining even-minded in success and failure. Such equanimity is called yoga.",
+            source: "Bhagavad Gita 2.48",
+            tags: ["karma", "yoga", "equanimity", "gita", "detachment"]
+        ),
+        VedicEntry(
+            id: "ve_006", category: "Karma",
+            title: "Inaction in Action",
+            sanskritText: "कर्मण्यकर्म यः पश्येदकर्मणि च कर्म यः । स बुद्धिमान्मनुष्येषु स युक्तः कृत्स्नकर्मकृत् ॥",
+            transliteration: "karmaṇy akarma yaḥ paśyed akarmaṇi ca karma yaḥ | sa buddhimān manuṣyeṣu sa yuktaḥ kṛtsna-karma-kṛt ||",
+            translation: "One who sees inaction in action, and action in inaction, is wise among all people; such a person is a yogi and has accomplished all action.",
+            source: "Bhagavad Gita 4.18",
+            tags: ["karma", "wisdom", "gita", "action", "jnana"]
+        ),
+        VedicEntry(
+            id: "ve_007", category: "Karma",
+            title: "The Three Gunas Drive All Action",
+            sanskritText: "प्रकृतेः क्रियमाणानि गुणैः कर्माणि सर्वशः । अहङ्कारविमूढात्मा कर्ताहमिति मन्यते ॥",
+            transliteration: "prakṛteḥ kriyamāṇāni guṇaiḥ karmāṇi sarvaśaḥ | ahaṅkāra-vimūḍhātmā kartāham iti manyate ||",
+            translation: "All actions are performed by the three gunas of material nature. But one whose mind is deluded by egoism thinks: 'I am the doer.'",
+            source: "Bhagavad Gita 3.27",
+            tags: ["karma", "gunas", "prakriti", "ego", "gita"]
+        ),
+        VedicEntry(
+            id: "ve_028", category: "Karma",
+            title: "Work as Sacrifice",
+            sanskritText: "यज्ञार्थात्कर्मणोऽन्यत्र लोकोऽयं कर्मबन्धनः । तदर्थं कर्म कौन्तेय मुक्तसङ्गः समाचर ॥",
+            transliteration: "yajñārthāt karmaṇo 'nyatra loko 'yaṃ karma-bandhanaḥ | tad-arthaṃ karma kaunteya mukta-saṅgaḥ samācara ||",
+            translation: "Work done as a sacrifice for the Supreme frees one from bondage. Otherwise, work binds one in this material world. O son of Kunti, perform your duties free from attachment.",
+            source: "Bhagavad Gita 3.9",
+            tags: ["karma", "yajna", "sacrifice", "gita", "nishkama"]
+        ),
+        VedicEntry(
+            id: "ve_029", category: "Karma",
+            title: "Untouched Like the Lotus Leaf",
+            sanskritText: "ब्रह्मण्याधाय कर्माणि सङ्गं त्यक्त्वा करोति यः । लिप्यते न स पापेन पद्मपत्रमिवाम्भसा ॥",
+            transliteration: "brahmaṇy ādhāya karmāṇi saṅgaṃ tyaktvā karoti yaḥ | lipyate na sa pāpena padma-patram ivāmbhasā ||",
+            translation: "One who performs duty without attachment, surrendering results to the Supreme, is untouched by sin -- as a lotus leaf is untouched by water.",
+            source: "Bhagavad Gita 5.10",
+            tags: ["karma", "surrender", "lotus", "gita", "purity"]
+        ),
+        VedicEntry(
+            id: "ve_030", category: "Karma",
+            title: "The Storehouse of Karmic Impressions",
+            sanskritText: "क्लेशमूलः कर्माशयो दृष्टादृष्टजन्मवेदनीयः ।",
+            transliteration: "kleśa-mūlaḥ karma-āśayo dṛṣṭa-adṛṣṭa-janma-vedanīyaḥ |",
+            translation: "The storehouse of karma has its root in the afflictions (kleshas) and is experienced in present and future births.",
+            source: "Yoga Sutras of Patanjali 2.12",
+            tags: ["karma", "yoga", "patanjali", "klesha", "samsara"]
+        ),
+        VedicEntry(
+            id: "ve_049", category: "Karma",
+            title: "As You Sow, So Shall You Reap",
+            sanskritText: "यादृशं वपते बीजं तादृशं लभते फलम् ।",
+            transliteration: "yādṛśaṃ vapate bījaṃ tādṛśaṃ labhate phalam |",
+            translation: "As is the seed sown, so is the fruit reaped. Good actions yield good results; harmful actions yield suffering.",
+            source: "Subhashita Ratna Bhandagara",
+            tags: ["karma", "action", "consequence", "subhashita"]
+        ),
+        VedicEntry(
+            id: "ve_031", category: "Karma",
+            title: "The Deluded on the Path of Karma",
+            sanskritText: "इष्टापूर्तं मन्यमानाः वरिष्ठं नान्यच्छ्रेयो वेदयन्ते प्रमूढाः ।",
+            transliteration: "iṣṭā-pūrtaṃ manyamānāḥ variṣṭhaṃ nānyac chreyo vedayante pramūḍhāḥ |",
+            translation: "The deluded, regarding ritual merit and charity as the highest good, do not know any higher truth. Having enjoyed their merit on the heights of heaven, they re-enter this world or a lower one.",
+            source: "Mundaka Upanishad 1.2.10",
+            tags: ["karma", "upanishad", "mundaka", "merit", "samsara"]
+        ),
+
+        // MARK: Rituals
+        VedicEntry(
+            id: "ve_008", category: "Rituals",
+            title: "Gayatri Mantra",
+            sanskritText: "ॐ भूर्भुवः स्वः तत्सवितुर्वरेण्यं भर्गो देवस्य धीमहि धियो यो नः प्रचोदयात् ॥",
+            transliteration: "oṃ bhūr bhuvaḥ svaḥ tat savitur vareṇyaṃ bhargo devasya dhīmahi dhiyo yo naḥ pracodayāt ||",
+            translation: "We meditate upon the divine light of the radiant Sun (Savitri); may that supreme light illuminate our intellect and guide our understanding.",
+            source: "Rigveda 3.62.10",
+            tags: ["ritual", "gayatri", "sandhya", "savitri", "mantra"]
+        ),
+        VedicEntry(
+            id: "ve_009", category: "Rituals",
+            title: "Agnihotra -- Offering to Fire",
+            sanskritText: "अग्नये स्वाहा । इदमग्नये इदं न मम । प्रजापतये स्वाहा । इदं प्रजापतये इदं न मम ॥",
+            transliteration: "agnaye svāhā | idam agnaye idaṃ na mama | prajāpataye svāhā | idaṃ prajāpataye idaṃ na mama ||",
+            translation: "Svaha to Agni! This offering is for Agni, not for me. Svaha to Prajapati! This offering is for Prajapati, not for me. (The daily fire-oblation at sunrise and sunset.)",
+            source: "Shatapatha Brahmana 12.4.1",
+            tags: ["ritual", "agnihotra", "fire", "homa", "svaha"]
+        ),
+        VedicEntry(
+            id: "ve_010", category: "Rituals",
+            title: "Shanti Mantra -- Peace Invocation",
+            sanskritText: "ॐ सह नाववतु सह नौ भुनक्तु सह वीर्यं करवावहै । तेजस्वि नावधीतमस्तु मा विद्विषावहै ॥ ॐ शान्तिः शान्तिः शान्तिः ॥",
+            transliteration: "oṃ saha nāv avatu saha nau bhunaktu saha vīryaṃ karavāvahai | tejasvi nāv adhītam astu mā vidviṣāvahai || oṃ śāntiḥ śāntiḥ śāntiḥ ||",
+            translation: "Om, may the Lord protect us both (teacher and student). May He nourish us both. May we work together with great vigor. May our study be brilliant. May we never quarrel. Om, peace, peace, peace.",
+            source: "Taittiriya Upanishad 2.2 / Katha Upanishad invocation",
+            tags: ["ritual", "shanti", "peace", "upanishad", "invocation"]
+        ),
+        VedicEntry(
+            id: "ve_011", category: "Rituals",
+            title: "Purusha Sukta -- Cosmic Sacrifice",
+            sanskritText: "सहस्रशीर्षा पुरुषः सहस्राक्षः सहस्रपात् । स भूमिं विश्वतो वृत्वात्यतिष्ठद्दशाङ्गुलम् ॥",
+            transliteration: "sahasra-śīrṣā puruṣaḥ sahasrākṣaḥ sahasra-pāt | sa bhūmiṃ viśvato vṛtvāty atiṣṭhad daśāṅgulam ||",
+            translation: "The cosmic being (Purusha) has a thousand heads, a thousand eyes, and a thousand feet. He pervades the entire earth and extends beyond it by ten fingers' breadth.",
+            source: "Rigveda 10.90.1",
+            tags: ["ritual", "purusha-sukta", "creation", "cosmic", "rigveda"]
+        ),
+        VedicEntry(
+            id: "ve_032", category: "Rituals",
+            title: "Sri Suktam -- Hymn to Lakshmi",
+            sanskritText: "हिरण्यवर्णां हरिणीं सुवर्णरजतस्रजाम् । चन्द्रां हिरण्मयीं लक्ष्मीं जातवेदो म आवह ॥",
+            transliteration: "hiraṇya-varṇāṃ hariṇīṃ suvarṇa-rajata-srajām | candrāṃ hiraṇmayīṃ lakṣmīṃ jātavedo ma āvaha ||",
+            translation: "O Jatavedas (Agni), bring to me Lakshmi who is of golden complexion, radiant as a deer, adorned with gold and silver garlands, lustrous as the moon, resplendent as gold.",
+            source: "Sri Suktam 1 (Rigveda Khilani)",
+            tags: ["ritual", "lakshmi", "suktam", "prosperity", "agni"]
+        ),
+        VedicEntry(
+            id: "ve_033", category: "Rituals",
+            title: "Rudram -- Homage to Rudra-Shiva",
+            sanskritText: "ॐ नमस्ते रुद्र मन्यव उतो त इषवे नमः । नमस्ते अस्तु धन्वने बाहुभ्यामुत ते नमः ॥",
+            transliteration: "oṃ namaste rudra manyava uto ta iṣave namaḥ | namaste astu dhanvane bāhubhyām uta te namaḥ ||",
+            translation: "Salutations to you, O Rudra, to your wrath and to your arrow. Salutations to your bow and to your two arms.",
+            source: "Krishna Yajurveda, Taittiriya Samhita 4.5.1",
+            tags: ["ritual", "rudra", "shiva", "yajurveda", "namakam"]
+        ),
+        VedicEntry(
+            id: "ve_034", category: "Rituals",
+            title: "Aarti -- Waving of the Sacred Light",
+            sanskritText: "ॐ जय जगदीश हरे स्वामी जय जगदीश हरे । भक्तजनों के संकट दास जनों के संकट क्षण में दूर करे ॥",
+            transliteration: "oṃ jaya jagadīśa hare svāmī jaya jagadīśa hare | bhakta-janon ke saṅkaṭ dāsa-janon ke saṅkaṭ kṣaṇa men dūra kare ||",
+            translation: "Victory to the Lord of the universe! O Master, you remove the sorrows of your devotees and servants in an instant.",
+            source: "Om Jai Jagdish Hare (Shraddha Ram Phillauri, 1870)",
+            tags: ["ritual", "aarti", "devotion", "lamp", "bhajan"]
+        ),
+        VedicEntry(
+            id: "ve_035", category: "Rituals",
+            title: "Shodasopachara Puja -- Sixteen-Step Worship",
+            sanskritText: nil,
+            transliteration: nil,
+            translation: "The sixteen-step worship of a deity: avahana (invocation), asana (offering seat), padya (washing feet), arghya (water to hands), snana (bathing), vastra (clothing), yajnopavita (sacred thread), gandha (sandalwood paste), pushpa (flowers), dhupa (incense), dipa (lamp), naivedya (food), tambula (betel), namaskara (prostration), pradakshina (circumambulation), and visarjana (farewell).",
+            source: "Agama Shastra / Puja Paddhati",
+            tags: ["ritual", "puja", "worship", "sixteen", "upachara"]
+        ),
+
+        // MARK: Planets
+        VedicEntry(
+            id: "ve_012", category: "Planets",
+            title: "Surya -- Aditya Hridayam",
+            sanskritText: "ॐ मित्राय नमः । ॐ रवये नमः । ॐ सूर्याय नमः । ॐ भानवे नमः । ॐ खगाय नमः । ॐ पूष्णे नमः ।",
+            transliteration: "oṃ mitrāya namaḥ | oṃ ravaye namaḥ | oṃ sūryāya namaḥ | oṃ bhānave namaḥ | oṃ khagāya namaḥ | oṃ pūṣṇe namaḥ |",
+            translation: "Salutations to the Friend of all (Mitra). Salutations to the Shining One (Ravi). Salutations to the Impeller (Surya). Salutations to the Luminous (Bhanu). Salutations to the Sky-Mover (Khaga). Salutations to the Nourisher (Pushan). (The first six of the twelve Surya Namaskar mantras.)",
+            source: "Surya Namaskar Mantras / Aditya Hridayam",
+            tags: ["planets", "surya", "sun", "namaskar", "aditya"]
+        ),
+        VedicEntry(
+            id: "ve_013", category: "Planets",
+            title: "Chandra -- Moon Beeja Mantra",
+            sanskritText: "ॐ श्रां श्रीं श्रौं सः चन्द्रमसे नमः ॥ दधिशङ्खतुषाराभं क्षीरोदार्णवसम्भवम् । नमामि शशिनं सोमं शम्भोर्मुकुटभूषणम् ॥",
+            transliteration: "oṃ śrāṃ śrīṃ śrauṃ saḥ candramase namaḥ || dadhi-śaṅkha-tuṣārābhaṃ kṣīrodārṇava-sambhavam | namāmi śaśinaṃ somaṃ śambhor mukuṭa-bhūṣaṇam ||",
+            translation: "Om, salutations to the Moon (beeja mantra). I bow to the Moon (Soma) who is white as curd, conch-shell, and snow, who rose from the ocean of milk, and who is the crest-jewel adorning Lord Shiva's crown.",
+            source: "Navagraha Stotram 2",
+            tags: ["planets", "chandra", "moon", "beeja", "navagraha"]
+        ),
+        VedicEntry(
+            id: "ve_014", category: "Planets",
+            title: "Mangala -- Mars Dhyana Shloka",
+            sanskritText: "धरणीगर्भसम्भूतं विद्युत्कान्तिसमप्रभम् । कुमारं शक्तिहस्तं तं मङ्गलं प्रणमाम्यहम् ॥",
+            transliteration: "dharaṇī-garbha-sambhūtaṃ vidyut-kānti-samaprabham | kumāraṃ śakti-hastaṃ taṃ maṅgalaṃ praṇamāmy aham ||",
+            translation: "I bow to Mars (Mangala), born from the womb of the Earth, whose radiance equals that of lightning, who is youthful and holds a spear in his hand.",
+            source: "Navagraha Stotram 3",
+            tags: ["planets", "mangala", "mars", "navagraha", "stotram"]
+        ),
+        VedicEntry(
+            id: "ve_015", category: "Planets",
+            title: "Shani -- Saturn Dhyana Shloka",
+            sanskritText: "नीलाञ्जनसमाभासं रविपुत्रं यमाग्रजम् । छायामार्तण्डसम्भूतं तं नमामि शनैश्चरम् ॥",
+            transliteration: "nīlāñjana-samābhāsaṃ ravi-putraṃ yamāgrajam | chāyā-mārtāṇḍa-sambhūtaṃ taṃ namāmi śanaiścaram ||",
+            translation: "I bow to Saturn (Shani), who is dark as blue collyrium, the son of the Sun and elder brother of Yama, born of Chaya and the Sun god -- the slow-moving one.",
+            source: "Navagraha Stotram 7",
+            tags: ["planets", "shani", "saturn", "navagraha", "stotram"]
+        ),
+        VedicEntry(
+            id: "ve_036", category: "Planets",
+            title: "Budha -- Mercury Dhyana Shloka",
+            sanskritText: "प्रियङ्गुकल्पकश्यामं रूपेणाप्रतिमं बुधम् । सौम्यं सौम्यगुणोपेतं तं बुधं प्रणमाम्यहम् ॥",
+            transliteration: "priyaṅgu-kalpa-kśyāmaṃ rūpeṇāpratimaṃ budham | saumyaṃ saumya-guṇopetaṃ taṃ budhaṃ praṇamāmy aham ||",
+            translation: "I bow to Mercury (Budha), who is dark like the priyangu plant, of matchless beauty, gentle and endowed with gentle qualities -- the son of Soma (Moon).",
+            source: "Navagraha Stotram 4",
+            tags: ["planets", "budha", "mercury", "navagraha", "stotram"]
+        ),
+        VedicEntry(
+            id: "ve_037", category: "Planets",
+            title: "Guru -- Jupiter Dhyana Shloka",
+            sanskritText: "देवानां च ऋषीणां च गुरुं काञ्चनसन्निभम् । बुद्धिभूतं त्रिलोकेशं तं नमामि बृहस्पतिम् ॥",
+            transliteration: "devānāṃ ca ṛṣīṇāṃ ca guruṃ kāñcana-sannibham | buddhi-bhūtaṃ tri-lokeśaṃ taṃ namāmi bṛhaspatim ||",
+            translation: "I bow to Jupiter (Brihaspati), the guru of gods and sages, who shines like gold, the embodiment of wisdom and lord of the three worlds.",
+            source: "Navagraha Stotram 5",
+            tags: ["planets", "guru", "jupiter", "brihaspati", "navagraha"]
+        ),
+        VedicEntry(
+            id: "ve_038", category: "Planets",
+            title: "Shukra -- Venus Dhyana Shloka",
+            sanskritText: "हिमकुन्दमृणालाभं दैत्यानां परमं गुरुम् । सर्वशास्त्रप्रवक्तारं भार्गवं प्रणमाम्यहम् ॥",
+            transliteration: "hima-kunda-mṛṇālābhaṃ daityānāṃ paramaṃ gurum | sarva-śāstra-pravaktāraṃ bhārgavaṃ praṇamāmy aham ||",
+            translation: "I bow to Venus (Shukra), who shines like snow, jasmine, and the lotus stem, the supreme guru of the demons (asuras), and the expounder of all scriptures.",
+            source: "Navagraha Stotram 6",
+            tags: ["planets", "shukra", "venus", "bhargava", "navagraha"]
+        ),
+        VedicEntry(
+            id: "ve_039", category: "Planets",
+            title: "Rahu -- Shadow Planet Dhyana Shloka",
+            sanskritText: "अर्धकायं महावीर्यं चन्द्रादित्यविमर्दनम् । सिंहिकागर्भसम्भूतं तं राहुं प्रणमाम्यहम् ॥",
+            transliteration: "ardha-kāyaṃ mahā-vīryaṃ candrāditya-vimardanam | siṃhikā-garbha-sambhūtaṃ taṃ rāhuṃ praṇamāmy aham ||",
+            translation: "I bow to Rahu, the half-bodied one of immense power who eclipses the Sun and Moon, born from the womb of Simhika.",
+            source: "Navagraha Stotram 8",
+            tags: ["planets", "rahu", "eclipse", "shadow", "navagraha"]
+        ),
+        VedicEntry(
+            id: "ve_040", category: "Planets",
+            title: "Ketu -- The Comet's Blessing",
+            sanskritText: "पलाशपुष्पसंकाशं तारकाग्रहमस्तकम् । रौद्रं रौद्रात्मकं घोरं तं केतुं प्रणमाम्यहम् ॥",
+            transliteration: "palāśa-puṣpa-saṃkāśaṃ tārakā-graha-mastakam | raudraṃ raudrātmakaṃ ghoraṃ taṃ ketuṃ praṇamāmy aham ||",
+            translation: "I bow to Ketu, who resembles the palasha flower, who is the head of stars and planets, fierce, of fierce nature, and terrifying -- the south lunar node that grants moksha.",
+            source: "Navagraha Stotram 9",
+            tags: ["planets", "ketu", "moksha", "shadow", "navagraha"]
+        ),
+
+        // MARK: Deities
+        VedicEntry(
+            id: "ve_016", category: "Deities",
+            title: "Ganesha Vandana",
+            sanskritText: "वक्रतुण्ड महाकाय सूर्यकोटिसमप्रभ । निर्विघ्नं कुरु मे देव सर्वकार्येषु सर्वदा ॥",
+            transliteration: "vakratuṇḍa mahākāya sūryakoṭi-samaprabha | nirvighnaṃ kuru me deva sarva-kāryeṣu sarvadā ||",
+            translation: "O Lord of the curved trunk and massive body, whose splendor equals a million suns -- grant me freedom from obstacles in all my undertakings, always.",
+            source: "Mudgala Purana / Ganesha Stotram",
+            tags: ["deity", "ganesha", "vandana", "obstacles", "invocation"]
+        ),
+        VedicEntry(
+            id: "ve_017", category: "Deities",
+            title: "Shiva Panchakshari Stotram",
+            sanskritText: "नागेन्द्रहाराय त्रिलोचनाय भस्माङ्गरागाय महेश्वराय । नित्याय शुद्धाय दिगम्बराय तस्मै नकाराय नमः शिवाय ॥",
+            transliteration: "nāgendra-hārāya trilocanāya bhasmāṅga-rāgāya maheśvarāya | nityāya śuddhāya digambarāya tasmai na-kārāya namaḥ śivāya ||",
+            translation: "Salutations to Shiva -- who wears the king of serpents as a garland, who has three eyes, whose body is adorned with sacred ash, the great Lord, eternal, pure, and sky-clad. To Him, represented by the syllable 'na', I bow.",
+            source: "Shiva Panchakshari Stotram (Adi Shankaracharya) v.1",
+            tags: ["deity", "shiva", "panchakshari", "shankaracharya", "stotram"]
+        ),
+        VedicEntry(
+            id: "ve_018", category: "Deities",
+            title: "Vishnu Dvadasakshari Mantra",
+            sanskritText: "ॐ नमो भगवते वासुदेवाय ॥ शान्ताकारं भुजगशयनं पद्मनाभं सुरेशं विश्वाधारं गगनसदृशं मेघवर्णं शुभाङ्गम् ।",
+            transliteration: "oṃ namo bhagavate vāsudevāya || śāntākāraṃ bhujaga-śayanaṃ padma-nābhaṃ sureśaṃ viśvādhāraṃ gagana-sadṛśaṃ megha-varṇaṃ śubhāṅgam |",
+            translation: "Om, salutations to Lord Vasudeva (the twelve-syllable liberation mantra). He whose form is peace, who reclines upon the serpent Shesha, from whose navel springs the lotus, Lord of the gods, support of the universe, vast as the sky, dark as a cloud, of auspicious body.",
+            source: "Vishnu Dhyanam / Bhagavata Purana",
+            tags: ["deity", "vishnu", "dvadasakshari", "vasudeva", "dhyanam"]
+        ),
+        VedicEntry(
+            id: "ve_019", category: "Deities",
+            title: "Devi Mahatmyam -- Salutations to the Goddess",
+            sanskritText: "सर्वमङ्गलमाङ्गल्ये शिवे सर्वार्थसाधिके । शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते ॥",
+            transliteration: "sarva-maṅgala-māṅgalye śive sarvārtha-sādhike | śaraṇye tryambake gauri nārāyaṇi namo 'stu te ||",
+            translation: "Salutations to you, O Narayani, who are the auspiciousness of all that is auspicious, the consort of Shiva, the accomplisher of every purpose, the refuge of all, the three-eyed Gauri.",
+            source: "Devi Mahatmyam 11.10 (Durga Saptashati)",
+            tags: ["deity", "devi", "durga", "narayani", "shakti"]
+        ),
+        VedicEntry(
+            id: "ve_041", category: "Deities",
+            title: "Mahalakshmi Beeja Mantra",
+            sanskritText: "ॐ श्रीं महालक्ष्म्यै नमः ॥",
+            transliteration: "oṃ śrīṃ mahālakṣmyai namaḥ ||",
+            translation: "Salutation to the great goddess Lakshmi. 'Shreem' is her seed syllable (beeja) representing abundance, beauty, and divine grace. Chanting attracts prosperity, harmony, and spiritual wealth.",
+            source: "Lakshmi Tantra / Sri Suktam tradition",
+            tags: ["deity", "lakshmi", "prosperity", "beeja", "mantra"]
+        ),
+        VedicEntry(
+            id: "ve_042", category: "Deities",
+            title: "Saraswati Vandana",
+            sanskritText: "या कुन्देन्दुतुषारहारधवला या शुभ्रवस्त्रावृता । या वीणावरदण्डमण्डितकरा या श्वेतपद्मासना ॥",
+            transliteration: "yā kundendu-tuṣāra-hāra-dhavalā yā śubhra-vastrāvṛtā | yā vīṇā-vara-daṇḍa-maṇḍita-karā yā śveta-padmāsanā ||",
+            translation: "She who is white as the jasmine, the moon, and snow garlands, who is adorned in pure white garments, whose hands are graced by the veena, who is seated on a white lotus -- may that goddess Saraswati protect me.",
+            source: "Saraswati Vandana / Padma Purana",
+            tags: ["deity", "saraswati", "knowledge", "prayer", "vidya"]
+        ),
+        VedicEntry(
+            id: "ve_043", category: "Deities",
+            title: "Hanuman Chalisa -- Opening Verse",
+            sanskritText: "श्रीगुरु चरन सरोज रज निज मनु मुकुरु सुधारि । बरनउँ रघुबर बिमल जसु जो दायकु फल चारि ॥",
+            transliteration: "śrī guru carana saroja raja nija manu mukuru sudhāri | baranauṃ raghubara bimala jasu jo dāyaku phala cāri ||",
+            translation: "Cleansing the mirror of my mind with the dust of my Guru's lotus feet, I describe the pure glory of Sri Rama, the best of the Raghu dynasty, who bestows the four fruits of life (dharma, artha, kama, moksha).",
+            source: "Hanuman Chalisa (Goswami Tulsidas, 16th century)",
+            tags: ["deity", "hanuman", "chalisa", "rama", "tulsidas"]
+        ),
+        VedicEntry(
+            id: "ve_044", category: "Deities",
+            title: "Mahamrityunjaya Mantra",
+            sanskritText: "ॐ त्र्यम्बकं यजामहे सुगन्धिं पुष्टिवर्धनम् । उर्वारुकमिव बन्धनान्मृत्योर्मुक्षीय मामृतात् ॥",
+            transliteration: "oṃ tryambakaṃ yajāmahe sugandhiṃ puṣṭi-vardhanam | urvārukam iva bandhanān mṛtyor mukṣīya māmṛtāt ||",
+            translation: "We worship the three-eyed Lord Shiva who is fragrant and nourishes all beings. As a ripe cucumber is released from its vine, may He liberate us from death and grant us immortality.",
+            source: "Rigveda 7.59.12 / Yajurveda 3.60",
+            tags: ["deity", "shiva", "healing", "mrityunjaya", "mantra"]
+        ),
+
+        // MARK: - Life Events (8 entries)
+        VedicEntry(
+            id: "ve_045", category: "Life Events",
+            title: "Jatakarma -- Birth Rites",
+            sanskritText: nil,
+            transliteration: nil,
+            translation: "The first samskara, performed immediately after birth. The father touches honey and ghee to the newborn's lips with a gold ring while reciting Vedic mantras, invoking intelligence (medha) and long life (ayush). This ritual symbolizes welcoming the child into the world with divine blessings and the protection of Agni.",
+            source: "Ashvalayana Grihya Sutra 1.15",
+            tags: ["samskara", "birth", "jatakarma", "newborn"]
+        ),
+        VedicEntry(
+            id: "ve_020", category: "Life Events",
+            title: "Namakarana -- Naming Ceremony Mantra",
+            sanskritText: "ॐ आयुष्मान् भव सौम्य नामाङ्कितोऽसि बालक । दीर्घायुष्यमस्तु ते सर्वदा शान्तिरस्तु ते ॥",
+            transliteration: "oṃ āyuṣmān bhava saumya nāmāṅkito 'si bālaka | dīrghāyuṣyam astu te sarvadā śāntir astu te ||",
+            translation: "Om, may you be blessed with long life, gentle child; you are now marked with your name. May longevity be yours and may peace be with you always.",
+            source: "Paraskara Grihya Sutra 1.17",
+            tags: ["samskara", "namakarana", "naming", "birth", "ceremony"]
+        ),
+        VedicEntry(
+            id: "ve_046", category: "Life Events",
+            title: "Annaprashana -- First Solid Food",
+            sanskritText: nil,
+            transliteration: nil,
+            translation: "The ceremony of first feeding solid food to the infant, performed in the sixth month. Cooked rice mixed with ghee, honey, and curd is offered to the child while mantras are recited for health and nourishment. This samskara marks the transition from mother's milk to earthly sustenance and is celebrated with family and community.",
+            source: "Ashvalayana Grihya Sutra 1.16",
+            tags: ["samskara", "feeding", "infant", "annaprashana"]
+        ),
+        VedicEntry(
+            id: "ve_047", category: "Life Events",
+            title: "Vidyarambha -- Commencement of Learning",
+            sanskritText: "ॐ नमो गणेशाय । ॐ नमः सरस्वत्यै ।",
+            transliteration: "oṃ namo gaṇeśāya | oṃ namaḥ sarasvatyai |",
+            translation: "The ceremony marking the beginning of formal education, typically at age five. The child writes their first letters -- usually 'Om' and the alphabet -- on a plate of rice grains, invoking Ganesha to remove obstacles and Saraswati to bestow wisdom. This ceremony often coincides with Vijayadashami.",
+            source: "Regional Grihya traditions / Dharmasutras",
+            tags: ["samskara", "education", "vidyarambha", "learning"]
+        ),
+        VedicEntry(
+            id: "ve_021", category: "Life Events",
+            title: "Upanayana -- Gayatri Initiation",
+            sanskritText: "यथेदं भूम्या अधि पवित्रं शतधारम् । एवा शतधारं ब्रह्म पवित्रमस्तु ते ॥",
+            transliteration: "yathedam bhūmyā adhi pavitraṃ śata-dhāram | evā śata-dhāraṃ brahma pavitram astu te ||",
+            translation: "Just as this purifying stream flows upon the earth in a hundred streams, so may the purifying knowledge of Brahman flow to you in a hundred streams. (Spoken by the guru during sacred thread investiture.)",
+            source: "Ashvalayana Grihya Sutra 1.20 / Taittiriya Aranyaka",
+            tags: ["samskara", "upanayana", "thread", "gayatri", "initiation"]
+        ),
+        VedicEntry(
+            id: "ve_048", category: "Life Events",
+            title: "Samavartana -- Graduation Ceremony",
+            sanskritText: nil,
+            transliteration: nil,
+            translation: "The ceremony marking the end of the student's Vedic education and return home from the guru's ashram. The student takes a ritual bath (snana), signifying the completion of studies, and is given permission to enter the householder stage (grihastha). The guru offers final blessings and the student offers guru-dakshina (gift to the teacher).",
+            source: "Paraskara Grihya Sutra 2.6",
+            tags: ["samskara", "graduation", "student", "grihastha"]
+        ),
+        VedicEntry(
+            id: "ve_022", category: "Life Events",
+            title: "Vivaha -- The Seven Steps (Saptapadi)",
+            sanskritText: "सखा सप्तपदा भव । सखायौ सप्तपदा बभूव । सख्यं ते गमेयम् । सख्यात् ते मायोषम् । सख्यान्मे मयोष्ठाः ॥",
+            transliteration: "sakhā saptapadā bhava | sakhāyau saptapadā babhūva | sakhyaṃ te gameyam | sakhyāt te māyoṣam | sakhyān me mayoṣṭhāḥ ||",
+            translation: "With these seven steps, become my friend. Having taken seven steps together, we have become companions. May I attain your friendship. May I never part from your friendship. May your friendship never part from me.",
+            source: "Rigveda 10.85.36 / Ashvalayana Grihya Sutra 1.7",
+            tags: ["samskara", "vivaha", "marriage", "saptapadi", "rigveda"]
+        ),
+        VedicEntry(
+            id: "ve_023", category: "Life Events",
+            title: "Antyeshti -- Final Farewell Prayer",
+            sanskritText: "वायुरनिलममृतमथेदं भस्मान्तं शरीरम् । ॐ क्रतो स्मर कृतं स्मर क्रतो स्मर कृतं स्मर ॥",
+            transliteration: "vāyur anilam amṛtam athedaṃ bhasmāntaṃ śarīram | oṃ krato smara kṛtaṃ smara krato smara kṛtaṃ smara ||",
+            translation: "Let the life-breath merge with the immortal wind; let this body end in ashes. Om, O mind, remember your deeds, remember! O mind, remember your deeds, remember!",
+            source: "Isha Upanishad 17",
+            tags: ["samskara", "antyeshti", "funeral", "death", "upanishad"]
+        )
+    ]
 }
 
 // MARK: - API Response Wrappers

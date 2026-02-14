@@ -45,6 +45,7 @@ enum AnalyticsEvent: String {
     case cardUnlocked = "card_unlocked"
     case insightShared = "insight_shared"
     case journeyMilestoneUnlocked = "journey_milestone_unlocked"
+    case retentionDay7 = "retention_day_7"
     case oracleActionCompleted = "oracle_action_completed"
     case activationOracleAction = "activation_oracle_action"
     case timeTravelSnapshotViewed = "time_travel_snapshot_viewed"
@@ -57,6 +58,8 @@ enum AnalyticsEvent: String {
     case diyPoojaCompleted = "diy_pooja_completed"
     case muhuratChecked = "muhurat_checked"
     case vedicEntryRead = "vedic_entry_read"
+    case weeklyChallengeCompleted = "weekly_challenge_completed"
+    case paywallConversion = "paywall_conversion"
 
     // NEW ERROR TRACKING EVENTS
     case networkError = "network_error"

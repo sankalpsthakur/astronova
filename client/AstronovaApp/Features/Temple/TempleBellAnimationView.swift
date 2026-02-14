@@ -27,10 +27,10 @@ struct TempleBellAnimationView: View {
                         colors: [Color.cosmicGold.opacity(0.3 * glowOpacity), Color.clear],
                         center: .center,
                         startRadius: 0,
-                        endRadius: 80
+                        endRadius: 50
                     )
                 )
-                .frame(width: 160, height: 160)
+                .frame(width: 100, height: 100)
 
             // Particle burst
             if isAnimating && !hasRungToday {
@@ -46,7 +46,7 @@ struct TempleBellAnimationView: View {
 
             // Bell icon
             Image(systemName: hasRungToday ? "bell.badge.fill" : "bell.fill")
-                .font(.system(size: 80, weight: .light))
+                .font(.system(size: 48, weight: .light))
                 .foregroundStyle(
                     hasRungToday
                         ? AnyShapeStyle(Color.cosmicSuccess)
@@ -61,7 +61,7 @@ struct TempleBellAnimationView: View {
                 .accessibilityLabel(hasRungToday ? "Bell rung today" : "Ring the temple bell")
                 .accessibilityHint(hasRungToday ? "You've already rung the bell today" : "Double tap to ring")
         }
-        .frame(width: 160, height: 160)
+        .frame(width: 100, height: 100)
         .onChange(of: isAnimating) { _, animating in
             if animating {
                 playAnimation()

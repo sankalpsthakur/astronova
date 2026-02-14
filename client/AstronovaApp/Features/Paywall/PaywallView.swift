@@ -75,11 +75,11 @@ struct PaywallView: View {
         case (.chatLimit, _):
             return "You’ve hit today’s free limit. Unlock deeper journeys for unlimited guidance."
         case (.report, _):
-            return "Unlock deeper journeys: full reports, saved chapters, and unlimited guidance."
+            return "Unlock deeper journeys: complete bundles, saved progress, and unlimited guidance."
         case (.home, "B"):
             return "Your next chapter: premium guidance and unlimited chat."
         default:
-            return "Unlimited chat, full reports, and deeper journeys."
+            return "Unlimited chat, complete journeys, and deeper guidance."
         }
     }
 
@@ -89,19 +89,19 @@ struct PaywallView: View {
             return [
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
                 ("sparkles", "Priority cosmic insights"),
-                ("doc.text.fill", "All detailed reports included"),
+                ("doc.text.fill", "All journey paths included"),
                 ("clock.fill", "Cancel anytime"),
             ]
         case (.chatLimit, _):
             return [
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
                 ("bolt.fill", "Continue instantly — no waiting"),
-                ("doc.text.fill", "All detailed reports included"),
+                ("doc.text.fill", "All journey paths included"),
                 ("clock.fill", "Cancel anytime"),
             ]
         case (.report, _):
             return [
-                ("doc.text.fill", "All detailed reports included"),
+                ("doc.text.fill", "All journey paths included"),
                 ("tray.full.fill", "Saved to your library"),
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
                 ("clock.fill", "Cancel anytime"),
@@ -109,7 +109,7 @@ struct PaywallView: View {
         default:
             return [
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
-                ("doc.text.fill", "All detailed reports included"),
+                ("doc.text.fill", "All journey paths included"),
                 ("heart.fill", "Love, Career, Money, Health + more"),
                 ("clock.fill", "Cancel anytime"),
             ]
@@ -248,7 +248,7 @@ struct PaywallView: View {
                         HStack(spacing: Cosmic.Spacing.sm) {
                             Image(systemName: "doc.text.magnifyingglass")
                                 .foregroundStyle(Color.cosmicGold)
-                            Text("Buy a detailed report (from $12.99)")
+                            Text("Open a deeper journey (from $12.99)")
                                 .font(.cosmicCallout)
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -352,8 +352,12 @@ struct PaywallView: View {
         #if DEBUG
         // UI tests only: bypass StoreKit dialogs using mock store
         if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
-            let success = await BasicStoreManager.shared.purchaseProduct(productId: subscriptionProductId)
+                let success = await BasicStoreManager.shared.purchaseProduct(productId: subscriptionProductId)
             if success {
+                Analytics.shared.track(
+                    .paywallConversion,
+                    properties: ["product": subscriptionProductId, "context": context.rawValue, "source": "paywall"]
+                )
                 Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
                 await MainActor.run {
                     OracleQuotaManager.shared.checkSubscription()
@@ -371,6 +375,10 @@ struct PaywallView: View {
         // Production: Use only StoreKit for purchases
         let success = await storeKitManager.purchaseProduct(productId: subscriptionProductId)
         if success {
+            Analytics.shared.track(
+                .paywallConversion,
+                properties: ["product": subscriptionProductId, "context": context.rawValue, "source": "paywall"]
+            )
             Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
             await MainActor.run {
                 OracleQuotaManager.shared.checkSubscription()

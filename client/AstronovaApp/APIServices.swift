@@ -1134,10 +1134,10 @@ class APIServices: ObservableObject, APIServicesProtocol {
         )
     }
 
-    /// List available pandits
-    func listPandits(specialization: String? = nil, language: String? = nil, availableOnly: Bool = true) async throws -> [PanditProfile] {
-        struct PanditsResponse: Codable {
-            let pandits: [PanditProfile]
+    /// List available guides
+    func listGuides(specialization: String? = nil, language: String? = nil, availableOnly: Bool = true) async throws -> [GuideProfile] {
+        struct GuidesResponse: Codable {
+            let pandits: [GuideProfile]
         }
 
         var queryItems: [String] = []
@@ -1147,22 +1147,22 @@ class APIServices: ObservableObject, APIServicesProtocol {
 
         let queryString = queryItems.isEmpty ? "" : "?" + queryItems.joined(separator: "&")
 
-        let response: PanditsResponse = try await networkClient.request(
+        let response: GuidesResponse = try await networkClient.request(
             endpoint: "/api/v1/temple/pandits\(queryString)",
             method: HTTPMethod.GET,
             body: nil,
-            responseType: PanditsResponse.self
+            responseType: GuidesResponse.self
         )
         return response.pandits
     }
 
-    /// Get pandit availability slots
-    func getPanditAvailability(panditId: String, date: Date? = nil) async throws -> [AvailabilitySlot] {
+    /// Get guide availability slots
+    func getGuideAvailability(guideId: String, date: Date? = nil) async throws -> [AvailabilitySlot] {
         struct AvailabilityResponse: Codable {
             let slots: [AvailabilitySlot]
         }
 
-        var endpoint = "/api/v1/temple/pandits/\(panditId)/availability"
+        var endpoint = "/api/v1/temple/pandits/\(guideId)/availability"
         if let date = date {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
@@ -1181,7 +1181,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     /// Create a pooja booking
     func createPoojaBooking(
         poojaTypeId: String,
-        panditId: String?,
+        guideId: String?,
         scheduledDate: Date,
         scheduledTime: String,
         timezone: String = "Asia/Kolkata",
@@ -1207,7 +1207,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
 
         let request = BookingRequest(
             poojaTypeId: poojaTypeId,
-            panditId: panditId,
+            panditId: guideId,
             scheduledDate: dateFormatter.string(from: scheduledDate),
             scheduledTime: scheduledTime,
             timezone: timezone,

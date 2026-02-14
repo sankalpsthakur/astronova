@@ -127,7 +127,7 @@ struct HomeView: View {
                     } label: {
                         HStack(spacing: Cosmic.Spacing.s) {
                             Image(systemName: "doc.text.magnifyingglass")
-                            Text("Explore all reports (from $12.99)")
+                            Text("Explore all journeys (from $12.99)")
                                 .font(.cosmicCallout)
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -142,8 +142,8 @@ struct HomeView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Explore all reports")
-                    .accessibilityHint("Opens the reports store")
+                    .accessibilityLabel("Explore all journeys")
+                    .accessibilityHint("Opens the journey store")
 
                     HStack {
                         Button {

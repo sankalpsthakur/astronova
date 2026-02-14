@@ -145,6 +145,21 @@ struct DiscoverView: View {
                 .padding(.horizontal, Cosmic.Spacing.m)
                 .padding(.top, Cosmic.Spacing.m)
 
+                ArcanaCollectionSection(
+                    cards: gamification.allArcanaCards,
+                    unlockedCardIds: gamification.unlockedCardIds,
+                    currentCard: gamification.currentDailyCard
+                )
+                .padding(.horizontal, Cosmic.Spacing.m)
+
+                WeeklyChallengeSection(
+                    theme: gamification.weeklyTheme(),
+                    isCompleted: gamification.isCurrentWeeklyChallengeComplete
+                ) {
+                    openWeeklyChallengeAction(gamification.weeklyTheme())
+                }
+                .padding(.horizontal, Cosmic.Spacing.m)
+
                 // Life Domain Grid with Cosmic Weather header
                 DomainGridView(
                     insights: viewModel.domainInsights,
@@ -243,6 +258,19 @@ struct DiscoverView: View {
                     gamification.markShared()
                 }
             )
+        }
+    }
+
+    private func openWeeklyChallengeAction(_ theme: WeeklyTheme) {
+        switch theme {
+        case .love:
+            showingDailySignal = true
+        case .career:
+            NotificationCenter.default.post(name: .switchToTab, object: 3)
+        case .calm:
+            NotificationCenter.default.post(name: .switchToTab, object: 2)
+        case .focus:
+            NotificationCenter.default.post(name: .switchToTab, object: 1)
         }
     }
 
@@ -388,6 +416,168 @@ struct DiscoverView: View {
             withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
                 viewModel.loadingRotation = 360
             }
+        }
+    }
+
+    private struct ArcanaCollectionSection: View {
+        let cards: [ArcanaCard]
+        let unlockedCardIds: Set<String>
+        let currentCard: ArcanaCard?
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sigils & Arcana")
+                            .font(.cosmicHeadline)
+                        Text("Unlock cards by completing meaningful actions.")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                    }
+                    Spacer()
+                }
+
+                Text("\(unlockedCardIds.count) of \(cards.count)")
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicGold)
+
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: Cosmic.Spacing.xs) {
+                    ForEach(cards, id: \.id) { card in
+                        let unlocked = unlockedCardIds.contains(card.id)
+                        let isCurrent = currentCard?.id == card.id
+                        ArcanaCollectionCard(card: card, isUnlocked: unlocked, isCurrent: isCurrent)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+        }
+    }
+
+    private struct ArcanaCollectionCard: View {
+        let card: ArcanaCard
+        let isUnlocked: Bool
+        let isCurrent: Bool
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                HStack {
+                    Text(card.title)
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(isUnlocked ? Color.cosmicTextPrimary : Color.cosmicTextSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                    Spacer()
+                    if isCurrent {
+                        Image(systemName: "sparkles")
+                            .font(.caption)
+                            .foregroundStyle(Color.cosmicGold)
+                    } else if !isUnlocked {
+                        Image(systemName: "lock.fill")
+                            .font(.caption2)
+                            .foregroundStyle(Color.cosmicTextSecondary.opacity(0.8))
+                    }
+                }
+
+                Text(card.subtitle)
+                    .font(.cosmicMicro)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .lineLimit(2)
+
+                Spacer(minLength: 0)
+
+                HStack {
+                    Spacer()
+                    Text(isUnlocked ? "Unlocked" : "Locked")
+                        .font(.cosmicMicro)
+                        .foregroundStyle(isUnlocked ? Color.cosmicSuccess : Color.cosmicTextTertiary)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 98, alignment: .topLeading)
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                    .fill(isUnlocked ? Color.cosmicGold.opacity(0.16) : Color.cosmicSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                            .stroke(
+                                isUnlocked
+                                    ? Color.cosmicGold.opacity(0.45)
+                                    : Color.cosmicTextTertiary.opacity(0.2),
+                                lineWidth: Cosmic.Border.hairline
+                            )
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                    .stroke(isCurrent ? Color.cosmicGold.opacity(0.8) : Color.clear, lineWidth: 1)
+            )
+        }
+    }
+
+    private struct WeeklyChallengeSection: View {
+        let theme: WeeklyTheme
+        let isCompleted: Bool
+        let onAction: () -> Void
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Weekly Challenge")
+                            .font(.cosmicHeadline)
+                        Text(theme.title)
+                            .font(.cosmicTitle2)
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                    }
+                    Spacer()
+
+                    if isCompleted {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.cosmicTitle2)
+                            .foregroundStyle(Color.cosmicSuccess)
+                    }
+                }
+
+                Text(theme.weeklyChallenge)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+
+                HStack {
+                    Text(theme.weeklyChallengeRewardText)
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(isCompleted ? Color.cosmicSuccess : Color.cosmicGold)
+
+                    Spacer()
+
+                    if isCompleted {
+                        Text("Completed")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicSuccess)
+                    } else {
+                        Button {
+                            onAction()
+                        } label: {
+                            Text("Take action")
+                                .font(.cosmicCaptionEmphasis)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.cosmicGold.opacity(0.2), in: Capsule())
+                                .foregroundStyle(Color.cosmicTextPrimary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                    .fill(Color.cosmicSurface)
+            )
         }
     }
 

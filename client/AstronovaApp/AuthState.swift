@@ -27,6 +27,8 @@ class AuthState: ObservableObject {
     
     private let apiServices = APIServices.shared
     private let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
+    private let onboardingCompletedKey = "hasCompletedOnboarding"
+    private let legacyOnboardingCompletedKey = "onboarding_complete"
     
     // MARK: - Keychain Helper Methods
     
@@ -237,6 +239,7 @@ class AuthState: ObservableObject {
             }
             
             await MainActor.run {
+                setOnboardingCompleted()
                 state = .signedIn
             }
         } catch {
@@ -244,6 +247,7 @@ class AuthState: ObservableObject {
             debugPrint("[Auth] Failed to save profile during setup completion: \(error.localizedDescription)")
             #endif
             await MainActor.run {
+                setOnboardingCompleted()
                 // Still transition to signedIn state as profile data is in memory
                 state = .signedIn
             }
@@ -357,6 +361,11 @@ class AuthState: ObservableObject {
 
     var isAuthenticated: Bool {
         jwtToken != nil
+    }
+
+    private func setOnboardingCompleted(_ completed: Bool = true) {
+        UserDefaults.standard.set(completed, forKey: onboardingCompletedKey)
+        UserDefaults.standard.set(completed, forKey: legacyOnboardingCompletedKey)
     }
 }
 

@@ -55,6 +55,25 @@ Runtime testing observations including:
 - **Integration**: Complete API endpoint coverage
 - **E2E**: Key user journeys validated
 
+## Post-Deploy Server Verification
+
+```bash
+bash scripts/deploy-post-push-check.sh \
+  --base-url https://astronova.onrender.com \
+  --wait-seconds 300 \
+  --health-retries 30 \
+  --health-delay 10
+```
+
+Key options:
+
+- `--base-url` - Deployment base URL (`https://astronova-staging.onrender.com` for staging)
+- `--wait-seconds` - Delay before the first check (default `300`)
+- `--health-retries` / `--health-delay` - Retry strategy while waiting for startup
+- `--allow-chat-503` - Temporarily treat 503 as acceptable for `/api/v1/chat`
+- `--skip-charged-reports` - Skip report generate/download checks
+- `--skip-chat` - Skip chat checks
+
 ## Running Tests
 
 ### Backend
@@ -71,6 +90,36 @@ pytest -m "not slow"                          # Skip slow tests
 cd client
 xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
+
+## UI Journey Tests
+
+Comprehensive end-to-end UI testing covering key user flows and edge cases:
+
+### Test Suites
+
+- **ChaosJourneyTests.swift** - Seeded deterministic chaos testing with 3 adversarial journey paths. Uses deterministic seeds for reproducible test runs that simulate real-world edge cases and rapid user interactions.
+
+- **MonetizationJourneyTests.swift** - Validates complete monetization flows including free-to-credit conversion, credit-to-pro upgrades, and pro report purchases.
+
+- **AccessibilityTests.swift** - VoiceOver navigation verification, color contrast checks, and dynamic type support across key screens.
+
+### Running UI Tests
+
+```bash
+xcodebuild test \
+  -project client/astronova.xcodeproj \
+  -scheme AstronovaApp \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:AstronovaAppUITests
+```
+
+Run specific test class:
+```bash
+xcodebuild test ... -only-testing:AstronovaAppUITests/ChaosJourneyTests
+```
+
+**Note**: Chaos tests use deterministic seeds to ensure reproducible results across test runs.
 
 ## Related Documentation
 

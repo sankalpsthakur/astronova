@@ -4,7 +4,7 @@ This is the full Claude Code guide. For the lightweight entrypoint, see `../../C
 
 ## Project Overview
 
-Astronova is an iOS SwiftUI app with a Flask backend for Vedic astrology features: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and a Time Travel visualization. Recent additions include a complete Temple/Pooja booking system with live video sessions.
+Astronova is an iOS SwiftUI app with a Flask backend for Vedic astrology features: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and a Time Travel visualization. Recent additions include a gamification system with XP progression and unlockable content, plus a redesigned Temple tab focused on self-service spiritual experiences.
 
 **Structure:**
 - `client/` — iOS SwiftUI app (Xcode project: `client/astronova.xcodeproj`)
@@ -286,12 +286,13 @@ astronova/
 |---------|-----------|
 | Home | `Features/Home/HomeView.swift`, `HomeViewModel.swift` |
 | Discover | `Features/Discover/DiscoverView.swift`, `DomainGridView.swift` |
-| Time Travel | `EnhancedTimeTravelView.swift`, `DashaChakraWheelView.swift` |
+| Time Travel | `EnhancedTimeTravelView.swift`, `DashaChakraWheelView.swift`, `TimeTravelSwarmOverlay.swift` |
 | Connect | `ConnectView.swift`, `RelationshipDetailView.swift`, `SynastryCompassView.swift` |
 | Oracle (Chat) | `Features/Oracle/OracleView.swift`, `OracleViewModel.swift` |
 | Self/Profile | `Features/Self/SelfTabView.swift`, `CosmicPulseView.swift` |
-| Temple | `Features/Temple/TempleView.swift`, `TempleModels.swift` (Astrologers, Pooja, Oracle) |
+| Temple | `Features/Temple/TempleView.swift`, `TempleBellView.swift`, `DIYPooja/`, `Muhurat/`, `Library/` |
 | Paywall | `Features/Paywall/PaywallView.swift` |
+| Gamification | `Gamification/GamificationManager.swift`, `GamificationModels.swift` |
 
 **Models:**
 | File | Purpose |
@@ -588,8 +589,69 @@ Calculates relationship pulse based on synastry aspect activation by transits.
 - Aspect types: conjunction (0°), sextile (60°), square (90°), trine (120°), opposition (180°)
 - Pulse states: flowing, electric, magnetic, grounded, friction
 
-### Temple/Pooja Booking System
-Complete pooja booking workflow with video session integration:
+### Gamification System
+Complete progression system to increase engagement and retention:
+- **GamificationManager**: Singleton service managing XP, levels, streaks, and unlocks
+- **XP Economy**: Users earn XP for in-app actions (reading insights, checking charts, etc.)
+- **Level Progression**: Three tiers — Seeker (levels 1-5) → Alchemist (6-10) → Oracle (11+)
+- **Daily Streaks**: Tracked via check-ins; consecutive days increase multipliers
+- **Unlockable Content**:
+  - **Sigils**: Visual rewards unlocked via activity milestones
+  - **Arcana Cards**: Tarot-style collectibles awarded for specific achievements
+- **Weekly Challenges**: Rotating themes (Love, Career, Calm, Focus) reset every 7 days
+- **Journey Map**: Visual milestone tracker showing user progression path
+- **Analytics Integration**:
+  - `Analytics.shared.track(.streakCheckIn)` — Daily check-in logged
+  - `Analytics.shared.track(.cardUnlocked, properties: ["card": cardName])` — Card unlock events
+  - `Analytics.shared.track(.insightShared)` — Social sharing actions
+  - `Analytics.shared.track(.levelUp, properties: ["level": newLevel])` — Level progression
+
+**Key Files:**
+- `client/AstronovaApp/Gamification/GamificationManager.swift` — Core manager with persistence
+- `client/AstronovaApp/Gamification/GamificationModels.swift` — Data models (Achievement, Milestone, Challenge, etc.)
+
+### Temple Redesign (Feb 2026)
+**Old Architecture (Pre-Feb 2026):**
+- Astrologer video consultations
+- Pandit booking for in-person/remote poojas
+- Backend booking APIs with pandit management
+
+**New Architecture (Feb 2026):**
+Self-service spiritual experience with four main sections:
+
+1. **Temple Bell** — Daily spiritual check-in
+   - Interactive bell ringing with haptic feedback
+   - Plays `bell.wav` (132KB synthesized audio in bundle)
+   - Tracks daily check-ins via `TempleBellState` (UserDefaults persistence)
+   - Uses `load()`/`save()` pattern for state management
+
+2. **DIY Pooja** — Self-guided ritual steps
+   - Step-by-step pooja instructions with ingredient lists
+   - No external pandit required
+   - Multiple pooja types with deity-specific guidance
+
+3. **Muhurat** — Auspicious timing calculator
+   - Panchang-based timing recommendations
+   - Event type selection (marriage, business launch, etc.)
+   - Vedic calendar integration
+
+4. **Vedic Library** — Searchable spiritual knowledge base
+   - Articles on mantras, rituals, deities
+   - Categorized content for easy discovery
+   - Educational resource for self-learning
+
+**Technical Implementation:**
+- 13 new Swift files added across `DIYPooja/`, `Muhurat/`, `Library/` subdirectories
+- `bell.wav` audio synthesized and added to Xcode bundle (132KB)
+- User-facing copy changed from "Pandit" to "Wisdom Guide" for self-service tone
+- Backend booking APIs **preserved** for backward compatibility (endpoints not deleted)
+- Old consultation models kept in `TempleModels.swift` but unused in new UI
+
+**Design Note:**
+- `AnyShapeStyle()` used when ternary branches return different `ShapeStyle` types (e.g., `Color` vs `LinearGradient`)
+
+### Temple/Pooja Booking System (Legacy — Backend Only)
+Backend booking infrastructure maintained for backward compatibility:
 - **Pooja Types**: Pre-configured poojas with deity, duration, benefits, ingredients, mantras
 - **Pandit Management**: Enrollment, availability scheduling, rating system
 - **Booking Flow**:
@@ -606,15 +668,35 @@ Complete pooja booking workflow with video session integration:
   - Logs all filter actions for monitoring
   - Prevents direct contact exchange during sessions
 
+**Note:** As of Feb 2026, iOS UI no longer exposes booking flow. APIs remain active for potential future use or alternative clients.
+
 ## iOS App Architecture & Patterns
 
 ### Navigation Structure
 - **Tab-Based Navigation**: RootView.swift contains 5 main tabs:
   1. **Today** (Home) — Daily insights, cosmic pulse, domain cards
   2. **Connect** — Relationships, compatibility, synastry compass
-  3. **Time Travel** — Dasha timeline visualization, chakra wheel
+  3. **Time Travel** — Dasha timeline visualization, chakra wheel, swarm overlay
   4. **Ask** (Oracle) — AI chat with astrological context
   5. **Manage** (Self) — Profile, reports, settings
+
+### Time Travel Feature
+The Time Travel tab provides an immersive dasha timeline exploration experience:
+
+**Key Components:**
+- **EnhancedTimeTravelView.swift** — Main timeline interface with zoom/scrub controls
+- **DashaChakraWheelView.swift** — Circular visualization of Vimshottari dasha periods
+- **TimeSeeker.swift** — Time scrubber control with haptic feedback
+- **TimeTravelSwarmOverlay.swift** — Motion-reactive particle system (added Feb 2026)
+  - Responds to scrub speed and direction from TimeSeeker
+  - Layered particles with orbital pulses and streak tails
+  - Creates visual feedback for temporal navigation
+  - Particles accelerate/decelerate based on user interaction
+- **UnifiedTimeTravelView.swift** — Unified layout wrapper for timeline components
+
+**Visual Bridge:**
+- Dark-to-light gradient transition between tabs provides immersive page flow
+- Particle swarm adds kinetic energy to time navigation experience
 
 ### MVVM Pattern
 - **ViewModels**: Observe `@Published` properties for state changes
@@ -1136,11 +1218,30 @@ do {
 4. Wire to navigation in `RootView.swift` or parent view
 5. Add accessibility identifiers for UI testing
 
-### Adding Temple/Pooja Features
+### Adding Temple/Spiritual Features (Post-Feb 2026 Self-Service Model)
+1. **New DIY Pooja**:
+   - Add pooja content to `DIYPooja/` directory
+   - Define step-by-step ritual instructions
+   - Include ingredient lists and mantra suggestions
+   - Update navigation in `TempleView.swift`
+2. **New Muhurat Type**:
+   - Add timing calculation logic to `Muhurat/` directory
+   - Integrate with Panchang service
+   - Add event type to selection picker
+3. **Vedic Library Content**:
+   - Add article markdown or structured content to `Library/` subdirectory
+   - Update search index and categories
+   - Link related content for discovery
+4. **Temple Bell Customization**:
+   - Modify bell audio or add alternative sound files
+   - Update `TempleBellState` for new tracking features
+   - Adjust haptic feedback patterns in `TempleBellAnimationView.swift`
+
+### Adding Legacy Booking Features (Backend Only)
 1. **New Pooja Type**:
    - Add entry to `pooja_types` table (via SQL or migration)
    - Include: name, description, deity, duration, price, icon, benefits, ingredients, mantras
-   - Update iOS `TempleModels.swift` if needed
+   - Update iOS `TempleModels.swift` if exposing in UI
 2. **Pandit Management**:
    - Pandits enroll via `/api/v1/temple/pandits/enroll`
    - Set availability via `pandit_availability` table
@@ -1149,6 +1250,8 @@ do {
    - Configure video service credentials in environment
    - Session links auto-generate on booking confirmation
    - Frontend loads video SDK for live streaming
+
+**Note:** As of Feb 2026, booking APIs are backend-only (not exposed in iOS UI).
 
 ### Database Changes & Migrations
 When adding new tables or columns:

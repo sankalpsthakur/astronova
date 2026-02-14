@@ -218,6 +218,9 @@ struct QuickBirthEditView: View {
                         .stroke(Color.cosmicTextTertiary.opacity(0.2), lineWidth: 1)
                 )
                 .onChange(of: birthPlace) { _, newValue in
+                    if selectedLocation?.fullName != newValue {
+                        selectedLocation = nil
+                    }
                     searchLocations(query: newValue)
                 }
 
@@ -443,24 +446,39 @@ struct QuickBirthEditView: View {
     }
 
     private func saveChanges() {
+        Task {
+            await saveChangesAsync()
+        }
+    }
+
+    @MainActor
+    private func saveChangesAsync() async {
         isSaving = true
 
         #if DEBUG
-        print("[QuickBirthEdit] saveChanges called")
+        print("[QuickBirthEdit] saveChangesAsync called")
         print("[QuickBirthEdit] hasBirthTime: \(hasBirthTime)")
         print("[QuickBirthEdit] birthTime state: \(birthTime)")
         #endif
+
+        let query = birthPlace.trimmingCharacters(in: .whitespacesAndNewlines)
+        let shouldSavePlace = !query.isEmpty
+        var resolvedLocation: LocationResult?
+
+        if let location = selectedLocation {
+            resolvedLocation = location
+        } else if shouldSavePlace {
+            resolvedLocation = await resolveLocation(for: query)
+        }
 
         var updatedProfile = profile
         updatedProfile.fullName = fullName
         updatedProfile.birthDate = birthDate
         updatedProfile.birthTime = hasBirthTime ? birthTime : nil
-
-        #if DEBUG
-        print("[QuickBirthEdit] updatedProfile.birthTime: \(String(describing: updatedProfile.birthTime))")
-        #endif
-
-        if let location = selectedLocation {
+        if shouldSavePlace {
+            updatedProfile.birthPlace = query
+        }
+        if let location = resolvedLocation {
             updatedProfile.birthPlace = location.fullName
             updatedProfile.birthLatitude = location.coordinate.latitude
             updatedProfile.birthLongitude = location.coordinate.longitude
@@ -471,6 +489,23 @@ struct QuickBirthEditView: View {
 
         isSaving = false
         dismiss()
+    }
+
+    private func resolveLocation(for query: String) async -> LocationResult? {
+        let locations = await auth.profileManager.searchLocations(query: query)
+        if let first = locations.first {
+            return first
+        }
+
+        do {
+            let fallback = try await MapKitLocationService.shared.searchPlaces(query: query)
+            return fallback.first
+        } catch {
+            #if DEBUG
+            print("[QuickBirthEdit] Failed to resolve location '\(query)': \(error)")
+            #endif
+            return nil
+        }
     }
 
     private func defaultBirthTime(for date: Date) -> Date {
