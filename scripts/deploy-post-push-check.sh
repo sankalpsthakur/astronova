@@ -120,7 +120,8 @@ check_endpoint() {
     local output_file
     local status
 
-    local -a headers=("$@")
+    local -a headers=()
+    if [[ $# -gt 0 ]]; then headers=("$@"); fi
 
     output_file="$(mktemp)"
     local -a curl_args=(
@@ -140,9 +141,11 @@ check_endpoint() {
         curl_args+=( -H "Content-Type: application/json" --data "$body")
     fi
 
-    for header in "${headers[@]:-}"; do
-        curl_args+=( -H "$header" )
-    done
+    if [[ ${#headers[@]} -gt 0 ]]; then
+        for header in "${headers[@]}"; do
+            curl_args+=( -H "$header" )
+        done
+    fi
 
     status="$(curl "${curl_args[@]}" || true)"
     local status_code="${status//$'\n'/}"
@@ -232,65 +235,63 @@ fi
 record_result "Initial Health Check" 1 "healthy"
 
 # Public endpoint checks
-public_out=""
-public_headers=()
-out_file="$(check_endpoint "System status" "GET" "/api/v1/system-status" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "System status" "GET" "/api/v1/system-status" "200" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "OpenAPI spec" "GET" "/api/v1/openapi.yaml" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "OpenAPI spec" "GET" "/api/v1/openapi.yaml" "200" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Docs page" "GET" "/api/v1/docs" "200,301,302" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Docs page" "GET" "/api/v1/docs" "200,301,302" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Horoscope" "GET" "/api/v1/horoscope?sign=aries&type=daily" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Horoscope" "GET" "/api/v1/horoscope?sign=aries&type=daily" "200" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Ephemeris current" "GET" "/api/v1/ephemeris/current" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Ephemeris current" "GET" "/api/v1/ephemeris/current" "200" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Planetary positions" "GET" "/api/v1/astrology/positions" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Planetary positions" "GET" "/api/v1/astrology/positions" "200" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Temple poojas" "GET" "/api/v1/temple/poojas" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Temple poojas" "GET" "/api/v1/temple/poojas" "200" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Compatibility" "POST" "/api/v1/compatibility" "200" '{"person1":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"person2":{"date":"1988-03-20","time":"18:15","timezone":"America/Los_Angeles","latitude":34.0522,"longitude":-118.2437}}' "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Compatibility" "POST" "/api/v1/compatibility" "200" '{"person1":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"person2":{"date":"1988-03-20","time":"18:15","timezone":"America/Los_Angeles","latitude":34.0522,"longitude":-118.2437}}' || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Chart generation" "POST" "/api/v1/chart/generate" "200" '{"systems":["western","vedic"],"chartType":"natal","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Chart generation" "POST" "/api/v1/chart/generate" "200" '{"systems":["western","vedic"],"chartType":"natal","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Dasha calculation" "POST" "/api/v1/astrology/dashas/complete" "200" '{"birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"targetDate":"2026-02-14","includeTransitions":true,"includeEducation":true}' "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Dasha calculation" "POST" "/api/v1/astrology/dashas/complete" "200" '{"birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006},"targetDate":"2026-02-14","includeTransitions":true,"includeEducation":true}' || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
-out_file="$(check_endpoint "Location search" "GET" "/api/v1/location/search?q=New%20York" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Location search" "GET" "/api/v1/location/search?q=New%20York" "200" "__NO_BODY__" || true)"
 if [[ -f "$out_file" ]]; then
     rm -f "$out_file"
 fi
 
 # Auth + protected endpoints
-out_file="$(check_endpoint "Auth (Apple fallback)" "POST" "/api/v1/auth/apple" "200" '{"userIdentifier":"astronova-deploy-check","email":"deploy-check@astronova.app","firstName":"Deploy","lastName":"Checker"}' "${public_headers[@]}" || true)"
+out_file="$(check_endpoint "Auth (Apple fallback)" "POST" "/api/v1/auth/apple" "200" '{"userIdentifier":"astronova-deploy-check","email":"deploy-check@astronova.app","firstName":"Deploy","lastName":"Checker"}' || true)"
 if [[ -f "$out_file" ]]; then
     AUTH_TOKEN="$(extract_json_field "$out_file" "jwtToken" || true)"
     AUTH_USER_ID="$(extract_json_field "$out_file" "user.id" || true)"
@@ -331,7 +332,7 @@ if [[ -f "$out_file" ]]; then
                     if [[ -f "$out_file3" ]]; then
                         rm -f "$out_file3"
                     fi
-                    out_file3="$(check_endpoint "Report PDF" "GET" "/api/v1/reports/${REPORT_ID}/pdf" "200" "__NO_BODY__" "${public_headers[@]}" || true)"
+                    out_file3="$(check_endpoint "Report PDF" "GET" "/api/v1/reports/${REPORT_ID}/pdf" "200" "__NO_BODY__" || true)"
                     if [[ -f "$out_file3" ]]; then
                         rm -f "$out_file3"
                     fi
