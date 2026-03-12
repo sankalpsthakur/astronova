@@ -1,2 +1,7 @@
 cloudkit_data/
 .env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
