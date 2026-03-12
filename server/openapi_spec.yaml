@@ -1480,6 +1480,9 @@ paths:
   /api/v1/astrology/dashas:
     get:
       summary: Get Vimshottari dasha (lightweight)
+      description: |
+        Returns current and next dasha periods for a given birth date.
+        Note: Also accepts 'date' as alias for 'birth_date', 'time' as alias for 'birth_time', and 'tz' as alias for 'timezone'.
       tags:
         - Astrology
       parameters:
@@ -1489,16 +1492,19 @@ paths:
             type: string
             example: "1990-05-15"
           required: true
+          description: Birth date in YYYY-MM-DD format. Also accepts 'date' parameter name.
         - in: query
           name: birth_time
           schema:
             type: string
             example: "14:30"
+          description: Birth time in HH:MM format. Defaults to 12:00. Also accepts 'time' parameter name.
         - in: query
           name: timezone
           schema:
             type: string
             example: "UTC"
+          description: IANA timezone (e.g., America/New_York, Asia/Kolkata). Defaults to UTC. Also accepts 'tz' parameter name.
         - in: query
           name: lat
           schema:

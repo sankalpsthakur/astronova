@@ -371,7 +371,9 @@ struct ContactRow: View {
 
 #Preview {
     ContactPickerView { contact in
+        #if DEBUG
         print("Selected: \(contact.fullName)")
+        #endif
     }
 }
 

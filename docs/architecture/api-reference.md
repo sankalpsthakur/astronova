@@ -68,6 +68,39 @@ Get simplified planetary positions.
 }
 ```
 
+### GET /astrology/dashas
+Get lightweight Vimshottari dasha information.
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| `birth_date` (or `date`) | string | Yes | Birth date in YYYY-MM-DD format |
+| `birth_time` (or `time`) | string | No | Birth time in HH:MM (defaults to 12:00) |
+| `timezone` (or `tz`) | string | No | IANA timezone (defaults to UTC) |
+| `target_date` | string | Yes | Target date in YYYY-MM-DD format |
+| `lat` | float | No | Latitude for coordinates |
+| `lon` | float | No | Longitude for coordinates |
+| `include_boundaries` | boolean | No | Include full antardasha list |
+| `debug` | boolean | No | Include calculation debug info |
+
+**Response:**
+```json
+{
+  "mahadasha": {
+    "lord": "Jupiter",
+    "start": "2019-09-18",
+    "end": "2035-09-18",
+    "annotation": "Growth, wisdom, fortune; focus on expansion and teaching."
+  },
+  "antardasha": {
+    "lord": "Saturn",
+    "start": "2019-09-18",
+    "end": "2022-08-18",
+    "annotation": "Discipline, structure, lessons; focus on responsibility."
+  }
+}
+```
+
 ### POST /astrology/dashas/complete
 Get complete Vimshottari dasha timeline with impact analysis.
 

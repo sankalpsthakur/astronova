@@ -211,9 +211,11 @@ struct LocationResultRow: View {
             placeholder: "Where were you born?",
             onSearchTextChanged: nil
         ) { location in
+            #if DEBUG
             print("Selected: \(location)")
+            #endif
         }
-        
+
         Spacer()
     }
     .padding()

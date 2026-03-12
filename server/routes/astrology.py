@@ -70,17 +70,20 @@ def dashas():
     """
     Lightweight Vimshottari dasha endpoint - delegates to DashaService for consistency.
     Query:
-      - birth_date: YYYY-MM-DD (required)
-      - birth_time: HH:MM (optional, defaults to 12:00)
-      - timezone: IANA tz (optional, defaults UTC)
+      - birth_date or date: YYYY-MM-DD (required)
+      - birth_time or time: HH:MM (optional, defaults to 12:00)
+      - timezone or tz: IANA tz (optional, defaults UTC)
       - lat, lon: coordinates (optional)
       - target_date: YYYY-MM-DD (required)
       - include_boundaries: include full antardasha list (optional)
       - debug: include calculation debug info (optional)
     """
-    birth_date = request.args.get("birth_date")
-    birth_time = request.args.get("birth_time", "12:00")
-    timezone = request.args.get("timezone", "UTC")
+    # Support both 'birth_date' and 'date' parameter names for flexibility
+    birth_date = request.args.get("birth_date") or request.args.get("date")
+    # Support both 'birth_time' and 'time' parameter names for flexibility
+    birth_time = request.args.get("birth_time") or request.args.get("time") or "12:00"
+    # Support both 'timezone' and 'tz' parameter names for flexibility
+    timezone = request.args.get("timezone") or request.args.get("tz") or "UTC"
     lat = request.args.get("lat", type=float)
     lon = request.args.get("lon", type=float)
     target_date_str = request.args.get("target_date")

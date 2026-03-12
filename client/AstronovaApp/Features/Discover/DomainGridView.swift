@@ -191,7 +191,9 @@ private struct CosmicGlowOrb: View {
             insights: DomainInsight.samples,
             horoscope: "A day of cosmic harmony awaits. The Sun's trine to Jupiter brings optimism and expansion, while Venus in Capricorn grounds your relationships in practical affection.",
             onDomainTap: { insight in
+                #if DEBUG
                 print("Tapped: \(insight.domain.displayName)")
+                #endif
             }
         )
         .padding()
