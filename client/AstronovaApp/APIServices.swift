@@ -1441,6 +1441,26 @@ class APIServices: ObservableObject, APIServicesProtocol {
             responseType: ShastrijiQueueStatus.self
         )
     }
+
+    /// Update call state for a booking (queued -> ringing -> connected -> ended)
+    func updateCallState(bookingId: String, callState: String) async throws -> CallStateResponse {
+        struct CallStateRequest: Codable {
+            let callState: String
+        }
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/bookings/\(bookingId)/call-state",
+            method: HTTPMethod.PATCH,
+            body: CallStateRequest(callState: callState),
+            responseType: CallStateResponse.self
+        )
+    }
+}
+
+/// Response model for call state updates
+struct CallStateResponse: Codable {
+    let bookingId: String
+    let callState: String
+    let updatedAt: String?
 }
 
 /// Empty response for fire-and-forget API calls

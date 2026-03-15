@@ -1863,11 +1863,15 @@ def update_call_state(booking_id: str):
         """, (now_iso, duration_seconds, booking_id))
 
     elif new_state == "requeued":
+        # Auto-transition requeued -> queued so the client doesn't get stuck.
+        # The valid-transitions map allows missed->requeued, but we land in
+        # 'queued' atomically so the polling loop picks it up immediately.
         next_slot = _calculate_next_shastriji_slot(cur, now=now)
+        new_state = "queued"
         cur.execute("""
             UPDATE pooja_bookings
             SET status = 'queued',
-                call_state = 'requeued',
+                call_state = 'queued',
                 scheduled_date = ?,
                 scheduled_time = ?,
                 updated_at = ?

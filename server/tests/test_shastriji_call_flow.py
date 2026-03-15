@@ -371,10 +371,13 @@ class TestCallStateMachine:
                 data=json.dumps({"callState": "requeued"}),
             )
         assert requeued.status_code == 200
+        # The handler auto-transitions requeued -> queued so the client
+        # polling loop picks it up immediately (no stuck 'requeued' state).
+        assert requeued.get_json()["callState"] == "queued"
 
         row = fetch_booking(db, booking_id)
         assert row["status"] == "queued"
-        assert row["call_state"] == "requeued"
+        assert row["call_state"] == "queued"
         assert row["queue_position"] == 1
         assert row["estimated_wait_minutes"] == 0
         assert f"{row['scheduled_date']} {row['scheduled_time']}" != original_slot

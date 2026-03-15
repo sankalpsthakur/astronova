@@ -45,6 +45,8 @@ struct ShastrijiConsultView: View {
     @State private var queueTimer: Timer?
     @State private var callTimer: Timer?
     @State private var pulseAnimation = false
+    @State private var showCallView = false
+    @State private var sessionURL: String?
 
     var body: some View {
         VStack(spacing: Cosmic.Spacing.md) {
@@ -80,6 +82,21 @@ struct ShastrijiConsultView: View {
         .padding(.horizontal, Cosmic.Spacing.screen)
         .task {
             await loadStatus()
+        }
+        .fullScreenCover(isPresented: $showCallView) {
+            if let url = sessionURL, case let .inCall(bookingId) = viewState {
+                ShastrijiCallView(
+                    sessionURL: url,
+                    bookingId: bookingId,
+                    onEndCall: {
+                        showCallView = false
+                        Task {
+                            try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "ended")
+                            viewState = .profile
+                        }
+                    }
+                )
+            }
         }
         .onDisappear {
             stopQueuePolling()
@@ -456,19 +473,37 @@ struct ShastrijiConsultView: View {
 
     private func joinCall() {
         if case let .callReady(bookingId) = viewState {
-            viewState = .inCall(bookingId: bookingId)
-            callDurationSeconds = 0
-            startCallTimer()
+            Task {
+                do {
+                    let sessionResponse = try await APIServices.shared.generatePoojaSessionLink(bookingId: bookingId)
+                    sessionURL = sessionResponse.sessionLink
 
-            Analytics.shared.track(.templeBookingCompleted, properties: [
-                "type": "shastriji_consultation",
-                "booking_id": bookingId
-            ])
+                    _ = try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "connected")
+
+                    viewState = .inCall(bookingId: bookingId)
+                    showCallView = true
+
+                    Analytics.shared.track(.templeBookingCompleted, properties: [
+                        "type": "shastriji_consultation",
+                        "booking_id": bookingId
+                    ])
+                } catch {
+                    errorMessage = "Could not start call. Please try again."
+                    viewState = .callReady(bookingId: bookingId)
+                }
+            }
         }
     }
 
     private func endCall() {
         stopCallTimer()
+        showCallView = false
+        sessionURL = nil
+        if case let .inCall(bookingId) = viewState {
+            Task {
+                try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "ended")
+            }
+        }
         viewState = .profile
         Task { await loadStatus() }
     }
