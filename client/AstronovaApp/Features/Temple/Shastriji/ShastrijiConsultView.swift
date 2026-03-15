@@ -354,6 +354,14 @@ struct ShastrijiConsultView: View {
             }
             .buttonStyle(.cosmicPrimary)
             .accessibilityLabel("Join video call with Shastriji")
+
+            if let error = errorMessage {
+                Text(error)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicError)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, Cosmic.Spacing.xs)
+            }
         }
         .padding(.vertical, Cosmic.Spacing.sm)
     }
@@ -481,6 +489,7 @@ struct ShastrijiConsultView: View {
                     _ = try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "connected")
 
                     viewState = .inCall(bookingId: bookingId)
+                    startCallTimer()
                     showCallView = true
 
                     Analytics.shared.track(.templeBookingCompleted, properties: [

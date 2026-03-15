@@ -45,9 +45,6 @@ struct ShastrijiCallView: View {
     @State private var elapsedSeconds: Int = 0
     @State private var showEndCallAlert = false
 
-    /// Timer that fires every second to update the call duration display.
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
     // MARK: - Body
 
     var body: some View {
@@ -70,8 +67,11 @@ struct ShastrijiCallView: View {
         } message: {
             Text("This will end your Shastriji consultation session.")
         }
-        .onReceive(timer) { _ in
-            elapsedSeconds += 1
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                elapsedSeconds += 1
+            }
         }
         .statusBarHidden(true)
     }
@@ -90,6 +90,7 @@ struct ShastrijiCallView: View {
                 Text(formattedDuration)
                     .font(.cosmicMono)
                     .foregroundStyle(Color.cosmicGold)
+                    .accessibilityLabel("Call duration \(elapsedSeconds / 60) minutes \(elapsedSeconds % 60) seconds")
             }
 
             Spacer()
@@ -103,6 +104,7 @@ struct ShastrijiCallView: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .accessibleIconButton()
             }
+            .accessibilityLabel("End consultation")
         }
         .padding(.horizontal, Cosmic.Spacing.screen)
         .padding(.vertical, Cosmic.Spacing.sm)
@@ -152,6 +154,7 @@ struct ShastrijiCallView: View {
                 .background(Color.cosmicError)
                 .clipShape(Capsule())
             }
+            .accessibilityLabel("End call and close")
         }
         .padding(.vertical, Cosmic.Spacing.md)
         .padding(.bottom, Cosmic.Spacing.xs)
