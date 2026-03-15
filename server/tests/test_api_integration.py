@@ -444,3 +444,94 @@ class TestResponseSchemas:
         required_domains = ["career", "relationships", "health", "spiritual"]
         for domain in required_domains:
             assert domain in scores, f"Missing score domain: {domain}"
+
+
+class TestHouseInsights:
+    """Test GET /api/v1/astrology/house-insights endpoint."""
+
+    @pytest.fixture
+    def client(self):
+        from app import create_app
+
+        app = create_app()
+        app.config["TESTING"] = True
+        with app.test_client() as client:
+            yield client
+
+    def test_single_planet_lookup(self, client):
+        """Test single-planet query-param mode returns insight and houses map."""
+        response = client.get(
+            "/api/v1/astrology/house-insights",
+            query_string={"planet": "sun", "house": "10"},
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+
+        # Top-level keys
+        assert "insights" in data
+        assert "houses" in data
+
+        # Exactly one insight returned
+        assert len(data["insights"]) == 1
+        insight = data["insights"][0]
+
+        # Response uses nested structure: planet, house, interpretation
+        assert "planet" in insight
+        assert "house" in insight
+        assert "interpretation" in insight
+        assert insight["house"]["number"] == 10
+        assert "summary" in insight["interpretation"]
+
+        # Houses reference map should have all 12 houses
+        assert len(data["houses"]) == 12
+        assert "10" in data["houses"]
+
+    def test_bulk_planets_lookup(self, client):
+        """Test bulk JSON-array mode with multiple planets."""
+        import json
+
+        planets = [
+            {"id": "sun", "house": 10, "retrograde": False},
+            {"id": "moon", "house": 4, "retrograde": False},
+            {"id": "saturn", "house": 7, "retrograde": True},
+        ]
+        response = client.get(
+            "/api/v1/astrology/house-insights",
+            query_string={"planets": json.dumps(planets)},
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+
+        assert len(data["insights"]) == 3
+        # Each insight has planet, house, interpretation structure
+        for insight in data["insights"]:
+            assert "planet" in insight
+            assert "house" in insight
+            assert "interpretation" in insight
+
+        # Saturn (retrograde) should have retrograde info
+        saturn = data["insights"][2]
+        assert "retrograde" in saturn
+
+    def test_no_planets_returns_empty(self, client):
+        """Test that omitting planets returns 200 with empty insights."""
+        response = client.get("/api/v1/astrology/house-insights")
+
+        assert response.status_code == 200
+        data = response.get_json()
+
+        assert data["insights"] == []
+        assert len(data["houses"]) == 12
+
+    def test_invalid_house_number(self, client):
+        """Test that an out-of-range house returns 400."""
+        response = client.get(
+            "/api/v1/astrology/house-insights",
+            query_string={"planet": "mars", "house": "13"},
+        )
+
+        assert response.status_code == 400
+        data = response.get_json()
+        assert "error" in data

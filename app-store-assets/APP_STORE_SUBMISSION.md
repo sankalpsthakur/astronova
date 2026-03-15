@@ -1,4 +1,4 @@
-# Astronova - App Store Submission Materials
+# Shastriji - App Store Submission Materials
 
 **Version:** 1.0
 **Date:** January 9, 2026
@@ -55,7 +55,7 @@ Discover your astrological blueprint with daily insights, Vimshottari dasha time
 ```
 🌟 DISCOVER YOUR COSMIC BLUEPRINT
 
-Astronova brings the ancient wisdom of Vedic astrology into the modern age. Get personalized daily insights, explore your life's timeline through Vimshottari dasha, connect with expert astrologers, and book authentic sacred rituals—all in one beautifully designed app.
+Shastriji brings the ancient wisdom of Vedic astrology into the modern age. Get personalized daily insights, explore your life's timeline through Vimshottari dasha, connect with your personal Shastriji, and book authentic sacred rituals—all in one beautifully designed app.
 
 ✨ DAILY COSMIC INSIGHTS
 Start each day with personalized astrological guidance tailored to your birth chart. Discover how planetary transits influence seven key life domains:

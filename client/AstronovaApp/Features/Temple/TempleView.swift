@@ -29,6 +29,9 @@ struct TempleView: View {
 
                 ScrollView {
                     VStack(spacing: Cosmic.Spacing.xl) {
+                        // 0. Shastriji Consultation
+                        ShastrijiConsultView()
+
                         // 1. Temple Bell Hero
                         TempleBellView()
 

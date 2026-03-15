@@ -15,10 +15,11 @@ import logging
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from flask_babel import gettext as _
 
 from db import get_connection
+from middleware import require_auth
 
 logger = logging.getLogger(__name__)
 temple_bp = Blueprint("temple", __name__)
@@ -660,22 +661,22 @@ def get_booking(booking_id: str):
 
 
 @temple_bp.route("/bookings/<booking_id>/cancel", methods=["POST"])
+@require_auth
 def cancel_booking(booking_id: str):
     """
     POST /api/v1/temple/bookings/<booking_id>/cancel
 
     Cancel a booking.
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        return jsonify({"error": _("Authentication required")}), 401
+    user_id = g.user_id
 
     conn = get_connection()
     cur = conn.cursor()
 
     # Check booking exists and belongs to user
     cur.execute("""
-        SELECT status FROM pooja_bookings
+        SELECT status, pandit_id, call_state
+        FROM pooja_bookings
         WHERE id = ? AND user_id = ?
     """, (booking_id, user_id))
 
@@ -694,9 +695,19 @@ def cancel_booking(booking_id: str):
     now = datetime.utcnow().isoformat()
     cur.execute("""
         UPDATE pooja_bookings
-        SET status = 'cancelled', updated_at = ?
+        SET status = 'cancelled',
+            call_state = CASE
+                WHEN COALESCE(call_state, 'idle') = 'ended' THEN COALESCE(call_state, 'idle')
+                ELSE 'ended'
+            END,
+            queue_position = 0,
+            estimated_wait_minutes = 0,
+            updated_at = ?
         WHERE id = ?
     """, (now, booking_id))
+
+    if row["pandit_id"] == SHASTRIJI_ID:
+        _recalculate_shastriji_queue(cur)
 
     conn.commit()
     conn.close()
@@ -793,6 +804,7 @@ def accept_booking(booking_id: str):
 
 
 @temple_bp.route("/bookings/<booking_id>/session", methods=["POST"])
+@require_auth
 def generate_session_link(booking_id: str):
     """
     POST /api/v1/temple/bookings/<booking_id>/session
@@ -800,9 +812,7 @@ def generate_session_link(booking_id: str):
     Generate a video session link for the booking.
     Called when payment is confirmed.
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        return jsonify({"error": _("Authentication required")}), 401
+    user_id = g.user_id
     logger.info("Temple generate_session_link booking_id=%s user_id=%s", booking_id, user_id)
 
     conn = get_connection()
@@ -1393,4 +1403,512 @@ def record_bell_ring():
     return jsonify({
         "success": True,
         "message": "Bell ring recorded. Om Shanti!",
+    })
+
+
+# =============================================================================
+# Shastriji Single-Practitioner Endpoints
+# =============================================================================
+
+SHASTRIJI_ID = "shastriji-001"
+SLOT_DURATION_MINUTES = 30
+
+# Valid call-state transitions
+VALID_CALL_TRANSITIONS = {
+    "idle": ["queued"],
+    "queued": ["ringing"],
+    "ringing": ["connected", "missed"],
+    "connected": ["ended"],
+    "missed": ["requeued"],
+    "requeued": ["queued"],
+    "ended": [],
+}
+
+
+def _parse_booking_datetime(date_str: str | None, time_str: str | None) -> datetime | None:
+    if not date_str or not time_str:
+        return None
+
+    try:
+        return datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+    except ValueError:
+        return None
+
+
+def _count_active_shastriji_bookings(cur) -> int:
+    cur.execute(
+        """
+        SELECT COUNT(*) AS cnt
+        FROM pooja_bookings
+        WHERE pandit_id = ?
+          AND status NOT IN ('cancelled', 'completed')
+          AND COALESCE(call_state, 'idle') NOT IN ('ended', 'missed')
+        """,
+        (SHASTRIJI_ID,),
+    )
+    row = cur.fetchone()
+    return row["cnt"] if row else 0
+
+
+def _calculate_next_shastriji_slot(cur, now: datetime | None = None) -> datetime:
+    """Choose the next slot using both queue depth and the latest scheduled active booking."""
+    now = now or datetime.utcnow()
+    queue_count = _count_active_shastriji_bookings(cur)
+    queue_based_slot = now + timedelta(minutes=max(2, queue_count * SLOT_DURATION_MINUTES))
+
+    cur.execute(
+        """
+        SELECT scheduled_date, scheduled_time
+        FROM pooja_bookings
+        WHERE pandit_id = ?
+          AND status NOT IN ('cancelled', 'completed')
+          AND COALESCE(call_state, 'idle') NOT IN ('ended', 'missed')
+        ORDER BY scheduled_date DESC, scheduled_time DESC, created_at DESC
+        LIMIT 1
+        """,
+        (SHASTRIJI_ID,),
+    )
+    last_booking = cur.fetchone()
+    if not last_booking:
+        return queue_based_slot
+
+    last_scheduled = _parse_booking_datetime(last_booking["scheduled_date"], last_booking["scheduled_time"])
+    if last_scheduled is None:
+        return queue_based_slot
+
+    return max(queue_based_slot, last_scheduled + timedelta(minutes=SLOT_DURATION_MINUTES))
+
+
+def _recalculate_shastriji_queue(cur) -> None:
+    cur.execute(
+        """
+        UPDATE pooja_bookings
+        SET queue_position = 0,
+            estimated_wait_minutes = 0
+        WHERE pandit_id = ?
+        """,
+        (SHASTRIJI_ID,),
+    )
+
+    cur.execute(
+        """
+        SELECT id
+        FROM pooja_bookings
+        WHERE pandit_id = ?
+          AND status NOT IN ('cancelled', 'completed')
+          AND COALESCE(call_state, 'idle') NOT IN ('ended', 'missed')
+        ORDER BY scheduled_date ASC, scheduled_time ASC, created_at ASC, id ASC
+        """,
+        (SHASTRIJI_ID,),
+    )
+
+    for position, row in enumerate(cur.fetchall(), start=1):
+        cur.execute(
+            """
+            UPDATE pooja_bookings
+            SET queue_position = ?,
+                estimated_wait_minutes = ?
+            WHERE id = ?
+            """,
+            (position, (position - 1) * SLOT_DURATION_MINUTES, row["id"]),
+        )
+
+
+@temple_bp.route("/shastriji/status", methods=["GET"])
+def get_shastriji_status():
+    """
+    GET /api/v1/temple/shastriji/status
+
+    Returns Shastriji's current availability, queue length,
+    and next available slot time.
+    """
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Fetch Shastriji record
+    cur.execute("""
+        SELECT id, name, rating, review_count, specializations,
+               is_available
+        FROM pandits
+        WHERE id = ?
+    """, (SHASTRIJI_ID,))
+
+    shastriji = cur.fetchone()
+    if not shastriji:
+        conn.close()
+        return jsonify({"error": _("Shastriji not found")}), 404
+
+    current_queue_length = _count_active_shastriji_bookings(cur)
+    next_slot = _calculate_next_shastriji_slot(cur)
+    conn.close()
+
+    estimated_wait = current_queue_length * SLOT_DURATION_MINUTES
+
+    specializations = (
+        json.loads(shastriji["specializations"])
+        if shastriji["specializations"]
+        else []
+    )
+
+    logger.info(
+        "Temple shastriji_status is_online=%s queue_length=%d next_slot=%s",
+        bool(shastriji["is_available"]),
+        current_queue_length,
+        next_slot.isoformat(),
+    )
+
+    return jsonify({
+        "isOnline": bool(shastriji["is_available"]),
+        "currentQueueLength": current_queue_length,
+        "nextSlotTime": next_slot.isoformat(),
+        "estimatedWaitMinutes": estimated_wait,
+        "shastriji": {
+            "name": shastriji["name"],
+            "rating": shastriji["rating"],
+            "reviewCount": shastriji["review_count"],
+            "specializations": specializations,
+        },
+    })
+
+
+@temple_bp.route("/shastriji/queue", methods=["GET"])
+@require_auth
+def get_shastriji_queue():
+    """
+    GET /api/v1/temple/shastriji/queue
+
+    Returns the authenticated user's position in the Shastriji queue.
+    """
+    user_id = g.user_id
+
+    conn = get_connection()
+    cur = conn.cursor()
+    _recalculate_shastriji_queue(cur)
+
+    # Find user's active booking with Shastriji
+    cur.execute("""
+        SELECT id, status, call_state, queue_position, estimated_wait_minutes,
+               created_at
+        FROM pooja_bookings
+        WHERE user_id = ?
+          AND pandit_id = ?
+          AND status NOT IN ('cancelled', 'completed')
+          AND COALESCE(call_state, 'idle') NOT IN ('ended', 'missed')
+        ORDER BY created_at DESC
+        LIMIT 1
+    """, (user_id, SHASTRIJI_ID))
+
+    booking = cur.fetchone()
+    if not booking:
+        conn.close()
+        return jsonify({"error": _("No active booking found")}), 404
+
+    conn.close()
+
+    logger.info(
+        "Temple shastriji_queue user_id=%s booking_id=%s position=%d",
+        user_id,
+        booking["id"],
+        booking["queue_position"],
+    )
+
+    return jsonify({
+        "queuePosition": booking["queue_position"],
+        "estimatedWaitMinutes": booking["estimated_wait_minutes"],
+        "bookingId": booking["id"],
+        "callState": booking["call_state"],
+    })
+
+
+@temple_bp.route("/shastriji/book", methods=["POST"])
+@require_auth
+def book_shastriji():
+    """
+    POST /api/v1/temple/shastriji/book
+
+    Book a consultation with Shastriji (the sole practitioner).
+    Auto-assigns Shastriji and places the user in the queue.
+
+    Body (optional):
+    {
+        "poojaTypeId": "pooja_ganesh",
+        "sankalpName": "...",
+        "sankalpGotra": "...",
+        "sankalpNakshatra": "...",
+        "specialRequests": "..."
+    }
+    """
+    user_id = g.user_id
+    data = request.get_json() or {}
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Verify Shastriji exists and is available
+    cur.execute("""
+        SELECT id, is_available FROM pandits WHERE id = ?
+    """, (SHASTRIJI_ID,))
+    shastriji = cur.fetchone()
+    if not shastriji:
+        conn.close()
+        return jsonify({"error": _("Shastriji not found")}), 404
+
+    # Check if user already has an active booking in queue
+    cur.execute("""
+        SELECT id FROM pooja_bookings
+        WHERE user_id = ?
+          AND pandit_id = ?
+          AND status NOT IN ('cancelled', 'completed')
+          AND COALESCE(call_state, 'idle') NOT IN ('ended', 'missed')
+    """, (user_id, SHASTRIJI_ID))
+
+    existing = cur.fetchone()
+    if existing:
+        conn.close()
+        return jsonify({
+            "error": _("You already have an active booking in the queue"),
+            "existingBookingId": existing["id"],
+        }), 409
+
+    # Resolve pooja type (default to a general consultation)
+    pooja_type_id = data.get("poojaTypeId", "pooja_ganesh")
+    cur.execute("""
+        SELECT id, base_price FROM pooja_types WHERE id = ? AND is_active = 1
+    """, (pooja_type_id,))
+    pooja_row = cur.fetchone()
+    if not pooja_row:
+        # Fall back to first active pooja type
+        cur.execute("""
+            SELECT id, base_price FROM pooja_types WHERE is_active = 1
+            ORDER BY sort_order ASC LIMIT 1
+        """)
+        pooja_row = cur.fetchone()
+        if not pooja_row:
+            conn.close()
+            return jsonify({"error": _("No pooja types available")}), 400
+        pooja_type_id = pooja_row["id"]
+
+    # Create booking
+    booking_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    now_iso = now.isoformat()
+    scheduled_dt = _calculate_next_shastriji_slot(cur, now=now)
+    scheduled_date = scheduled_dt.strftime("%Y-%m-%d")
+    scheduled_time = scheduled_dt.strftime("%H:%M")
+
+    cur.execute("""
+        INSERT INTO pooja_bookings
+        (id, user_id, pooja_type_id, pandit_id, scheduled_date, scheduled_time,
+         timezone, status, sankalp_name, sankalp_gotra, sankalp_nakshatra,
+         special_requests, amount_paid, payment_status,
+         queue_position, estimated_wait_minutes, call_state,
+         created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        booking_id,
+        user_id,
+        pooja_type_id,
+        SHASTRIJI_ID,
+        scheduled_date,
+        scheduled_time,
+        data.get("timezone", "Asia/Kolkata"),
+        "queued",
+        data.get("sankalpName"),
+        data.get("sankalpGotra"),
+        data.get("sankalpNakshatra"),
+        data.get("specialRequests"),
+        0,  # Free initially
+        "not_required",
+        0,
+        0,
+        "queued",
+        now_iso,
+        now_iso,
+    ))
+
+    _recalculate_shastriji_queue(cur)
+    cur.execute(
+        """
+        SELECT queue_position, estimated_wait_minutes
+        FROM pooja_bookings
+        WHERE id = ?
+        """,
+        (booking_id,),
+    )
+    queue_row = cur.fetchone()
+    queue_position = queue_row["queue_position"] if queue_row else 0
+    estimated_wait = queue_row["estimated_wait_minutes"] if queue_row else 0
+    conn.commit()
+    conn.close()
+
+    logger.info(
+        "Temple shastriji_book user_id=%s booking_id=%s queue_position=%d estimated_wait=%d",
+        user_id,
+        booking_id,
+        queue_position,
+        estimated_wait,
+    )
+
+    return jsonify({
+        "bookingId": booking_id,
+        "queuePosition": queue_position,
+        "estimatedWaitMinutes": estimated_wait,
+        "scheduledDate": scheduled_date,
+        "scheduledTime": scheduled_time,
+    }), 201
+
+
+@temple_bp.route("/bookings/<booking_id>/call-state", methods=["PATCH"])
+@require_auth
+def update_call_state(booking_id: str):
+    """
+    PATCH /api/v1/temple/bookings/<booking_id>/call-state
+
+    Update the call state of a booking.
+    Valid transitions:
+      idle -> queued -> ringing -> connected -> ended
+      ringing -> missed -> requeued -> ringing (retry cycle)
+
+    Body:
+    {
+        "callState": "connected"
+    }
+
+    On 'connected': sets user_joined_at or pandit_joined_at.
+    On 'ended': sets completed_at, calculates duration.
+    """
+    actor_id = g.user_id
+
+    data = request.get_json() or {}
+    new_state = data.get("callState")
+    if not new_state:
+        return jsonify({"error": _("callState is required")}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Fetch current booking
+    cur.execute("""
+        SELECT id, user_id, pandit_id, call_state, status,
+               user_joined_at, pandit_joined_at, created_at
+        FROM pooja_bookings
+        WHERE id = ?
+    """, (booking_id,))
+
+    booking = cur.fetchone()
+    if not booking:
+        conn.close()
+        return jsonify({"error": _("Booking not found")}), 404
+
+    # Verify ownership
+    is_booking_user = booking["user_id"] == actor_id
+    is_booking_pandit = booking["pandit_id"] == actor_id
+    if not is_booking_user and not is_booking_pandit:
+        conn.close()
+        return jsonify({"error": _("Not authorized for this booking")}), 403
+
+    # Validate state transition
+    current_state = booking["call_state"] or "idle"
+    allowed = VALID_CALL_TRANSITIONS.get(current_state, [])
+    if new_state not in allowed:
+        conn.close()
+        return jsonify({
+            "error": _("Invalid state transition from '%(current)s' to '%(new)s'") % {
+                "current": current_state,
+                "new": new_state,
+            },
+            "allowedTransitions": allowed,
+        }), 400
+
+    now = datetime.utcnow()
+    now_iso = now.isoformat()
+
+    # Apply state-specific side effects
+    if new_state == "connected":
+        if is_booking_pandit:
+            cur.execute("""
+                UPDATE pooja_bookings
+                SET pandit_joined_at = ?, status = 'confirmed', updated_at = ?
+                WHERE id = ? AND pandit_joined_at IS NULL
+            """, (now_iso, now_iso, booking_id))
+        else:
+            cur.execute("""
+                UPDATE pooja_bookings
+                SET user_joined_at = ?, status = 'confirmed', updated_at = ?
+                WHERE id = ? AND user_joined_at IS NULL
+            """, (now_iso, now_iso, booking_id))
+
+    elif new_state == "ended":
+        # Calculate duration from the earliest join time
+        join_time = booking["pandit_joined_at"] or booking["user_joined_at"]
+        duration_seconds = 0
+        if join_time:
+            try:
+                join_dt = datetime.fromisoformat(join_time)
+                duration_seconds = int((now - join_dt).total_seconds())
+            except (ValueError, TypeError):
+                duration_seconds = 0
+
+        cur.execute("""
+            UPDATE pooja_bookings
+            SET completed_at = ?, status = 'completed', updated_at = ?
+            WHERE id = ?
+        """, (now_iso, now_iso, booking_id))
+
+        # Also update matching session record if it exists
+        cur.execute("""
+            UPDATE pooja_sessions
+            SET ended_at = ?, duration_seconds = ?, status = 'completed'
+            WHERE booking_id = ?
+        """, (now_iso, duration_seconds, booking_id))
+
+    elif new_state == "requeued":
+        next_slot = _calculate_next_shastriji_slot(cur, now=now)
+        cur.execute("""
+            UPDATE pooja_bookings
+            SET status = 'queued',
+                call_state = 'requeued',
+                scheduled_date = ?,
+                scheduled_time = ?,
+                updated_at = ?
+            WHERE id = ?
+        """, (
+            next_slot.strftime("%Y-%m-%d"),
+            next_slot.strftime("%H:%M"),
+            now_iso,
+            booking_id,
+        ))
+
+    elif new_state == "missed":
+        cur.execute("""
+            UPDATE pooja_bookings
+            SET status = 'queued',
+                queue_position = 0,
+                estimated_wait_minutes = 0,
+                updated_at = ?
+            WHERE id = ?
+        """, (now_iso, booking_id))
+
+    if new_state != "requeued":
+        cur.execute("""
+            UPDATE pooja_bookings
+            SET call_state = ?, updated_at = ?
+            WHERE id = ?
+        """, (new_state, now_iso, booking_id))
+
+    _recalculate_shastriji_queue(cur)
+    conn.commit()
+    conn.close()
+
+    logger.info(
+        "Temple call_state_update booking_id=%s %s -> %s",
+        booking_id,
+        current_state,
+        new_state,
+    )
+
+    return jsonify({
+        "bookingId": booking_id,
+        "callState": new_state,
+        "updatedAt": now_iso,
     })

@@ -1,8 +1,8 @@
-# Astronova Architecture
+# Shastriji Architecture
 
 ## System Overview
 
-Astronova is a full-stack astrology platform consisting of:
+Shastriji is a full-stack astrology platform consisting of:
 - **iOS Client** — SwiftUI app for end users
 - **Flask Backend** — REST API for astrology calculations and data persistence
 
@@ -57,10 +57,11 @@ Astronova is a full-stack astrology platform consisting of:
 └──────────────────┘ └────────────┘ └───────────┘
 ```
 
-### Routes (12 Blueprints)
+### Routes (14 Blueprints)
 
 | Blueprint | Base Path | Responsibility |
 |-----------|-----------|----------------|
+| `admin` | `/api/v1/admin` | Admin operations |
 | `astrology` | `/api/v1/astrology` | Dasha calculations, planetary positions |
 | `auth` | `/api/v1/auth` | Authentication (Apple Sign-In, JWT) |
 | `chart` | `/api/v1/chart` | Birth chart generation and aspects |
@@ -73,6 +74,7 @@ Astronova is a full-stack astrology platform consisting of:
 | `locations` | `/api/v1/location` | Geocoding and timezone lookup |
 | `misc` | `/api/v1` | Health, config, subscription status |
 | `reports` | `/api/v1/reports` | Report generation and PDF download |
+| `temple` | `/api/v1/temple` | Temple services, pooja booking |
 
 ### Core Services
 
@@ -99,6 +101,11 @@ Calculates aspect activations for relationship compatibility:
 - Detects when transiting planets activate synastry aspects
 - Determines relationship "pulse" state (flowing, electric, friction, etc.)
 - Generates daily journey forecasts
+
+#### HousePlanetInterpretations
+Provides planet-in-house meaning text for natal chart insights (`house_planet_interpretations.py`).
+- Returns interpretive paragraphs for each planet placed in a given house
+- Used by `HouseInsightCard.swift` on the iOS client via `POST /api/v1/chart/house-insights`
 
 #### PlanetaryStrengthService
 Implements Shadbala-like strength calculations:

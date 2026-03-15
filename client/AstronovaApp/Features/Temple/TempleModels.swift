@@ -1348,3 +1348,33 @@ struct VedicLibraryResponse: Codable {
 struct DIYPoojasResponse: Codable {
     let poojas: [DIYPooja]
 }
+
+// MARK: - Shastriji Models
+
+struct ShastrijiStatus: Codable {
+    let isOnline: Bool
+    let currentQueueLength: Int
+    let nextSlotTime: String?
+    let estimatedWaitMinutes: Int
+    let shastriji: ShastrijiProfile
+}
+
+struct ShastrijiProfile: Codable {
+    let name: String
+    let rating: Double
+    let reviewCount: Int
+    let specializations: [String]
+}
+
+struct ShastrijiBookingResponse: Codable {
+    let bookingId: String
+    let queuePosition: Int
+    let estimatedWaitMinutes: Int
+}
+
+struct ShastrijiQueueStatus: Codable {
+    let queuePosition: Int
+    let estimatedWaitMinutes: Int
+    let bookingId: String
+    let callState: String
+}

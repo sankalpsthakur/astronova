@@ -4,14 +4,14 @@ This is the full Claude Code guide. For the lightweight entrypoint, see `../../C
 
 ## Project Overview
 
-Astronova is an iOS SwiftUI app with a Flask backend for Vedic astrology features: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and a Time Travel visualization. Recent additions include a gamification system with XP progression and unlockable content, plus a redesigned Temple tab focused on self-service spiritual experiences.
+Shastriji (codename: astronova) is an iOS SwiftUI app with a Flask backend for Vedic astrology features: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and a Time Travel visualization. Recent additions include a gamification system with XP progression and unlockable content, plus a redesigned Temple tab focused on self-service spiritual experiences.
 
 **Structure:**
 - `client/` — iOS SwiftUI app (Xcode project: `client/astronova.xcodeproj`)
-  - 79 Swift files, MVVM architecture, iOS 17+ target
-  - 5-tab navigation: Today, Connect, Time Travel, Ask (Oracle), Manage
+  - 98 Swift files, MVVM architecture, iOS 17+ target
+  - 5-tab navigation: Discover, Time Travel, Temple, Connect, Self
 - `server/` — Flask API (entry point: `server/app.py`)
-  - 13 API blueprints, 19 test files (499+ tests), 80% test coverage
+  - 14 API blueprints, 19 test files (499+ tests), 80% test coverage
   - SQLite database with WAL mode and auto-migrations
 
 **Tech Stack:**
@@ -149,7 +149,8 @@ astronova/
 │   ├── app.py                       # Flask app factory
 │   ├── db.py                        # Database interface
 │   ├── middleware.py                # Logging, request IDs
-│   ├── routes/                      # API blueprints (13 files)
+│   ├── routes/                      # API blueprints (14 files)
+│   │   ├── admin.py                 # Admin operations
 │   │   ├── astrology.py             # Dasha, positions
 │   │   ├── auth.py                  # Apple Sign-In, JWT
 │   │   ├── chart.py                 # Birth charts
@@ -174,7 +175,11 @@ astronova/
 │   │   └── report_generation_service.py
 │   ├── migrations/                  # Database migrations
 │   │   ├── 001_initial_schema.py
-│   │   └── 002_temple_pooja_booking.py
+│   │   ├── 002_temple_pooja_booking.py
+│   │   ├── 003_add_consultation_pooja_type.py
+│   │   ├── 004_backfill_session_urls.py
+│   │   ├── 005_add_user_preferred_language.py
+│   │   └── 006_temple_redesign.py
 │   ├── tests/                       # Test suite (19 files)
 │   │   ├── conftest.py              # Shared fixtures
 │   │   ├── test_service_layer.py
@@ -231,9 +236,10 @@ astronova/
 
 **Entry Point:** `app.py` — Flask app factory with blueprint registration
 
-**Routes** (`routes/`) — 13 API blueprints:
+**Routes** (`routes/`) — 14 API blueprints:
 | Blueprint | Purpose | Key Endpoints |
 |-----------|---------|---------------|
+| `admin` | Admin operations | `GET /stats`, `POST /manage` |
 | `astrology` | Dasha timelines, positions | `GET /positions`, `POST /dashas/complete` |
 | `auth` | Apple Sign-In, JWT | `POST /apple`, `GET /validate`, `POST /refresh` |
 | `chart` | Birth chart generation | `POST /generate`, `POST /aspects` |
@@ -258,6 +264,7 @@ astronova/
 | `transit_service.py` | Synastry aspect activation, relationship pulse |
 | `chat_response_service.py` | OpenAI integration for personalized chat |
 | `report_generation_service.py` | Comprehensive report payload generation |
+| `house_planet_interpretations.py` | Planet-in-house meaning text for natal chart insights |
 | `pdf/` | PDF rendering (report_renderer.py, themes.py, canvas.py) |
 
 **Database** (`db.py`) — SQLite with WAL mode, auto-initialized on startup
@@ -286,11 +293,11 @@ astronova/
 |---------|-----------|
 | Home | `Features/Home/HomeView.swift`, `HomeViewModel.swift` |
 | Discover | `Features/Discover/DiscoverView.swift`, `DomainGridView.swift` |
-| Time Travel | `EnhancedTimeTravelView.swift`, `DashaChakraWheelView.swift`, `TimeTravelSwarmOverlay.swift` |
+| Time Travel | `EnhancedTimeTravelView.swift`, `DashaChakraWheelView.swift`, `TimeTravelSwarmOverlay.swift`, `CosmicMapView.swift`, `HouseInsightCard.swift` |
 | Connect | `ConnectView.swift`, `RelationshipDetailView.swift`, `SynastryCompassView.swift` |
 | Oracle (Chat) | `Features/Oracle/OracleView.swift`, `OracleViewModel.swift` |
 | Self/Profile | `Features/Self/SelfTabView.swift`, `CosmicPulseView.swift` |
-| Temple | `Features/Temple/TempleView.swift`, `TempleBellView.swift`, `DIYPooja/`, `Muhurat/`, `Library/` |
+| Temple | `Features/Temple/TempleView.swift`, `TempleBellView.swift`, `ShastrijiConsultView.swift`, `ShastrijiCallView.swift`, `DIYPooja/`, `Muhurat/`, `Library/` |
 | Paywall | `Features/Paywall/PaywallView.swift` |
 | Gamification | `Gamification/GamificationManager.swift`, `GamificationModels.swift` |
 
@@ -334,7 +341,7 @@ astronova/
 
 ### Compatibility
 - `POST /api/v1/compatibility` — Calculate compatibility between two people
-- `GET /api/v1/compatibility/relationships` — List user's relationships (requires X-User-Id)
+- `GET /api/v1/compatibility/relationships` — List user's relationships (Bearer token required)
 - `GET /api/v1/compatibility/relationships/{id}/snapshot` — Full compatibility snapshot
 
 ### Authentication
@@ -360,6 +367,11 @@ astronova/
 - `POST /api/v1/temple/pandits/enroll` — Enroll new pandit
 - `GET /api/v1/temple/pandit/bookings` — List pandit's bookings (requires X-Pandit-Id header)
 - `POST /api/v1/temple/filter-message` — Filter contact details from messages
+
+### Chart Interpretation
+- `POST /api/v1/chart/house-insights` — Planet-in-house interpretations for a natal chart
+  - Returns per-house insight text for each planet placement
+  - Powered by `house_planet_interpretations.py` service
 
 ### Other
 - `GET /api/v1/health` — Health check
@@ -650,6 +662,22 @@ Self-service spiritual experience with four main sections:
 **Design Note:**
 - `AnyShapeStyle()` used when ternary branches return different `ShapeStyle` types (e.g., `Color` vs `LinearGradient`)
 
+### Shastriji Consultation (Mar 2026)
+Single-practitioner consultation model replacing the earlier 6-pandit roster:
+
+- **Concept**: "Shastriji" is the app's sole resident Vedic practitioner. Users book consultations directly with Shastriji — no pandit selection or marketplace browsing.
+- **Booking Flow**:
+  1. User opens Temple tab and taps "Consult Shastriji"
+  2. `ShastrijiConsultView.swift` shows availability calendar, pooja picker, and sankalp form
+  3. On confirmation, booking is created via `POST /api/v1/temple/bookings` (pandit auto-assigned)
+  4. `ShastrijiCallView.swift` handles the live video session (WebRTC, mic/camera toggles, timer)
+- **Call Orchestration**: `ShastrijiCallView` manages session lifecycle — join, mute/unmute, camera toggle, elapsed timer, and graceful end-call with a confirmation dialog.
+- **Backend**: Reuses existing temple booking endpoints; Shastriji is seeded as the single verified pandit.
+
+**Key Files:**
+- `client/AstronovaApp/Features/Temple/ShastrijiConsultView.swift`
+- `client/AstronovaApp/Features/Temple/ShastrijiCallView.swift`
+
 ### Temple/Pooja Booking System (Legacy — Backend Only)
 Backend booking infrastructure maintained for backward compatibility:
 - **Pooja Types**: Pre-configured poojas with deity, duration, benefits, ingredients, mantras
@@ -668,7 +696,7 @@ Backend booking infrastructure maintained for backward compatibility:
   - Logs all filter actions for monitoring
   - Prevents direct contact exchange during sessions
 
-**Note:** As of Feb 2026, iOS UI no longer exposes booking flow. APIs remain active for potential future use or alternative clients.
+**Note:** As of Feb 2026, iOS UI no longer exposes the multi-pandit booking flow. The Shastriji single-practitioner model is the current user-facing consultation path. Legacy APIs remain active for backward compatibility.
 
 ## iOS App Architecture & Patterns
 
@@ -693,6 +721,16 @@ The Time Travel tab provides an immersive dasha timeline exploration experience:
   - Creates visual feedback for temporal navigation
   - Particles accelerate/decelerate based on user interaction
 - **UnifiedTimeTravelView.swift** — Unified layout wrapper for timeline components
+- **CosmicMapView.swift** — Hyperrealistic natal chart (upgraded Mar 2026)
+  - 200-star background with realistic twinkle animation
+  - Element-colored zodiac ring (Fire/Earth/Air/Water hues per sign)
+  - Bezier-curve aspect lines between planets (colored by aspect type)
+  - Planet glyphs with sign/degree labels and house placement
+  - Canvas-rendered for smooth 60fps performance
+- **HouseInsightCard.swift** — Expandable cards showing planet-in-house interpretations
+  - Taps into `house_planet_interpretations.py` backend service
+  - Displays per-house meaning when a planet occupies a specific house
+  - Integrated below the natal chart in the Time Travel view
 
 **Visual Bridge:**
 - Dark-to-light gradient transition between tabs provides immersive page flow
@@ -745,7 +783,6 @@ withAnimation(.cosmicSpring) { ... }
 - **JWT-based**: Token issued after Apple Sign-In
 - **Headers**:
   - `Authorization: Bearer <token>` — Standard JWT auth
-  - `X-User-Id: <user_id>` — Alternative for user identification
   - `X-Pandit-Id: <pandit_id>` — Pandit-specific endpoints
 - **Token Expiration**: 30 days (configurable in `routes/auth.py`)
 - **Refresh Tokens**: Use `POST /api/v1/auth/refresh` with valid token
@@ -753,7 +790,7 @@ withAnimation(.cosmicSpring) { ... }
 ### Rate Limiting
 Rate limits prevent API abuse using flask-limiter with in-memory storage.
 
-**Default Limits** (per IP or X-User-Id):
+**Default Limits** (per IP or authenticated user):
 - 200 requests per day
 - 60 requests per hour
 
@@ -900,7 +937,7 @@ Use with tools like:
 
 **Standard route structure:**
 ```python
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from middleware import require_auth
 from db import get_connection
 
@@ -910,7 +947,7 @@ my_bp = Blueprint("my_feature", __name__)
 @require_auth  # Adds authentication requirement
 def list_items():
     """GET /api/v1/my_feature/items - List all items"""
-    user_id = request.headers.get("X-User-Id")
+    user_id = g.user_id
 
     conn = get_connection()
     cur = conn.cursor()
@@ -935,7 +972,7 @@ def list_items():
 def create_item():
     """POST /api/v1/my_feature/items - Create new item"""
     data = request.get_json() or {}
-    user_id = request.headers.get("X-User-Id")
+    user_id = g.user_id
 
     # Validate required fields
     if not data.get("name"):
@@ -1461,7 +1498,7 @@ curl -H "Authorization: Bearer <JWT_TOKEN>" \
 # POST with JSON
 curl -X POST http://127.0.0.1:8080/api/v1/temple/bookings \
      -H "Content-Type: application/json" \
-     -H "X-User-Id: test-user-123" \
+     -H "Authorization: Bearer <JWT_TOKEN>" \
      -d '{"poojaTypeId": "pooja_ganesh", "scheduledDate": "2025-01-20", "scheduledTime": "10:00"}'
 ```
 

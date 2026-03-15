@@ -1,6 +1,6 @@
-# Astronova Documentation
+# Shastriji Documentation
 
-This directory contains comprehensive documentation for the Astronova iOS app and Flask backend.
+This directory contains comprehensive documentation for the Shastriji iOS app and Flask backend.
 
 ## 📁 Documentation Structure
 

@@ -1202,3 +1202,129 @@ private extension String {
         return trimmed
     }
 }
+
+// MARK: - House Insight Models
+
+struct HouseInsight: Codable, Identifiable {
+    var id: String { "\(planetId)-\(house)" }
+    let planetId: String
+    let planetName: String
+    let planetSymbol: String
+    let house: Int
+    let houseName: String
+    let houseTheme: String
+    let summary: String
+    let strengths: [String]
+    let challenges: [String]
+    let lifeArea: String
+    let isRetrograde: Bool
+    let retrogradeNote: String?
+}
+
+struct HouseInsightsResponse: Codable {
+    let insights: [HouseInsight]
+}
+
+extension TimeTravelSnapshot {
+    static func displaySignGlyph(forName name: String) -> String {
+        signGlyph(forName: name)
+    }
+
+    static func displayHouseLabel(_ house: Int) -> String {
+        houseLabel(house)
+    }
+}
+
+// MARK: - Client-Side House Insight Builder
+
+extension HouseInsight {
+    /// Generates a client-side insight from planet state when the API is unavailable.
+    static func clientSide(from planet: PlanetState) -> HouseInsight {
+        let house = planet.house ?? 1
+        let (houseName, houseTheme, lifeArea) = houseMetadata(for: house)
+        let (strengths, challenges) = planetHouseTraits(planet: planet.id, house: house)
+        let summary = "\(planet.name) in \(planet.sign) occupies your \(houseName), highlighting themes of \(lifeArea.lowercased())."
+
+        var retrogradeNote: String?
+        if planet.isRetrograde {
+            retrogradeNote = "\(planet.name) is retrograde here, suggesting a period of inward reflection around \(lifeArea.lowercased()) matters."
+        }
+
+        return HouseInsight(
+            planetId: planet.id,
+            planetName: planet.name,
+            planetSymbol: planet.symbol,
+            house: house,
+            houseName: houseName,
+            houseTheme: houseTheme,
+            summary: summary,
+            strengths: strengths,
+            challenges: challenges,
+            lifeArea: lifeArea,
+            isRetrograde: planet.isRetrograde,
+            retrogradeNote: retrogradeNote
+        )
+    }
+
+    private static func houseMetadata(for house: Int) -> (name: String, theme: String, lifeArea: String) {
+        switch house {
+        case 1:  return ("1st House", "Self & Identity", "Identity")
+        case 2:  return ("2nd House", "Wealth & Values", "Finances")
+        case 3:  return ("3rd House", "Communication & Siblings", "Communication")
+        case 4:  return ("4th House", "Home & Roots", "Home Life")
+        case 5:  return ("5th House", "Creativity & Romance", "Creativity")
+        case 6:  return ("6th House", "Health & Service", "Health")
+        case 7:  return ("7th House", "Partnerships & Marriage", "Relationships")
+        case 8:  return ("8th House", "Transformation & Mystery", "Transformation")
+        case 9:  return ("9th House", "Wisdom & Fortune", "Higher Learning")
+        case 10: return ("10th House", "Career & Status", "Career")
+        case 11: return ("11th House", "Gains & Community", "Aspirations")
+        case 12: return ("12th House", "Spirituality & Liberation", "Spirituality")
+        default: return ("\(house)th House", "Life Themes", "Life")
+        }
+    }
+
+    private static func planetHouseTraits(planet: String, house: Int) -> (strengths: [String], challenges: [String]) {
+        // General traits based on house placement
+        switch house {
+        case 1:
+            return (["Strong personal magnetism", "Natural leadership presence"],
+                    ["May appear self-focused", "Identity tied to external validation"])
+        case 2:
+            return (["Good financial instincts", "Strong sense of self-worth"],
+                    ["Attachment to possessions", "Overvaluing material security"])
+        case 3:
+            return (["Articulate communicator", "Quick-witted and adaptable"],
+                    ["Restless mind", "Superficial connections"])
+        case 4:
+            return (["Deep emotional roots", "Strong family bonds"],
+                    ["Over-attachment to the past", "Difficulty with change"])
+        case 5:
+            return (["Creative self-expression", "Joyful and playful energy"],
+                    ["Risk-taking tendencies", "Drama in romance"])
+        case 6:
+            return (["Disciplined work ethic", "Service-oriented mindset"],
+                    ["Perfectionism", "Health anxieties"])
+        case 7:
+            return (["Natural partner", "Diplomatic and fair-minded"],
+                    ["Codependency patterns", "Compromising too much"])
+        case 8:
+            return (["Psychological depth", "Resilience through crisis"],
+                    ["Power struggles", "Fear of vulnerability"])
+        case 9:
+            return (["Philosophical wisdom", "Adventurous spirit"],
+                    ["Dogmatic beliefs", "Restlessness"])
+        case 10:
+            return (["Ambitious drive", "Public recognition potential"],
+                    ["Work-life imbalance", "Status anxiety"])
+        case 11:
+            return (["Community builder", "Visionary thinking"],
+                    ["Detachment from intimacy", "Unrealistic ideals"])
+        case 12:
+            return (["Spiritual depth", "Compassionate nature"],
+                    ["Escapist tendencies", "Boundary issues"])
+        default:
+            return (["Unique placement energy"], ["Uncharted territory"])
+        }
+    }
+}

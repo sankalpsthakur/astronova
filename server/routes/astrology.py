@@ -18,6 +18,21 @@ except Exception:  # pragma: no cover - defensive
     SWE_AVAILABLE = False
     _swe = None
 
+try:
+    from services.house_planet_interpretations import (
+        HOUSE_MEANINGS,
+        PLANET_SIGNIFICATIONS,
+        PLANET_IN_HOUSE,
+        get_house_planet_insight,
+    )
+    _HOUSE_PLANET_SVC_AVAILABLE = True
+except ImportError:  # pragma: no cover - teammate module may not be merged yet
+    _HOUSE_PLANET_SVC_AVAILABLE = False
+    HOUSE_MEANINGS = None
+    PLANET_SIGNIFICATIONS = None
+    PLANET_IN_HOUSE = None
+    get_house_planet_insight = None
+
 astrology_bp = Blueprint("astrology", __name__)
 _svc = EphemerisService()
 _dasha_svc = DashaService()
@@ -403,3 +418,143 @@ def dashas_complete():
 
     response["disclaimer"] = "For entertainment purposes only. Not professional advice."
     return jsonify(response)
+
+
+# ---------------------------------------------------------------------------
+# Fallback reference data used when services.house_planet_interpretations
+# has not been merged yet.
+# ---------------------------------------------------------------------------
+_FALLBACK_HOUSE_MEANINGS = {
+    "1": {"name": "1st House (Lagna)", "theme": "Self & Identity", "keywords": ["personality", "appearance", "vitality"]},
+    "2": {"name": "2nd House (Dhana)", "theme": "Wealth & Speech", "keywords": ["finances", "family", "values"]},
+    "3": {"name": "3rd House (Sahaja)", "theme": "Courage & Siblings", "keywords": ["communication", "effort", "short travel"]},
+    "4": {"name": "4th House (Sukha)", "theme": "Home & Comfort", "keywords": ["mother", "property", "emotional peace"]},
+    "5": {"name": "5th House (Putra)", "theme": "Creativity & Children", "keywords": ["intelligence", "romance", "past merit"]},
+    "6": {"name": "6th House (Ripu)", "theme": "Health & Enemies", "keywords": ["service", "obstacles", "daily routine"]},
+    "7": {"name": "7th House (Kalatra)", "theme": "Partnerships", "keywords": ["marriage", "business partner", "public dealings"]},
+    "8": {"name": "8th House (Randhra)", "theme": "Transformation", "keywords": ["longevity", "occult", "sudden changes"]},
+    "9": {"name": "9th House (Dharma)", "theme": "Fortune & Dharma", "keywords": ["luck", "higher learning", "father"]},
+    "10": {"name": "10th House (Karma)", "theme": "Career & Status", "keywords": ["profession", "reputation", "authority"]},
+    "11": {"name": "11th House (Labha)", "theme": "Gains & Aspirations", "keywords": ["income", "friends", "fulfilment"]},
+    "12": {"name": "12th House (Vyaya)", "theme": "Liberation & Loss", "keywords": ["spirituality", "foreign lands", "expenses"]},
+}
+
+_FALLBACK_PLANET_INFO = {
+    "sun": {"name": "Sun", "symbol": "\u2609"},
+    "moon": {"name": "Moon", "symbol": "\u263D"},
+    "mars": {"name": "Mars", "symbol": "\u2642"},
+    "mercury": {"name": "Mercury", "symbol": "\u263F"},
+    "jupiter": {"name": "Jupiter", "symbol": "\u2643"},
+    "venus": {"name": "Venus", "symbol": "\u2640"},
+    "saturn": {"name": "Saturn", "symbol": "\u2644"},
+    "rahu": {"name": "Rahu", "symbol": "\u260A"},
+    "ketu": {"name": "Ketu", "symbol": "\u260B"},
+}
+
+
+def _build_fallback_insight(planet_id: str, house: int, is_retrograde: bool) -> dict:
+    """Return a minimal insight dict when the service module is not available."""
+    pinfo = _FALLBACK_PLANET_INFO.get(planet_id.lower(), {"name": planet_id.title(), "symbol": ""})
+    hinfo = _FALLBACK_HOUSE_MEANINGS.get(str(house), {
+        "name": f"{house}th House",
+        "theme": "Unknown",
+        "keywords": [],
+    })
+    retro_note = (
+        f"{pinfo['name']} is retrograde here, turning its energy inward for deeper introspection."
+        if is_retrograde
+        else None
+    )
+    return {
+        "planetId": planet_id.lower(),
+        "planetName": pinfo["name"],
+        "planetSymbol": pinfo["symbol"],
+        "house": house,
+        "houseName": hinfo["name"],
+        "houseTheme": hinfo["theme"],
+        "summary": f"{pinfo['name']} in the {hinfo['name']} influences {hinfo['theme'].lower()}.",
+        "strengths": [],
+        "challenges": [],
+        "lifeArea": hinfo["theme"].split("&")[0].strip().lower() if "&" in hinfo["theme"] else hinfo["theme"].lower(),
+        "isRetrograde": is_retrograde,
+        "retrogradeNote": retro_note,
+    }
+
+
+@astrology_bp.route("/house-insights", methods=["GET"])
+def house_insights():
+    """
+    Return interpretive insights for planets placed in houses.
+
+    Query params (two modes):
+      Bulk:   ?planets=[{"id":"sun","house":10,"retrograde":false}, ...]
+      Single: ?planet=sun&house=10&retrograde=false
+
+    Always includes a full ``houses`` reference map in the response.
+    """
+    import json as _json
+
+    planet_list: list[dict] = []
+
+    # --- Parse input ---------------------------------------------------------
+    planets_raw = request.args.get("planets")
+    if planets_raw:
+        try:
+            parsed = _json.loads(planets_raw)
+            if not isinstance(parsed, list):
+                return jsonify({"error": "planets must be a JSON array"}), 400
+            planet_list = parsed
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid JSON in planets parameter"}), 400
+    else:
+        # Single-planet mode
+        planet_id = request.args.get("planet")
+        house_str = request.args.get("house")
+        if planet_id and house_str:
+            try:
+                house_num = int(house_str)
+            except (ValueError, TypeError):
+                return jsonify({"error": "house must be an integer (1-12)"}), 400
+            retro = request.args.get("retrograde", "false").lower() in ("1", "true", "yes")
+            planet_list = [{"id": planet_id, "house": house_num, "retrograde": retro}]
+
+    # --- Validate each entry -------------------------------------------------
+    for idx, entry in enumerate(planet_list):
+        pid = entry.get("id")
+        h = entry.get("house")
+        if not pid or h is None:
+            return jsonify({"error": f"Entry {idx}: 'id' and 'house' are required"}), 400
+        try:
+            h_int = int(h)
+        except (ValueError, TypeError):
+            return jsonify({"error": f"Entry {idx}: 'house' must be an integer"}), 400
+        if h_int < 1 or h_int > 12:
+            return jsonify({"error": f"Entry {idx}: 'house' must be between 1 and 12"}), 400
+
+    # --- Build insights ------------------------------------------------------
+    insights: list[dict] = []
+    for entry in planet_list:
+        pid = str(entry["id"]).lower()
+        h = int(entry["house"])
+        retro = bool(entry.get("retrograde", False))
+
+        if _HOUSE_PLANET_SVC_AVAILABLE and get_house_planet_insight is not None:
+            insight = get_house_planet_insight(pid, h, retro)
+        else:
+            insight = _build_fallback_insight(pid, h, retro)
+
+        insights.append(insight)
+
+    # --- Build houses reference map ------------------------------------------
+    if _HOUSE_PLANET_SVC_AVAILABLE and HOUSE_MEANINGS is not None:
+        houses_map = {
+            str(k): {"name": v.get("name", ""), "theme": v.get("theme", ""), "keywords": v.get("keywords", [])}
+            for k, v in HOUSE_MEANINGS.items()
+        }
+    else:
+        houses_map = _FALLBACK_HOUSE_MEANINGS
+
+    return jsonify({
+        "insights": insights,
+        "houses": houses_map,
+    })

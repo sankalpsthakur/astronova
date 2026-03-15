@@ -132,6 +132,7 @@ struct UnifiedTimeTravelView: View {
                                     onNextTapped: { showNextSheet = true }
                                 )
                                 .padding(.horizontal)
+
                             } else {
                                 VStack(spacing: Cosmic.Spacing.sm) {
                                     ProgressView()
@@ -207,7 +208,11 @@ struct UnifiedTimeTravelView: View {
                 if let snapshot = state.displaySnapshot,
                    case .planet(let id) = state.selectedElement,
                    let planet = snapshot.planets.first(where: { $0.id == id }) {
-                    PlanetDetailSheetV2(planet: planet, snapshot: snapshot)
+                    PlanetDetailSheetV2(
+                        planet: planet,
+                        snapshot: snapshot,
+                        scrubFeedback: state.scrubFeedback
+                    )
                 }
             }
             .sheet(isPresented: $showDashaSheet) {
@@ -1018,7 +1023,121 @@ struct NextDetailSheet: View {
 struct PlanetDetailSheetV2: View {
     let planet: PlanetState
     let snapshot: TimeTravelSnapshot
+    let scrubFeedback: ScrubFeedback
     @Environment(\.dismiss) private var dismiss
+
+    private var placementLine: String {
+        var pieces = [
+            "\(TimeTravelSnapshot.displaySignGlyph(forName: planet.sign)) \(planet.sign)",
+            "\(String(format: "%.2f", planet.degree))°"
+        ]
+
+        if let house = planet.house {
+            pieces.append(TimeTravelSnapshot.displayHouseLabel(house))
+        }
+
+        return pieces.joined(separator: " • ")
+    }
+
+    private var houseInsight: HouseInsight? {
+        guard planet.house != nil else { return nil }
+        return HouseInsight.clientSide(from: planet)
+    }
+
+    private var relevantAspects: [ActiveAspect] {
+        snapshot.aspects
+            .filter { $0.planet1 == planet.id || $0.planet2 == planet.id }
+            .sorted { $0.orb < $1.orb }
+    }
+
+    private var temporalSummary: String? {
+        trimmedNonEmpty(scrubFeedback.summary)
+    }
+
+    private var relevantTemporalInsights: [ScrubInsight] {
+        scrubFeedback.insights.filter { insight in
+            guard let element = insight.element else { return false }
+
+            switch element {
+            case .planet(let id):
+                return id == planet.id
+            case .dashaLord(let lord):
+                return lord.caseInsensitiveCompare(planet.name) == .orderedSame
+            case .aspect(let p1, let p2):
+                return p1 == planet.id || p2 == planet.id
+            }
+        }
+    }
+
+    private var significanceText: String {
+        if let provided = trimmedNonEmpty(planet.significance) {
+            return provided
+        }
+
+        switch planet.id {
+        case "sun":
+            return "Vitality, confidence, visibility, and the way you take up space."
+        case "moon":
+            return "Emotions, instincts, memory, and the way you metabolize experience."
+        case "mercury":
+            return "Thinking, messages, timing, and how decisions move through your day."
+        case "venus":
+            return "Attraction, values, intimacy, aesthetics, and what feels nourishing."
+        case "mars":
+            return "Drive, courage, friction, and how you act when something matters."
+        case "jupiter":
+            return "Growth, teachers, protection, and what expands when trusted well."
+        case "saturn":
+            return "Structure, responsibility, time, and the lessons that ask for maturity."
+        case "rahu":
+            return "Desire, appetite, obsession, and the frontier where life feels amplified."
+        case "ketu":
+            return "Release, detachment, spiritual pruning, and what becomes clearer when simplified."
+        case "ascendant":
+            return "Presence, orientation, and the way the world first meets you."
+        default:
+            return "\(planet.name) shows where this timeline is asking for attention and movement."
+        }
+    }
+
+    private var effectHighlights: [String] {
+        var highlights: [String] = []
+
+        if planet.isDashaLord {
+            highlights.append("\(planet.name) is the current Mahadasha lord, so its themes are shaping the long arc of this chapter.")
+        }
+
+        if planet.isAntardashaLord {
+            highlights.append("\(planet.name) is the current Antardasha lord, so its effects are especially immediate in the present window.")
+        }
+
+        if let houseInsight {
+            highlights.append("\(planet.name) is expressing through \(houseInsight.houseName), bringing focus to \(houseInsight.lifeArea.lowercased()) and \(houseInsight.houseTheme.lowercased()).")
+
+            if let strength = houseInsight.strengths.first {
+                highlights.append("When expressed well: \(strength).")
+            }
+
+            if let challenge = houseInsight.challenges.first {
+                highlights.append("Watch for: \(challenge).")
+            }
+        }
+
+        if let strongestAspect = relevantAspects.first,
+           let otherPlanet = otherPlanet(for: strongestAspect) {
+            highlights.append("\(strongestAspect.type.rawValue.capitalized) with \(otherPlanet.name): \(strongestAspect.significance)")
+        }
+
+        if planet.isRetrograde {
+            highlights.append("Retrograde motion turns the effect inward first, asking for review, revision, or unfinished reflection before outward action.")
+        }
+
+        if highlights.isEmpty {
+            highlights.append("\(planet.name) colors this moment through \(significanceText.lowercased())")
+        }
+
+        return Array(highlights.prefix(4))
+    }
 
     var body: some View {
         NavigationStack {
@@ -1046,23 +1165,96 @@ struct PlanetDetailSheetV2: View {
                             Text("\(planet.sign) • \(String(format: "%.2f", planet.degree))°")
                                 .font(.cosmicTitle2)
                                 .foregroundStyle(Color.cosmicTextSecondary)
+
+                            if let houseInsight {
+                                Text("\(houseInsight.houseName) • \(houseInsight.houseTheme)")
+                                    .font(.cosmicCaption.weight(.semibold))
+                                    .foregroundStyle(Color.cosmicInfo)
+                            }
                         }
                     }
                     .padding()
                     .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
 
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                        Text("Current Placement")
+                            .font(.cosmicHeadline)
+
+                        Text(placementLine)
+                            .font(.cosmicTitle3.weight(.semibold))
+
+                        if let houseInsight {
+                            Text("This house represents \(houseInsight.lifeArea.lowercased()) and the broader theme of \(houseInsight.houseTheme.lowercased()).")
+                                .foregroundStyle(Color.cosmicTextSecondary)
+
+                            Text(houseInsight.summary)
+                                .foregroundStyle(Color.cosmicTextSecondary)
+
+                            if let retrogradeNote = houseInsight.retrogradeNote {
+                                Text(retrogradeNote)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicWarning)
+                            }
+
+                            if let strength = houseInsight.strengths.first {
+                                detailChip(
+                                    title: "Supports",
+                                    text: strength,
+                                    accent: Color.cosmicSuccess
+                                )
+                            }
+
+                            if let challenge = houseInsight.challenges.first {
+                                detailChip(
+                                    title: "Watch",
+                                    text: challenge,
+                                    accent: Color.cosmicWarning
+                                )
+                            }
+                        } else {
+                            Text("This point is not currently mapped to a specific house, so the timing emphasis is sign-based rather than house-specific.")
+                                .foregroundStyle(Color.cosmicTextSecondary)
+                        }
+                    }
+                    .padding()
+                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+
+                    VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                        Text("Planet Significance & Effects")
+                            .font(.cosmicHeadline)
+
+                        Text(significanceText)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                            ForEach(Array(effectHighlights.enumerated()), id: \.offset) { _, effect in
+                                HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
+                                    Image(systemName: "sparkles")
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicGold)
+                                        .padding(.top, 2)
+
+                                    Text(effect)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                }
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+
                     // Dasha role
                     if planet.isDashaLord || planet.isAntardashaLord {
                         VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
-                            Text("Dasha Role")
+                            Text("Timing Influence")
                                 .font(.cosmicHeadline)
 
                             if planet.isDashaLord {
-                                Label("Current Mahadasha Lord", systemImage: "star.fill")
+                                Label("Current Mahadasha Lord • \(snapshot.currentDasha.mahadasha.theme)", systemImage: "star.fill")
                                     .foregroundStyle(Color.cosmicAmethyst)
                             }
                             if planet.isAntardashaLord {
-                                Label("Current Antardasha Lord", systemImage: "star.fill")
+                                Label("Current Antardasha Lord • \(snapshot.currentDasha.antardasha.theme)", systemImage: "star.fill")
                                     .foregroundStyle(Color.cosmicInfo)
                             }
                         }
@@ -1070,25 +1262,80 @@ struct PlanetDetailSheetV2: View {
                         .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
                     }
 
+                    if temporalSummary != nil || !relevantTemporalInsights.isEmpty {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                            Text("What Shifted While You Scrubbed Here")
+                                .font(.cosmicHeadline)
+
+                            if let temporalSummary {
+                                Text(temporalSummary)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            }
+
+                            if relevantTemporalInsights.isEmpty {
+                                Text("This stop changes the broader timeline context even if the scrub chips did not call out \(planet.name) directly.")
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            } else {
+                                ForEach(Array(relevantTemporalInsights.prefix(3))) { insight in
+                                    HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
+                                        Circle()
+                                            .fill(toneColor(for: insight.tone))
+                                            .frame(width: 10, height: 10)
+                                            .padding(.top, 5)
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(toneLabel(for: insight.tone))
+                                                .font(.cosmicCaption.weight(.bold))
+                                                .foregroundStyle(toneColor(for: insight.tone))
+
+                                            Text(insight.text)
+                                                .foregroundStyle(Color.cosmicTextSecondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                            }
+                        }
+                        .padding()
+                        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+                    }
+
                     // Active aspects
-                    let relevantAspects = snapshot.aspects.filter { $0.planet1 == planet.id || $0.planet2 == planet.id }
                     if !relevantAspects.isEmpty {
-                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
                             Text("Active Aspects")
                                 .font(.cosmicHeadline)
 
                             ForEach(relevantAspects) { aspect in
-                                let otherPlanet = aspect.planet1 == planet.id ? aspect.planet2 : aspect.planet1
-                                HStack {
-                                    Text(aspect.type.rawValue.capitalized)
-                                        .font(.subheadline.weight(.medium))
-                                    Text("to \(otherPlanet.capitalized)")
+                                let otherPlanet = otherPlanet(for: aspect)
+
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text(aspect.type.rawValue.capitalized)
+                                            .font(.subheadline.weight(.medium))
+
+                                        if let otherPlanet {
+                                            Text("to \(otherPlanet.name)")
+                                                .foregroundStyle(Color.cosmicTextSecondary)
+                                        }
+
+                                        Spacer()
+
+                                        Text(String(format: "%.1f° orb", aspect.orb))
+                                            .font(.cosmicCaption.monospacedDigit())
+                                            .foregroundStyle(Color.cosmicTextSecondary)
+                                    }
+
+                                    Text(aspect.significance)
+                                        .font(.cosmicCaption)
                                         .foregroundStyle(Color.cosmicTextSecondary)
-                                    Spacer()
-                                    Text(String(format: "%.1f° orb", aspect.orb))
-                                        .font(.cosmicCaption.monospacedDigit())
-                                        .foregroundStyle(Color.cosmicTextSecondary)
+
+                                    Text(aspect.isApplying ? "Applying now: the effect is still building." : "Separating now: the lesson is already integrating.")
+                                        .font(.cosmicMicro)
+                                        .foregroundStyle(aspect.isApplying ? Color.cosmicSuccess : Color.cosmicWarning)
                                 }
+                                .padding(.vertical, 4)
                             }
                         }
                         .padding()
@@ -1105,6 +1352,59 @@ struct PlanetDetailSheetV2: View {
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func detailChip(title: String, text: String, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.cosmicCaption.weight(.bold))
+                .foregroundStyle(accent)
+
+            Text(text)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+    }
+
+    private func otherPlanet(for aspect: ActiveAspect) -> PlanetState? {
+        let otherPlanetId = aspect.planet1 == planet.id ? aspect.planet2 : aspect.planet1
+        return snapshot.planets.first(where: { $0.id == otherPlanetId })
+    }
+
+    private func toneColor(for tone: ScrubInsight.Tone) -> Color {
+        switch tone {
+        case .supportive:
+            return Color.cosmicSuccess
+        case .challenging:
+            return Color.cosmicWarning
+        case .review:
+            return Color.cosmicInfo
+        case .neutral:
+            return Color.cosmicTextSecondary
+        }
+    }
+
+    private func toneLabel(for tone: ScrubInsight.Tone) -> String {
+        switch tone {
+        case .supportive:
+            return "Supportive shift"
+        case .challenging:
+            return "Pressure point"
+        case .review:
+            return "Review cue"
+        case .neutral:
+            return "Change noted"
+        }
+    }
+
+    private func trimmedNonEmpty(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 

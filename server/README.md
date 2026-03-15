@@ -9,8 +9,8 @@ Run locally
 - `python server/app.py`
 
 Docker
-- Build: `docker build -t astronova-server:dev server/`
-- Run: `docker run --rm -p 8080:8080 --name astronova astronova-server:dev`
+- Build: `docker build -t shastriji-server:dev server/`
+- Run: `docker run --rm -p 8080:8080 --name shastriji shastriji-server:dev`
 - Health: `curl http://localhost:8080/api/v1/health` should return `{ "status": "ok" }`
 
 Notes

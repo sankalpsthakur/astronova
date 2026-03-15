@@ -47,8 +47,12 @@ class TestSwissEphemerisFailures:
 
     def test_ephemeris_calculation_exception_returns_503(self, authenticated_client):
         """Calculation errors should fail loudly rather than returning misleading values."""
-        from services.ephemeris_service import EphemerisService
+        from services.ephemeris_service import EphemerisService, _POSITIONS_CACHE
         from errors import SwissEphemerisUnavailableError
+
+        # Clear the module-level cache so a previously cached result for the
+        # current minute doesn't mask the mocked exception.
+        _POSITIONS_CACHE.clear()
 
         with patch("services.ephemeris_service.swe") as mock_swe:
             # Make calc_ut raise an exception

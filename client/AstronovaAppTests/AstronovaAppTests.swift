@@ -135,6 +135,107 @@ final class AstronovaAppTests: XCTestCase {
         XCTAssertTrue(summary.contains("this person"))
         XCTAssertTrue(summary.contains("50%"))
     }
+
+    func testRelationshipDateParserSupportsDateOnlyAndISO8601() throws {
+        let dateOnly = try XCTUnwrap(APIServices.parseRelationshipBirthDate("1992-05-20"))
+        let iso8601 = try XCTUnwrap(APIServices.parseRelationshipBirthDate("1992-05-20T00:00:00Z"))
+        let fractionalISO8601 = try XCTUnwrap(APIServices.parseRelationshipBirthDate("1992-05-20T00:00:00.123Z"))
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+
+        for parsed in [dateOnly, iso8601, fractionalISO8601] {
+            let components = calendar.dateComponents([.year, .month, .day], from: parsed)
+            XCTAssertEqual(components.year, 1992)
+            XCTAssertEqual(components.month, 5)
+            XCTAssertEqual(components.day, 20)
+        }
+    }
+
+    func testClientSideHouseInsightReturnsReadableMeaning() throws {
+        let planet = PlanetState(
+            id: "sun",
+            name: "Sun",
+            symbol: "☉",
+            longitude: 120.0,
+            sign: "Leo",
+            degree: 0.0,
+            house: 10,
+            significance: "Vitality and leadership.",
+            isRetrograde: false,
+            speed: 1.0
+        )
+
+        let insight = HouseInsight.clientSide(from: planet)
+        XCTAssertEqual(insight.houseName, "10th House")
+        XCTAssertEqual(insight.houseTheme, "Career & Status")
+        XCTAssertEqual(insight.lifeArea, "Career")
+    }
+
+    func testScrubFeedbackHighlightsHouseShiftForPriorityPlanet() throws {
+        let base = TimeTravelSnapshot.sample(targetDate: makeDate(year: 2026, month: 3, day: 15))
+
+        var previousPlanets = base.planets
+        let sunIndex = try XCTUnwrap(previousPlanets.firstIndex(where: { $0.id == "sun" }))
+        let originalSun = previousPlanets[sunIndex]
+
+        previousPlanets[sunIndex] = PlanetState(
+            id: originalSun.id,
+            name: originalSun.name,
+            symbol: originalSun.symbol,
+            longitude: originalSun.longitude,
+            sign: originalSun.sign,
+            degree: originalSun.degree,
+            house: 9,
+            significance: originalSun.significance,
+            isRetrograde: originalSun.isRetrograde,
+            speed: originalSun.speed,
+            isDashaLord: originalSun.isDashaLord,
+            isAntardashaLord: originalSun.isAntardashaLord
+        )
+
+        let previous = TimeTravelSnapshot(
+            targetDate: base.targetDate,
+            planets: previousPlanets,
+            currentDasha: base.currentDasha,
+            aspects: base.aspects,
+            now: base.now,
+            nextTransitions: base.nextTransitions,
+            act: base.act
+        )
+
+        var currentPlanets = previousPlanets
+        let shiftedSun = currentPlanets[sunIndex]
+        currentPlanets[sunIndex] = PlanetState(
+            id: shiftedSun.id,
+            name: shiftedSun.name,
+            symbol: shiftedSun.symbol,
+            longitude: shiftedSun.longitude,
+            sign: shiftedSun.sign,
+            degree: shiftedSun.degree,
+            house: 10,
+            significance: shiftedSun.significance,
+            isRetrograde: shiftedSun.isRetrograde,
+            speed: shiftedSun.speed,
+            isDashaLord: shiftedSun.isDashaLord,
+            isAntardashaLord: shiftedSun.isAntardashaLord
+        )
+
+        let current = TimeTravelSnapshot(
+            targetDate: base.targetDate.addingTimeInterval(86_400),
+            planets: currentPlanets,
+            currentDasha: base.currentDasha,
+            aspects: base.aspects,
+            now: base.now,
+            nextTransitions: base.nextTransitions,
+            act: base.act
+        )
+
+        let feedback = TimeTravelSnapshot.scrubFeedback(from: previous, to: current)
+
+        XCTAssertTrue(feedback.insights.contains(where: { $0.id == "house-sun-9-10" && $0.text.contains("H9→H10") }))
+        XCTAssertTrue(feedback.summary?.contains("10th house (career)") ?? false)
+    }
     
     // MARK: - Auth State Tests
     
