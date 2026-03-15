@@ -476,12 +476,13 @@ class TestHouseInsights:
         assert len(data["insights"]) == 1
         insight = data["insights"][0]
 
-        # Response uses nested structure: planet, house, interpretation
-        assert "planet" in insight
+        # Response uses flat structure matching client HouseInsight model
+        assert "planetId" in insight
         assert "house" in insight
-        assert "interpretation" in insight
-        assert insight["house"]["number"] == 10
-        assert "summary" in insight["interpretation"]
+        assert "summary" in insight
+        assert insight["planetId"] == "sun"
+        assert insight["house"] == 10
+        assert isinstance(insight["summary"], str)
 
         # Houses reference map should have all 12 houses
         assert len(data["houses"]) == 12
@@ -505,15 +506,17 @@ class TestHouseInsights:
         data = response.get_json()
 
         assert len(data["insights"]) == 3
-        # Each insight has planet, house, interpretation structure
+        # Each insight uses flat structure matching client model
         for insight in data["insights"]:
-            assert "planet" in insight
+            assert "planetId" in insight
             assert "house" in insight
-            assert "interpretation" in insight
+            assert isinstance(insight["house"], int)
+            assert "summary" in insight
 
         # Saturn (retrograde) should have retrograde info
         saturn = data["insights"][2]
-        assert "retrograde" in saturn
+        assert saturn["isRetrograde"] is True
+        assert "retrogradeNote" in saturn
 
     def test_no_planets_returns_empty(self, client):
         """Test that omitting planets returns 200 with empty insights."""

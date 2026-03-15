@@ -539,11 +539,26 @@ def house_insights():
         retro = bool(entry.get("retrograde", False))
 
         if _HOUSE_PLANET_SVC_AVAILABLE and get_house_planet_insight is not None:
-            insight = get_house_planet_insight(pid, h, retro)
+            raw_insight = get_house_planet_insight(pid, h, retro)
+            # Flatten nested structure to match client HouseInsight model
+            flat_insight = {
+                "planetId": pid,
+                "planetName": raw_insight.get("planet", {}).get("name", pid),
+                "planetSymbol": raw_insight.get("planet", {}).get("symbol", ""),
+                "house": h,
+                "houseName": raw_insight.get("house", {}).get("name", f"House {h}"),
+                "houseTheme": raw_insight.get("house", {}).get("theme", ""),
+                "summary": raw_insight.get("interpretation", {}).get("summary", ""),
+                "strengths": raw_insight.get("interpretation", {}).get("strengths", []),
+                "challenges": raw_insight.get("interpretation", {}).get("challenges", []),
+                "lifeArea": raw_insight.get("interpretation", {}).get("lifeArea", ""),
+                "isRetrograde": retro,
+                "retrogradeNote": raw_insight.get("retrograde", {}).get("theme") if retro and "retrograde" in raw_insight else None,
+            }
+            insights.append(flat_insight)
         else:
             insight = _build_fallback_insight(pid, h, retro)
-
-        insights.append(insight)
+            insights.append(insight)
 
     # --- Build houses reference map ------------------------------------------
     if _HOUSE_PLANET_SVC_AVAILABLE and HOUSE_MEANINGS is not None:
