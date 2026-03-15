@@ -2281,7 +2281,7 @@ struct FloatingTabBar: View {
                             .font(.cosmicMicro)
                             .foregroundStyle(selectedTab == index ? Color.cosmicGold : Color.cosmicTextTertiary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                            .fixedSize(horizontal: true, vertical: false)
                             .animation(.cosmicQuick, value: selectedTab)
                     }
                     .frame(maxWidth: .infinity)

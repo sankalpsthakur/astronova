@@ -1,10 +1,10 @@
 openapi: 3.0.0
 info:
-  title: AstroNova Backend API
+  title: Shastriji Backend API
   description: Comprehensive astrology API with AI-powered insights, birth charts, compatibility matching, and personalized reports
   version: 1.0.0
   contact:
-    name: AstroNova Support
+    name: Shastriji Support
     email: admin@100xai.engineering
     
 servers:
@@ -1302,13 +1302,8 @@ paths:
       summary: List user's saved relationships
       tags:
         - Compatibility
-      parameters:
-        - in: header
-          name: X-User-Id
-          schema:
-            type: string
-          required: true
-          description: User identifier
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: List of relationships
@@ -1321,8 +1316,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Relationship'
-        '400':
-          description: Missing X-User-Id header
+        '401':
+          description: Authorization required
           content:
             application/json:
               schema:
@@ -1331,13 +1326,8 @@ paths:
       summary: Create a new relationship
       tags:
         - Compatibility
-      parameters:
-        - in: header
-          name: X-User-Id
-          schema:
-            type: string
-          required: true
-          description: User identifier
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1363,6 +1353,8 @@ paths:
       summary: Get a specific relationship
       tags:
         - Compatibility
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: relationship_id
@@ -1370,11 +1362,6 @@ paths:
           schema:
             type: string
             format: uuid
-        - in: header
-          name: X-User-Id
-          schema:
-            type: string
-          required: true
       responses:
         '200':
           description: Relationship details
@@ -1392,6 +1379,8 @@ paths:
       summary: Delete a relationship
       tags:
         - Compatibility
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: relationship_id
@@ -1399,11 +1388,6 @@ paths:
           schema:
             type: string
             format: uuid
-        - in: header
-          name: X-User-Id
-          schema:
-            type: string
-          required: true
       responses:
         '200':
           description: Relationship deleted
@@ -1436,6 +1420,8 @@ paths:
         - Shareable insight summary
       tags:
         - Compatibility
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: relationship_id
@@ -1443,11 +1429,6 @@ paths:
           schema:
             type: string
             format: uuid
-        - in: header
-          name: X-User-Id
-          schema:
-            type: string
-          required: true
       responses:
         '200':
           description: Complete compatibility snapshot
@@ -2086,7 +2067,476 @@ paths:
         '302':
           description: Redirect to /docs
 
+  /:
+    get:
+      summary: Root health check
+      tags:
+        - System
+      responses:
+        '200':
+          description: Service info
+
+  /terms:
+    get:
+      summary: Terms of service page
+      tags:
+        - System
+      responses:
+        '200':
+          description: Terms of service HTML
+
+  /privacy:
+    get:
+      summary: Privacy policy page
+      tags:
+        - System
+      responses:
+        '200':
+          description: Privacy policy HTML
+
+  /support:
+    get:
+      summary: Support page
+      tags:
+        - System
+      responses:
+        '200':
+          description: Support page HTML
+
+  /api/v1/admin/grant-pro:
+    post:
+      summary: Grant pro subscription to a user
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pro subscription granted
+
+  /api/v1/admin/health:
+    get:
+      summary: Admin health check
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Admin service health status
+
+  /api/v1/admin/list-users:
+    get:
+      summary: List all users
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+
+  /api/v1/astrology/house-insights:
+    get:
+      summary: Get house insights for planets
+      tags:
+        - Astrology
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: House insights data
+
+  /api/v1/discover/domains:
+    get:
+      summary: List discovery domains
+      tags:
+        - Discover
+      responses:
+        '200':
+          description: Discovery domains list
+    post:
+      summary: Create or update discovery domains
+      tags:
+        - Discover
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Domain created or updated
+
+  /api/v1/discover/snapshot:
+    get:
+      summary: Get discovery snapshot
+      tags:
+        - Discover
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Discovery snapshot data
+    post:
+      summary: Generate discovery snapshot
+      tags:
+        - Discover
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Discovery snapshot generated
+
+  /api/v1/reports/{report_id}/status:
+    get:
+      summary: Get report generation status
+      tags:
+        - Reports
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Report status
+
+  /api/v1/seed-test-user:
+    post:
+      summary: Seed a test user for development
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Test user created
+
+  /api/v1/temple/bell/ring:
+    post:
+      summary: Ring the temple bell
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Bell rung successfully
+
+  /api/v1/temple/bookings:
+    get:
+      summary: List user bookings
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of bookings
+    post:
+      summary: Create a new booking
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Booking created
+
+  /api/v1/temple/bookings/{booking_id}:
+    get:
+      summary: Get booking details
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: booking_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Booking details
+
+  /api/v1/temple/bookings/{booking_id}/accept:
+    post:
+      summary: Accept a booking
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: booking_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Booking accepted
+
+  /api/v1/temple/bookings/{booking_id}/call-state:
+    patch:
+      summary: Update booking call state
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: booking_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Call state updated
+
+  /api/v1/temple/bookings/{booking_id}/cancel:
+    post:
+      summary: Cancel a booking
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: booking_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Booking cancelled
+
+  /api/v1/temple/bookings/{booking_id}/session:
+    post:
+      summary: Create session for a booking
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: booking_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Session created
+
+  /api/v1/temple/diy-poojas:
+    get:
+      summary: List DIY pooja guides
+      tags:
+        - Temple
+      responses:
+        '200':
+          description: DIY pooja list
+
+  /api/v1/temple/filter-message:
+    post:
+      summary: Filter a message for inappropriate content
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Filtered message result
+
+  /api/v1/temple/muhurats:
+    get:
+      summary: List auspicious muhurats
+      tags:
+        - Temple
+      responses:
+        '200':
+          description: Muhurat list
+
+  /api/v1/temple/pandit/bookings:
+    get:
+      summary: List bookings for pandit
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pandit bookings list
+
+  /api/v1/temple/pandit/bookings/{booking_id}/join:
+    get:
+      summary: Join a booking session as pandit
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: booking_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Joined booking session
+
+  /api/v1/temple/pandits:
+    get:
+      summary: List available pandits
+      tags:
+        - Temple
+      responses:
+        '200':
+          description: Pandits list
+
+  /api/v1/temple/pandits/enroll:
+    post:
+      summary: Enroll as a pandit
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Pandit enrolled
+
+  /api/v1/temple/pandits/{pandit_id}:
+    get:
+      summary: Get pandit details
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: pandit_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pandit details
+
+  /api/v1/temple/pandits/{pandit_id}/availability:
+    get:
+      summary: Get pandit availability
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: pandit_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pandit availability
+
+  /api/v1/temple/poojas:
+    get:
+      summary: List available poojas
+      tags:
+        - Temple
+      responses:
+        '200':
+          description: Pooja list
+
+  /api/v1/temple/poojas/{pooja_id}:
+    get:
+      summary: Get pooja details
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: pooja_id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pooja details
+
+  /api/v1/temple/session/{session_id}:
+    get:
+      summary: Get session details
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: session_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Session details
+
+  /api/v1/temple/session/{session_id}/token:
+    post:
+      summary: Generate session token
+      tags:
+        - Temple
+      parameters:
+        - in: path
+          name: session_id
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Session token
+
+  /api/v1/temple/shastriji/book:
+    post:
+      summary: Book a Shastriji consultation
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Consultation booked
+
+  /api/v1/temple/shastriji/queue:
+    get:
+      summary: Get Shastriji queue status
+      tags:
+        - Temple
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Queue status
+
+  /api/v1/temple/shastriji/status:
+    get:
+      summary: Get Shastriji availability status
+      tags:
+        - Temple
+      responses:
+        '200':
+          description: Shastriji status
+
+  /api/v1/temple/vedic-library:
+    get:
+      summary: Browse Vedic library content
+      tags:
+        - Temple
+      responses:
+        '200':
+          description: Vedic library content
+
 tags:
+  - name: Admin
+    description: Administrative endpoints
+  - name: Discover
+    description: Discovery and exploration features
+  - name: Temple
+    description: Temple services, bookings, and rituals
   - name: System
     description: System health and status endpoints
   - name: Astrology

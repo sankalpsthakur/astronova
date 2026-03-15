@@ -1,4 +1,4 @@
-# Astronova Development Guide
+# Shastriji Development Guide
 
 ## Prerequisites
 
@@ -72,12 +72,6 @@ FLASK_DEBUG=true python app.py
 cd client
 xcodebuild -project astronova.xcodeproj -scheme AstronovaApp \
   -destination 'platform=iOS Simulator,name=iPhone 15' build
-```
-
-### Quick Start Script
-```bash
-./scripts/run-local.sh           # Boots backend + opens Xcode
-OPEN_XCODE=0 ./scripts/run-local.sh  # Backend only
 ```
 
 ## Testing
@@ -319,12 +313,6 @@ def down(conn):  # Optional rollback
 cd server
 rm astronova.db
 python app.py  # Recreates via migrations
-```
-
-### Seed Test Data
-```bash
-cd server
-python seed_sankalp.py
 ```
 
 ### View Database

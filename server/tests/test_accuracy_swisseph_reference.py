@@ -56,7 +56,8 @@ def test_ephemeris_service_matches_swisseph_tropical_and_sidereal():
     assert western["ascendant"]["longitude"] == round(expected_asc_lon, 2)
     assert western["ascendant"]["degree"] == round(expected_asc_deg, 2)
 
-    xx_rahu, _ = swe.calc_ut(jd, swe.TRUE_NODE)
+    # Service uses MEAN_NODE (not TRUE_NODE) for Rahu/Ketu.
+    xx_rahu, _ = swe.calc_ut(jd, swe.MEAN_NODE)
     expected_rahu_lon = float(xx_rahu[0])
     expected_rahu_sign, expected_rahu_deg = _sign_and_degree(expected_rahu_lon, list(EphemerisService.ZODIAC_SIGNS))
     expected_ketu_lon = (expected_rahu_lon + 180.0) % 360.0
@@ -87,7 +88,8 @@ def test_ephemeris_service_matches_swisseph_tropical_and_sidereal():
     assert vedic["ascendant"]["longitude"] == round(expected_asc_sid_lon, 2)
     assert vedic["ascendant"]["degree"] == round(expected_asc_sid_deg, 2)
 
-    xx_rahu_sid, _ = swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SIDEREAL)
+    # Service uses MEAN_NODE (not TRUE_NODE) for Rahu/Ketu.
+    xx_rahu_sid, _ = swe.calc_ut(jd, swe.MEAN_NODE, swe.FLG_SIDEREAL)
     expected_rahu_sid_lon = float(xx_rahu_sid[0])
     expected_rahu_sid_sign, expected_rahu_sid_deg = _sign_and_degree(
         expected_rahu_sid_lon, list(EphemerisService.VEDIC_SIGNS)

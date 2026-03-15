@@ -166,6 +166,7 @@ struct TimeSeeker: View {
                             .font(.cosmicCaptionEmphasis)
                             .lineLimit(1)
                     }
+                    .fixedSize()
                     .foregroundStyle(Color.cosmicGold)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)

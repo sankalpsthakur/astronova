@@ -128,10 +128,12 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
         
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: profile.birthDate)
-        
+
         let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
         timeFormatter.dateFormat = "HH:mm"
         let timeString = profile.birthTime != nil ? timeFormatter.string(from: profile.birthTime!) : "12:00"
         
@@ -253,6 +255,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         
         if let date = date {
             let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "yyyy-MM-dd"
             queryItems.append(URLQueryItem(name: "date", value: formatter.string(from: date)))
         }
@@ -298,6 +301,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         var queryString = "?sign=\(sign.lowercased())"
         if let date = date {
             let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "yyyy-MM-dd"
             queryString += "&date=\(formatter.string(from: date))"
         }
@@ -326,6 +330,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
 
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
 
         let request = DiscoverRequest(
@@ -387,6 +392,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         var queryString = ""
         if let date = date {
             let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "yyyy-MM-dd"
             queryString = "?date=\(formatter.string(from: date))"
         }
@@ -529,7 +535,35 @@ class APIServices: ObservableObject, APIServicesProtocol {
         )
         return response.planets
     }
-    
+
+    /// Get house-based interpretations for planets in their current placements.
+    /// - Parameter planets: Array of tuples describing each planet's id, house number, and retrograde status.
+    /// - Returns: Array of `HouseInsight` objects with interpretation data.
+    func getHouseInsights(planets: [(id: String, house: Int, retrograde: Bool)]) async throws -> [HouseInsight] {
+        struct PlanetQuery: Codable {
+            let id: String
+            let house: Int
+            let retrograde: Bool
+        }
+
+        let queryPlanets = planets.map { PlanetQuery(id: $0.id, house: $0.house, retrograde: $0.retrograde) }
+        let encoder = JSONEncoder()
+        let jsonData = try encoder.encode(queryPlanets)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "[]"
+
+        var components = URLComponents()
+        components.path = "/api/v1/astrology/house-insights"
+        components.queryItems = [
+            URLQueryItem(name: "planets", value: jsonString)
+        ]
+
+        let response: HouseInsightsResponse = try await networkClient.request(
+            endpoint: components.path + "?" + (components.query ?? ""),
+            responseType: HouseInsightsResponse.self
+        )
+        return response.insights
+    }
+
     /// Send chat message
     func sendChatMessage(_ message: String, context: String = "") async throws -> ChatResponse {
         struct ChatRequest: Codable {
@@ -874,12 +908,14 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
 
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let dateString = dateFormatter.string(from: profile.birthDate)
 
         var timeString: String? = nil
         if let birthTime = profile.birthTime {
             let timeFormatter = DateFormatter()
+            timeFormatter.locale = Locale(identifier: "en_US_POSIX")
             timeFormatter.dateFormat = "HH:mm"
             timeString = timeFormatter.string(from: birthTime)
         }
@@ -944,7 +980,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     // MARK: - Relationships (Compatibility)
 
     /// List all relationships for the current user
-    /// Note: X-User-Id header is automatically set by NetworkClient
+    /// Note: Bearer authentication is automatically handled by NetworkClient
     func listRelationships() async throws -> [RelationshipProfile] {
         struct RelationshipsResponse: Codable {
             let relationships: [RelationshipAPIProfile]
@@ -972,11 +1008,8 @@ class APIServices: ObservableObject, APIServicesProtocol {
         )
 
         // Convert API response to RelationshipProfile models
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-
         return response.relationships.compactMap { apiProfile -> RelationshipProfile? in
-            guard let birthDate = dateFormatter.date(from: apiProfile.birthDate) else {
+            guard let birthDate = Self.parseRelationshipBirthDate(apiProfile.birthDate) else {
                 return nil
             }
 
@@ -1001,8 +1034,37 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
     }
 
+    static func parseRelationshipBirthDate(_ value: String) -> Date? {
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        if let date = dateFormatter.date(from: value) {
+            return date
+        }
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFormatter.date(from: value) {
+            return date
+        }
+
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: value) {
+            return date
+        }
+
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+        if let date = dateFormatter.date(from: value) {
+            return date
+        }
+
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return dateFormatter.date(from: value)
+    }
+
     /// Create a new relationship
-    /// Note: X-User-Id header is automatically set by NetworkClient
+    /// Note: Bearer authentication is automatically handled by NetworkClient
     func createRelationship(
         name: String,
         birthDate: Date,
@@ -1037,12 +1099,14 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
 
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let birthDateString = dateFormatter.string(from: birthDate)
 
         var birthTimeString: String? = nil
         if let birthTime = birthTime {
             let timeFormatter = DateFormatter()
+            timeFormatter.locale = Locale(identifier: "en_US_POSIX")
             timeFormatter.dateFormat = "HH:mm"
             birthTimeString = timeFormatter.string(from: birthTime)
         }
@@ -1079,7 +1143,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     }
 
     /// Delete a relationship
-    /// Note: X-User-Id header is automatically set by NetworkClient
+    /// Note: Bearer authentication is automatically handled by NetworkClient
     func deleteRelationship(relationshipId: String) async throws {
         let _: [String: Bool] = try await networkClient.request(
             endpoint: "/api/v1/compatibility/relationships/\(relationshipId)",
@@ -1090,11 +1154,12 @@ class APIServices: ObservableObject, APIServicesProtocol {
     }
 
     /// Get full compatibility snapshot for a relationship
-    /// Note: X-User-Id header is automatically set by NetworkClient
+    /// Note: Bearer authentication is automatically handled by NetworkClient
     func getCompatibilitySnapshot(relationshipId: String, date: Date? = nil) async throws -> CompatibilitySnapshot {
         var endpoint = "/api/v1/compatibility/relationships/\(relationshipId)/snapshot"
         if let date = date {
             let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "yyyy-MM-dd"
             endpoint += "?date=\(formatter.string(from: date))"
         }
@@ -1165,6 +1230,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         var endpoint = "/api/v1/temple/pandits/\(guideId)/availability"
         if let date = date {
             let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "yyyy-MM-dd"
             endpoint += "?date=\(formatter.string(from: date))"
         }
@@ -1203,6 +1269,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
         }
 
         let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "yyyy-MM-dd"
 
         let request = BookingRequest(
@@ -1280,6 +1347,7 @@ class APIServices: ObservableObject, APIServicesProtocol {
     /// Fetch muhurat times and panchang data for a given date
     func fetchMuhurats(date: Date = Date(), latitude: Double? = nil, longitude: Double? = nil) async throws -> MuhuratResponse {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
         var endpoint = "/api/v1/temple/muhurats?date=\(formatter.string(from: date))"
         if let lat = latitude { endpoint += "&lat=\(lat)" }
@@ -1337,6 +1405,62 @@ class APIServices: ObservableObject, APIServicesProtocol {
             // Fire and forget - don't fail the bell ring if server is down
         }
     }
+
+    // MARK: - Shastriji Consultation
+
+    /// Get Shastriji availability status and queue info
+    func getShastrijiStatus() async throws -> ShastrijiStatus {
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/shastriji/status",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: ShastrijiStatus.self
+        )
+    }
+
+    /// Book a consultation with Shastriji
+    func bookShastriji(poojaTypeId: String? = nil, specialRequests: String? = nil) async throws -> ShastrijiBookingResponse {
+        struct BookRequest: Codable {
+            let poojaTypeId: String?
+            let specialRequests: String?
+        }
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/shastriji/book",
+            method: HTTPMethod.POST,
+            body: BookRequest(poojaTypeId: poojaTypeId, specialRequests: specialRequests),
+            responseType: ShastrijiBookingResponse.self
+        )
+    }
+
+    /// Get current queue status for an active Shastriji booking
+    func getShastrijiQueue() async throws -> ShastrijiQueueStatus {
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/shastriji/queue",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: ShastrijiQueueStatus.self
+        )
+    }
+
+    /// Update call state for a booking (queued -> ringing -> connected -> ended)
+    func updateCallState(bookingId: String, callState: String) async throws -> CallStateResponse {
+        struct CallStateRequest: Codable {
+            let callState: String
+        }
+        return try await networkClient.request(
+            endpoint: "/api/v1/temple/bookings/\(bookingId)/call-state",
+            method: HTTPMethod.PATCH,
+            body: CallStateRequest(callState: callState),
+            responseType: CallStateResponse.self
+        )
+    }
+}
+
+/// Response model for call state updates
+struct CallStateResponse: Codable {
+    let bookingId: String
+    let callState: String
+    let updatedAt: String?
 }
 
 /// Empty response for fire-and-forget API calls

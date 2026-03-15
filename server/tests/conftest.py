@@ -102,6 +102,9 @@ class ThreadSafeTestClient:
     def delete(self, *args, **kwargs):
         return self._call("delete", *args, **kwargs)
 
+    def patch(self, *args, **kwargs):
+        return self._call("patch", *args, **kwargs)
+
     def options(self, *args, **kwargs):
         return self._call("options", *args, **kwargs)
 

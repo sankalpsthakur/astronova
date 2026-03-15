@@ -1,6 +1,6 @@
-# CLAUDE.md
+# CLAUDE.md — Shastriji
 
-Lightweight entrypoint for Claude Code.
+Lightweight entrypoint for Claude Code. (Internal codename: astronova)
 
 - Full guide: `docs/claude/CLAUDE_FULL.md`
 - Docs index: `docs/README.md`

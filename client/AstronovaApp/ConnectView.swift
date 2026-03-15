@@ -55,10 +55,16 @@ struct ConnectView: View {
             .navigationDestination(item: $selectedRelationship) { profile in
                 RelationshipDetailView(profile: profile)
             }
-            .task {
-                guard auth.isAuthenticated else { return }
-                await loadRelationships()
-                await contactsService.fetchContacts()
+            .task(id: auth.isAuthenticated) {
+                if auth.isAuthenticated {
+                    await loadRelationships()
+                    await contactsService.fetchContacts()
+                } else {
+                    relationships = []
+                    selectedRelationship = nil
+                    loadError = nil
+                    isLoading = false
+                }
             }
             .refreshable {
                 guard auth.isAuthenticated else { return }

@@ -1,4 +1,4 @@
-# Astronova
+# Shastriji
 
 [![Test Suite](https://github.com/yourusername/astronova/actions/workflows/test.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/test.yml)
 [![iOS Build](https://github.com/yourusername/astronova/actions/workflows/ios.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/ios.yml)
@@ -7,7 +7,7 @@
 [![Swift 5.9](https://img.shields.io/badge/swift-5.9-orange.svg)](https://swift.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-iOS SwiftUI app + Flask backend for Vedic and Western astrology: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and an animated Time Travel visualization.
+**Shastriji** — iOS SwiftUI app + Flask backend for Vedic and Western astrology: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and an animated Time Travel visualization.
 
 ## Features
 

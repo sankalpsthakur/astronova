@@ -245,14 +245,16 @@ class TestTransitService:
         self, transit_service, mock_ephemeris, sample_natal_a, sample_natal_b, sample_aspects
     ):
         """Test pulse returns 'grounded' state when no transits activate aspects."""
-        # Set up transits that don't activate anything
+        # Set up transits that don't activate anything.
+        # 110.0 is verified to not form any major aspect to the natal points
+        # in sample_natal_a or sample_natal_b (267, 148, 273, 134, 239).
         mock_ephemeris.get_positions_for_date.return_value = {
             "planets": {
-                "sun": {"longitude": 45.0},
-                "moon": {"longitude": 45.0},
-                "venus": {"longitude": 45.0},
-                "mars": {"longitude": 45.0},
-                "mercury": {"longitude": 45.0},
+                "sun": {"longitude": 110.0},
+                "moon": {"longitude": 110.0},
+                "venus": {"longitude": 110.0},
+                "mars": {"longitude": 110.0},
+                "mercury": {"longitude": 110.0},
             }
         }
 
@@ -261,7 +263,7 @@ class TestTransitService:
         )
 
         assert pulse["state"] == "grounded"
-        assert pulse["score"] == 55
+        assert pulse["score"] == 50
 
     def test_find_next_significant_transit(
         self, transit_service, mock_ephemeris, sample_natal_a, sample_natal_b, sample_aspects

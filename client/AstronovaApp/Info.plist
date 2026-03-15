@@ -2,8 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDisplayName</key>
+	<string>Shastriji</string>
 	<key>NSContactsUsageDescription</key>
-	<string>Astronova uses your contacts to help you explore compatibility with friends and loved ones based on their birth dates.</string>
+	<string>Shastriji uses your contacts to help you explore compatibility with friends and loved ones based on their birth dates.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
@@ -33,11 +35,11 @@
 		<string>remote-notification</string>
 	</array>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>Astronova uses analytics to improve your experience and understand how features are used. This helps us provide better astrological insights and app performance.</string>
+	<string>Shastriji uses analytics to improve your experience and understand how features are used. This helps us provide better astrological insights and app performance.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Astronova needs camera access for video sessions during your bookings.</string>
+	<string>Shastriji needs camera access for video sessions during your bookings.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Astronova needs microphone access to communicate during video sessions.</string>
+	<string>Shastriji needs microphone access to communicate during video sessions.</string>
 	<key>SMARTLOOK_PROJECT_KEY</key>
 	<string>3ea51a8cc18ecd6b6b43eec84450f694a65569ed</string>
 </dict>

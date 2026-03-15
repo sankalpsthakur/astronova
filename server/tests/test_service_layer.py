@@ -306,36 +306,27 @@ class TestChatResponseService:
     def test_classify_question(self, service, message, expected):
         assert service._classify_question(message) == expected
 
-    def test_generate_response_and_followups_without_birth_data(self, service):
-        with patch.object(
-            service,
-            "_get_current_transits_summary",
-            return_value={"sun": "Aries", "moon": "Taurus", "mercury": "Gemini", "venus": "Cancer", "mars": "Leo"},
-        ):
-            with patch("services.chat_response_service.random.choice", side_effect=lambda items: items[0]):
-                with patch("services.chat_response_service.random.random", return_value=0.0):
-                    reply, followups = service.generate_response(message="Will I find love?", user_id="u1", birth_data=None)
+    def test_generate_follow_ups_without_birth_data(self, service):
+        """Test that follow-ups for a user without birth data include a prompt to share birth details."""
+        follow_ups = service._generate_follow_ups("love", has_birth_data=False)
+        assert isinstance(follow_ups, list)
+        assert len(follow_ups) == 3
+        assert "Share my birth details for personalized insights" in follow_ups
 
-        assert isinstance(reply, str)
-        assert isinstance(followups, list)
-        assert "Can you analyze my birth chart in detail?" in followups
+    def test_generate_follow_ups_with_birth_data(self, service):
+        """Test that follow-ups for a user with birth data do NOT include the prompt to share details."""
+        follow_ups = service._generate_follow_ups("career", has_birth_data=True)
+        assert isinstance(follow_ups, list)
+        assert len(follow_ups) == 3
+        assert "Share my birth details for personalized insights" not in follow_ups
 
-    def test_generate_response_and_followups_with_birth_data(self, service):
-        birth_data = {"birth_date": "1990-01-15"}
-        with patch.object(
-            service,
-            "_get_current_transits_summary",
-            return_value={"sun": "Aries", "moon": "Taurus", "mercury": "Gemini", "venus": "Cancer", "mars": "Leo"},
-        ):
-            with patch("services.chat_response_service.random.choice", side_effect=lambda items: items[0]):
-                with patch("services.chat_response_service.random.random", return_value=0.0):
-                    reply, followups = service.generate_response(
-                        message="Tell me about my career", user_id="u1", birth_data=birth_data
-                    )
+    def test_generate_response_raises_without_ai_provider(self, service):
+        """Test that generate_response raises ChatServiceError when no AI client is configured."""
+        from services.chat_response_service import ChatServiceError
 
-        assert isinstance(reply, str)
-        assert isinstance(followups, list)
-        assert "Can you analyze my birth chart in detail?" not in followups
+        with patch.object(service, "_get_current_transits", return_value={"sun": {"sign": "Aries", "longitude": 10.0}}):
+            with pytest.raises(ChatServiceError, match="AI client not configured"):
+                service.generate_response(message="Will I find love?", user_id="u1", birth_data=None)
 
 
 class TestDashaInterpretationService:

@@ -4,8 +4,8 @@ Base URL: `/api/v1`
 
 ## Authentication
 
-Most endpoints work without authentication. Relationship endpoints require `X-User-Id` header.
-Protected endpoints require `Authorization: Bearer <JWT>` header.
+Most endpoints work without authentication.
+Protected endpoints, including saved relationship endpoints, require `Authorization: Bearer <JWT>` header.
 
 ---
 
@@ -270,7 +270,7 @@ Calculate compatibility between two people.
 ### GET /compatibility/relationships
 List user's saved relationships.
 
-**Headers:** `X-User-Id: <user-id>`
+**Headers:** `Authorization: Bearer <JWT>`
 
 **Response:**
 ```json
@@ -292,7 +292,7 @@ List user's saved relationships.
 ### POST /compatibility/relationships
 Create a new relationship.
 
-**Headers:** `X-User-Id: <user-id>`
+**Headers:** `Authorization: Bearer <JWT>`
 
 **Request Body:**
 ```json
@@ -310,7 +310,7 @@ Create a new relationship.
 ### GET /compatibility/relationships/{id}/snapshot
 Get full compatibility snapshot with transits.
 
-**Headers:** `X-User-Id: <user-id>`
+**Headers:** `Authorization: Bearer <JWT>`
 
 **Query Parameters:**
 | Param | Type | Required | Description |
@@ -340,7 +340,7 @@ Get full compatibility snapshot with transits.
 ### DELETE /compatibility/relationships/{id}
 Delete a relationship.
 
-**Headers:** `X-User-Id: <user-id>`
+**Headers:** `Authorization: Bearer <JWT>`
 
 ---
 

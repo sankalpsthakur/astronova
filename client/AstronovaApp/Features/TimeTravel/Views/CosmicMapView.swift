@@ -111,9 +111,9 @@ struct CosmicMapView: View {
             let dy = point.y - pos.y
             let distance = sqrt(dx * dx + dy * dy)
 
-            var planetSize: CGFloat = 12
-            if planet.isDashaLord || planet.isAntardashaLord { planetSize = 16 }
-            if selectedElement == .planet(planet.id) { planetSize = 20 }
+            var planetSize = basePlanetSize(for: planet.id)
+            if planet.isDashaLord || planet.isAntardashaLord { planetSize = max(planetSize, 16) }
+            if selectedElement == .planet(planet.id) { planetSize += 6 }
             let hitRadius = max(22, planetSize)
 
             if distance <= hitRadius {
@@ -174,39 +174,207 @@ struct CosmicMapView: View {
     // MARK: - Drawing Functions
 
     private func drawBackground(_ context: inout GraphicsContext, size: CGSize) {
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let maxDim = max(size.width, size.height)
+        let rect = CGRect(origin: .zero, size: size)
+        let clipShape = Path(roundedRect: rect, cornerRadius: 20)
+
+        // Base radial gradient
         let gradient = Gradient(colors: [
             Color(red: 0.02, green: 0.02, blue: 0.08),
             Color(red: 0.08, green: 0.04, blue: 0.15),
             Color(red: 0.05, green: 0.02, blue: 0.12)
         ])
-
-        let rect = CGRect(origin: .zero, size: size)
         context.fill(
-            Path(roundedRect: rect, cornerRadius: 20),
-            with: .radialGradient(gradient, center: CGPoint(x: size.width/2, y: size.height/2),
-                                 startRadius: 0, endRadius: size.width * 0.7)
+            clipShape,
+            with: .radialGradient(gradient, center: center,
+                                 startRadius: 0, endRadius: maxDim * 0.7)
+        )
+
+        // Concentric ring gradient suggesting cosmic depth
+        let ringGradient = Gradient(colors: [
+            Color.clear,
+            Color(red: 0.15, green: 0.08, blue: 0.25).opacity(0.03),
+            Color.clear,
+            Color(red: 0.10, green: 0.06, blue: 0.20).opacity(0.03),
+            Color.clear,
+            Color(red: 0.12, green: 0.07, blue: 0.22).opacity(0.03),
+            Color.clear
+        ])
+        context.fill(
+            clipShape,
+            with: .radialGradient(ringGradient, center: center,
+                                 startRadius: maxDim * 0.05, endRadius: maxDim * 0.6)
+        )
+
+        // Darker edges vignette effect
+        let vignetteGradient = Gradient(colors: [
+            Color.clear,
+            Color.clear,
+            Color.black.opacity(0.15),
+            Color.black.opacity(0.4)
+        ])
+        context.fill(
+            clipShape,
+            with: .radialGradient(vignetteGradient, center: center,
+                                 startRadius: maxDim * 0.15, endRadius: maxDim * 0.55)
         )
     }
 
+    // Precomputed star data for deterministic starfield
+    private struct StarData {
+        let x: Double       // normalized 0..1
+        let y: Double       // normalized 0..1
+        let size: CGFloat   // pixel radius
+        let tier: Int       // 0=bright, 1=medium, 2=dim
+        let colorTint: Int  // 0=white, 1=blue, 2=gold
+        let phaseOffset: Double
+        let frequency: Double
+    }
+
+    private static let stars: [StarData] = {
+        // Seeded pseudo-random using a linear congruential generator
+        var seed: UInt64 = 42_424_242
+        func nextRand() -> Double {
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            return Double((seed >> 33) & 0x7FFFFFFF) / Double(0x7FFFFFFF)
+        }
+
+        var result: [StarData] = []
+        let count = 200
+        for _ in 0..<count {
+            let x = nextRand()
+            let y = nextRand()
+            let tierRoll = nextRand()
+            let tier: Int
+            let size: CGFloat
+            if tierRoll < 0.15 {
+                tier = 0; size = 2.5   // bright (~15%)
+            } else if tierRoll < 0.50 {
+                tier = 1; size = 1.5   // medium (~35%)
+            } else {
+                tier = 2; size = 0.8   // dim (~50%)
+            }
+            let colorRoll = nextRand()
+            let colorTint: Int
+            if colorRoll < 0.10 {
+                colorTint = 1          // blue (~10%)
+            } else if colorRoll < 0.15 {
+                colorTint = 2          // gold (~5%)
+            } else {
+                colorTint = 0          // white
+            }
+            let phaseOffset = nextRand() * .pi * 2
+            let frequency = 1.0 + nextRand() * 3.0 // 1-4 Hz variation
+            result.append(StarData(x: x, y: y, size: size, tier: tier,
+                                   colorTint: colorTint, phaseOffset: phaseOffset,
+                                   frequency: frequency))
+        }
+        return result
+    }()
+
     private func drawStarfield(_ context: inout GraphicsContext, size: CGSize, phase: Double) {
-        // Deterministic star positions based on grid
-        let starCount = 60
-        for i in 0..<starCount {
-            let x = Double(i % 10) / 10.0 * size.width + 15
-            let y = Double(i / 10) / 6.0 * size.height + 10
+        // Draw nebula wisps first (behind stars)
+        drawNebulaWisps(&context, size: size)
 
-            // Subtle twinkle based on phase
-            let twinkle = sin(phase * 2 + Double(i) * 0.5) * 0.3 + 0.7
-            let starSize: CGFloat = (i % 3 == 0) ? 1.5 : 1.0
+        // Draw stars with phase-offset twinkle
+        for star in Self.stars {
+            let x = star.x * size.width
+            let y = star.y * size.height
 
+            // Phase-offset sin wave twinkle at varying frequencies
+            let twinkle = sin(phase * star.frequency + star.phaseOffset) * 0.3 + 0.7
+
+            // Base opacity varies by tier
+            let baseOpacity: Double
+            switch star.tier {
+            case 0: baseOpacity = 0.85  // bright
+            case 1: baseOpacity = 0.50  // medium
+            default: baseOpacity = 0.25 // dim
+            }
+
+            // Star color
+            let starColor: Color
+            switch star.colorTint {
+            case 1: starColor = Color(red: 0.7, green: 0.8, blue: 1.0) // blue tint
+            case 2: starColor = Color(red: 1.0, green: 0.9, blue: 0.7) // gold tint
+            default: starColor = .white
+            }
+
+            let s = star.size
             context.fill(
-                Path(ellipseIn: CGRect(x: x, y: y, width: starSize, height: starSize)),
-                with: .color(.white.opacity(twinkle * 0.4))
+                Path(ellipseIn: CGRect(x: x - s / 2, y: y - s / 2, width: s, height: s)),
+                with: .color(starColor.opacity(twinkle * baseOpacity))
             )
         }
     }
 
+    private func drawNebulaWisps(_ context: inout GraphicsContext, size: CGSize) {
+        // 3 subtle nebula wisps: very faint radial gradient patches
+        let wisps: [(cx: CGFloat, cy: CGFloat, r: CGFloat, color: Color)] = [
+            (0.25, 0.30, 0.18, Color(red: 0.35, green: 0.15, blue: 0.55)), // purple
+            (0.72, 0.65, 0.15, Color(red: 0.15, green: 0.20, blue: 0.50)), // blue
+            (0.50, 0.80, 0.12, Color(red: 0.25, green: 0.12, blue: 0.45)), // deep purple
+        ]
+
+        for wisp in wisps {
+            let center = CGPoint(x: wisp.cx * size.width, y: wisp.cy * size.height)
+            let radius = wisp.r * max(size.width, size.height)
+            let gradient = Gradient(colors: [
+                wisp.color.opacity(0.04),
+                wisp.color.opacity(0.02),
+                Color.clear
+            ])
+            context.fill(
+                Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius,
+                                       width: radius * 2, height: radius * 2)),
+                with: .radialGradient(gradient, center: center,
+                                     startRadius: 0, endRadius: radius)
+            )
+        }
+    }
+
+    // Zodiac Unicode glyphs
+    private let zodiacGlyphs = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"]
+
+    // Element colors for zodiac arc segments (Fire, Earth, Air, Water pattern)
+    // Index maps: 0=Ari(Fire), 1=Tau(Earth), 2=Gem(Air), 3=Can(Water), repeating
+    private static let elementColors: [Color] = [
+        Color(red: 0.77, green: 0.36, blue: 0.36), // Fire: Aries
+        Color(red: 0.30, green: 0.69, blue: 0.49), // Earth: Taurus
+        Color(red: 0.42, green: 0.72, blue: 0.78), // Air: Gemini
+        Color(red: 0.56, green: 0.44, blue: 0.75), // Water: Cancer
+        Color(red: 0.77, green: 0.36, blue: 0.36), // Fire: Leo
+        Color(red: 0.30, green: 0.69, blue: 0.49), // Earth: Virgo
+        Color(red: 0.42, green: 0.72, blue: 0.78), // Air: Libra
+        Color(red: 0.56, green: 0.44, blue: 0.75), // Water: Scorpio
+        Color(red: 0.77, green: 0.36, blue: 0.36), // Fire: Sagittarius
+        Color(red: 0.30, green: 0.69, blue: 0.49), // Earth: Capricorn
+        Color(red: 0.42, green: 0.72, blue: 0.78), // Air: Aquarius
+        Color(red: 0.56, green: 0.44, blue: 0.75), // Water: Pisces
+    ]
+
     private func drawZodiacRing(_ context: inout GraphicsContext, center: CGPoint, radius: CGFloat) {
+        let innerRadius = radius - 25
+
+        // Colored 30-degree arc segments by element
+        for i in 0..<12 {
+            let startAngle = CGFloat(i) * 30.0 - 90
+            let endAngle = startAngle + 30.0
+            let elementColor = Self.elementColors[i]
+
+            var arcPath = Path()
+            arcPath.addArc(center: center, radius: (radius + innerRadius) / 2,
+                          startAngle: .degrees(Double(startAngle)),
+                          endAngle: .degrees(Double(endAngle)),
+                          clockwise: false)
+            context.stroke(
+                arcPath,
+                with: .color(elementColor.opacity(0.12)),
+                style: StrokeStyle(lineWidth: radius - innerRadius, lineCap: .butt)
+            )
+        }
+
         // Outer ring
         var ringPath = Path()
         ringPath.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius,
@@ -214,18 +382,31 @@ struct CosmicMapView: View {
         context.stroke(ringPath, with: .color(.white.opacity(0.2)), lineWidth: 1)
 
         // Inner ring
-        let innerRadius = radius - 25
         var innerPath = Path()
         innerPath.addEllipse(in: CGRect(x: center.x - innerRadius, y: center.y - innerRadius,
                                         width: innerRadius * 2, height: innerRadius * 2))
         context.stroke(innerPath, with: .color(.white.opacity(0.15)), lineWidth: 0.5)
 
-        // Sign divisions and labels
+        // Sign divisions, divider lines, and labels
         for i in 0..<12 {
             let angle = CGFloat(i) * 30.0 - 90 // Start at top
             let radians = angle * .pi / 180
 
-            // Tick mark
+            // Radial divider line at each 30-degree boundary
+            let divStart = CGPoint(
+                x: center.x + innerRadius * cos(radians),
+                y: center.y + innerRadius * sin(radians)
+            )
+            let divEnd = CGPoint(
+                x: center.x + radius * cos(radians),
+                y: center.y + radius * sin(radians)
+            )
+            var divPath = Path()
+            divPath.move(to: divStart)
+            divPath.addLine(to: divEnd)
+            context.stroke(divPath, with: .color(.white.opacity(0.18)), lineWidth: 0.5)
+
+            // Tick mark (extends beyond the ring)
             let tickStart = CGPoint(
                 x: center.x + (radius - 5) * cos(radians),
                 y: center.y + (radius - 5) * sin(radians)
@@ -240,17 +421,28 @@ struct CosmicMapView: View {
             tickPath.addLine(to: tickEnd)
             context.stroke(tickPath, with: .color(.white.opacity(0.3)), lineWidth: i % 3 == 0 ? 2 : 1)
 
-            // Sign label
-            let labelAngle = (CGFloat(i) * 30.0 + 15.0 - 90) * .pi / 180
-            let labelRadius = radius - 14
+            // Sign glyph (outer, closer to rim)
+            let glyphAngle = (CGFloat(i) * 30.0 + 15.0 - 90) * .pi / 180
+            let glyphRadius = radius - 8
+            let glyphPos = CGPoint(
+                x: center.x + glyphRadius * cos(glyphAngle),
+                y: center.y + glyphRadius * sin(glyphAngle)
+            )
+            let glyphText = Text(zodiacGlyphs[i])
+                .font(.system(size: 10))
+                .foregroundStyle(Self.elementColors[i].opacity(0.85))
+            context.draw(glyphText, at: glyphPos, anchor: .center)
+
+            // Sign abbreviation label (inner)
+            let labelRadius = radius - 19
             let labelPos = CGPoint(
-                x: center.x + labelRadius * cos(labelAngle),
-                y: center.y + labelRadius * sin(labelAngle)
+                x: center.x + labelRadius * cos(glyphAngle),
+                y: center.y + labelRadius * sin(glyphAngle)
             )
 
             let signText = Text(zodiacSigns[i])
-                .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.system(size: 8, weight: .medium))
+                .foregroundStyle(.white.opacity(0.65))
 
             context.draw(signText, at: labelPos, anchor: .center)
         }
@@ -415,9 +607,17 @@ struct CosmicMapView: View {
             let pos1 = planetPosition(for: planet1, center: center, radius: radius)
             let pos2 = planetPosition(for: planet2, center: center, radius: radius)
 
-            var linePath = Path()
-            linePath.move(to: pos1)
-            linePath.addLine(to: pos2)
+            // Quadratic Bezier curve with control point offset 30% toward center
+            let midX = (pos1.x + pos2.x) / 2
+            let midY = (pos1.y + pos2.y) / 2
+            let controlPoint = CGPoint(
+                x: midX + (center.x - midX) * 0.3,
+                y: midY + (center.y - midY) * 0.3
+            )
+
+            var curvePath = Path()
+            curvePath.move(to: pos1)
+            curvePath.addQuadCurve(to: pos2, control: controlPoint)
 
             let isSelected: Bool = {
                 guard let selectedAspect else { return false }
@@ -426,58 +626,204 @@ struct CosmicMapView: View {
             }()
 
             let baseColor: Color = aspect.type.isHarmonious ? .cosmicSuccess : .cosmicError
-            let opacity: Double = isSelected ? 0.85 : 0.35
-            let width: CGFloat = isSelected ? 3 : (aspect.isApplying ? 2 : 1)
-            let dash: [CGFloat] = isSelected ? [] : (aspect.isApplying ? [] : [4, 4])
-            let style = StrokeStyle(lineWidth: width, dash: dash)
 
-            context.stroke(linePath, with: .color(baseColor.opacity(opacity)), style: style)
+            // Width and opacity vary by orb strength
+            let orbAbs = abs(aspect.orb)
+            let orbWidth: CGFloat
+            let orbOpacity: Double
+            if isSelected {
+                orbWidth = 3.0
+                orbOpacity = 0.85
+            } else {
+                // Width varies by orb: tight orb = thick, wide orb = thin
+                orbWidth = max(1.0, 3.0 - (orbAbs / 3.0))
+                // Opacity varies by orb: tight orb = opaque, wide orb = transparent
+                orbOpacity = max(0.15, 0.6 - (orbAbs / 15.0))
+            }
+
+            let dash: [CGFloat] = isSelected ? [] : (aspect.isApplying ? [] : [4, 4])
+
+            // Subtle glow: duplicate path at 2x width, 0.12 opacity
+            let glowStyle = StrokeStyle(lineWidth: orbWidth * 2, dash: dash)
+            context.stroke(curvePath, with: .color(baseColor.opacity(0.12)), style: glowStyle)
+
+            // Main aspect line
+            let style = StrokeStyle(lineWidth: orbWidth, dash: dash)
+            context.stroke(curvePath, with: .color(baseColor.opacity(orbOpacity)), style: style)
         }
     }
 
+    /// Returns the base visual size for a planet based on its type/hierarchy.
+    private func basePlanetSize(for planetId: String) -> CGFloat {
+        switch planetId {
+        case "sun":                      return 24
+        case "jupiter", "saturn":        return 18
+        case "moon", "mercury", "venus", "mars": return 14
+        case "rahu", "ketu":             return 10
+        default:                         return 12 // uranus, neptune, pluto, ascendant, etc.
+        }
+    }
+
+    /// Label bounding rect for collision detection
+    private struct LabelInfo {
+        let planetIndex: Int
+        let planetPos: CGPoint
+        var labelPos: CGPoint
+        var rect: CGRect
+        let planetSize: CGFloat
+        var wasOffset: Bool = false
+    }
+
     private func drawPlanets(_ context: inout GraphicsContext, center: CGPoint, radius: CGFloat) {
-        for planet in snapshot.planets {
+        // First pass: compute positions and label rects for collision detection
+        var labelInfos: [LabelInfo] = []
+
+        for (index, planet) in snapshot.planets.enumerated() {
             let pos = planetPosition(for: planet, center: center, radius: radius)
-            let color = planetColors[planet.id] ?? .white
             let isSelected = selectedElement == .planet(planet.id)
             let isDashaLord = planet.isDashaLord || planet.isAntardashaLord
 
-            // Planet size based on importance
-            var planetSize: CGFloat = 12
-            if isDashaLord { planetSize = 16 }
-            if isSelected { planetSize = 20 }
+            // Size hierarchy
+            var planetSize = basePlanetSize(for: planet.id)
+            if isDashaLord { planetSize = max(planetSize, 16) }
+            if isSelected { planetSize += 6 }
 
-            // Glow effect
+            // Estimate label rect (symbol text pill)
+            let fontSize: CGFloat = isSelected ? 13 : 10
+            let textWidth = fontSize * 1.5 // rough estimate
+            let textHeight = fontSize * 1.2
+            let paddingX: CGFloat = 5
+            let paddingY: CGFloat = 3
+            let labelPoint = CGPoint(x: pos.x, y: pos.y - planetSize - 10)
+            let labelRect = CGRect(
+                x: labelPoint.x - textWidth / 2 - paddingX,
+                y: labelPoint.y - textHeight / 2 - paddingY,
+                width: textWidth + paddingX * 2,
+                height: textHeight + paddingY * 2
+            )
+
+            labelInfos.append(LabelInfo(
+                planetIndex: index,
+                planetPos: pos,
+                labelPos: labelPoint,
+                rect: labelRect,
+                planetSize: planetSize
+            ))
+        }
+
+        // Collision detection and resolution
+        // Canvas bounds for clamping
+        let canvasWidth = radius * 2 / 0.38 // approximate canvas width from radius
+        let canvasHeight = canvasWidth
+
+        for i in 0..<labelInfos.count {
+            for j in 0..<i {
+                if labelInfos[i].rect.intersects(labelInfos[j].rect) {
+                    // Move the later label below its planet instead of above
+                    labelInfos[i].labelPos.y = labelInfos[i].planetPos.y + labelInfos[i].planetSize + 10 + labelInfos[i].rect.height / 2
+                    labelInfos[i].rect.origin.y = labelInfos[i].labelPos.y - labelInfos[i].rect.height / 2
+                    labelInfos[i].wasOffset = true
+
+                    // If still colliding after moving below, push further down
+                    if labelInfos[i].rect.intersects(labelInfos[j].rect) {
+                        let pushAmount = labelInfos[i].rect.height + 4
+                        labelInfos[i].labelPos.y += pushAmount
+                        labelInfos[i].rect.origin.y += pushAmount
+                    }
+                }
+            }
+
+            // Clamp labels within canvas bounds
+            let halfW = labelInfos[i].rect.width / 2
+            let halfH = labelInfos[i].rect.height / 2
+            labelInfos[i].labelPos.x = max(halfW + 4, min(canvasWidth - halfW - 4, labelInfos[i].labelPos.x))
+            labelInfos[i].labelPos.y = max(halfH + 4, min(canvasHeight - halfH - 4, labelInfos[i].labelPos.y))
+            labelInfos[i].rect.origin.x = labelInfos[i].labelPos.x - halfW
+            labelInfos[i].rect.origin.y = labelInfos[i].labelPos.y - halfH
+        }
+
+        // Second pass: draw planets and labels
+        for (index, planet) in snapshot.planets.enumerated() {
+            let info = labelInfos[index]
+            let pos = info.planetPos
+            let color = planetColors[planet.id] ?? .white
+            let isSelected = selectedElement == .planet(planet.id)
+            let isDashaLord = planet.isDashaLord || planet.isAntardashaLord
+            let planetSize = info.planetSize
+
+            // Atmospheric glow: outer soft glow ring at 2x planet size
+            let glowRadius = planetSize * 2
+            let atmoGradient = Gradient(colors: [color.opacity(0.15), color.opacity(0.05), color.opacity(0)])
+            context.fill(
+                Path(ellipseIn: CGRect(x: pos.x - glowRadius, y: pos.y - glowRadius,
+                                      width: glowRadius * 2, height: glowRadius * 2)),
+                with: .radialGradient(atmoGradient, center: pos, startRadius: 0, endRadius: glowRadius)
+            )
+
+            // Enhanced glow for dasha lords / selected
             if isDashaLord || isSelected {
-                let glowGradient = Gradient(colors: [color.opacity(0.6), color.opacity(0)])
+                let specialGlow = Gradient(colors: [color.opacity(0.6), color.opacity(0.15), color.opacity(0)])
                 context.fill(
                     Path(ellipseIn: CGRect(x: pos.x - planetSize * 1.5, y: pos.y - planetSize * 1.5,
                                           width: planetSize * 3, height: planetSize * 3)),
-                    with: .radialGradient(glowGradient, center: pos, startRadius: 0, endRadius: planetSize * 1.5)
+                    with: .radialGradient(specialGlow, center: pos, startRadius: 0, endRadius: planetSize * 1.5)
                 )
             }
 
-            // Planet body
-            let planetGradient = Gradient(colors: [color, color.opacity(0.6)])
+            // Planet body: 4-stop radial gradient for realistic sphere lighting
+            // Offset center (upper-left) for directional illumination
+            let highlightCenter = CGPoint(x: pos.x - planetSize * 0.2, y: pos.y - planetSize * 0.2)
+            let sphereGradient = Gradient(stops: [
+                .init(color: color.opacity(1.0), location: 0.0),           // highlight (full color)
+                .init(color: color.opacity(0.9), location: 0.3),           // planet color at 0.9
+                .init(color: color.opacity(0.6), location: 0.7),           // darkened (multiply by 0.6)
+                .init(color: color.opacity(0.3), location: 1.0),           // very dark (multiply by 0.3)
+            ])
+
+            let halfSize = planetSize / 2
             let bodyRect = CGRect(
-                x: pos.x - planetSize / 2,
-                y: pos.y - planetSize / 2,
+                x: pos.x - halfSize,
+                y: pos.y - halfSize,
                 width: planetSize,
                 height: planetSize
             )
             let bodyPath = Path(ellipseIn: bodyRect)
             context.fill(
                 bodyPath,
-                with: .radialGradient(planetGradient, center: CGPoint(x: pos.x - 2, y: pos.y - 2),
-                                     startRadius: 0, endRadius: planetSize)
+                with: .radialGradient(sphereGradient, center: highlightCenter,
+                                     startRadius: 0, endRadius: planetSize * 0.7)
             )
 
-            // Edge definition (improves contrast across light/dark planet colors)
-            context.stroke(bodyPath, with: .color(.black.opacity(0.55)), lineWidth: 1.5)
-            context.stroke(bodyPath, with: .color(.white.opacity(0.18)), lineWidth: 0.75)
+            // Specular highlight: small bright white spot at upper-left (10 o'clock)
+            let specularCenter = CGPoint(x: pos.x - halfSize * 0.45, y: pos.y - halfSize * 0.45)
+            let specularRadius = planetSize * 0.18
+            let specGradient = Gradient(colors: [
+                Color.white.opacity(0.85),
+                Color.white.opacity(0.2),
+                Color.white.opacity(0)
+            ])
+            context.fill(
+                Path(ellipseIn: CGRect(x: specularCenter.x - specularRadius,
+                                      y: specularCenter.y - specularRadius,
+                                      width: specularRadius * 2, height: specularRadius * 2)),
+                with: .radialGradient(specGradient, center: specularCenter,
+                                     startRadius: 0, endRadius: specularRadius)
+            )
 
-            // Planet symbol label
-            let labelPoint = CGPoint(x: pos.x, y: pos.y - planetSize - 10)
+            // Edge definition
+            context.stroke(bodyPath, with: .color(.black.opacity(0.55)), lineWidth: 1.5)
+            context.stroke(bodyPath, with: .color(.white.opacity(0.12)), lineWidth: 0.5)
+
+            // Leader line if label was offset due to collision
+            if info.wasOffset {
+                var leaderPath = Path()
+                leaderPath.move(to: pos)
+                leaderPath.addLine(to: info.labelPos)
+                context.stroke(leaderPath, with: .color(.white.opacity(0.2)),
+                              style: StrokeStyle(lineWidth: 0.5, dash: [2, 2]))
+            }
+
+            // Planet symbol label at (possibly adjusted) position
             let symbolText = Text(planet.symbol)
                 .font(.system(size: isSelected ? 13 : 10, weight: .bold))
                 .foregroundStyle(.white)
@@ -485,7 +831,7 @@ struct CosmicMapView: View {
             drawTextPill(
                 &context,
                 text: symbolText,
-                at: labelPoint,
+                at: info.labelPos,
                 paddingX: 5,
                 paddingY: 3,
                 background: Color.black.opacity(0.45),
@@ -497,9 +843,8 @@ struct CosmicMapView: View {
                 let rxText = Text("Rx")
                     .font(.system(size: 7, weight: .bold))
                     .foregroundStyle(Color.cosmicWarning)
-                context.draw(rxText, at: CGPoint(x: pos.x + planetSize/2 + 4, y: pos.y), anchor: .leading)
+                context.draw(rxText, at: CGPoint(x: pos.x + halfSize + 4, y: pos.y), anchor: .leading)
             }
-
         }
     }
 

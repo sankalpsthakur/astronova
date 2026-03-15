@@ -1,6 +1,6 @@
 # Temple/Pooja Booking Feature - Status Report
 
-**Date**: January 8, 2026
+**Date**: January 8, 2026 (updated March 15, 2026)
 **Status**: ✅ **COMPLETE & READY FOR TESTING**
 
 ---
@@ -8,6 +8,15 @@
 ## 📋 Feature Overview
 
 A complete end-to-end pooja booking system with verified pandits, video sessions, and contact detail filtering.
+
+### Shastriji Single-Practitioner Model (Mar 2026)
+
+The multi-pandit marketplace has been replaced with a single-practitioner ("Shastriji") consultation model:
+
+- **ShastrijiConsultView.swift** — Booking UI with availability calendar, pooja picker, and sankalp form. Users book directly with Shastriji (no pandit browsing).
+- **ShastrijiCallView.swift** — Live video session view with WebRTC, mic/camera toggles, elapsed timer, and end-call confirmation.
+- **Backend** — Reuses existing `/api/v1/temple/bookings` endpoints; Shastriji is the single verified pandit auto-assigned to all bookings.
+- **Status**: ✅ iOS views implemented, backend endpoints functional.
 
 ---
 
