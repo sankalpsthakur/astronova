@@ -1,0 +1,32 @@
+DEBUG: argv[0]="cupsfilter"
+DEBUG: argv[1]="1"
+DEBUG: argv[2]="sankalp"
+DEBUG: argv[3]="Sankalp Thakur-kundali-report.pdf"
+DEBUG: argv[4]="1"
+DEBUG: argv[5]="page-ranges=33"
+DEBUG: argv[6]="/Users/sankalp/Downloads/Sankalp Thakur-kundali-report.pdf"
+DEBUG: envp[0]="<CFProcessPath>"
+DEBUG: envp[1]="CONTENT_TYPE=application/pdf"
+DEBUG: envp[2]="CUPS_DATADIR=/usr/share/cups"
+DEBUG: envp[3]="CUPS_FONTPATH=/usr/share/cups/fonts"
+DEBUG: envp[4]="CUPS_SERVERBIN=/usr/libexec/cups"
+DEBUG: envp[5]="CUPS_SERVERROOT=/private/etc/cups"
+DEBUG: envp[6]="LANG=en_US.UTF8"
+DEBUG: envp[7]="PATH=/usr/libexec/cups/filter:/usr/bin:/usr/sbin:/bin:/usr/bin"
+DEBUG: envp[8]="PPD=/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/PrintCore.framework/Versions/A/Resources/Generic.ppd"
+DEBUG: envp[9]="PRINTER_INFO=cupsfilter"
+DEBUG: envp[10]="PRINTER_LOCATION=Unknown"
+DEBUG: envp[11]="PRINTER=cupsfilter"
+DEBUG: envp[12]="RIP_MAX_CACHE=128m"
+DEBUG: envp[13]="USER=sankalp"
+DEBUG: envp[14]="CHARSET=utf-8"
+DEBUG: envp[15]="FINAL_CONTENT_TYPE=application/vnd.cups-raster"
+INFO: cgpdftoraster (PID 15488) started.
+DEBUG: cgpdftoraster version:2024.0 isURF=NO
+DEBUG: cgpdftoraster: "/Users/sankalp/Downloads/Sankalp Thakur-kundali-report.pdf" has 55 pages.
+DEBUG: cgpdftoraster: opened PPD file "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/PrintCore.framework/Versions/A/Resources/Generic.ppd"...
+DEBUG: cgpdftoraster: PreferredRotation = -90
+ERROR: ‘cupsRasterInterpretPPD’ had an error = Unknown operator "dict".
+Stack not empty: [ 1 --dict--
+.
+ERROR: cgpdftoraster (PID 15488) stopped with status 2
