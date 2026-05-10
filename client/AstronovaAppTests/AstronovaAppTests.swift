@@ -35,12 +35,13 @@ final class AstronovaAppTests: XCTestCase {
         ].forEach { defaults.removeObject(forKey: $0) }
 
         // Keychain token can also leak between runs and flip AuthState into "signed in".
-        let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: jwtTokenKey,
-        ]
-        SecItemDelete(query as CFDictionary)
+        ["com.astronova.app.jwtToken", "com.sankalp.AstronovaApp.jwtToken"].forEach { jwtTokenKey in
+            let query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrAccount as String: jwtTokenKey,
+            ]
+            SecItemDelete(query as CFDictionary)
+        }
     }
 
     private func makeDate(year: Int, month: Int, day: Int) -> Date {
@@ -105,6 +106,16 @@ final class AstronovaAppTests: XCTestCase {
         XCTAssertTrue(reportIds.contains("birth_chart"))
         XCTAssertTrue(reportIds.contains("career_forecast"))
         XCTAssertTrue(reportIds.contains("year_ahead"))
+    }
+
+    func testShopCatalogHasSingleMonetizationTruth() throws {
+        XCTAssertEqual(ShopCatalog.proMonthlyProductID, "astronova_pro_monthly")
+        XCTAssertEqual(ShopCatalog.reportProductIDs.count, 7)
+        XCTAssertEqual(ShopCatalog.chatCreditAmounts["chat_credits_5"], 50)
+        XCTAssertEqual(ShopCatalog.chatCreditAmounts["chat_credits_15"], 150)
+        XCTAssertEqual(ShopCatalog.chatCreditAmounts["chat_credits_50"], 500)
+        XCTAssertEqual(ShopCatalog.allProductIDs.count, 11)
+        XCTAssertTrue(ShopCatalog.allProductIDs.contains(ShopCatalog.proMonthlyProductID))
     }
 
     // MARK: - Copy Tests

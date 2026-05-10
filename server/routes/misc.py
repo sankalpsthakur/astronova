@@ -46,9 +46,9 @@ def system_status():
 
 @misc_bp.route("/subscription/status", methods=["GET"])
 def subscription_status():
-    # Optional userId to check real status; defaults to inactive
+    # Optional userId to check real status; native clients send X-User-Id.
     init_db()
-    user_id = request.args.get("userId")
+    user_id = request.args.get("userId") or request.headers.get("X-User-Id")
     return jsonify(get_subscription(user_id))
 
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Render deployment startup script
 
-echo "Starting AstroNova Backend..."
+echo "Starting Astronova Backend..."
 echo "Python version: $(python --version)"
 echo "Working directory before cd: $(pwd)"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

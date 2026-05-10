@@ -4,6 +4,9 @@ SECURITY: These endpoints should be protected in production with proper authenti
 """
 
 import logging
+import os
+import hmac
+from functools import wraps
 from datetime import datetime
 from flask import Blueprint, jsonify, request
 from db import get_connection
@@ -11,9 +14,29 @@ from db import get_connection
 logger = logging.getLogger(__name__)
 
 admin_bp = Blueprint("admin", __name__)
+ASTRONOVA_PRO_PRODUCT_ID = "astronova_pro_monthly"
+
+
+def require_admin_token(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        expected_token = os.environ.get("ADMIN_API_TOKEN")
+        if not expected_token:
+            logger.error("ADMIN_API_TOKEN is not configured; refusing admin request")
+            return jsonify({"error": "Admin API is not configured", "code": "ADMIN_NOT_CONFIGURED"}), 503
+
+        authorization = request.headers.get("Authorization", "")
+        supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
+        if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+            return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 @admin_bp.route("/grant-pro", methods=["POST"])
+@require_admin_token
 def grant_pro():
     """
     Grant Pro subscription to a user by email or user ID.
@@ -31,7 +54,7 @@ def grant_pro():
         "email": "...",
         "subscription": {
             "isActive": true,
-            "productId": "pro.annual"
+            "productId": "astronova_pro_monthly"
         }
     }
     """
@@ -75,16 +98,16 @@ def grant_pro():
         cur.execute("""
             UPDATE subscription_status
             SET is_active = 1,
-                product_id = 'pro.annual',
+                product_id = ?,
                 updated_at = ?
             WHERE user_id = ?
-        """, (now, user_id))
+        """, (ASTRONOVA_PRO_PRODUCT_ID, now, user_id))
         action = "updated"
     else:
         cur.execute("""
             INSERT INTO subscription_status (user_id, is_active, product_id, updated_at)
-            VALUES (?, 1, 'pro.annual', ?)
-        """, (user_id, now))
+            VALUES (?, 1, ?, ?)
+        """, (user_id, ASTRONOVA_PRO_PRODUCT_ID, now))
         action = "created"
 
     conn.commit()
@@ -111,6 +134,7 @@ def grant_pro():
 
 
 @admin_bp.route("/list-users", methods=["GET"])
+@require_admin_token
 def list_users():
     """
     List all users in the system.
@@ -128,7 +152,7 @@ def list_users():
                 "fullName": "...",
                 "subscription": {
                     "isActive": true,
-                    "productId": "pro.annual"
+                    "productId": "astronova_pro_monthly"
                 },
                 "createdAt": "..."
             }
@@ -185,6 +209,7 @@ def list_users():
 
 
 @admin_bp.route("/health", methods=["GET"])
+@require_admin_token
 def admin_health():
     """Admin endpoints health check."""
     return jsonify({

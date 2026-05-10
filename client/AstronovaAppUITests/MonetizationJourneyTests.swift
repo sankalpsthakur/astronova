@@ -127,10 +127,101 @@ final class MonetizationJourneyTests: XCTestCase {
         }
     }
 
+    private func visibleText(containing text: String) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", text)).firstMatch
+    }
+
+    private func screenshotProof(_ name: String) throws {
+        let screenshot = XCUIScreen.main.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+
+        let testFile = URL(fileURLWithPath: #filePath)
+        let screenshotsDir = testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("app-store-assets/screenshots", isDirectory: true)
+        try FileManager.default.createDirectory(at: screenshotsDir, withIntermediateDirectories: true)
+        try screenshot.pngRepresentation.write(to: screenshotsDir.appendingPathComponent("\(name).png"))
+    }
+
     private func chatInputElement() -> XCUIElement {
         if app.textFields["chatInputField"].exists { return app.textFields["chatInputField"] }
         if app.textViews["chatInputField"].exists { return app.textViews["chatInputField"] }
         return app.textFields.firstMatch
+    }
+
+    // MARK: - Local Screenshot Proof
+
+    @MainActor
+    func testProofStartTabArgumentRoutesToSelf() throws {
+        launchSignedIn(arguments: [
+            "UITEST_RESET",
+            "UITEST_SEED_PROFILE_FULL",
+            "UITEST_SKIP_ONBOARDING",
+            "UITEST_ENABLE_LOGGING",
+            "UITEST_START_TAB_INDEX=4"
+        ])
+
+        XCTAssertTrue(anyElement("selfTabView").waitForExistence(timeout: 12), "UITEST_START_TAB_INDEX=4 should route directly to Self")
+        XCTAssertTrue(app.buttons["selfTab"].exists || app.otherElements["selfTab"].exists, "Self tab hook should remain exposed")
+    }
+
+    @MainActor
+    func testProofPaywallToReportsShopFooterVisible() throws {
+        launchSignedIn(arguments: [
+            "UITEST_RESET",
+            "UITEST_SEED_PROFILE_FULL",
+            "UITEST_SKIP_ONBOARDING",
+            "UITEST_MOCK_PURCHASES",
+            "UITEST_ENABLE_LOGGING",
+            "UITEST_PRESENT_PAYWALL",
+            "UITEST_PRESENT_PAYWALL_CONTEXT=report"
+        ])
+
+        XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 12), "Paywall should be presented by the UI-test launch hook")
+        XCTAssertTrue(visibleText(containing: "Subscription auto-renews monthly").waitForExistence(timeout: 8), "Paywall safe-area footer should be visible before navigating")
+
+        let reportsShop = anyElement("buyDetailedReportButton")
+        XCTAssertTrue(reportsShop.waitForExistence(timeout: 8), "Reports Shop CTA should be visible on the paywall")
+        reportsShop.tap()
+
+        XCTAssertTrue(
+            anyElement("reportsStoreView").waitForExistence(timeout: 8) || app.navigationBars["Reports Shop"].waitForExistence(timeout: 8),
+            "Reports Shop should open from the paywall"
+        )
+        XCTAssertTrue(visibleText(containing: "Reports available immediately").waitForExistence(timeout: 8), "Reports Shop safe-area footer should be visible")
+        try screenshotProof("monetization-proof-paywall-to-reports-shop")
+    }
+
+    @MainActor
+    func testProofPaywallToChatPackagesFooterVisible() throws {
+        launchSignedIn(arguments: [
+            "UITEST_RESET",
+            "UITEST_SEED_PROFILE_FULL",
+            "UITEST_SKIP_ONBOARDING",
+            "UITEST_MOCK_PURCHASES",
+            "UITEST_ENABLE_LOGGING",
+            "UITEST_PRESENT_PAYWALL",
+            "UITEST_PRESENT_PAYWALL_CONTEXT=chatLimit"
+        ])
+
+        XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 12), "Paywall should be presented by the UI-test launch hook")
+        XCTAssertTrue(visibleText(containing: "Subscription auto-renews monthly").waitForExistence(timeout: 8), "Paywall safe-area footer should be visible before navigating")
+
+        let chatPackages = anyElement("buyChatPackagesButton")
+        XCTAssertTrue(chatPackages.waitForExistence(timeout: 8), "Chat Packages CTA should be visible on the paywall")
+        chatPackages.tap()
+
+        XCTAssertTrue(
+            anyElement("chatPackagesSheet").waitForExistence(timeout: 8) || app.navigationBars["Chat Packages"].waitForExistence(timeout: 8),
+            "Chat Packages should open from the paywall"
+        )
+        XCTAssertTrue(visibleText(containing: "Credits never expire").waitForExistence(timeout: 8), "Chat Packages safe-area footer should be visible")
+        try screenshotProof("monetization-proof-paywall-to-chat-packages")
     }
 
     // MARK: - Journey A: Free -> Hits Limit -> Buys Credits -> Continues

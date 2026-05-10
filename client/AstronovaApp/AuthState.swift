@@ -26,7 +26,8 @@ class AuthState: ObservableObject {
     @AppStorage("is_quick_start_user") var isQuickStartUser = false
     
     private let apiServices = APIServices.shared
-    private let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
+    private let jwtTokenKey = "com.astronova.app.jwtToken"
+    private let legacyJWTTokenKey = "com.sankalp.AstronovaApp.jwtToken"
     private let onboardingCompletedKey = "hasCompletedOnboarding"
     private let legacyOnboardingCompletedKey = "onboarding_complete"
     
@@ -55,9 +56,23 @@ class AuthState: ObservableObject {
     }
     
     private func getJWTToken() -> String? {
+        if let token = getJWTToken(account: jwtTokenKey) {
+            return token
+        }
+
+        if let legacyToken = getJWTToken(account: legacyJWTTokenKey) {
+            storeJWTToken(legacyToken)
+            deleteJWTToken(account: legacyJWTTokenKey)
+            return legacyToken
+        }
+
+        return nil
+    }
+
+    private func getJWTToken(account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: jwtTokenKey,
+            kSecAttrAccount as String: account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -75,9 +90,14 @@ class AuthState: ObservableObject {
     }
     
     private func deleteJWTToken() {
+        deleteJWTToken(account: jwtTokenKey)
+        deleteJWTToken(account: legacyJWTTokenKey)
+    }
+
+    private func deleteJWTToken(account: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: jwtTokenKey
+            kSecAttrAccount as String: account
         ]
         
         let status = SecItemDelete(query as CFDictionary)
@@ -579,7 +599,7 @@ extension AuthState {
     /// Get status message for UI display
     var statusMessage: String {
         if isAPIConnected {
-            return "Connected to AstroNova services"
+            return "Connected to Astronova services"
         } else if let error = connectionError {
             return "Offline mode: \(error)"
         } else {

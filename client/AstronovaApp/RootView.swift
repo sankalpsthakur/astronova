@@ -1850,6 +1850,7 @@ struct SimpleTabBarView: View {
     @AppStorage("app_launch_count") private var appLaunchCount = 0
     @AppStorage("has_seen_tab_guide") private var hasSeenTabGuide = false
     @State private var keyboardHeight: CGFloat = 0
+    @State private var showingUITestPaywall = false
     
     var body: some View {
         ZStack {
@@ -1925,10 +1926,14 @@ struct SimpleTabBarView: View {
                 }
             }
         )
+        .sheet(isPresented: $showingUITestPaywall) {
+            PaywallView(context: uiTestPaywallContext)
+        }
         .onAppear {
             trackAppLaunch()
             showFirstRunGuideIfNeeded()
             applyUITestStartTabIfRequested()
+            presentUITestPaywallIfRequested()
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToTab)) { notification in
             if let tabIndex = notification.object as? Int {
@@ -1985,11 +1990,26 @@ struct SimpleTabBarView: View {
 
     private func applyUITestStartTabIfRequested() {
         // Used for screenshotting and UI validation from `xcrun simctl launch`.
-        guard TestEnvironment.shared.isUITest else { return }
-        guard let raw = ProcessInfo.processInfo.environment["UITEST_START_TAB_INDEX"],
-              let idx = Int(raw) else { return }
+        let idx = TestEnvironment.shared.getIntValue(for: .startTabIndex, default: -1)
+        guard idx >= 0 else { return }
         let clamped = min(4, max(0, idx))
         selectedTab = clamped
+    }
+
+    private var uiTestPaywallContext: PaywallContext {
+        guard TestEnvironment.shared.isUITest,
+              let raw = TestEnvironment.shared.getRawValue(for: .presentPaywallContext),
+              let context = PaywallContext(rawValue: raw) else {
+            return .general
+        }
+        return context
+    }
+
+    private func presentUITestPaywallIfRequested() {
+        guard TestEnvironment.shared.hasArgument(.presentPaywall) else { return }
+        DispatchQueue.main.async {
+            showingUITestPaywall = true
+        }
     }
 }
 
@@ -4215,6 +4235,7 @@ struct ErrorMessageView: View {
 
 struct SubscriptionSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var storeKitManager = StoreKitManager.shared
     
     var body: some View {
         NavigationStack {
@@ -4255,7 +4276,17 @@ struct SubscriptionSheet: View {
                 VStack(spacing: 16) {
                     Button {
                         Task {
-                            let success = await BasicStoreManager.shared.purchaseProduct(productId: "astronova_pro_monthly")
+                            let productId = ShopCatalog.proMonthlyProductID
+                            let success: Bool
+                            #if DEBUG
+                            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+                                success = await BasicStoreManager.shared.purchaseProduct(productId: productId)
+                            } else {
+                                success = await storeKitManager.purchaseProduct(productId: productId)
+                            }
+                            #else
+                            success = await storeKitManager.purchaseProduct(productId: productId)
+                            #endif
                             if success {
                                 OracleQuotaManager.shared.checkSubscription()
                                 await MainActor.run { dismiss() }
@@ -6775,7 +6806,12 @@ struct ReportGenerationSheet: View {
     @State private var showingSubscription = false
     @State private var showPurchaseError = false
     @State private var showPaymentOptions = false
+    @ObservedObject private var storeKitManager = StoreKitManager.shared
     @Environment(\.dismiss) private var dismiss
+
+    private var mappedReportOffer: ShopCatalog.Report? {
+        ShopCatalog.report(forReportType: reportType)
+    }
     
     private var reportInfo: InsightType {
         switch reportType {
@@ -6966,9 +7002,9 @@ struct ReportGenerationSheet: View {
                             }
                             
                             // Individual Report - Secondary Option
-                            if ReportPricing.pricing(for: reportType) != nil {
+                            if let offer = mappedReportOffer {
                                 Button {
-                                    purchaseIndividualReport()
+                                    purchaseIndividualReport(offer)
                                 } label: {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 4) {
@@ -6977,7 +7013,7 @@ struct ReportGenerationSheet: View {
                                                 .foregroundStyle(Color.cosmicTextSecondary)
                                             Text("Open \(reportInfo.title)")
                                                 .font(.subheadline.weight(.medium))
-                                            Text("from $12.99")
+                                            Text(priceLabel(for: offer))
                                                 .font(.headline.weight(.bold))
                                         }
                                         Spacer()
@@ -7023,9 +7059,14 @@ struct ReportGenerationSheet: View {
             PaymentOptionsSheet(
                 reportType: reportType,
                 reportInfo: reportInfo,
+                reportOffer: mappedReportOffer,
                 onPurchaseIndividual: {
                     showPaymentOptions = false
-                    purchaseIndividualReport()
+                    guard let offer = mappedReportOffer else {
+                        showPurchaseError = true
+                        return
+                    }
+                    purchaseIndividualReport(offer)
                 },
                 onSubscribe: {
                     showPaymentOptions = false
@@ -7045,19 +7086,32 @@ struct ReportGenerationSheet: View {
         onGenerate(reportType)
     }
     
-    private func purchaseIndividualReport() {
+    private func purchaseIndividualReport(_ offer: ShopCatalog.Report) {
         isGenerating = true
         Task {
-            let success = await BasicStoreManager.shared.purchaseProduct(productId: reportType)
+            let success: Bool
+            #if DEBUG
+            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+                success = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
+            } else {
+                success = await storeKitManager.purchaseProduct(productId: offer.productId)
+            }
+            #else
+            success = await storeKitManager.purchaseProduct(productId: offer.productId)
+            #endif
             await MainActor.run {
                 if success {
-                    onGenerate(reportType)
+                    onGenerate(ShopCatalog.reportType(for: offer))
                 } else {
                     isGenerating = false
                     showPurchaseError = true
                 }
             }
         }
+    }
+
+    private func priceLabel(for offer: ShopCatalog.Report) -> String {
+        storeKitManager.products[offer.productId] ?? ShopCatalog.price(for: offer.productId)
     }
     
     private func getSampleOverview() -> String {
@@ -7143,6 +7197,7 @@ struct ReportSectionPreview: View {
 struct PaymentOptionsSheet: View {
     let reportType: String
     let reportInfo: InsightType
+    let reportOffer: ShopCatalog.Report?
     let onPurchaseIndividual: () -> Void
     let onSubscribe: () -> Void
     
@@ -7217,7 +7272,7 @@ struct PaymentOptionsSheet: View {
                     }
                     
                     // Individual Report Option
-                    if ReportPricing.pricing(for: reportType) != nil {
+                    if let offer = reportOffer {
                         Button {
                             onPurchaseIndividual()
                         } label: {
@@ -7228,7 +7283,7 @@ struct PaymentOptionsSheet: View {
                                         .foregroundStyle(Color.cosmicTextSecondary)
                                     Text(reportInfo.title)
                                         .font(.cosmicHeadline)
-                                    Text("from $12.99")
+                                    Text(ShopCatalog.price(for: offer.productId))
                                         .font(.title3.weight(.bold))
                                 }
                                 
@@ -7352,6 +7407,7 @@ struct InlineReportsStoreSheet: View {
                             .disabled(isPurchasing != nil || isEntitled)
                             .accessibilityIdentifier(AccessibilityID.reportBuyButton(offer.productId))
                         }
+                        .listRowBackground(Color.cosmicSurface)
                     }
                 }
 
@@ -7381,6 +7437,7 @@ struct InlineReportsStoreSheet: View {
                         }
                     }
                     .foregroundStyle(Color.cosmicGold)
+                    .listRowBackground(Color.cosmicSurface)
                 }
 
                 // App Store compliance: Terms and Privacy links
@@ -7404,7 +7461,13 @@ struct InlineReportsStoreSheet: View {
                     .listRowBackground(Color.clear)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.cosmicBackground)
+            .safeAreaInset(edge: .bottom) {
+                reportsShopFooter
+            }
             .navigationTitle("Reports Shop")
+            .accessibilityIdentifier(AccessibilityID.reportsStoreView)
             .accessibilityElement(children: .contain)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -7420,6 +7483,39 @@ struct InlineReportsStoreSheet: View {
                 )
             }
         }
+    }
+
+    private var reportsShopFooter: some View {
+        VStack(spacing: Cosmic.Spacing.xs) {
+            Text("One-time purchase. Reports available immediately.")
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextTertiary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Cosmic.Spacing.sm) {
+                    Link("Terms of Use", destination: termsURL)
+                    Text("•")
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                    Link("Privacy Policy", destination: privacyURL)
+                }
+
+                VStack(spacing: Cosmic.Spacing.xxs) {
+                    Link("Terms of Use", destination: termsURL)
+                    Link("Privacy Policy", destination: privacyURL)
+                }
+            }
+            .font(.cosmicCaption)
+            .foregroundStyle(Color.cosmicGold)
+        }
+        .padding(.horizontal, Cosmic.Spacing.screen)
+        .padding(.top, Cosmic.Spacing.sm)
+        .padding(.bottom, Cosmic.Spacing.xs)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.reportsShopFooter)
     }
 
     private func buy(_ offer: ShopCatalog.Report) async {
@@ -7502,16 +7598,10 @@ struct InlineReportsStoreSheet: View {
     }
 
     private func mapReportType(_ id: String) -> String {
-        switch id {
-        case "general": return "birth_chart"
-        case "love": return "love_forecast"
-        case "career": return "career_forecast"
-        case "money": return "year_ahead"
-        case "health": return "year_ahead"
-        case "family": return "year_ahead"
-        case "spiritual": return "year_ahead"
-        default: return id
+        guard let offer = offers.first(where: { $0.id == id }) else {
+            return id
         }
+        return ShopCatalog.reportType(for: offer)
     }
 
     private func priceLabel(for offer: ShopCatalog.Report) -> String {

@@ -15,6 +15,10 @@ services:
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: ADMIN_API_TOKEN
+        generateValue: true
+      - key: APPLE_BUNDLE_ID
+        value: com.astronova.app
       - key: GEMINI_API_KEY
         sync: false  # Set via Render dashboard
       - key: DB_PATH

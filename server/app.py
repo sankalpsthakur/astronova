@@ -171,8 +171,12 @@ def create_app():
         try:
             with open(spec_path, "r", encoding="utf-8") as f:
                 payload = f.read()
-        except OSError:
-            payload = "openapi: 3.0.0\ninfo:\n  title: AstroNova Backend API\n  version: 1.0.0\npaths: {}\n"
+        except OSError as exc:
+            logger.error("OpenAPI spec artifact is missing at %s: %s", spec_path, exc)
+            return jsonify({
+                "error": "OpenAPI spec artifact is missing",
+                "code": "OPENAPI_SPEC_MISSING",
+            }), 503
 
         return Response(payload, mimetype="application/yaml")
 

@@ -20,7 +20,7 @@ auth_bp = Blueprint("auth", __name__)
 APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys"
 APPLE_ISSUER = "https://appleid.apple.com"
 # Bundle ID - should match your iOS app's bundle identifier
-APPLE_BUNDLE_ID = os.environ.get("APPLE_BUNDLE_ID", "com.sankalp.AstronovaApp")
+APPLE_BUNDLE_ID = os.environ.get("APPLE_BUNDLE_ID", "com.astronova.app")
 
 # Cache for Apple's public keys (refreshed every hour)
 _apple_keys_cache: dict = {"keys": None, "expires": None}
@@ -133,8 +133,14 @@ def validate_apple_id_token(id_token: str) -> dict:
         raise ValueError(_("Invalid token format"))
 
 
-# JWT secret key - in production, use a strong random secret from environment
-JWT_SECRET = os.environ.get("JWT_SECRET", "astronova-dev-secret-change-in-production")
+# JWT secret key - in production, use a strong random secret from environment.
+# Render's blueprint historically generated JWT_SECRET_KEY, while local docs use
+# JWT_SECRET. Accept both so existing deployments do not silently fall back to
+# the development secret.
+def get_jwt_secret() -> str:
+    return os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY") or "astronova-dev-secret-change-in-production"
+
+
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_DAYS = 30
 
@@ -160,7 +166,7 @@ def generate_jwt(user_id: str, email: Optional[str] = None) -> str:
     if email:
         payload["email"] = email
 
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, get_jwt_secret(), algorithm=JWT_ALGORITHM)
 
 
 def validate_jwt(token: str) -> dict:
@@ -176,7 +182,7 @@ def validate_jwt(token: str) -> dict:
     import jwt
 
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, get_jwt_secret(), algorithms=[JWT_ALGORITHM])
         return {
             "user_id": payload.get("sub"),
             "email": payload.get("email"),
@@ -245,7 +251,7 @@ def apple_auth():
         return jsonify({"error": _("Request body must be a JSON object"), "code": "INVALID_PAYLOAD"}), 400
 
     # Get user info from payload
-    identity_token = data.get("identityToken")
+    identity_token = data.get("identityToken") or data.get("idToken")
     user_identifier = data.get("userIdentifier")
     email = data.get("email")
     first_name = data.get("firstName")
@@ -271,9 +277,7 @@ def apple_auth():
 
         except ValueError as e:
             logger.warning(f"Apple token validation failed: {e}")
-            # In production, you might want to reject invalid tokens:
-            # return jsonify({"error": str(e), "code": "INVALID_TOKEN"}), 401
-            # For now, we'll continue with fallback to allow development testing
+            return jsonify({"error": str(e), "code": "INVALID_TOKEN"}), 401
 
     # Generate a user ID if none provided
     if not user_identifier:

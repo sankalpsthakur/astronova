@@ -25,7 +25,7 @@ if str(SERVER_ROOT) not in sys.path:
 
 from app import create_app
 from db import get_connection
-from routes.auth import generate_jwt
+from routes.auth import generate_jwt, validate_jwt
 
 
 @pytest.fixture()
@@ -112,6 +112,56 @@ class TestAppleSignIn:
         assert "jwtToken" in data
         assert data["user"]["id"] == "apple-user-002"
         assert data["user"]["fullName"] == "User"
+
+    def test_jwt_secret_key_render_env_fallback(self, monkeypatch):
+        """Render's blueprint sets JWT_SECRET_KEY; tokens should not use the dev fallback."""
+        import jwt as pyjwt
+
+        monkeypatch.delenv("JWT_SECRET", raising=False)
+        monkeypatch.setenv("JWT_SECRET_KEY", "render-compatible-secret")
+
+        token = generate_jwt("render-user", "render@example.com")
+        payload = pyjwt.decode(token, "render-compatible-secret", algorithms=["HS256"])
+
+        assert payload["sub"] == "render-user"
+        assert validate_jwt(token)["user_id"] == "render-user"
+
+    def test_apple_auth_accepts_documented_id_token(self, client, monkeypatch):
+        """The iOS client and OpenAPI contract send idToken, not identityToken."""
+
+        def fake_validate(id_token):
+            assert id_token == "valid-ios-token"
+            return {"sub": "apple-token-user", "email": "token@example.com"}
+
+        monkeypatch.setattr("routes.auth.validate_apple_id_token", fake_validate)
+
+        response = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": "valid-ios-token", "userIdentifier": "client-user", "email": "client@example.com"},
+            content_type="application/json",
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["user"]["id"] == "apple-token-user"
+        assert data["user"]["email"] == "token@example.com"
+
+    def test_apple_auth_rejects_invalid_documented_id_token(self, client, monkeypatch):
+        """Invalid iOS idToken values must not silently fall back to userIdentifier."""
+
+        def fake_validate(_id_token):
+            raise ValueError("Invalid token")
+
+        monkeypatch.setattr("routes.auth.validate_apple_id_token", fake_validate)
+
+        response = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": "invalid-token", "userIdentifier": "client-user", "email": "client@example.com"},
+            content_type="application/json",
+        )
+
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "INVALID_TOKEN"
 
     def test_apple_auth_no_user_identifier_generates_uuid(self, client):
         """Test Apple auth without userIdentifier generates UUID."""
@@ -313,6 +363,86 @@ class TestTokenValidation:
         assert response.status_code == 200
         data = response.get_json()
         assert data["valid"] is False
+
+
+class TestAdminTokenProtection:
+    """Test admin endpoints require the configured admin token."""
+
+    def test_admin_grant_pro_without_config_returns_503(self, client, monkeypatch):
+        monkeypatch.delenv("ADMIN_API_TOKEN", raising=False)
+
+        response = client.post("/api/v1/admin/grant-pro", json={"userId": "admin-test-user"})
+
+        assert response.status_code == 503
+        assert response.get_json()["code"] == "ADMIN_NOT_CONFIGURED"
+
+    def test_admin_grant_pro_rejects_invalid_token(self, client, monkeypatch):
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+
+        response = client.post(
+            "/api/v1/admin/grant-pro",
+            json={"userId": "admin-test-user"},
+            headers={"X-Admin-Token": "wrong-admin-token"},
+        )
+
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
+
+    def test_admin_list_users_rejects_missing_token(self, client, monkeypatch):
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+
+        response = client.get("/api/v1/admin/list-users")
+
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
+
+    def test_admin_grant_pro_accepts_x_admin_token(self, client, monkeypatch):
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+
+        response = client.post(
+            "/api/v1/admin/grant-pro",
+            json={},
+            headers={"X-Admin-Token": "expected-admin-token"},
+        )
+
+        assert response.status_code == 400
+        assert response.get_json()["error"] == "email or userId is required"
+
+    def test_admin_grant_pro_uses_app_store_product_id(self, client, monkeypatch):
+        from db import upsert_user
+
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+        upsert_user("admin-product-user", "iap@example.com", "IAP", "User", "IAP User")
+
+        response = client.post(
+            "/api/v1/admin/grant-pro",
+            json={"userId": "admin-product-user"},
+            headers={"X-Admin-Token": "expected-admin-token"},
+        )
+
+        assert response.status_code == 200
+        assert response.get_json()["subscription"]["productId"] == "astronova_pro_monthly"
+
+    def test_admin_list_users_accepts_bearer_token(self, client, monkeypatch):
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+
+        response = client.get(
+            "/api/v1/admin/list-users",
+            headers={"Authorization": "Bearer expected-admin-token"},
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "users" in data
+        assert "total" in data
+
+    def test_admin_health_requires_token(self, client, monkeypatch):
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+
+        response = client.get("/api/v1/admin/health")
+
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
 
 
 class TestLogout:

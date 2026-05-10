@@ -610,14 +610,30 @@ class TestSubscriptionEndpoint:
         from db import set_subscription
 
         user_id = "test-user-sub-1"
-        set_subscription(user_id, True, "premium_monthly")
+        set_subscription(user_id, True, "astronova_pro_monthly")
 
         response = authenticated_client.get(f"/api/v1/subscription/status?userId={user_id}")
         assert response.status_code == 200
         data = response.get_json()
         assert data["isActive"] is True
         assert "productId" in data
-        assert data["productId"] == "premium_monthly"
+        assert data["productId"] == "astronova_pro_monthly"
+
+    def test_subscription_status_uses_client_user_header(self, authenticated_client, sample_user):
+        """Native clients send X-User-Id rather than a query parameter."""
+        from db import set_subscription
+
+        set_subscription(sample_user["id"], True, "astronova_pro_monthly")
+
+        response = authenticated_client.get(
+            "/api/v1/subscription/status",
+            headers={"X-User-Id": sample_user["id"]},
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["isActive"] is True
+        assert data["productId"] == "astronova_pro_monthly"
 
     def test_subscription_status_with_inactive_subscription(self, authenticated_client):
         """Test subscription status for user with inactive subscription."""

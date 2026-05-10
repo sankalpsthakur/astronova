@@ -17,7 +17,6 @@ venv
 
 # Tests and tooling not required for runtime
 tests/
-openapi_spec.yaml
 render.yaml
 runtime.txt
 

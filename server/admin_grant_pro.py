@@ -9,6 +9,8 @@ import sys
 import sqlite3
 from datetime import datetime
 
+ASTRONOVA_PRO_PRODUCT_ID = "astronova_pro_monthly"
+
 def grant_pro_access(email: str, db_path: str = "astronova.db"):
     """Grant Pro subscription to user by email."""
 
@@ -39,16 +41,16 @@ def grant_pro_access(email: str, db_path: str = "astronova.db"):
         cur.execute("""
             UPDATE subscription_status
             SET is_active = 1,
-                product_id = 'pro.annual',
+                product_id = ?,
                 updated_at = ?
             WHERE user_id = ?
-        """, (now, user_id))
+        """, (ASTRONOVA_PRO_PRODUCT_ID, now, user_id))
         print(f"✅ Updated existing subscription to Pro")
     else:
         cur.execute("""
             INSERT INTO subscription_status (user_id, is_active, product_id, updated_at)
-            VALUES (?, 1, 'pro.annual', ?)
-        """, (user_id, now))
+            VALUES (?, 1, ?, ?)
+        """, (user_id, ASTRONOVA_PRO_PRODUCT_ID, now))
         print(f"✅ Created new Pro subscription")
 
     conn.commit()

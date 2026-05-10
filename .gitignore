@@ -6,6 +6,9 @@
 /Packages
 xcuserdata/
 DerivedData/
+DerivedData-*/
+client/DerivedData-*/
+*.xcresult/
 client/DerivedDataCodex/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata

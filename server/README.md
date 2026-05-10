@@ -16,3 +16,8 @@ Docker
 Notes
 - The Dockerfile exposes port `8080` and defines a `HEALTHCHECK` that pings `/api/v1/health`.
 - Use `-e FLASK_DEBUG=true` with `docker run` for verbose logging during development.
+
+Production security smoke
+- Run after every deploy: `./.venv/bin/python scripts/check_production_security.py`
+- Override target: `ASTRONOVA_BASE_URL=https://<host> ./.venv/bin/python scripts/check_production_security.py`
+- The check verifies health, rejects unauthenticated admin data access, and catches stale/empty OpenAPI output without printing sensitive bodies.

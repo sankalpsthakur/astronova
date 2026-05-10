@@ -68,30 +68,16 @@ struct ChatPackagesSheet: View {
                         }
                     }
 
-                    // App Store compliance: Terms and Privacy links
-                    VStack(spacing: Cosmic.Spacing.xs) {
-                        Text("One-time purchase. Credits never expire.")
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicTextTertiary)
-                            .multilineTextAlignment(.center)
-
-                        HStack(spacing: Cosmic.Spacing.md) {
-                            Link("Terms of Use", destination: termsURL)
-                            Text("•")
-                                .foregroundStyle(Color.cosmicTextTertiary)
-                            Link("Privacy Policy", destination: privacyURL)
-                        }
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicGold)
-                    }
-                    .padding(.top, Cosmic.Spacing.md)
                 }
                 .padding(.horizontal, Cosmic.Spacing.screen)
-                .padding(.bottom, Cosmic.Spacing.xl)
+                .padding(.bottom, 120)
             }
             .background(Color.cosmicBackground)
             .navigationTitle("Chat Packages")
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
+                chatPackagesFooter
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -120,6 +106,39 @@ struct ChatPackagesSheet: View {
         } message: {
             Text("The purchase could not be completed. You were not charged.")
         }
+    }
+
+    private var chatPackagesFooter: some View {
+        VStack(spacing: Cosmic.Spacing.xs) {
+            Text("One-time purchase. Credits never expire.")
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextTertiary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: Cosmic.Spacing.sm) {
+                    Link("Terms of Use", destination: termsURL)
+                    Text("•")
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                    Link("Privacy Policy", destination: privacyURL)
+                }
+
+                VStack(spacing: Cosmic.Spacing.xxs) {
+                    Link("Terms of Use", destination: termsURL)
+                    Link("Privacy Policy", destination: privacyURL)
+                }
+            }
+            .font(.cosmicCaption)
+            .foregroundStyle(Color.cosmicGold)
+        }
+        .padding(.horizontal, Cosmic.Spacing.screen)
+        .padding(.top, Cosmic.Spacing.sm)
+        .padding(.bottom, Cosmic.Spacing.xs)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.chatPackagesFooter)
     }
 
     private func buy(_ pack: ShopCatalog.ChatPack) async {

@@ -20,24 +20,7 @@ class StoreKitManager: ObservableObject {
     private var updateListenerTask: Task<Void, Error>?
     
     // Product IDs defined in App Store Connect
-    private let productIDs: Set<String> = [
-        // Subscription
-        "astronova_pro_monthly",
-
-        // Reports (Non-Consumable)
-        "report_general",
-        "report_love",
-        "report_career",
-        "report_money",
-        "report_health",
-        "report_family",
-        "report_spiritual",
-
-        // Chat Credits (Consumable)
-        "chat_credits_5",
-        "chat_credits_15",
-        "chat_credits_50"
-    ]
+    private let productIDs = ShopCatalog.allProductIDs
     
     init() {
         // Start listening for transaction updates
@@ -73,24 +56,7 @@ class StoreKitManager: ObservableObject {
             #endif
             // Fallback to hardcoded prices (must match BasicStoreManager)
             await MainActor.run {
-                self.products = [
-                    // Subscription
-                    "astronova_pro_monthly": "$9.99",
-
-                    // Reports
-                    "report_general": "$12.99",
-                    "report_love": "$12.99",
-                    "report_career": "$12.99",
-                    "report_money": "$12.99",
-                    "report_health": "$12.99",
-                    "report_family": "$12.99",
-                    "report_spiritual": "$12.99",
-
-                    // Chat Credits
-                    "chat_credits_5": "$14.99",
-                    "chat_credits_15": "$34.99",
-                    "chat_credits_50": "$89.99"
-                ]
+                self.products = ShopCatalog.fallbackPrices
             }
         }
     }
@@ -155,7 +121,7 @@ class StoreKitManager: ObservableObject {
     
     /// Check if a specific product has been purchased
     func hasProduct(_ productId: String) -> Bool {
-        if productId == "astronova_pro_monthly" {
+        if productId == ShopCatalog.proMonthlyProductID {
             return hasProSubscription
         }
         
@@ -216,7 +182,7 @@ class StoreKitManager: ObservableObject {
     
     private func handleSuccessfulPurchase(transaction: StoreKit.Transaction) async {
         await MainActor.run {
-            if transaction.productID == "astronova_pro_monthly" {
+            if transaction.productID == ShopCatalog.proMonthlyProductID {
                 self.hasProSubscription = true
             }
 
@@ -225,13 +191,7 @@ class StoreKitManager: ObservableObject {
                 // Map Product ID to actual credit amounts
                 // Note: Product IDs can't be changed in App Store Connect,
                 // so we use an explicit mapping instead of parsing the ID
-                let creditAmounts: [String: Int] = [
-                    "chat_credits_5": 50,
-                    "chat_credits_15": 150,
-                    "chat_credits_50": 500
-                ]
-
-                if let credits = creditAmounts[transaction.productID] {
+                if let credits = ShopCatalog.chatCreditAmounts[transaction.productID] {
                     let currentCredits = UserDefaults.standard.integer(forKey: "chat_credits")
                     UserDefaults.standard.set(currentCredits + credits, forKey: "chat_credits")
                 }
@@ -259,7 +219,7 @@ class StoreKitManager: ObservableObject {
             do {
                 let transaction = try checkVerified(result)
 
-                if transaction.productID == "astronova_pro_monthly" {
+                if transaction.productID == ShopCatalog.proMonthlyProductID {
                     hasPro = true
                 }
 

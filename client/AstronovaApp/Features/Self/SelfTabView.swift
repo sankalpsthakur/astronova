@@ -125,6 +125,7 @@ struct SelfTabView: View {
                 loadingOverlay
             }
         }
+        .accessibilityIdentifier(AccessibilityID.selfTabView)
         .task {
             // Non-blocking: fetch data even with minimal profile (just birth date)
             if canFetchData {

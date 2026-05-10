@@ -91,7 +91,7 @@ struct ShastrijiConsultView: View {
                     onEndCall: {
                         showCallView = false
                         Task {
-                            try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "ended")
+                            _ = try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "ended")
                             viewState = .profile
                         }
                     }
@@ -510,7 +510,7 @@ struct ShastrijiConsultView: View {
         sessionURL = nil
         if case let .inCall(bookingId) = viewState {
             Task {
-                try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "ended")
+                _ = try? await APIServices.shared.updateCallState(bookingId: bookingId, callState: "ended")
             }
         }
         viewState = .profile

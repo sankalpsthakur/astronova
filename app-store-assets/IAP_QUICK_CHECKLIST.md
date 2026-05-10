@@ -27,9 +27,9 @@
 
 | # | Product ID | Display Name | Price |
 |---|------------|--------------|-------|
-| 9 | `chat_credits_5` | 5 Chat Credits | $14.99 |
-| 10 | `chat_credits_15` | 15 Chat Credits | $34.99 |
-| 11 | `chat_credits_50` | 50 Chat Credits | $89.99 |
+| 9 | `chat_credits_5` | 50 Chat Credits | $14.99 |
+| 10 | `chat_credits_15` | 150 Chat Credits | $34.99 |
+| 11 | `chat_credits_50` | 500 Chat Credits | $89.99 |
 
 ---
 

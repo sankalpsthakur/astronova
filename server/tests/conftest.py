@@ -217,7 +217,7 @@ def authenticated_client(client, sample_user):
     import os
     import jwt as pyjwt
 
-    secret = os.environ.get("JWT_SECRET", "astronova-dev-secret-change-in-production")
+    secret = os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY") or "astronova-dev-secret-change-in-production"
     payload = {
         "sub": sample_user["id"],
         "email": sample_user["email"],
@@ -238,11 +238,11 @@ def sample_subscription(sample_user, clean_db):
     now = datetime.utcnow().isoformat()
     cur.execute(
         "INSERT INTO subscription_status (user_id, is_active, product_id, updated_at) VALUES (?,?,?,?)",
-        (sample_user["id"], 1, "pro_monthly", now),
+        (sample_user["id"], 1, "astronova_pro_monthly", now),
     )
     conn.commit()
     conn.close()
-    return {"user_id": sample_user["id"], "is_active": True, "product_id": "pro_monthly"}
+    return {"user_id": sample_user["id"], "is_active": True, "product_id": "astronova_pro_monthly"}
 
 
 # ============================================================================

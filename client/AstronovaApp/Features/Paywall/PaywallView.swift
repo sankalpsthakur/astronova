@@ -13,8 +13,8 @@ struct PaywallView: View {
     @State private var isPurchasing = false
     @State private var isRestoring = false
     @State private var purchaseResult: PurchaseResult?
-    @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
-    @AppStorage("trigger_show_chat_packages") private var triggerShowChatPackages: Bool = false
+    @State private var showingReportShop = false
+    @State private var showingChatPackages = false
 
     private let context: PaywallContext
 
@@ -34,7 +34,7 @@ struct PaywallView: View {
         }
     }
     
-    private let subscriptionProductId = "astronova_pro_monthly"
+    private let subscriptionProductId = ShopCatalog.proMonthlyProductID
 
     init(context: PaywallContext = .general) {
         self.context = context
@@ -170,60 +170,6 @@ struct PaywallView: View {
                         .stroke(Color.cosmicGold.opacity(0.2), lineWidth: Cosmic.Border.thin)
                 )
 
-                // Primary CTA
-                Button {
-                    CosmicHaptics.medium()
-                    Task { await purchasePro() }
-                } label: {
-                    HStack(spacing: Cosmic.Spacing.sm) {
-                        if isPurchasing {
-                            ProgressView()
-                                .tint(Color.cosmicVoid)
-                        }
-                        Text(purchaseButtonTitle)
-                            .font(.cosmicBodyEmphasis)
-                    }
-                }
-                .buttonStyle(.cosmicPrimary)
-                .accessibilityIdentifier(AccessibilityID.startProButton)
-                .accessibilityHint("Starts your Pro subscription")
-
-                // Restore purchases
-                Button {
-                    CosmicHaptics.light()
-                    Task { await restorePurchases() }
-                } label: {
-                    HStack(spacing: Cosmic.Spacing.xs) {
-                        if isRestoring { ProgressView() }
-                        Text(isRestoring ? "Restoring..." : "Restore Purchases")
-                            .font(.cosmicCallout)
-                    }
-                }
-                .foregroundStyle(Color.cosmicTextSecondary)
-                .accessibilityIdentifier(AccessibilityID.restorePurchasesButton)
-                .accessibilityHint("Restores previous purchases")
-
-                // MARK: - Subscription Disclosure (App Store Guideline 3.1.2)
-                VStack(spacing: Cosmic.Spacing.xs) {
-                    Text("Subscription auto-renews monthly at \(subscriptionPrice)/month until canceled. Cancel anytime in Settings → Apple ID → Subscriptions.")
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextTertiary)
-                        .multilineTextAlignment(.center)
-
-                    HStack(spacing: Cosmic.Spacing.md) {
-                        Link("Terms of Use", destination: termsURL)
-                        Text("•")
-                            .foregroundStyle(Color.cosmicTextTertiary)
-                        Link("Privacy Policy", destination: privacyURL)
-                        Text("•")
-                            .foregroundStyle(Color.cosmicTextTertiary)
-                        Link("Manage", destination: manageSubscriptionsURL)
-                    }
-                    .font(.cosmicCaption)
-                    .foregroundStyle(Color.cosmicGold)
-                }
-                .padding(.top, Cosmic.Spacing.sm)
-
                 // Divider
                 HStack {
                     Rectangle()
@@ -241,9 +187,7 @@ struct PaywallView: View {
                 // Alternative CTAs
                 VStack(spacing: Cosmic.Spacing.sm) {
                     Button {
-                        triggerShowReportShop = true
-                        NotificationCenter.default.post(name: .switchToTab, object: 0)
-                        dismiss()
+                        showingReportShop = true
                     } label: {
                         HStack(spacing: Cosmic.Spacing.sm) {
                             Image(systemName: "doc.text.magnifyingglass")
@@ -260,9 +204,7 @@ struct PaywallView: View {
                     .accessibilityIdentifier(AccessibilityID.buyDetailedReportButton)
 
                     Button {
-                        triggerShowChatPackages = true
-                        NotificationCenter.default.post(name: .switchToTab, object: 2)
-                        dismiss()
+                        showingChatPackages = true
                     } label: {
                         HStack(spacing: Cosmic.Spacing.sm) {
                             Image(systemName: "bubble.left.and.bubble.right")
@@ -280,9 +222,18 @@ struct PaywallView: View {
                 }
             }
             .padding(.horizontal, Cosmic.Spacing.screen)
-            .padding(.bottom, Cosmic.Spacing.xl)
+            .padding(.bottom, 220)
         }
         .background(Color.cosmicBackground)
+        .safeAreaInset(edge: .bottom) {
+            paywallFooter
+        }
+        .sheet(isPresented: $showingReportShop) {
+            InlineReportsStoreSheet()
+        }
+        .sheet(isPresented: $showingChatPackages) {
+            ChatPackagesSheet()
+        }
         .overlay(alignment: .topTrailing) {
             Button {
                 dismiss()
@@ -339,6 +290,67 @@ struct PaywallView: View {
                 )
             }
         }
+    }
+
+    private var paywallFooter: some View {
+        VStack(spacing: Cosmic.Spacing.sm) {
+            Button {
+                CosmicHaptics.medium()
+                Task { await purchasePro() }
+            } label: {
+                HStack(spacing: Cosmic.Spacing.sm) {
+                    if isPurchasing {
+                        ProgressView()
+                            .tint(Color.cosmicVoid)
+                    }
+                    Text(purchaseButtonTitle)
+                        .font(.cosmicBodyEmphasis)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.78)
+                }
+            }
+            .buttonStyle(.cosmicPrimary)
+            .accessibilityIdentifier(AccessibilityID.startProButton)
+            .accessibilityHint("Starts your Pro subscription")
+
+            Button {
+                CosmicHaptics.light()
+                Task { await restorePurchases() }
+            } label: {
+                HStack(spacing: Cosmic.Spacing.xs) {
+                    if isRestoring { ProgressView() }
+                    Text(isRestoring ? "Restoring..." : "Restore Purchases")
+                        .font(.cosmicCallout)
+                }
+            }
+            .foregroundStyle(Color.cosmicTextSecondary)
+            .accessibilityIdentifier(AccessibilityID.restorePurchasesButton)
+            .accessibilityHint("Restores previous purchases")
+
+            Text("Subscription auto-renews monthly at \(subscriptionPrice)/month until canceled. Cancel anytime in Settings → Apple ID → Subscriptions.")
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextTertiary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: Cosmic.Spacing.sm) {
+                Link("Terms", destination: termsURL)
+                Text("•")
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                Link("Privacy", destination: privacyURL)
+                Text("•")
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                Link("Manage", destination: manageSubscriptionsURL)
+            }
+            .font(.cosmicCaption)
+            .foregroundStyle(Color.cosmicGold)
+        }
+        .padding(.horizontal, Cosmic.Spacing.screen)
+        .padding(.top, Cosmic.Spacing.sm)
+        .padding(.bottom, Cosmic.Spacing.xs)
+        .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.paywallFooter)
     }
     
     private func purchasePro() async {

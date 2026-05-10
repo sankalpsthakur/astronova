@@ -552,7 +552,7 @@ class E2ESmokeTest:
             conn = sqlite3.connect(self.temp_db_path)
             cur = conn.cursor()
             cur.execute(
-                "INSERT OR REPLACE INTO subscription_status (user_id, is_active, product_id, updated_at) VALUES (?, 1, 'premium_monthly', datetime('now'))",
+                "INSERT OR REPLACE INTO subscription_status (user_id, is_active, product_id, updated_at) VALUES (?, 1, 'astronova_pro_monthly', datetime('now'))",
                 (user_id,),
             )
             conn.commit()

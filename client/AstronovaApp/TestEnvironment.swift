@@ -20,12 +20,15 @@ enum TestLaunchArgument: String {
     case skipOnboarding = "UITEST_SKIP_ONBOARDING"
     case mockPurchases = "UITEST_MOCK_PURCHASES"
     case enableLogging = "UITEST_ENABLE_LOGGING"
+    case presentPaywall = "UITEST_PRESENT_PAYWALL"
 }
 
 /// Environment keys for passing test values
 enum TestEnvironmentKey: String {
     case chatCreditsValue = "UITEST_CHAT_CREDITS_VALUE"
     case dailyMessageCount = "UITEST_DAILY_MESSAGE_COUNT"
+    case startTabIndex = "UITEST_START_TAB_INDEX"
+    case presentPaywallContext = "UITEST_PRESENT_PAYWALL_CONTEXT"
 }
 
 /// Handles UI test launch arguments for deterministic test state
@@ -33,7 +36,8 @@ final class TestEnvironment {
     static let shared = TestEnvironment()
 
     private let processInfo = ProcessInfo.processInfo
-    private let jwtTokenKey = "com.sankalp.AstronovaApp.jwtToken"
+    private let jwtTokenKey = "com.astronova.app.jwtToken"
+    private let legacyJWTTokenKey = "com.sankalp.AstronovaApp.jwtToken"
     private let onboardingCompletedKey = "hasCompletedOnboarding"
     private let legacyOnboardingCompletedKey = "onboarding_complete"
 
@@ -47,7 +51,9 @@ final class TestEnvironment {
         hasArgument(.setProSubscribed) ||
         hasArgument(.skipOnboarding) ||
         hasArgument(.mockPurchases) ||
-        hasArgument(.enableLogging)
+        hasArgument(.enableLogging) ||
+        hasArgument(.presentPaywall) ||
+        getRawValue(for: .startTabIndex) != nil
     }
 
     /// Check if a launch argument is present
@@ -60,9 +66,21 @@ final class TestEnvironment {
         processInfo.environment[key.rawValue]
     }
 
+    /// Get a test value from either environment or `KEY=value` launch argument.
+    func getRawValue(for key: TestEnvironmentKey) -> String? {
+        if let value = processInfo.environment[key.rawValue] {
+            return value
+        }
+
+        let prefix = "\(key.rawValue)="
+        return processInfo.arguments
+            .first(where: { $0.hasPrefix(prefix) })
+            .map { String($0.dropFirst(prefix.count)) }
+    }
+
     /// Get integer value from environment
     func getIntValue(for key: TestEnvironmentKey, default defaultValue: Int = 0) -> Int {
-        guard let stringValue = getValue(for: key),
+        guard let stringValue = getRawValue(for: key),
               let intValue = Int(stringValue) else {
             return defaultValue
         }
@@ -125,7 +143,7 @@ final class TestEnvironment {
         clearAuthKeychain()
 
         // Clear UserDefaults
-        let domain = Bundle.main.bundleIdentifier ?? "com.sankalp.AstronovaApp"
+        let domain = Bundle.main.bundleIdentifier ?? "com.astronova.app"
         UserDefaults.standard.removePersistentDomain(forName: domain)
         UserDefaults.standard.synchronize()
 
@@ -155,12 +173,14 @@ final class TestEnvironment {
     }
 
     private func clearAuthKeychain() {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: jwtTokenKey
-        ]
+        [jwtTokenKey, legacyJWTTokenKey].forEach { account in
+            let query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrAccount as String: account
+            ]
 
-        SecItemDelete(query as CFDictionary)
+            SecItemDelete(query as CFDictionary)
+        }
     }
 
     private func seedMockJWTToken() {
@@ -300,6 +320,7 @@ enum AccessibilityID {
     static let timeTravelTab = "timeTravelTab"
     static let manageTab = "manageTab"
     static let selfTab = "selfTab"
+    static let selfTabView = "selfTabView"
     static let oracleQuickAccessButton = "oracleQuickAccessButton"
 
     // Chat / Ask
@@ -316,9 +337,11 @@ enum AccessibilityID {
     static let restorePurchasesButton = "restorePurchasesButton"
     static let buyDetailedReportButton = "buyDetailedReportButton"
     static let buyChatPackagesButton = "buyChatPackagesButton"
+    static let paywallFooter = "paywallFooter"
 
     // Chat Packages
     static let chatPackagesSheet = "chatPackagesSheet"
+    static let chatPackagesFooter = "chatPackagesFooter"
     static let chatCreditsLabel = "chatCreditsLabel"
     static func chatPackBuyButton(_ productId: String) -> String {
         "chatPackBuyButton_\(productId)"
@@ -326,6 +349,7 @@ enum AccessibilityID {
 
     // Reports
     static let reportsStoreView = "reportsStoreView"
+    static let reportsShopFooter = "reportsShopFooter"
     static let myReportsView = "myReportsView"
     static let reportsShopButton = "reportsShopButton"
     static func reportBuyButton(_ productId: String) -> String {

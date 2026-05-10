@@ -32,7 +32,7 @@ def _make_auth_client(client):
     """Helper to add JWT auth to a test client."""
     import jwt as pyjwt
 
-    secret = os.environ.get("JWT_SECRET", "astronova-dev-secret-change-in-production")
+    secret = os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY") or "astronova-dev-secret-change-in-production"
     payload = {
         "sub": "perf-test-user",
         "email": "perf@test.com",

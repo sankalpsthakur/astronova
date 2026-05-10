@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AppTrackingTransparency
 #if canImport(SmartlookAnalytics)
 import SmartlookAnalytics
 #endif
@@ -29,60 +28,29 @@ struct AstronovaAppApp: App {
 
         _authState = StateObject(wrappedValue: AuthState())
 
-        // NOTE: Smartlook initialization is deferred to RootView.onAppear
-        // to request App Tracking Transparency (ATT) permission first
+        // NOTE: Smartlook initialization is deferred to RootView.onAppear so
+        // the first screen is visible before analytics starts.
         #if DEBUG
-        print("🔍 [INIT] Smartlook initialization deferred - will request ATT on app load")
+        print("🔍 [INIT] Smartlook initialization deferred until app load")
         #endif
     }
 
-    // MARK: - App Tracking Transparency (ATT)
+    // MARK: - Analytics
 
-    /// Request App Tracking Transparency permission from the user and initialize Smartlook
-    /// if permission is granted. This follows Apple's guidelines by requesting ATT after
-    /// the app's first screen loads (not immediately on launch).
-    private func requestTrackingAuthorizationAndInitializeAnalytics() async {
+    @MainActor private static var hasStartedAnalytics = false
+
+    @MainActor
+    private static func setupAnalyticsOnce() {
         #if DEBUG
         if TestEnvironment.shared.isUITest {
-            print("🔍 [DEBUG] ATT request SKIPPED - Running in UI test mode")
+            print("🔍 [DEBUG] Smartlook skipped - Running in UI test mode")
             return
         }
         #endif
 
-        // Request tracking authorization from the user
-        let status = await ATTrackingManager.requestTrackingAuthorization()
-
-        switch status {
-        case .authorized:
-            #if DEBUG
-            print("✅ [ATT] User granted tracking authorization")
-            #endif
-            Self.setupSmartlook()
-
-        case .denied:
-            #if DEBUG
-            print("⚠️ [ATT] User denied tracking authorization - Smartlook will not be initialized")
-            #endif
-
-        case .notDetermined:
-            #if DEBUG
-            print("⚠️ [ATT] Tracking authorization not determined - requesting again")
-            #endif
-            let retryStatus = await ATTrackingManager.requestTrackingAuthorization()
-            if retryStatus == .authorized {
-                Self.setupSmartlook()
-            }
-
-        case .restricted:
-            #if DEBUG
-            print("⚠️ [ATT] Tracking is restricted on this device - Smartlook will not be initialized")
-            #endif
-
-        @unknown default:
-            #if DEBUG
-            print("⚠️ [ATT] Unknown tracking authorization status")
-            #endif
-        }
+        guard !hasStartedAnalytics else { return }
+        hasStartedAnalytics = true
+        Self.setupSmartlook()
     }
 
     #if canImport(SmartlookAnalytics)
@@ -119,11 +87,9 @@ struct AstronovaAppApp: App {
             RootView()
                 .environmentObject(authState)
                 .environmentObject(gamification)
+                .preferredColorScheme(.dark)
                 .onAppear {
-                    // Request App Tracking Transparency permission and initialize analytics
-                    Task {
-                        await requestTrackingAuthorizationAndInitializeAnalytics()
-                    }
+                    Self.setupAnalyticsOnce()
 
                     if !TestEnvironment.shared.isUITest {
                         Analytics.shared.track(.appLaunched, properties: nil)

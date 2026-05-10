@@ -1,10 +1,10 @@
 openapi: 3.0.0
 info:
-  title: Shastriji Backend API
+  title: Astronova Backend API
   description: Comprehensive astrology API with AI-powered insights, birth charts, compatibility matching, and personalized reports
   version: 1.0.0
   contact:
-    name: Shastriji Support
+    name: Astronova Support
     email: admin@100xai.engineering
     
 servers:

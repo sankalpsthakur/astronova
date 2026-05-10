@@ -1,0 +1,201 @@
+{
+  "identifier": "ASTRONOVA_LOCAL_STOREKIT",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "12.99",
+      "familyShareable": false,
+      "internalID": "410001",
+      "localizations": [
+        {
+          "description": "A detailed personal astrology blueprint report.",
+          "displayName": "Personal Blueprint",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "report_general",
+      "referenceName": "Personal Blueprint Report",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "12.99",
+      "familyShareable": false,
+      "internalID": "410002",
+      "localizations": [
+        {
+          "description": "A detailed love and compatibility astrology report.",
+          "displayName": "Love Forecast",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "report_love",
+      "referenceName": "Love Forecast Report",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "12.99",
+      "familyShareable": false,
+      "internalID": "410003",
+      "localizations": [
+        {
+          "description": "A detailed career and purpose astrology report.",
+          "displayName": "Career Roadmap",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "report_career",
+      "referenceName": "Career Roadmap Report",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "12.99",
+      "familyShareable": false,
+      "internalID": "410004",
+      "localizations": [
+        {
+          "description": "A detailed wealth and money astrology report.",
+          "displayName": "Wealth & Money",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "report_money",
+      "referenceName": "Wealth and Money Report",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "12.99",
+      "familyShareable": false,
+      "internalID": "410005",
+      "localizations": [
+        {
+          "description": "A detailed health and vitality astrology report.",
+          "displayName": "Health & Vitality",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "report_health",
+      "referenceName": "Health and Vitality Report",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "12.99",
+      "familyShareable": false,
+      "internalID": "410006",
+      "localizations": [
+        {
+          "description": "A detailed home, family, and friendship astrology report.",
+          "displayName": "Family & Friends",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "report_family",
+      "referenceName": "Family and Friends Report",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "12.99",
+      "familyShareable": false,
+      "internalID": "410007",
+      "localizations": [
+        {
+          "description": "A detailed spiritual and karmic astrology report.",
+          "displayName": "Spiritual & Karma",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "report_spiritual",
+      "referenceName": "Spiritual and Karma Report",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "14.99",
+      "familyShareable": false,
+      "internalID": "420001",
+      "localizations": [
+        {
+          "description": "50 Oracle chat credits.",
+          "displayName": "50 Oracle Credits",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "chat_credits_5",
+      "referenceName": "50 Oracle Credits",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "34.99",
+      "familyShareable": false,
+      "internalID": "420002",
+      "localizations": [
+        {
+          "description": "150 Oracle chat credits.",
+          "displayName": "150 Oracle Credits",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "chat_credits_15",
+      "referenceName": "150 Oracle Credits",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "89.99",
+      "familyShareable": false,
+      "internalID": "420003",
+      "localizations": [
+        {
+          "description": "500 Oracle chat credits.",
+          "displayName": "500 Oracle Credits",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "chat_credits_50",
+      "referenceName": "500 Oracle Credits",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {},
+  "subscriptionGroups": [
+    {
+      "id": "400001",
+      "localizations": [
+        {
+          "displayName": "Astronova Pro",
+          "locale": "en_US"
+        }
+      ],
+      "name": "Astronova Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "9.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "430001",
+          "introductoryOffer": {
+            "displayPrice": "0",
+            "internalID": "440001",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P2W"
+          },
+          "localizations": [
+            {
+              "description": "Unlimited Oracle chat, Pro reports, saved journeys, and advanced astrological guidance.",
+              "displayName": "Astronova Pro Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "astronova_pro_monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Astronova Pro Monthly",
+          "subscriptionGroupID": "400001",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 2,
+    "minor": 0
+  }
+}
