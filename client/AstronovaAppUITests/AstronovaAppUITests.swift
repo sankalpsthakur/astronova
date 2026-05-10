@@ -32,6 +32,34 @@ final class AstronovaAppUITests: XCTestCase {
     }
 
     @MainActor
+    func testFirstRunGuestOnboardingAcceptsNameEntry() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["UITEST_RESET", "UITEST_ENABLE_LOGGING"]
+        app.launch()
+
+        let guestButton = app.buttons["Continue without signing in"]
+        XCTAssertTrue(guestButton.waitForExistence(timeout: 12), "Guest CTA should be visible on first launch")
+        guestButton.tap()
+
+        let profileSetup = app.otherElements["profileSetupView"]
+        XCTAssertTrue(profileSetup.waitForExistence(timeout: 12), "Guest flow should enter profile setup without hanging")
+
+        let primaryButton = app.buttons["saveProfileButton"]
+        XCTAssertTrue(primaryButton.waitForExistence(timeout: 8), "Profile setup primary CTA should be available")
+        primaryButton.tap()
+
+        let nameField = app.textFields["profileNameField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "Name field should expose a stable UI-test identifier")
+        nameField.tap()
+        nameField.typeText("Ava")
+
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ava")).firstMatch.waitForExistence(timeout: 5), "Typed name should populate validation copy")
+        primaryButton.tap()
+
+        XCTAssertTrue(app.datePickers["birthDatePicker"].waitForExistence(timeout: 8), "Continue should advance to birth-date step after a valid name")
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.

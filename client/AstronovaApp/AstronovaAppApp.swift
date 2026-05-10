@@ -76,8 +76,7 @@ struct AstronovaAppApp: App {
     #else
     private static func setupSmartlook() {
         #if DEBUG
-        print("❌ [Smartlook] SDK NOT available - SmartlookAnalytics cannot be imported")
-        print("❌ [Smartlook] Check if package is properly linked to target")
+        print("ℹ️ [Smartlook] SDK not linked in this build; analytics will remain local-only")
         #endif
     }
     #endif

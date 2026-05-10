@@ -364,6 +364,7 @@ enum AccessibilityID {
     static let birthDatePicker = "birthDatePicker"
     static let birthTimePicker = "birthTimePicker"
     static let locationSearchField = "locationSearchField"
+    static let profileNameField = "profileNameField"
     static let saveProfileButton = "saveProfileButton"
 
     // Time Travel

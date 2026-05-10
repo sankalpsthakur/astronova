@@ -144,6 +144,7 @@ struct ProfileSetupContentView: View {
                     .disabled(!canContinue)
                     .scaleEffect(canContinue ? 1.0 : 0.95)
                     .animation(.cosmicQuick, value: canContinue)
+                    .accessibilityLabel(currentStep == 0 ? L10n.Onboarding.Actions.beginJourney : L10n.Actions.continueLabel)
                     .accessibilityIdentifier(AccessibilityID.saveProfileButton)
 
                     if currentStep > 0 {
@@ -886,8 +887,15 @@ struct EnhancedNameStepView: View {
                         .focused($isTextFieldFocused)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
+                        .textContentType(.name)
+                        .submitLabel(.done)
+                        .accessibilityLabel("Profile name")
+                        .accessibilityIdentifier(AccessibilityID.profileNameField)
                         .onChange(of: fullName) { _, newValue in
                             validateName(newValue)
+                        }
+                        .onSubmit {
+                            isTextFieldFocused = false
                         }
                     
                     // Validation feedback
@@ -8750,8 +8758,9 @@ struct CompellingLandingView: View {
     
     private func handleSkipSignIn() async {
         inProgress = true
-        UserDefaults.standard.set(true, forKey: "is_anonymous_user")
-        await auth.requestSignIn()
+        await MainActor.run {
+            auth.continueAsGuest()
+        }
         inProgress = false
     }
 }
