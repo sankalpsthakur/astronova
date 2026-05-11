@@ -25,18 +25,7 @@ struct ContactPickerView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                switch contactsService.authorizationStatus {
-                case .notDetermined:
-                    requestAccessView
-                case .denied, .restricted:
-                    accessDeniedView
-                case .authorized, .limited:
-                    contactListView
-                @unknown default:
-                    requestAccessView
-                }
-            }
+            authorizationContent
             .background(Color.cosmicBackground.ignoresSafeArea())
             .navigationTitle("Choose Contact")
             .navigationBarTitleDisplayMode(.inline)
@@ -46,6 +35,19 @@ struct ContactPickerView: View {
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
+        }
+    }
+
+    private var authorizationContent: AnyView {
+        switch contactsService.authorizationStatus {
+        case .notDetermined:
+            return AnyView(requestAccessView)
+        case .denied, .restricted:
+            return AnyView(accessDeniedView)
+        case .authorized, .limited:
+            return AnyView(contactListView)
+        @unknown default:
+            return AnyView(requestAccessView)
         }
     }
 

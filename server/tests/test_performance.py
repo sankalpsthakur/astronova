@@ -512,6 +512,8 @@ class TestLargePayloadHandling:
 
     def test_many_concurrent_reports_query(self, authenticated_client):
         """Test querying reports for user with many reports."""
+        user_id = "perf-test-user"
+
         # Create 50 reports for a user
         for i in range(50):
             report_data = {
@@ -523,14 +525,14 @@ class TestLargePayloadHandling:
                     "timezone": "Asia/Kolkata",
                 },
                 "reportType": "birth_chart",
-                "userId": "heavy-user",
+                "userId": user_id,
             }
             response = authenticated_client.post("/api/v1/reports", json=report_data)
             assert response.status_code == 200
 
         # Query all reports
         start_time = datetime.now()
-        response = authenticated_client.get("/api/v1/reports/user/heavy-user")
+        response = authenticated_client.get(f"/api/v1/reports/user/{user_id}")
         elapsed_time = (datetime.now() - start_time).total_seconds()
 
         assert response.status_code == 200
