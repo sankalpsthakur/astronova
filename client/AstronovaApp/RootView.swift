@@ -7386,8 +7386,14 @@ struct InlineReportsStoreSheet: View {
             List {
                 Section("Detailed Reports") {
                     ForEach(offers) { offer in
+                        #if DEBUG
+                        let testProEntitled = TestEnvironment.shared.hasArgument(.setProSubscribed)
+                        #else
+                        let testProEntitled = false
+                        #endif
+                        let proEntitled = hasProSubscription || UserDefaults.standard.bool(forKey: "hasAstronovaPro") || testProEntitled
                         let purchased = isPurchased(offer)
-                        let isEntitled = hasProSubscription || purchased
+                        let isEntitled = proEntitled || purchased
                         HStack(spacing: 12) {
                             Circle().fill(offer.color.opacity(0.15)).frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
@@ -7395,25 +7401,32 @@ struct InlineReportsStoreSheet: View {
                                 Text(offer.subtitle).font(.cosmicCaption).foregroundStyle(Color.cosmicTextSecondary)
                             }
                             Spacer()
-                            Button {
-                                Task { await buy(offer) }
-                            } label: {
+                            if isEntitled {
                                 HStack(spacing: 6) {
-                                    if isPurchasing == offer.productId { ProgressView().tint(.white) }
-                                    if isEntitled {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .font(.system(size: 12))
-                                    }
-                                    Text(
-                                        hasProSubscription
-                                            ? "Included"
-                                            : (purchased ? "Purchased" : (isPurchasing == offer.productId ? "Processing…" : priceLabel(for: offer)))
-                                    )
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 12))
+                                    Text(proEntitled ? "Included" : "Purchased")
                                 }
+                                .font(.cosmicCalloutEmphasis)
+                                .foregroundStyle(Color.cosmicGold)
+                                .padding(.horizontal, Cosmic.Spacing.sm)
+                                .padding(.vertical, Cosmic.Spacing.xs)
+                                .background(Color.cosmicGold.opacity(0.14), in: Capsule())
+                                .accessibilityIdentifier(AccessibilityID.reportIncludedBadge(offer.productId))
+                                .accessibilityLabel(proEntitled ? "Included with Pro" : "Purchased")
+                            } else {
+                                Button {
+                                    Task { await buy(offer) }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        if isPurchasing == offer.productId { ProgressView().tint(.white) }
+                                        Text(isPurchasing == offer.productId ? "Processing..." : priceLabel(for: offer))
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .disabled(isPurchasing != nil)
+                                .accessibilityIdentifier(AccessibilityID.reportBuyButton(offer.productId))
                             }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(isPurchasing != nil || isEntitled)
-                            .accessibilityIdentifier(AccessibilityID.reportBuyButton(offer.productId))
                         }
                         .listRowBackground(Color.cosmicSurface)
                     }

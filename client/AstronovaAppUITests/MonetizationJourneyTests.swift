@@ -35,7 +35,12 @@ final class MonetizationJourneyTests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix)).firstMatch
     }
 
+    private func elementCount(withIdentifierPrefix prefix: String) -> Int {
+        app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix)).count
+    }
+
     private func launchSignedIn(arguments: [String], environment: [String: String] = [:]) {
+        app.terminate()
         app.launchArguments = arguments
         var mergedEnvironment = ["UITEST_TIME_TRAVEL_SAMPLE": "1"]
         for (key, value) in environment { mergedEnvironment[key] = value }
@@ -430,9 +435,9 @@ final class MonetizationJourneyTests: XCTestCase {
             "Reports shop should open"
         )
 
-        let reportBuyButton = firstElement(withIdentifierPrefix: "reportBuyButton_")
-        XCTAssertTrue(reportBuyButton.waitForExistence(timeout: 8), "A report buy button should exist")
-        XCTAssertFalse(reportBuyButton.isEnabled, "Report buy buttons should be disabled for Pro users")
+        let includedBadge = firstElement(withIdentifierPrefix: "reportIncludedBadge_")
+        XCTAssertTrue(includedBadge.waitForExistence(timeout: 8), "Pro users should see reports as included")
+        XCTAssertEqual(elementCount(withIdentifierPrefix: "reportBuyButton_"), 0, "Pro users should not see report buy buttons")
     }
 
     // MARK: - Smoke Test: App Launch and Basic Navigation

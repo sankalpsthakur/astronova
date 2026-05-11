@@ -11,6 +11,7 @@ import SwiftUI
 
 struct TempleView: View {
     @EnvironmentObject private var gamification: GamificationManager
+    @State private var showingOracle = false
     @State private var muhurats: [Muhurat] = Muhurat.sampleMuhurats()
     @State private var diyPoojas: [DIYPooja] = DIYPooja.samples
     @State private var planetPositions: [DetailedPlanetaryPosition] = []
@@ -31,6 +32,9 @@ struct TempleView: View {
                     VStack(spacing: Cosmic.Spacing.xl) {
                         // 0. Shastriji Consultation
                         ShastrijiConsultView()
+
+                        // 1. Oracle quick access
+                        oracleQuickAccessSection
 
                         // 1. Temple Bell Hero
                         TempleBellView()
@@ -72,6 +76,59 @@ struct TempleView: View {
         .task {
             await loadTempleData()
         }
+        .sheet(isPresented: $showingOracle) {
+            OracleView()
+                .environmentObject(gamification)
+        }
+    }
+
+    // MARK: - Oracle Quick Access
+
+    private var oracleQuickAccessSection: some View {
+        Button {
+            CosmicHaptics.medium()
+            showingOracle = true
+        } label: {
+            HStack(spacing: Cosmic.Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(Color.cosmicAmethyst.opacity(0.18))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Color.cosmicGold)
+                }
+
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                    Text(L10n.Temple.OracleQuickAccess.title)
+                        .font(.cosmicHeadline)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                    Text(L10n.Temple.OracleQuickAccess.subtitle)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.cosmicGold)
+            }
+            .padding(Cosmic.Spacing.md)
+            .frame(maxWidth: .infinity)
+            .background(Color.cosmicSurface)
+            .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                    .stroke(Color.cosmicGold.opacity(0.22), lineWidth: Cosmic.Border.thin)
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, Cosmic.Spacing.screen)
+        .accessibilityIdentifier(AccessibilityID.oracleQuickAccessButton)
+        .accessibilityLabel(L10n.Temple.OracleQuickAccess.accessibilityLabel)
+        .accessibilityHint(L10n.Temple.OracleQuickAccess.accessibilityHint)
     }
 
     // MARK: - Muhurat Section

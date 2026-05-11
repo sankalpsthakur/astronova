@@ -156,6 +156,7 @@ final class TestEnvironment {
             "daily_message_count",
             "last_message_date",
             "is_pro_subscriber",
+            "hasAstronovaPro",
             onboardingCompletedKey,
             legacyOnboardingCompletedKey,
             "user_profile",
@@ -165,6 +166,11 @@ final class TestEnvironment {
         ]
 
         for key in keysToReset {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+
+        for (key, _) in UserDefaults.standard.dictionaryRepresentation()
+            where key.hasPrefix("purchased_") || key.hasPrefix("oracle_daily_") {
             UserDefaults.standard.removeObject(forKey: key)
         }
 
@@ -272,6 +278,7 @@ final class TestEnvironment {
     private func setProSubscribed() {
         log("Setting Pro subscription active...")
         UserDefaults.standard.set(true, forKey: "hasAstronovaPro")
+        UserDefaults.standard.set(true, forKey: "is_pro_subscriber")
         UserDefaults.standard.synchronize()
     }
 
@@ -354,6 +361,9 @@ enum AccessibilityID {
     static let reportsShopButton = "reportsShopButton"
     static func reportBuyButton(_ productId: String) -> String {
         "reportBuyButton_\(productId)"
+    }
+    static func reportIncludedBadge(_ productId: String) -> String {
+        "reportIncludedBadge_\(productId)"
     }
     static func reportRow(_ reportId: String) -> String {
         "reportRow_\(reportId)"
