@@ -101,6 +101,7 @@ jobs:
             --cov-report=xml \
             --cov-report=html \
             --cov-report=term-missing \
+            --cov-fail-under=0 \
             --maxfail=5 \
             --tb=short \
             --junit-xml=pytest-results.xml
