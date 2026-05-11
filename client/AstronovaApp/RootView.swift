@@ -59,6 +59,7 @@ struct ProfileSetupContentView: View {
                         (Text("✨ ") + Text(L10n.Onboarding.progressTitle))
                             .font(.cosmicTitle3)
                             .foregroundStyle(Color.cosmicTextPrimary)
+                            .accessibilityIdentifier(AccessibilityID.profileSetupView)
                         Spacer()
                     }
 
@@ -79,35 +80,30 @@ struct ProfileSetupContentView: View {
                 .padding(.top, Cosmic.Spacing.m + Cosmic.Spacing.xxs)
             }
             
-            // Content area with beautiful card design
-            TabView(selection: $currentStep) {
-                // Step 1: Welcome with value preview
-                EnhancedWelcomeStepView()
-                    .tag(0)
-                
-                // Step 2: Name input with personality hint
-                EnhancedNameStepView(fullName: $fullName)
-                    .tag(1)
-                
-                // Step 3: Birth date with instant insight
-                EnhancedBirthDateStepView(birthDate: $birthDate, onQuickStart: handleQuickStart)
-                    .tag(2)
-                
-                // Step 4: Birth time input
-                EnhancedBirthTimeStepView(birthTime: $birthTime)
-                    .tag(3)
-                
-                // Step 5: Birth place input with completion
-                EnhancedBirthPlaceStepView(
-                    birthPlace: $birthPlace,
-                    onComplete: { insight in
-                        personalizedInsight = insight
-                        showPersonalizedInsight()
-                    }
-                )
-                .tag(4)
+            // Keep setup pages explicit so UI automation and accessibility can
+            // always reach the currently visible controls.
+            Group {
+                switch currentStep {
+                case 0:
+                    EnhancedWelcomeStepView()
+                case 1:
+                    EnhancedNameStepView(fullName: $fullName)
+                case 2:
+                    EnhancedBirthDateStepView(birthDate: $birthDate, onQuickStart: handleQuickStart)
+                case 3:
+                    EnhancedBirthTimeStepView(birthTime: $birthTime)
+                default:
+                    EnhancedBirthPlaceStepView(
+                        birthPlace: $birthPlace,
+                        onComplete: { insight in
+                            personalizedInsight = insight
+                            showPersonalizedInsight()
+                        }
+                    )
+                }
             }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .transition(.opacity.combined(with: .scale(scale: 0.98)))
             .animation(.cosmicSpring, value: currentStep)
 
             if !showingPersonalizedInsight {
@@ -161,8 +157,6 @@ struct ProfileSetupContentView: View {
                 .padding(.bottom, Cosmic.Spacing.xl + Cosmic.Spacing.xxs)
             }
         }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier(AccessibilityID.profileSetupView)
     }
 }
 
@@ -504,6 +498,14 @@ struct SimpleProfileSetupView: View {
             animateGradient = false
             animateStars = false
         }
+
+        if UserDefaults.standard.bool(forKey: "profile_setup_restart_requested") {
+            UserDefaults.standard.removeObject(forKey: "profile_setup_restart_requested")
+            clearProfileSetupProgress()
+        } else if currentStep > 0 && fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            clearProfileSetupProgress()
+        }
+
         restoreProfileProgress()
         currentStep = min(max(0, currentStep), totalSteps - 1)
     }
@@ -865,7 +867,7 @@ struct EnhancedNameStepView: View {
                 // Enhanced text field with validation
                 VStack(spacing: 8) {
                     TextField(
-                        "",
+                        "Profile name",
                         text: $fullName,
                         prompt: Text(L10n.Onboarding.Name.placeholder).foregroundColor(.cosmicTextTertiary)
                     )
@@ -992,32 +994,32 @@ struct EnhancedBirthDateStepView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
+            Spacer(minLength: Cosmic.Spacing.xs)
             
-            VStack(spacing: Cosmic.Spacing.xl) {
+            VStack(spacing: Cosmic.Spacing.md) {
                 // Animated calendar icon
                 ZStack {
                     Circle()
                         .fill(Color.cosmicGold.opacity(0.12))
-                        .frame(width: 100, height: 100)
+                        .frame(width: 72, height: 72)
                         .scaleEffect(animateIcon ? 1.05 : 1.0)
                     
                     Group {
                         if !reduceMotion {
                             Image(systemName: "calendar")
-                                .font(.system(size: 45))
+                                .font(.system(size: 32))
                                 .foregroundStyle(Color.cosmicGold)
                                 .symbolEffect(.pulse, options: .repeating)
                         } else {
                             Image(systemName: "calendar")
-                                .font(.system(size: 45))
+                                .font(.system(size: 32))
                                 .foregroundStyle(Color.cosmicGold)
                         }
                     }
                 }
                 .animation(!reduceMotion ? .easeInOut(duration: 2).repeatForever(autoreverses: true) : nil, value: animateIcon)
                 
-                VStack(spacing: 16) {
+                VStack(spacing: 10) {
                     Text(L10n.Onboarding.BirthDate.title)
                         .font(.title2.weight(.semibold))
                         .foregroundStyle(Color.cosmicTextPrimary)
@@ -1028,11 +1030,14 @@ struct EnhancedBirthDateStepView: View {
                         .font(.cosmicBody)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.86)
+                        .fixedSize(horizontal: false, vertical: true)
                         .lineSpacing(3)
                         .padding(.horizontal, 8)
                         .shadow(color: .black.opacity(0.25), radius: 6, x: 0, y: 1)
                 }
-                .padding(.vertical, Cosmic.Spacing.screen)
+                .padding(.vertical, Cosmic.Spacing.md)
                 .padding(.horizontal, Cosmic.Spacing.lg)
                 .background(
                     RoundedRectangle(cornerRadius: Cosmic.Radius.hero, style: .continuous)
@@ -1052,6 +1057,8 @@ struct EnhancedBirthDateStepView: View {
                         displayedComponents: .date
                     )
                     .datePickerStyle(.wheel)
+                    .frame(maxHeight: 214)
+                    .clipped()
                     .accessibilityIdentifier(AccessibilityID.birthDatePicker)
                     .background(
                         RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
@@ -1098,7 +1105,7 @@ struct EnhancedBirthDateStepView: View {
                 
                 // Quick Start option
                 if validationError == nil {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 8) {
                         Divider()
                             .background(Color.cosmicTextTertiary.opacity(0.3))
                             .padding(.horizontal, Cosmic.Spacing.lg)
@@ -1110,7 +1117,7 @@ struct EnhancedBirthDateStepView: View {
                                 Image(systemName: "bolt.shield.fill")
                                     .font(.cosmicHeadline)
                                 Text(L10n.Onboarding.BirthDate.quickStart)
-                                    .font(.title3.weight(.medium))
+                                    .font(.headline.weight(.medium))
                                 Spacer()
                                 Text(L10n.Onboarding.BirthDate.skipDetails)
                                     .font(.caption.weight(.medium))
@@ -1119,8 +1126,8 @@ struct EnhancedBirthDateStepView: View {
                                     .font(.cosmicCaption)
                             }
                             .foregroundStyle(Color.cosmicTextPrimary)
-                            .padding(.horizontal, Cosmic.Spacing.lg)
-                            .padding(.vertical, Cosmic.Spacing.md)
+                            .padding(.horizontal, Cosmic.Spacing.md)
+                            .padding(.vertical, Cosmic.Spacing.sm)
                             .background(
                                 RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
                                     .fill(Color.cosmicSurface)
@@ -1131,19 +1138,13 @@ struct EnhancedBirthDateStepView: View {
                             )
                         }
                         .padding(.horizontal, Cosmic.Spacing.lg)
-                        
-                        Text(L10n.Onboarding.BirthDate.quickStartHint)
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.cosmicTextTertiary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, Cosmic.Spacing.xl)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: validationError == nil)
                 }
             }
             
-            Spacer()
+            Spacer(minLength: Cosmic.Spacing.xs)
         }
         .onAppear {
             animateIcon = true
@@ -1857,6 +1858,7 @@ struct SimpleTabBarView: View {
     private let tabGuideSteps = 5
     @AppStorage("app_launch_count") private var appLaunchCount = 0
     @AppStorage("has_seen_tab_guide") private var hasSeenTabGuide = false
+    @AppStorage(AstronovaIntentRouteStore.pendingRouteKey) private var pendingIntentRoute = ""
     @State private var keyboardHeight: CGFloat = 0
     @State private var showingUITestPaywall = false
     
@@ -1942,6 +1944,10 @@ struct SimpleTabBarView: View {
             showFirstRunGuideIfNeeded()
             applyUITestStartTabIfRequested()
             presentUITestPaywallIfRequested()
+            applyPendingIntentRoute()
+        }
+        .onChange(of: pendingIntentRoute) { _, _ in
+            applyPendingIntentRoute()
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToTab)) { notification in
             if let tabIndex = notification.object as? Int {
@@ -1951,6 +1957,11 @@ struct SimpleTabBarView: View {
             }
         }
         .onOpenURL { url in
+            if AstronovaIntentRouteStore.request(from: url) {
+                applyPendingIntentRoute()
+                return
+            }
+
             // Handle video session deep links
             // Example: astronova://session/abc-123 or https://astronova.app/api/v1/temple/session/abc-123
             if url.absoluteString.contains("/temple/session/") || url.host == "session" {
@@ -1977,6 +1988,29 @@ struct SimpleTabBarView: View {
     
     private func trackAppLaunch() {
         appLaunchCount += 1
+    }
+
+    private func applyPendingIntentRoute() {
+        guard let route = AstronovaIntentRouteStore.consume() else { return }
+
+        let targetTab: Int
+        switch route {
+        case .today:
+            targetTab = 0
+        case .timeTravel:
+            targetTab = 1
+        case .temple:
+            targetTab = 2
+        case .connect:
+            targetTab = 3
+        case .profile:
+            targetTab = 4
+        }
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            selectedTab = targetTab
+            showTabGuide = false
+        }
     }
     
     private func showFirstRunGuideIfNeeded() {
@@ -8658,14 +8692,28 @@ struct CompellingLandingView: View {
             )
             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
             
-            Button("Continue without signing in") {
-                Task {
-                    await handleSkipSignIn()
-                }
+            Button {
+                handleSkipSignIn()
+            } label: {
+                Text("Continue without signing in")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(.white.opacity(0.12))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(.white.opacity(0.28), lineWidth: 1)
+                    )
             }
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.white.opacity(0.8))
+            .buttonStyle(.plain)
             .disabled(inProgress)
+            .accessibilityLabel("Continue without signing in")
+            .accessibilityIdentifier("continueWithoutSigningInButton")
+            .accessibilityAddTraits(.isButton)
         }
     }
     
@@ -8769,12 +8817,25 @@ struct CompellingLandingView: View {
         inProgress = false
     }
     
-    private func handleSkipSignIn() async {
+    private func handleSkipSignIn() {
         inProgress = true
-        await MainActor.run {
+        Self.clearProfileSetupDraft()
+        withAnimation(.easeInOut(duration: 0.25)) {
             auth.continueAsGuest()
         }
         inProgress = false
+    }
+
+    private static func clearProfileSetupDraft() {
+        [
+            "profile_setup_step",
+            "profile_setup_name",
+            "profile_setup_birth_date",
+            "profile_setup_birth_time",
+            "profile_setup_birth_place"
+        ].forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        UserDefaults.standard.set(true, forKey: "profile_setup_restart_requested")
+        UserDefaults.standard.synchronize()
     }
 }
 

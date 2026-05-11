@@ -310,6 +310,10 @@ class AuthState: ObservableObject {
         // Clear any auth errors
         authError = nil
 
+        if !profileManager.isProfileComplete && !profileManager.hasMinimalProfileData {
+            resetProfileSetupDraft()
+        }
+
         isAnonymousUser = true
         hasSignedIn = true
 
@@ -319,6 +323,20 @@ class AuthState: ObservableObject {
         }
 
         state = (profileManager.isProfileComplete || profileManager.hasMinimalProfileData) ? .signedIn : .needsProfileSetup
+    }
+
+    private func resetProfileSetupDraft() {
+        let keys = [
+            "profile_setup_step",
+            "profile_setup_name",
+            "profile_setup_birth_date",
+            "profile_setup_birth_time",
+            "profile_setup_birth_place"
+        ]
+
+        for key in keys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
     
     func startQuickStart() {

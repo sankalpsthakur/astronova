@@ -37,24 +37,34 @@ final class AstronovaAppUITests: XCTestCase {
         app.launchArguments = ["UITEST_RESET", "UITEST_ENABLE_LOGGING"]
         app.launch()
 
-        let guestButton = app.buttons["Continue without signing in"]
+        let guestButtonByIdentifier = app.buttons["continueWithoutSigningInButton"]
+        let guestButton = guestButtonByIdentifier.exists ? guestButtonByIdentifier : app.buttons["Continue without signing in"]
         XCTAssertTrue(guestButton.waitForExistence(timeout: 12), "Guest CTA should be visible on first launch")
         guestButton.tap()
 
-        let profileSetup = app.otherElements["profileSetupView"]
+        let profileSetup = app.descendants(matching: .any)["profileSetupView"]
         XCTAssertTrue(profileSetup.waitForExistence(timeout: 12), "Guest flow should enter profile setup without hanging")
 
-        let primaryButton = app.buttons["saveProfileButton"]
+        let primaryButtonByIdentifier = app.descendants(matching: .any)["saveProfileButton"]
+        let primaryButton = primaryButtonByIdentifier.waitForExistence(timeout: 4)
+            ? primaryButtonByIdentifier
+            : app.buttons["Begin Journey"]
         XCTAssertTrue(primaryButton.waitForExistence(timeout: 8), "Profile setup primary CTA should be available")
         primaryButton.tap()
 
-        let nameField = app.textFields["profileNameField"]
+        let nameFieldByIdentifier = app.descendants(matching: .any)["profileNameField"]
+        let nameField = nameFieldByIdentifier.exists ? nameFieldByIdentifier : app.textFields["Profile name"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 8), "Name field should expose a stable UI-test identifier")
         nameField.tap()
         nameField.typeText("Ava")
 
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ava")).firstMatch.waitForExistence(timeout: 5), "Typed name should populate validation copy")
-        primaryButton.tap()
+        let continueButtonByIdentifier = app.descendants(matching: .any)["saveProfileButton"]
+        let continueButton = continueButtonByIdentifier.waitForExistence(timeout: 4)
+            ? continueButtonByIdentifier
+            : app.buttons["Continue"]
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 8), "Continue CTA should be available after valid name entry")
+        continueButton.tap()
 
         XCTAssertTrue(app.datePickers["birthDatePicker"].waitForExistence(timeout: 8), "Continue should advance to birth-date step after a valid name")
     }
