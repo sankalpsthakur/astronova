@@ -39,16 +39,25 @@ struct ContactPickerView: View {
     }
 
     private var authorizationContent: AnyView {
-        switch contactsService.authorizationStatus {
-        case .notDetermined:
-            return AnyView(requestAccessView)
-        case .denied, .restricted:
-            return AnyView(accessDeniedView)
-        case .authorized, .limited:
-            return AnyView(contactListView)
-        @unknown default:
+        let status = contactsService.authorizationStatus
+
+        if status == .notDetermined {
             return AnyView(requestAccessView)
         }
+
+        if status == .denied || status == .restricted {
+            return AnyView(accessDeniedView)
+        }
+
+        if status == .authorized {
+            return AnyView(contactListView)
+        }
+
+        if #available(iOS 18.0, *), status == .limited {
+            return AnyView(contactListView)
+        }
+
+        return AnyView(requestAccessView)
     }
 
     // MARK: - Request Access View
