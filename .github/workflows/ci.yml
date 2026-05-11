@@ -41,6 +41,7 @@ jobs:
         cd server && SECRET_KEY=test_secret_key python -m pytest tests/ -v --cov=. --cov-report=xml
       env:
         SECRET_KEY: test_secret_key
+        ASTRONOVA_DISABLE_RATE_LIMITS: "1"
     
     - name: Python syntax check
       run: python -m py_compile $(find server -name "*.py")

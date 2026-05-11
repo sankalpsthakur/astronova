@@ -481,6 +481,7 @@ struct DateSelectorView: View {
         .padding(.horizontal)
     }
 
+    @MainActor
     private func updateDate(year: Int? = nil, month: Int? = nil, calendar: Calendar) {
         var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
         if let year { components.year = year }
