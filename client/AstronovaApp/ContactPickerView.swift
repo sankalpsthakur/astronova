@@ -53,10 +53,6 @@ struct ContactPickerView: View {
             return AnyView(contactListView)
         }
 
-        if #available(iOS 18.0, *), status == .limited {
-            return AnyView(contactListView)
-        }
-
         return AnyView(requestAccessView)
     }
 

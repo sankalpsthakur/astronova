@@ -90,13 +90,7 @@ final class ContactsService: ObservableObject {
 
     @MainActor
     func fetchContacts() async {
-        let hasAccess: Bool
-        if #available(iOS 18.0, *) {
-            hasAccess = authorizationStatus == .authorized || authorizationStatus == .limited
-        } else {
-            hasAccess = authorizationStatus == .authorized
-        }
-        guard hasAccess else { return }
+        guard authorizationStatus == .authorized else { return }
 
         isLoading = true
         defer { isLoading = false }
