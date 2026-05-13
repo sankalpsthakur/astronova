@@ -5,12 +5,12 @@ on:
     branches: [ main, dev ]
     paths:
       - 'client/**'
-      - '.github/workflows/ios-build.yml'
+      - '.github/workflows/ios.yml'
   pull_request:
     branches: [ main, dev ]
     paths:
       - 'client/**'
-      - '.github/workflows/ios-build.yml'
+      - '.github/workflows/ios.yml'
   workflow_dispatch:
 
 jobs:
@@ -81,15 +81,14 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             ONLY_ACTIVE_ARCH=NO \
             | tee test.log
-        continue-on-error: true
 
       - name: Check for test failures
         run: |
           if grep -q "Test Suite.*failed" test.log; then
             echo "::error::Some tests failed"
             grep "Test Suite.*failed" test.log || true
+            exit 1
           fi
-        continue-on-error: true
 
       - name: Upload build logs
         uses: actions/upload-artifact@v4
