@@ -2,6 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>AppStoreProductIDSource</key>
+	<string>App Store Connect canonical product identifiers for TestFlight StoreKit loading</string>
+	<key>AppStoreProductIDs</key>
+	<array>
+		<string>astronova_pro_12_month_commitment</string>
+		<string>astronova_pro_monthly</string>
+		<string>report_general</string>
+		<string>report_love</string>
+		<string>report_career</string>
+		<string>report_money</string>
+		<string>report_health</string>
+		<string>report_family</string>
+		<string>report_spiritual</string>
+		<string>chat_credits_5</string>
+		<string>chat_credits_15</string>
+		<string>chat_credits_50</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Astronova</string>
 	<key>CFBundleURLTypes</key>
@@ -15,12 +32,26 @@
 			</array>
 		</dict>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Astronova needs camera access for video sessions during your bookings.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Astronova uses your contacts to help you explore compatibility with friends and loved ones based on their birth dates.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Astronova needs microphone access to communicate during video sessions.</string>
+	<key>SECURE_ENVELOPE_ALGORITHM</key>
+	<string>AES-256-GCM</string>
+	<key>SECURE_ENVELOPE_VERSION</key>
+	<integer>1</integer>
+	<key>SMARTLOOK_PROJECT_KEY</key>
+	<string>3ea51a8cc18ecd6b6b43eec84450f694a65569ed</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
-	<key>UIUserInterfaceStyle</key>
-	<string>Dark</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -30,21 +61,7 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>Astronova needs camera access for video sessions during your bookings.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Astronova needs microphone access to communicate during video sessions.</string>
-	<key>SMARTLOOK_PROJECT_KEY</key>
-	<string>3ea51a8cc18ecd6b6b43eec84450f694a65569ed</string>
-	<key>SECURE_ENVELOPE_ALGORITHM</key>
-	<string>AES-256-GCM</string>
-	<key>SECURE_ENVELOPE_VERSION</key>
-	<integer>1</integer>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<true/>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 </dict>
 </plist>

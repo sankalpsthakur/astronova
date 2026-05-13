@@ -22,7 +22,13 @@ class StoreKitManager: ObservableObject {
     private var updateListenerTask: Task<Void, Error>?
     
     // Product IDs defined in App Store Connect
-    private let productIDs = ShopCatalog.allProductIDs
+    private var productIDs: [String] {
+        if let ids = Bundle.main.object(forInfoDictionaryKey: "AppStoreProductIDs") as? [String] {
+            let configured = ids.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            if !configured.isEmpty { return configured }
+        }
+        return Array(ShopCatalog.allProductIDs)
+    }
     
     init() {
         // Start listening for transaction updates
@@ -60,10 +66,13 @@ class StoreKitManager: ObservableObject {
                 self.products = newProducts
                 self.monthlyBillingPlanPrices = newMonthlyBillingPlanPrices
                 self.commitmentDisplayPrices = newCommitmentDisplayPrices
+                if newProducts.isEmpty {
+                    debugPrint("[StoreKit] App Store Connect returned no Astronova products for: \(self.productIDs.joined(separator: ", "))")
+                }
             }
         } catch {
             #if DEBUG
-            debugPrint("[StoreKit] Failed to load products: \(error.localizedDescription)")
+            debugPrint("[StoreKit] Failed to load products for \(productIDs.joined(separator: ", ")): \(error.localizedDescription)")
             #endif
             // Fallback to hardcoded prices (must match BasicStoreManager)
             await MainActor.run {
