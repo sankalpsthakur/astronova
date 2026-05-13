@@ -59,6 +59,9 @@ jobs:
 
   swift-ios:
     runs-on: macos-14
+    defaults:
+      run:
+        working-directory: client
 
     steps:
     - uses: actions/checkout@v4
@@ -70,9 +73,13 @@ jobs:
 
     - name: Build iOS app
       run: |
-        xcodebuild -project client/astronova.xcodeproj -scheme AstronovaApp \
+        xcodebuild -project astronova.xcodeproj -scheme AstronovaApp \
           -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
-          CODE_SIGNING_ALLOWED=NO build
+          -configuration Debug \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          ONLY_ACTIVE_ARCH=NO \
+          build
 
   cloudkit-integration:
     runs-on: ubuntu-latest
