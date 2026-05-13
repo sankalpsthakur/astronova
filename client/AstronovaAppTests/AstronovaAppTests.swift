@@ -110,12 +110,80 @@ final class AstronovaAppTests: XCTestCase {
 
     func testShopCatalogHasSingleMonetizationTruth() throws {
         XCTAssertEqual(ShopCatalog.proMonthlyProductID, "astronova_pro_monthly")
+        XCTAssertEqual(ShopCatalog.pro12MonthCommitmentProductID, "astronova_pro_12_month_commitment")
+        XCTAssertEqual(ShopCatalog.defaultProProductID, ShopCatalog.pro12MonthCommitmentProductID)
+        XCTAssertEqual(ShopCatalog.proProductIDs.count, 2)
         XCTAssertEqual(ShopCatalog.reportProductIDs.count, 7)
         XCTAssertEqual(ShopCatalog.chatCreditAmounts["chat_credits_5"], 50)
         XCTAssertEqual(ShopCatalog.chatCreditAmounts["chat_credits_15"], 150)
         XCTAssertEqual(ShopCatalog.chatCreditAmounts["chat_credits_50"], 500)
-        XCTAssertEqual(ShopCatalog.allProductIDs.count, 11)
+        XCTAssertEqual(ShopCatalog.allProductIDs.count, 12)
         XCTAssertTrue(ShopCatalog.allProductIDs.contains(ShopCatalog.proMonthlyProductID))
+        XCTAssertTrue(ShopCatalog.allProductIDs.contains(ShopCatalog.pro12MonthCommitmentProductID))
+        XCTAssertEqual(ShopCatalog.proIntroOfferDescription, "14-day free trial")
+        XCTAssertEqual(ShopCatalog.proRenewalCadenceDescription, "then monthly auto-renewal")
+        XCTAssertEqual(ShopCatalog.pro12MonthRenewalCadenceDescription, "12 monthly payments, then monthly auto-renewal")
+        XCTAssertTrue(ShopCatalog.isProProduct(ShopCatalog.proMonthlyProductID))
+        XCTAssertTrue(ShopCatalog.isProProduct(ShopCatalog.pro12MonthCommitmentProductID))
+    }
+
+    func testShopCatalogDefaultsToTwelveMonthMonthlyCommitmentPlan() throws {
+        let defaultPlan = ShopCatalog.proPlan(for: ShopCatalog.defaultProProductID)
+
+        XCTAssertEqual(defaultPlan.productId, ShopCatalog.pro12MonthCommitmentProductID)
+        XCTAssertEqual(defaultPlan.title, "12-month plan")
+        XCTAssertEqual(defaultPlan.fallbackBillingDisplayPrice, "$9.99")
+        XCTAssertEqual(defaultPlan.fallbackCommitmentDisplayPrice, "$119.88")
+        XCTAssertEqual(defaultPlan.billingCaption, "per month for 12 months")
+        XCTAssertEqual(defaultPlan.billingPlan, .monthlyCommitment)
+    }
+
+    func testSecureEnvelopeAESGCMRoundtrip() throws {
+        let service = SecureEnvelopeService()
+        let key = try service.key(from: Data(repeating: 0xA7, count: 32))
+        let payload = try JSONSerialization.data(
+            withJSONObject: [
+                "kind": "local-proof",
+                "userID": "test-user",
+                "issuedAt": "2026-05-12T00:00:00Z",
+            ],
+            options: [.sortedKeys]
+        )
+        let associatedData = Data("Astronova.local-proof.v1".utf8)
+
+        let envelope = try service.encrypt(payload, using: key, associatedData: associatedData)
+        let decryptedPayload = try service.decrypt(envelope, using: key, associatedData: associatedData)
+
+        XCTAssertEqual(envelope.version, SecureEnvelope.currentVersion)
+        XCTAssertEqual(envelope.algorithm, SecureEnvelope.currentAlgorithm)
+        XCTAssertEqual(decryptedPayload, payload)
+    }
+
+    func testSecureEnvelopeAESGCMRejectsTamperedPayload() throws {
+        let service = SecureEnvelopeService()
+        let key = try service.key(from: Data(repeating: 0x19, count: 32))
+        let envelope = try service.encrypt(
+            Data("sensitive proof payload".utf8),
+            using: key,
+            associatedData: Data("Astronova.local-proof.v1".utf8)
+        )
+        let tagData = try XCTUnwrap(Data(base64Encoded: envelope.tag))
+        let tamperedTag = Data(tagData.enumerated().map { index, byte in
+            index == 0 ? byte ^ 0x01 : byte
+        }).base64EncodedString()
+        let tamperedEnvelope = SecureEnvelope(
+            version: envelope.version,
+            algorithm: envelope.algorithm,
+            nonce: envelope.nonce,
+            ciphertext: envelope.ciphertext,
+            tag: tamperedTag
+        )
+
+        XCTAssertThrowsError(try service.decrypt(
+            tamperedEnvelope,
+            using: key,
+            associatedData: Data("Astronova.local-proof.v1".utf8)
+        ))
     }
 
     // MARK: - Copy Tests

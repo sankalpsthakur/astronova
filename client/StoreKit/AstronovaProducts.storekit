@@ -190,6 +190,32 @@
           "referenceName": "Astronova Pro Monthly",
           "subscriptionGroupID": "400001",
           "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "119.88",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "430002",
+          "introductoryOffer": {
+            "displayPrice": "0",
+            "internalID": "440002",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P2W"
+          },
+          "localizations": [
+            {
+              "description": "Unlimited Oracle chat, Pro reports, saved journeys, and advanced astrological guidance with a 12-month commitment.",
+              "displayName": "Astronova Pro 12-Month Plan",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "astronova_pro_12_month_commitment",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Astronova Pro 12-Month Monthly Plan",
+          "subscriptionGroupID": "400001",
+          "type": "RecurringSubscription"
         }
       ]
     }

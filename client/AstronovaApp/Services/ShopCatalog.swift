@@ -2,6 +2,23 @@ import SwiftUI
 
 // Central source of truth for shop SKUs and report metadata
 struct ShopCatalog {
+    enum ProBillingPlan: Equatable, Sendable {
+        case standard
+        case monthlyCommitment
+    }
+
+    struct ProPlan: Identifiable, Sendable {
+        let id: String
+        let productId: String
+        let title: String
+        let badge: String?
+        let fallbackBillingDisplayPrice: String
+        let fallbackCommitmentDisplayPrice: String?
+        let billingCaption: String
+        let renewalCadenceDescription: String
+        let billingPlan: ProBillingPlan
+    }
+
     struct Report: Identifiable {
         let id: String
         let productId: String
@@ -12,6 +29,48 @@ struct ShopCatalog {
     }
 
     static let proMonthlyProductID = "astronova_pro_monthly"
+    static let pro12MonthCommitmentProductID = "astronova_pro_12_month_commitment"
+    static let proIntroOfferDescription = "14-day free trial"
+    static let proRenewalCadenceDescription = "then monthly auto-renewal"
+    static let pro12MonthRenewalCadenceDescription = "12 monthly payments, then monthly auto-renewal"
+    static let defaultProProductID = pro12MonthCommitmentProductID
+
+    static let proPlans: [ProPlan] = [
+        .init(
+            id: "twelve_month_commitment",
+            productId: pro12MonthCommitmentProductID,
+            title: "12-month plan",
+            badge: "Best first year",
+            fallbackBillingDisplayPrice: "$9.99",
+            fallbackCommitmentDisplayPrice: "$119.88",
+            billingCaption: "per month for 12 months",
+            renewalCadenceDescription: pro12MonthRenewalCadenceDescription,
+            billingPlan: .monthlyCommitment
+        ),
+        .init(
+            id: "monthly",
+            productId: proMonthlyProductID,
+            title: "Monthly",
+            badge: nil,
+            fallbackBillingDisplayPrice: "$9.99",
+            fallbackCommitmentDisplayPrice: nil,
+            billingCaption: "per month",
+            renewalCadenceDescription: proRenewalCadenceDescription,
+            billingPlan: .standard
+        )
+    ]
+
+    static var proProductIDs: [String] {
+        proPlans.map(\.productId)
+    }
+
+    static func isProProduct(_ productId: String) -> Bool {
+        proProductIDs.contains(productId)
+    }
+
+    static func proPlan(for productId: String) -> ProPlan {
+        proPlans.first { $0.productId == productId } ?? proPlans[0]
+    }
 
     static let reportProductIDs = [
         "report_general",
@@ -31,6 +90,7 @@ struct ShopCatalog {
 
     static let fallbackPrices: [String: String] = [
         proMonthlyProductID: "$9.99",
+        pro12MonthCommitmentProductID: "$119.88",
         "report_general": "$12.99",
         "report_love": "$12.99",
         "report_career": "$12.99",
@@ -44,7 +104,7 @@ struct ShopCatalog {
     ]
 
     static var allProductIDs: Set<String> {
-        Set([proMonthlyProductID] + reportProductIDs + Array(chatCreditAmounts.keys))
+        Set(proProductIDs + reportProductIDs + Array(chatCreditAmounts.keys))
     }
     
     struct ChatPack: Identifiable {

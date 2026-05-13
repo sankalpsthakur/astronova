@@ -12,7 +12,7 @@ final class BasicStoreManager: ObservableObject {
 
     func purchaseProduct(productId: String) async -> Bool {
         await MainActor.run {
-            if productId == ShopCatalog.proMonthlyProductID {
+            if ShopCatalog.isProProduct(productId) {
                 hasProSubscription = true
             }
             if productId.hasPrefix("chat_credits_") {
@@ -27,7 +27,7 @@ final class BasicStoreManager: ObservableObject {
     }
 
     func hasProduct(_ productId: String) -> Bool {
-        if productId == ShopCatalog.proMonthlyProductID { return hasProSubscription }
+        if ShopCatalog.isProProduct(productId) { return hasProSubscription }
         let purchaseKey = "purchased_\(productId)"
         return UserDefaults.standard.bool(forKey: purchaseKey)
     }

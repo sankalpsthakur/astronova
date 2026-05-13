@@ -15,6 +15,7 @@ struct PaywallView: View {
     @State private var purchaseResult: PurchaseResult?
     @State private var showingReportShop = false
     @State private var showingChatPackages = false
+    @State private var selectedPlanProductId = ShopCatalog.defaultProProductID
 
     private let context: PaywallContext
 
@@ -34,8 +35,6 @@ struct PaywallView: View {
         }
     }
     
-    private let subscriptionProductId = ShopCatalog.proMonthlyProductID
-
     init(context: PaywallContext = .general) {
         self.context = context
     }
@@ -116,14 +115,26 @@ struct PaywallView: View {
         }
     }
     
-    private var subscriptionPrice: String {
-        storeKitManager.products[subscriptionProductId] ??
-        BasicStoreManager.shared.products[subscriptionProductId] ??
-        "$9.99"
+    private var selectedPlan: ShopCatalog.ProPlan {
+        ShopCatalog.proPlan(for: selectedPlanProductId)
+    }
+
+    private func billingDisplayPrice(for plan: ShopCatalog.ProPlan) -> String {
+        storeKitManager.monthlyBillingPlanPrices[plan.productId] ??
+        plan.fallbackBillingDisplayPrice
+    }
+
+    private func commitmentDisplayPrice(for plan: ShopCatalog.ProPlan) -> String? {
+        storeKitManager.commitmentDisplayPrices[plan.productId] ??
+        plan.fallbackCommitmentDisplayPrice
+    }
+
+    private var trialOfferText: String {
+        "\(ShopCatalog.proIntroOfferDescription), then \(billingDisplayPrice(for: selectedPlan)) \(selectedPlan.billingCaption)"
     }
     
     private var purchaseButtonTitle: String {
-        isPurchasing ? "Purchasing..." : "Begin deeper journeys for \(subscriptionPrice)/month"
+        isPurchasing ? "Starting trial..." : "Start \(selectedPlan.title)"
     }
 
     // MARK: - App Store Compliance URLs
@@ -156,8 +167,11 @@ struct PaywallView: View {
                 }
                 .padding(.top, Cosmic.Spacing.xl)
 
+                proPlanPicker
+
                 // Features list
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
+                    PaywallFeatureRow(icon: "gift.fill", text: trialOfferText)
                     ForEach(featureRows, id: \.text) { row in
                         PaywallFeatureRow(icon: row.icon, text: row.text)
                     }
@@ -327,7 +341,7 @@ struct PaywallView: View {
             .accessibilityIdentifier(AccessibilityID.restorePurchasesButton)
             .accessibilityHint("Restores previous purchases")
 
-            Text("Subscription auto-renews monthly at \(subscriptionPrice)/month until canceled. Cancel anytime in Settings → Apple ID → Subscriptions.")
+            Text("\(ShopCatalog.proIntroOfferDescription), \(selectedPlan.renewalCadenceDescription) at \(billingDisplayPrice(for: selectedPlan)) per month until canceled. Cancel at least 24 hours before renewal in Settings → Apple ID → Subscriptions.")
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .multilineTextAlignment(.center)
@@ -352,10 +366,75 @@ struct PaywallView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.paywallFooter)
     }
+
+    private var proPlanPicker: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+            Text("Choose Pro")
+                .font(.cosmicHeadline)
+                .foregroundStyle(Color.cosmicTextPrimary)
+
+            ForEach(ShopCatalog.proPlans) { plan in
+                let isSelected = selectedPlanProductId == plan.productId
+                Button {
+                    CosmicHaptics.light()
+                    selectedPlanProductId = plan.productId
+                } label: {
+                    HStack(spacing: Cosmic.Spacing.sm) {
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 18))
+                            .foregroundStyle(isSelected ? Color.cosmicGold : Color.cosmicTextTertiary)
+                            .accessibilityHidden(true)
+
+                        VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                            HStack(spacing: Cosmic.Spacing.xs) {
+                                Text(plan.title)
+                                    .font(.cosmicBodyEmphasis)
+                                if let badge = plan.badge {
+                                    Text(badge.uppercased())
+                                        .font(.cosmicCaptionEmphasis)
+                                        .foregroundStyle(Color.cosmicVoid)
+                                        .padding(.horizontal, Cosmic.Spacing.xs)
+                                        .padding(.vertical, 2)
+                                        .background(Color.cosmicGold, in: Capsule())
+                                }
+                            }
+
+                            Text("\(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
+                                .font(.cosmicCallout)
+                                .foregroundStyle(Color.cosmicTextPrimary)
+
+                            if plan.billingPlan == .monthlyCommitment, let commitmentPrice = commitmentDisplayPrice(for: plan) {
+                                Text("\(commitmentPrice) first-year commitment")
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            } else {
+                                Text(plan.renewalCadenceDescription)
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            }
+                        }
+
+                        Spacer()
+                    }
+                    .padding(Cosmic.Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(isSelected ? Color.cosmicGold.opacity(0.14) : Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                            .stroke(isSelected ? Color.cosmicGold : Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.thin)
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("proPlanOption_\(plan.productId)")
+                .accessibilityLabel("\(plan.title), \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
+            }
+        }
+    }
     
     private func purchasePro() async {
         if await MainActor.run(body: { isPurchasing }) { return }
         await MainActor.run { isPurchasing = true }
+        let plan = await MainActor.run { selectedPlan }
 
         defer {
             Task { @MainActor in isPurchasing = false }
@@ -364,13 +443,13 @@ struct PaywallView: View {
         #if DEBUG
         // UI tests only: bypass StoreKit dialogs using mock store
         if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
-                let success = await BasicStoreManager.shared.purchaseProduct(productId: subscriptionProductId)
+            let success = await BasicStoreManager.shared.purchaseProduct(productId: plan.productId)
             if success {
                 Analytics.shared.track(
                     .paywallConversion,
-                    properties: ["product": subscriptionProductId, "context": context.rawValue, "source": "paywall"]
+                    properties: ["product": plan.productId, "context": context.rawValue, "source": "paywall"]
                 )
-                Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
+                Analytics.shared.track(.purchaseSuccess, properties: ["product": plan.productId])
                 await MainActor.run {
                     OracleQuotaManager.shared.checkSubscription()
                     purchaseResult = .success
@@ -385,13 +464,13 @@ struct PaywallView: View {
         #endif
 
         // Production: Use only StoreKit for purchases
-        let success = await storeKitManager.purchaseProduct(productId: subscriptionProductId)
+        let success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
         if success {
             Analytics.shared.track(
                 .paywallConversion,
-                properties: ["product": subscriptionProductId, "context": context.rawValue, "source": "paywall"]
+                properties: ["product": plan.productId, "context": context.rawValue, "source": "paywall"]
             )
-            Analytics.shared.track(.purchaseSuccess, properties: ["product": subscriptionProductId])
+            Analytics.shared.track(.purchaseSuccess, properties: ["product": plan.productId])
             await MainActor.run {
                 OracleQuotaManager.shared.checkSubscription()
                 purchaseResult = .success

@@ -38,6 +38,7 @@
 		AA000200000000000000000A /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000A /* HomeViewModel.swift */; };
 		AA000200000000000000000B /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000B /* NotificationService.swift */; };
 		AA000200000000000000000C /* ShareImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000C /* ShareImageService.swift */; };
+		AA0002000000000000000015 /* SecureEnvelopeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000015 /* SecureEnvelopeService.swift */; };
 		AA000200000000000000000D /* Zodiac.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000D /* Zodiac.swift */; };
 		AA000200000000000000000F /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000F /* StoreKitManager.swift */; };
 		AA0002000000000000000011 /* BasicStoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000011 /* BasicStoreManager.swift */; };
@@ -167,6 +168,7 @@
 		AA000100000000000000000A /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		AA000100000000000000000B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		AA000100000000000000000C /* ShareImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareImageService.swift; sourceTree = "<group>"; };
+		AA0001000000000000000015 /* SecureEnvelopeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureEnvelopeService.swift; sourceTree = "<group>"; };
 		AA000100000000000000000D /* Zodiac.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zodiac.swift; sourceTree = "<group>"; };
 		AA000100000000000000000F /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
 		AA0001000000000000000010 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
@@ -515,6 +517,7 @@
 			children = (
 				AA000100000000000000000B /* NotificationService.swift */,
 				AA000100000000000000000C /* ShareImageService.swift */,
+				AA0001000000000000000015 /* SecureEnvelopeService.swift */,
 				AA0001000000000000000011 /* BasicStoreManager.swift */,
 				AA0001000000000000000012 /* ShopCatalog.swift */,
 				E2E000000000000000000003 /* HapticFeedbackService.swift */,
@@ -802,6 +805,7 @@
 				AA000200000000000000000A /* HomeViewModel.swift in Sources */,
 				AA000200000000000000000B /* NotificationService.swift in Sources */,
 				AA000200000000000000000C /* ShareImageService.swift in Sources */,
+				AA0002000000000000000015 /* SecureEnvelopeService.swift in Sources */,
 				AA000200000000000000000D /* Zodiac.swift in Sources */,
 				AA000200000000000000000F /* StoreKitManager.swift in Sources */,
 				AA0002000000000000000011 /* BasicStoreManager.swift in Sources */,

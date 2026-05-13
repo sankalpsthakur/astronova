@@ -188,7 +188,8 @@ final class MonetizationJourneyTests: XCTestCase {
         ])
 
         XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 12), "Paywall should be presented by the UI-test launch hook")
-        XCTAssertTrue(visibleText(containing: "Subscription auto-renews monthly").waitForExistence(timeout: 8), "Paywall safe-area footer should be visible before navigating")
+        XCTAssertTrue(visibleText(containing: "12-month plan").waitForExistence(timeout: 8), "12-month plan should be visible on the first paywall surface")
+        XCTAssertTrue(visibleText(containing: "12 monthly payments").waitForExistence(timeout: 8), "Paywall safe-area footer should show the selected 12-month monthly plan before navigating")
 
         let reportsShop = anyElement("buyDetailedReportButton")
         XCTAssertTrue(reportsShop.waitForExistence(timeout: 8), "Reports Shop CTA should be visible on the paywall")
@@ -215,7 +216,8 @@ final class MonetizationJourneyTests: XCTestCase {
         ])
 
         XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 12), "Paywall should be presented by the UI-test launch hook")
-        XCTAssertTrue(visibleText(containing: "Subscription auto-renews monthly").waitForExistence(timeout: 8), "Paywall safe-area footer should be visible before navigating")
+        XCTAssertTrue(visibleText(containing: "12-month plan").waitForExistence(timeout: 8), "12-month plan should be visible on the first paywall surface")
+        XCTAssertTrue(visibleText(containing: "12 monthly payments").waitForExistence(timeout: 8), "Paywall safe-area footer should show the selected 12-month monthly plan before navigating")
 
         let chatPackages = anyElement("buyChatPackagesButton")
         XCTAssertTrue(chatPackages.waitForExistence(timeout: 8), "Chat Packages CTA should be visible on the paywall")

@@ -15,6 +15,8 @@ class StoreKitManager: ObservableObject {
     
     @AppStorage("hasAstronovaPro") var hasProSubscription = false
     @Published var products: [String: String] = [:]  // Product ID to localized price
+    @Published var monthlyBillingPlanPrices: [String: String] = [:]
+    @Published var commitmentDisplayPrices: [String: String] = [:]
     
     private var storeKitProducts: [Product] = []
     private var updateListenerTask: Task<Void, Error>?
@@ -45,10 +47,19 @@ class StoreKitManager: ObservableObject {
             // Update products dictionary with real localized prices
             await MainActor.run {
                 var newProducts: [String: String] = [:]
+                var newMonthlyBillingPlanPrices: [String: String] = [:]
+                var newCommitmentDisplayPrices: [String: String] = [:]
                 for product in storeKitProducts {
                     newProducts[product.id] = product.displayPrice
+                    if #available(iOS 26.4, *),
+                       let pricingTerms = Self.monthlyPricingTerms(for: product) {
+                        newMonthlyBillingPlanPrices[product.id] = pricingTerms.billingDisplayPrice
+                        newCommitmentDisplayPrices[product.id] = pricingTerms.commitmentInfo.displayPrice
+                    }
                 }
                 self.products = newProducts
+                self.monthlyBillingPlanPrices = newMonthlyBillingPlanPrices
+                self.commitmentDisplayPrices = newCommitmentDisplayPrices
             }
         } catch {
             #if DEBUG
@@ -57,6 +68,8 @@ class StoreKitManager: ObservableObject {
             // Fallback to hardcoded prices (must match BasicStoreManager)
             await MainActor.run {
                 self.products = ShopCatalog.fallbackPrices
+                self.monthlyBillingPlanPrices = [:]
+                self.commitmentDisplayPrices = [:]
             }
         }
     }
@@ -68,7 +81,7 @@ class StoreKitManager: ObservableObject {
         }
     }
     
-    func purchaseProduct(productId: String) async -> Bool {
+    func purchaseProduct(productId: String, billingPlan: ShopCatalog.ProBillingPlan = .standard) async -> Bool {
         guard let product = storeKitProducts.first(where: { $0.id == productId }) else {
             #if DEBUG
             debugPrint("[StoreKit] Product not found: \(productId)")
@@ -77,7 +90,7 @@ class StoreKitManager: ObservableObject {
         }
         
         do {
-            let result = try await product.purchase()
+            let result = try await purchase(product, billingPlan: billingPlan)
             
             switch result {
             case .success(let verification):
@@ -121,7 +134,7 @@ class StoreKitManager: ObservableObject {
     
     /// Check if a specific product has been purchased
     func hasProduct(_ productId: String) -> Bool {
-        if productId == ShopCatalog.proMonthlyProductID {
+        if ShopCatalog.isProProduct(productId) {
             return hasProSubscription
         }
         
@@ -179,10 +192,41 @@ class StoreKitManager: ObservableObject {
             return safe
         }
     }
+
+    @MainActor
+    private func purchase(_ product: Product, billingPlan: ShopCatalog.ProBillingPlan) async throws -> Product.PurchaseResult {
+        switch billingPlan {
+        case .standard:
+            return try await product.purchase()
+        case .monthlyCommitment:
+            if #available(iOS 26.4, *), Self.monthlyPricingTerms(for: product) != nil {
+                return try await product.purchase(options: [.billingPlanType(.monthly)])
+            }
+            return try await product.purchase()
+        }
+    }
+
+    @available(iOS 26.4, *)
+    private static func monthlyPricingTerms(for product: Product) -> Product.SubscriptionInfo.PricingTerms? {
+        guard let subscription = product.subscription else { return nil }
+        let monthlyTerms = subscription.pricingTerms.filter { $0.billingPlanType == .monthly }
+        return monthlyTerms.first { isTwelveMonthCommitment($0.commitmentInfo.period) } ?? monthlyTerms.first
+    }
+
+    private static func isTwelveMonthCommitment(_ period: Product.SubscriptionPeriod) -> Bool {
+        switch period.unit {
+        case .month:
+            return period.value == 12
+        case .year:
+            return period.value == 1
+        default:
+            return false
+        }
+    }
     
     private func handleSuccessfulPurchase(transaction: StoreKit.Transaction) async {
         await MainActor.run {
-            if transaction.productID == ShopCatalog.proMonthlyProductID {
+            if ShopCatalog.isProProduct(transaction.productID) {
                 self.hasProSubscription = true
             }
 
@@ -219,7 +263,7 @@ class StoreKitManager: ObservableObject {
             do {
                 let transaction = try checkVerified(result)
 
-                if transaction.productID == ShopCatalog.proMonthlyProductID {
+                if ShopCatalog.isProProduct(transaction.productID) {
                     hasPro = true
                 }
 

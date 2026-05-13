@@ -4,6 +4,17 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>Astronova</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>astronova</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>Astronova uses your contacts to help you explore compatibility with friends and loved ones based on their birth dates.</string>
 	<key>UILaunchStoryboardName</key>
@@ -29,5 +40,11 @@
 	<string>Astronova needs microphone access to communicate during video sessions.</string>
 	<key>SMARTLOOK_PROJECT_KEY</key>
 	<string>3ea51a8cc18ecd6b6b43eec84450f694a65569ed</string>
+	<key>SECURE_ENVELOPE_ALGORITHM</key>
+	<string>AES-256-GCM</string>
+	<key>SECURE_ENVELOPE_VERSION</key>
+	<integer>1</integer>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<true/>
 </dict>
 </plist>

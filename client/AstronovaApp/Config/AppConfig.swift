@@ -6,8 +6,15 @@ final class AppConfig {
 
     /// Base URL for the backend API
     let apiBaseURL: String
+    let secureEnvelopeAlgorithm: String
+    let secureEnvelopeVersion: Int
 
     private init() {
+        secureEnvelopeAlgorithm = Bundle.main.object(forInfoDictionaryKey: "SECURE_ENVELOPE_ALGORITHM") as? String
+            ?? SecureEnvelope.currentAlgorithm
+        secureEnvelopeVersion = Bundle.main.object(forInfoDictionaryKey: "SECURE_ENVELOPE_VERSION") as? Int
+            ?? SecureEnvelope.currentVersion
+
         if let fromPlist = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
            !fromPlist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             apiBaseURL = fromPlist

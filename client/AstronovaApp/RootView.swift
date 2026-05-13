@@ -399,6 +399,8 @@ struct SimpleProfileSetupView: View {
     @State private var saveError: String?
     @State private var showingSaveError = false
     @State private var showingIdentityQuiz = false
+    @State private var showingPostOnboardingPaywall = false
+    @State private var shouldCompleteProfileSetupAfterPaywall = false
     
     // Computed properties for date binding
     private var birthDate: Binding<Date> {
@@ -451,10 +453,16 @@ struct SimpleProfileSetupView: View {
                     gamification.setArchetype(archetype)
                     showingIdentityQuiz = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        auth.completeProfileSetup()
+                        presentPostOnboardingPaywall()
                     }
                 }
             )
+        }
+        .sheet(
+            isPresented: $showingPostOnboardingPaywall,
+            onDismiss: completeProfileSetupAfterPostOnboardingPaywall
+        ) {
+            PaywallView(context: .general)
         }
     }
     
@@ -473,8 +481,8 @@ struct SimpleProfileSetupView: View {
                         showingIdentityQuiz = true
                     }
                 } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        auth.completeProfileSetup()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                        presentPostOnboardingPaywall()
                     }
                 }
             }
@@ -730,6 +738,22 @@ struct SimpleProfileSetupView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.3)) {
             showingPersonalizedInsight = true
         }
+    }
+
+    private func presentPostOnboardingPaywall() {
+        if UserDefaults.standard.bool(forKey: "hasAstronovaPro") {
+            auth.completeProfileSetup()
+            return
+        }
+
+        shouldCompleteProfileSetupAfterPaywall = true
+        showingPostOnboardingPaywall = true
+    }
+
+    private func completeProfileSetupAfterPostOnboardingPaywall() {
+        guard shouldCompleteProfileSetupAfterPaywall else { return }
+        shouldCompleteProfileSetupAfterPaywall = false
+        auth.completeProfileSetup()
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -4318,16 +4342,16 @@ struct SubscriptionSheet: View {
                 VStack(spacing: 16) {
                     Button {
                         Task {
-                            let productId = ShopCatalog.proMonthlyProductID
+                            let plan = ShopCatalog.proPlan(for: ShopCatalog.defaultProProductID)
                             let success: Bool
                             #if DEBUG
                             if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
-                                success = await BasicStoreManager.shared.purchaseProduct(productId: productId)
+                                success = await BasicStoreManager.shared.purchaseProduct(productId: plan.productId)
                             } else {
-                                success = await storeKitManager.purchaseProduct(productId: productId)
+                                success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
                             }
                             #else
-                            success = await storeKitManager.purchaseProduct(productId: productId)
+                            success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
                             #endif
                             if success {
                                 OracleQuotaManager.shared.checkSubscription()
@@ -4340,7 +4364,9 @@ struct SubscriptionSheet: View {
                                 .font(.cosmicHeadline)
                                 .foregroundStyle(.white)
                             
-                            Text("$9.99/month")
+                            let plan = ShopCatalog.proPlan(for: ShopCatalog.defaultProProductID)
+                            let price = storeKitManager.monthlyBillingPlanPrices[plan.productId] ?? plan.fallbackBillingDisplayPrice
+                            Text("\(price) \(plan.billingCaption)")
                                 .font(.title2.weight(.bold))
                                 .foregroundStyle(.white)
                         }

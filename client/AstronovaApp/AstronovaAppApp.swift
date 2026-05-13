@@ -136,15 +136,15 @@ enum AstronovaIntentRouteStore {
         guard url.scheme == "astronova" else { return false }
 
         switch url.host {
-        case "today", "guidance":
+        case "today", "guidance", "daily", "cosmic-weather":
             request(.today)
-        case "time", "timeline":
+        case "time", "timeline", "time-travel", "muhurat":
             request(.timeTravel)
-        case "temple":
+        case "temple", "ritual":
             request(.temple)
-        case "connect":
+        case "connect", "oracle", "chat":
             request(.connect)
-        case "profile":
+        case "profile", "blueprint", "pro", "paywall":
             request(.profile)
         default:
             return false
