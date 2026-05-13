@@ -57,11 +57,13 @@ class StoreKitManager: ObservableObject {
                 var newCommitmentDisplayPrices: [String: String] = [:]
                 for product in storeKitProducts {
                     newProducts[product.id] = product.displayPrice
+                    #if compiler(>=6.2)
                     if #available(iOS 26.4, *),
                        let pricingTerms = Self.monthlyPricingTerms(for: product) {
                         newMonthlyBillingPlanPrices[product.id] = pricingTerms.billingDisplayPrice
                         newCommitmentDisplayPrices[product.id] = pricingTerms.commitmentInfo.displayPrice
                     }
+                    #endif
                 }
                 self.products = newProducts
                 self.monthlyBillingPlanPrices = newMonthlyBillingPlanPrices
@@ -208,19 +210,23 @@ class StoreKitManager: ObservableObject {
         case .standard:
             return try await product.purchase()
         case .monthlyCommitment:
+            #if compiler(>=6.2)
             if #available(iOS 26.4, *), Self.monthlyPricingTerms(for: product) != nil {
                 return try await product.purchase(options: [.billingPlanType(.monthly)])
             }
+            #endif
             return try await product.purchase()
         }
     }
 
+    #if compiler(>=6.2)
     @available(iOS 26.4, *)
     private static func monthlyPricingTerms(for product: Product) -> Product.SubscriptionInfo.PricingTerms? {
         guard let subscription = product.subscription else { return nil }
         let monthlyTerms = subscription.pricingTerms.filter { $0.billingPlanType == .monthly }
         return monthlyTerms.first { isTwelveMonthCommitment($0.commitmentInfo.period) } ?? monthlyTerms.first
     }
+    #endif
 
     private static func isTwelveMonthCommitment(_ period: Product.SubscriptionPeriod) -> Bool {
         switch period.unit {
