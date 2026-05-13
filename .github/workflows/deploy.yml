@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'server/**'
+      - 'scripts/deploy-post-push-check.sh'
+      - '.github/workflows/deploy.yml'
     tags:
       - 'v*'
   workflow_dispatch:
