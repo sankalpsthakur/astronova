@@ -44,13 +44,24 @@ final class HomeGuidanceService: ObservableObject {
 
     func loadGuidance(sign: String, date: Date = Date()) async throws -> DailyGuidance {
         let key = cacheKey(sign: sign, date: date)
-        if let cached = read(key: key), cached.horoscopeText != nil, cached.depth != nil { return cached }
+        if let cached = read(key: key), cached.horoscopeText != nil, cached.depth != nil {
+            await recordToDiary(cached)
+            return cached
+        }
 
         let response = try await api.getDailyHoroscope(for: sign, date: date)
         let dg = transform(response, sign: sign, date: date)
         write(dg, for: sign)
         pruneCache(for: sign)
+        await recordToDiary(dg)
         return dg
+    }
+
+    /// Wave 10 — log every successfully-loaded reading to the Cosmic Diary.
+    /// The store dedupes on (date, sign), so this is safe to call every load.
+    @MainActor
+    private func recordToDiary(_ dg: DailyGuidance) {
+        CosmicDiaryStore.shared.record(DiaryEntry(from: dg))
     }
 
     func recentGuidance(sign: String, days: Int = 3) -> [DailyGuidance] {

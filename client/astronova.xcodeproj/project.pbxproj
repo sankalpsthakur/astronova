@@ -113,6 +113,9 @@
 		TT001000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */; };
 		TT001000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */; };
 		TT001000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */; };
+		CD001000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD000000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift */; };
+		CD001000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD000000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift */; };
+		CD001000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD000000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift */; };
 		TMPLBF000000000000000010 /* HouseInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000010 /* HouseInsightCard.swift */; };
 		GAM001000000000000000001 /* GamificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000001 /* GamificationModels.swift */; };
 		GAM001000000000000000002 /* GamificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000002 /* GamificationManager.swift */; };
@@ -265,6 +268,9 @@
 		TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift; sourceTree = "<group>"; };
 		TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/ChartRevealCeremony.swift; sourceTree = "<group>"; };
 		TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/MarchOfLifeView.swift; sourceTree = "<group>"; };
+		CD000000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CosmicDiary/CosmicDiaryStore.swift; sourceTree = "<group>"; };
+		CD000000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CosmicDiary/CosmicDiaryView.swift; sourceTree = "<group>"; };
+		CD000000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CosmicDiary/FutureLetterView.swift; sourceTree = "<group>"; };
 		TMPLFR000000000000000010 /* HouseInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HouseInsightCard.swift; path = AstronovaApp/Features/TimeTravel/Views/HouseInsightCard.swift; sourceTree = SOURCE_ROOT; };
 		GAM000000000000000000001 /* GamificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationModels.swift; sourceTree = "<group>"; };
 		GAM000000000000000000002 /* GamificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationManager.swift; sourceTree = "<group>"; };
@@ -397,6 +403,9 @@
 				TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */,
 				TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */,
 				TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */,
+				CD000000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift */,
+				CD000000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift */,
+				CD000000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift */,
 				TMPLFR000000000000000010 /* HouseInsightCard.swift */,
 				F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */,
 				39808353AF2C460DBA69DC37 /* DashaImpactView.swift */,
@@ -790,6 +799,9 @@
 				TT001000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift in Sources */,
 				TT001000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift in Sources */,
 				TT001000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift in Sources */,
+				CD001000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift in Sources */,
+				CD001000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift in Sources */,
+				CD001000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift in Sources */,
 				TMPLBF000000000000000010 /* HouseInsightCard.swift in Sources */,
 				02BF82B08A9C4246B3BD0A51 /* DashaChakraWheelView.swift in Sources */,
 				3ABC5323337547CD8ACB46F0 /* DashaImpactView.swift in Sources */,

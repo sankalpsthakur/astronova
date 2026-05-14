@@ -32,6 +32,7 @@ struct SelfTabView: View {
         case reportDetail(DetailedReport)
         case reportShop
         case reportsLibrary
+        case cosmicDiary
 
         var id: String {
             switch self {
@@ -51,6 +52,8 @@ struct SelfTabView: View {
                 return "reportShop"
             case .reportsLibrary:
                 return "reportsLibrary"
+            case .cosmicDiary:
+                return "cosmicDiary"
             }
         }
     }
@@ -82,6 +85,16 @@ struct SelfTabView: View {
                         milestones: gamification.milestones
                     ) {
                         activeSheet = .journeyMap
+                    }
+
+                    // Cosmic Diary (Wave 10 endgame) — chronological archive of
+                    // every reading the user has ever opened. Acts as the
+                    // long-tail retention surface alongside JourneyMap.
+                    CosmicDiaryCard(
+                        entryCount: CosmicDiaryStore.shared.entries.count,
+                        letterCount: CosmicDiaryStore.shared.letters.count
+                    ) {
+                        activeSheet = .cosmicDiary
                     }
 
                     // Essence Bar (Nakshatra + Lagna) - requires full data for lagna
@@ -189,6 +202,10 @@ struct SelfTabView: View {
                     .environmentObject(auth)
             case .reportsLibrary:
                 ReportsLibraryView(reports: dataService.userReports)
+            case .cosmicDiary:
+                NavigationStack {
+                    CosmicDiaryView()
+                }
             }
         }
     }
@@ -359,6 +376,65 @@ struct SelfTabView: View {
             currentYear: 1,
             totalYears: 7
         )
+    }
+}
+
+private struct CosmicDiaryCard: View {
+    let entryCount: Int
+    let letterCount: Int
+    let onOpen: () -> Void
+
+    var body: some View {
+        Button {
+            CosmicHaptics.light()
+            onOpen()
+        } label: {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Cosmic Diary")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                        Text("Your readings, archived")
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                    }
+                    Spacer()
+                    Image(systemName: "book.closed.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(Color.cosmicGold)
+                }
+
+                HStack(spacing: Cosmic.Spacing.m) {
+                    diaryStat(value: entryCount, label: entryCount == 1 ? "entry" : "entries")
+                    diaryStat(value: letterCount, label: letterCount == 1 ? "letter" : "letters")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+            }
+            .padding()
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card)
+                    .stroke(Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.hairline)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Cosmic Diary, \(entryCount) entries, \(letterCount) letters")
+    }
+
+    private func diaryStat(value: Int, label: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text("\(value)")
+                .font(.cosmicCalloutEmphasis)
+                .foregroundStyle(Color.cosmicGold)
+                .monospacedDigit()
+            Text(label)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+        }
     }
 }
 
