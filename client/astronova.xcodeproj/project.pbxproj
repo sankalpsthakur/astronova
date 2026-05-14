@@ -113,6 +113,8 @@
 		TT001000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */; };
 		TT001000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */; };
 		TT001000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */; };
+		TT001000000000000000009 /* Features/TimeTravel/Views/TimeTravelTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000009 /* Features/TimeTravel/Views/TimeTravelTransition.swift */; };
+		PWPRMB001000000000000000001 /* Features/Paywall/PaywallPreamble.swift in Sources */ = {isa = PBXBuildFile; fileRef = PWPRMB000000000000000000001 /* Features/Paywall/PaywallPreamble.swift */; };
 		CD001000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD000000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift */; };
 		CD001000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD000000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift */; };
 		CD001000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD000000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift */; };
@@ -268,6 +270,8 @@
 		TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift; sourceTree = "<group>"; };
 		TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/ChartRevealCeremony.swift; sourceTree = "<group>"; };
 		TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/MarchOfLifeView.swift; sourceTree = "<group>"; };
+		TT000000000000000000009 /* Features/TimeTravel/Views/TimeTravelTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/TimeTravelTransition.swift; sourceTree = "<group>"; };
+		PWPRMB000000000000000000001 /* Features/Paywall/PaywallPreamble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/Paywall/PaywallPreamble.swift; sourceTree = "<group>"; };
 		CD000000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CosmicDiary/CosmicDiaryStore.swift; sourceTree = "<group>"; };
 		CD000000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CosmicDiary/CosmicDiaryView.swift; sourceTree = "<group>"; };
 		CD000000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/CosmicDiary/FutureLetterView.swift; sourceTree = "<group>"; };
@@ -403,6 +407,8 @@
 				TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */,
 				TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */,
 				TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */,
+				TT000000000000000000009 /* Features/TimeTravel/Views/TimeTravelTransition.swift */,
+				PWPRMB000000000000000000001 /* Features/Paywall/PaywallPreamble.swift */,
 				CD000000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift */,
 				CD000000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift */,
 				CD000000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift */,
@@ -799,6 +805,8 @@
 				TT001000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift in Sources */,
 				TT001000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift in Sources */,
 				TT001000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift in Sources */,
+				TT001000000000000000009 /* Features/TimeTravel/Views/TimeTravelTransition.swift in Sources */,
+				PWPRMB001000000000000000001 /* Features/Paywall/PaywallPreamble.swift in Sources */,
 				CD001000000000000000001 /* Features/CosmicDiary/CosmicDiaryStore.swift in Sources */,
 				CD001000000000000000002 /* Features/CosmicDiary/CosmicDiaryView.swift in Sources */,
 				CD001000000000000000003 /* Features/CosmicDiary/FutureLetterView.swift in Sources */,

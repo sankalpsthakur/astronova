@@ -9,6 +9,14 @@ struct OracleView: View {
     @EnvironmentObject private var gamification: GamificationManager
     @AppStorage("trigger_show_chat_packages") private var triggerShowChatPackages: Bool = false
 
+    // Wave 11 polish — Move 1: Oracle paywall preamble. When the trigger fires
+    // (3rd Oracle action), this arm goes true. We wait for the *next* AI reply
+    // to actually land — `isLoading` flipping true→false — before showing the
+    // "Shastriji wants to say more" line. That way the preamble doesn't race
+    // the loading state.
+    @State private var oracleMoreLineArmed: Bool = false
+    @State private var oracleMoreLineVisible: Bool = false
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -48,6 +56,18 @@ struct OracleView: View {
                                             viewModel.dismissError()
                                         }
                                         .id("error")
+                                    }
+
+                                    // Wave 11 polish — Move 1: "Shastriji wants to say more"
+                                    // preamble. Visible only after the 3rd-session trigger
+                                    // and after the reply that followed has landed.
+                                    if oracleMoreLineVisible {
+                                        PaywallOracleMoreLine {
+                                            oracleMoreLineVisible = false
+                                            PaywallTrigger.afterOracleSession3.firePaywallNow()
+                                        }
+                                        .id("oraclePreambleMore")
+                                        .transition(.opacity)
                                     }
                                 }
                                 .padding(.horizontal, Cosmic.Spacing.screen)
@@ -143,6 +163,22 @@ struct OracleView: View {
             }
         }
         .animation(.easeInOut(duration: 0.4), value: viewModel.isPreparingCeremony)
+        // Wave 11 polish — Move 1: arm the Oracle paywall preamble on the
+        // 3rd-session trigger. The line itself waits for the next AI reply.
+        .onReceive(NotificationCenter.default.publisher(for: .paywallPreambleRequested)) { note in
+            guard let event = PaywallPreambleEvent(note),
+                  event.trigger == .afterOracleSession3,
+                  !TestEnvironment.shared.isUITest else { return }
+            oracleMoreLineArmed = true
+        }
+        // Reply lands when isLoading goes true→false. Reveal the line then.
+        .onChange(of: viewModel.isLoading) { wasLoading, isLoading in
+            guard wasLoading, !isLoading, oracleMoreLineArmed else { return }
+            oracleMoreLineArmed = false
+            withAnimation(.easeIn(duration: 0.45)) {
+                oracleMoreLineVisible = true
+            }
+        }
     }
 
     private func hideKeyboard() {

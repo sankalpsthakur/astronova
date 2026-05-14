@@ -1899,6 +1899,10 @@ struct SimpleTabBarView: View {
     // `PaywallTrigger.fire()` and presents the contextual paywall sheet.
     @State private var triggeredPaywallContext: PaywallContext?
     @State private var triggeredPaywallTrigger: String?
+    // Wave 11 polish — Move 1: Reports preamble overlay. Visible briefly after
+    // the user's first Reports-Shop browse before the paywall presents. Owned
+    // here so it can overlay the whole surface (browsing happens in two places).
+    @State private var reportsPreambleVisible: Bool = false
 
     var body: some View {
         ZStack {
@@ -1998,6 +2002,30 @@ struct SimpleTabBarView: View {
             let contextRaw = userInfo["context"] as? String ?? PaywallContext.general.rawValue
             triggeredPaywallContext = PaywallContext(rawValue: contextRaw) ?? .general
             triggeredPaywallTrigger = userInfo["trigger"] as? String
+        }
+        // Wave 11 polish — Move 1: Reports preamble overlay.
+        .overlay {
+            if reportsPreambleVisible {
+                PaywallReportsOverlay {
+                    reportsPreambleVisible = false
+                    PaywallTrigger.afterReportShopBrowse.firePaywallNow()
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: reportsPreambleVisible)
+        .onReceive(NotificationCenter.default.publisher(for: .paywallPreambleRequested)) { note in
+            guard let event = PaywallPreambleEvent(note),
+                  event.trigger == .afterReportShopBrowse,
+                  !TestEnvironment.shared.isUITest else { return }
+            reportsPreambleVisible = true
+            // Safety net: auto-advance if the user doesn't tap within 6s.
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 6_000_000_000)
+                guard reportsPreambleVisible else { return }
+                reportsPreambleVisible = false
+                PaywallTrigger.afterReportShopBrowse.firePaywallNow()
+            }
         }
         .onAppear {
             trackAppLaunch()

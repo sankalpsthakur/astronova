@@ -22,6 +22,19 @@ struct UnifiedTimeTravelView: View {
     // modifier observes it and presents the ceremony exactly once per install.
     @State private var chartReadyForCeremony: Bool = false
 
+    // Wave 11 polish — Move 1: peak preamble for `afterFirstChartReading`.
+    // The 5s admire window starts when the preamble notification fires; after
+    // it elapses the `chartAdmireLineVisible` line appears. Tapping it (or it
+    // timing out) calls `PaywallTrigger.afterFirstChartReading.firePaywallNow()`.
+    @State private var chartAdmireLineVisible: Bool = false
+    @State private var chartAdmireTask: Task<Void, Never>?
+
+    // Wave 11 polish — Move 2: rewind destination for the Time Travel
+    // transition. Set when March of Life picks a past month; the overlay
+    // plays out and then clears itself, by which point the new snapshot
+    // is rendering underneath.
+    @State private var rewindDestination: Date?
+
     private var timeTravelLockMessage: String? {
         let profile = auth.profileManager.profile
 
@@ -216,9 +229,17 @@ struct UnifiedTimeTravelView: View {
                 // Wave 9 UX pass 2 — Move 3: March of Life selector.
                 // Picking a month feeds it back into the existing scrubber so the
                 // Cosmic Map + dasha wheel become the detail surface for that window.
+                //
+                // Wave 11 polish — Move 2: if the selected month is in the past,
+                // stage the rewind transition. The chart fetch starts at the same
+                // time so the new snapshot is ready when the overlay finishes.
                 MarchOfLifeView(birthDate: auth.profileManager.profile.birthDate) { selected in
                     state.targetDate = selected
                     state.onDateCommit()
+                    if selected < Date().addingTimeInterval(-60 * 60 * 24 * 7),
+                       !TestEnvironment.shared.isUITest {
+                        rewindDestination = selected
+                    }
                 }
             }
             .sheet(isPresented: $showGuideSheet) {
@@ -257,6 +278,45 @@ struct UnifiedTimeTravelView: View {
         // Wave 9 UX pass 2 — Move 2: chart-reveal ceremony. Fires exactly once per install
         // (gated on `@AppStorage("hasSeenChartCeremony")`) when the first snapshot commits.
         .chartRevealCeremony(when: chartReadyForCeremony)
+        // Wave 11 polish — Move 2: rewind transition when a past month is picked.
+        .timeTravelRewindTransition(to: $rewindDestination)
+        // Wave 11 polish — Move 1: chart admire line overlay. Sits at the bottom
+        // of the chart surface, above the floating tab bar. Tapping advances to
+        // the actual paywall via `firePaywallNow()`.
+        .overlay(alignment: .bottom) {
+            if chartAdmireLineVisible {
+                PaywallChartAdmireLine {
+                    chartAdmireLineVisible = false
+                    PaywallTrigger.afterFirstChartReading.firePaywallNow()
+                }
+                .padding(.horizontal, Cosmic.Spacing.md)
+                .padding(.bottom, 110) // clear the floating tab bar
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.4), value: chartAdmireLineVisible)
+        // Wave 11 polish — Move 1: observe the preamble for the chart trigger
+        // only. 5s admire delay, then the line. Auto-advances at 14s if the
+        // user never taps (they got the admire window; the pitch should still land).
+        .onReceive(NotificationCenter.default.publisher(for: .paywallPreambleRequested)) { note in
+            guard let event = PaywallPreambleEvent(note),
+                  event.trigger == .afterFirstChartReading,
+                  !TestEnvironment.shared.isUITest else { return }
+            chartAdmireTask?.cancel()
+            chartAdmireTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 5_000_000_000) // 5s admire
+                guard !Task.isCancelled else { return }
+                chartAdmireLineVisible = true
+                try? await Task.sleep(nanoseconds: 9_000_000_000) // 9s patience
+                guard !Task.isCancelled, chartAdmireLineVisible else { return }
+                chartAdmireLineVisible = false
+                PaywallTrigger.afterFirstChartReading.firePaywallNow()
+            }
+        }
+        .onDisappear {
+            chartAdmireTask?.cancel()
+            chartAdmireTask = nil
+        }
     }
 
     private var birthTimeAssumptionBanner: some View {

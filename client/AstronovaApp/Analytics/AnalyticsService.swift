@@ -60,6 +60,10 @@ enum AnalyticsEvent: String {
     case vedicEntryRead = "vedic_entry_read"
     case weeklyChallengeCompleted = "weekly_challenge_completed"
     case paywallConversion = "paywall_conversion"
+    // Wave 11 polish — fired when the peak amplification (preamble) shows
+    // before the actual paywall. Tracks how often each surface reaches the
+    // pitch handoff vs. the user dismissing the lead-in.
+    case paywallPreambleShown = "paywall_preamble_shown"
 
     // NEW ERROR TRACKING EVENTS
     case networkError = "network_error"

@@ -9,8 +9,11 @@ enum PaywallContext: String {
 
 /// PaywallTrigger names the *peak moment* a user has just experienced when a paywall is shown.
 /// Wave 8 UX pass 1 removed the post-onboarding paywall in favor of these peak-anchored entry points.
-/// Use `PaywallTrigger.fire()` from the matching peak — the trigger handles eligibility, analytics,
-/// and shows the paywall via the `paywall.requested` notification.
+///
+/// Wave 11 polish — Move 1 (peak→pitch). The redesign brief (P7, P10) calls for IAP nudges
+/// only AFTER a peak moment, with brief amplification before the wall. `fire()` now posts a
+/// `.paywallPreambleRequested` notification first; the owning surface renders the lead-in,
+/// then calls `firePaywallNow()` to post the real `.paywallRequested`.
 enum PaywallTrigger: String {
     /// First time the user finishes reading their own natal chart (high intent, high taste).
     case afterFirstChartReading
@@ -39,13 +42,41 @@ enum PaywallTrigger: String {
         return true
     }
 
-    /// Fire the trigger — records it, posts an analytics event, and asks the app to
-    /// present a paywall with the right context. The presenter is decoupled (`Notification`).
+    /// Fire the trigger — records eligibility (so it never fires twice), posts the
+    /// `.paywallPreambleRequested` event, and lets the owning surface decide when to
+    /// follow up with the actual paywall via `firePaywallNow()`.
+    ///
+    /// Marking eligibility on preamble-start (not paywall-show) is deliberate: if the user
+    /// dismisses the preamble or the surface route fails, we still don't re-pester.
     func fire() {
         guard shouldFire else { return }
         let defaults = UserDefaults.standard
         defaults.set(true, forKey: eligibilityKey)
 
+        Analytics.shared.track(.paywallPreambleShown, properties: [
+            "trigger": rawValue,
+            "context": paywallContext.rawValue
+        ])
+
+        NotificationCenter.default.post(
+            name: .paywallPreambleRequested,
+            object: nil,
+            userInfo: [
+                "context": paywallContext.rawValue,
+                "trigger": rawValue
+            ]
+        )
+
+        // UI-test bypass: tests don't want a 5s lead-in. They also assert paywall
+        // presentation directly, not the preamble. Fire immediately.
+        if TestEnvironment.shared.isUITest {
+            firePaywallNow()
+        }
+    }
+
+    /// Post the actual `.paywallRequested` event after the preamble has played out.
+    /// Surfaces call this once the lead-in completes (or the user taps to advance).
+    func firePaywallNow() {
         Analytics.shared.track(.paywallShown, properties: [
             "trigger": rawValue,
             "context": paywallContext.rawValue
@@ -66,6 +97,12 @@ extension Notification.Name {
     /// Posted when a `PaywallTrigger` fires. The root coordinator should observe this
     /// and present `PaywallView(context:)` with the supplied context.
     static let paywallRequested = Notification.Name("astronova.paywall.requested")
+
+    /// Wave 11: posted by `PaywallTrigger.fire()` *before* the paywall. The owning
+    /// surface (Time Travel, Oracle, Reports) observes for its own trigger and renders
+    /// the peak amplification (a delay, a chat line, or an overlay) before calling
+    /// `PaywallTrigger.firePaywallNow()`.
+    static let paywallPreambleRequested = Notification.Name("astronova.paywall.preamble.requested")
 }
 
 struct PaywallView: View {

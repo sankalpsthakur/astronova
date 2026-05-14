@@ -286,6 +286,22 @@ struct DepthBadge: View {
 
 // MARK: - Entry detail (sheet)
 
+/// Wave 11 polish — Move 3.
+///
+/// A long-form, calm detail page for a single diary entry. The original
+/// implementation rendered an expanded `DiaryEntryRow` which is good for the
+/// list but too dense for solo reading. The polished layout:
+///  - Serif date heading (system serif — designed for legibility, no licensing).
+///  - DepthBadge.
+///  - Headline + reading text in body typography with line-height ~1.7 and
+///    paragraph spacing.
+///  - User note editor (preserved from Wave 10).
+///  - Celestial illustration placeholder: `moon.stars` SF Symbol.
+///    Designer spec lives in `// DESIGNER:` comments in the body — the final
+///    illustration should be a custom SVG/PDF at 160×160 with stroke=1px in
+///    cosmicGold, sitting at 60% opacity.
+///  - "What was happening cosmically:" footer that surfaces `transitNote`
+///    when present.
 struct DiaryEntryDetailView: View {
     let entry: DiaryEntry
     @State private var note: String
@@ -297,25 +313,38 @@ struct DiaryEntryDetailView: View {
         self._note = State(initialValue: entry.userNote ?? "")
     }
 
+    private static let detailDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE\nMMMM d, yyyy"
+        f.locale = Locale.current
+        return f
+    }()
+
+    /// Split the long-form text into paragraphs and render each with proper
+    /// spacing. Falls back to the focus line if no extended body is present.
+    private var readingParagraphs: [String] {
+        let source = [entry.headline, entry.extendedBody, entry.horoscopeText]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first(where: { !$0.isEmpty })
+        guard let text = source, !text.isEmpty else { return [entry.focus] }
+        return text
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Cosmic.Spacing.m) {
-                DiaryEntryRow(entry: entry, expanded: true)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("YOUR NOTE")
-                        .font(.cosmicMicro)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                        .tracking(2)
-                    TextEditor(text: $note)
-                        .frame(minHeight: 120)
-                        .padding(8)
-                        .background(Color.cosmicSurface)
-                        .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card))
-                        .scrollContentBackground(.hidden)
-                }
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
+                header
+                readingBody
+                noteEditor
+                celestialIllustration
+                cosmicFooter
             }
-            .padding(Cosmic.Spacing.m)
+            .padding(.horizontal, Cosmic.Spacing.lg)
+            .padding(.top, Cosmic.Spacing.lg)
+            .padding(.bottom, Cosmic.Spacing.xxl)
         }
         .background(Color.cosmicVoid.ignoresSafeArea())
         .navigationTitle(entry.sign)
@@ -331,6 +360,90 @@ struct DiaryEntryDetailView: View {
                 }
                 .foregroundStyle(Color.cosmicGold)
             }
+        }
+    }
+
+    // MARK: - Sections
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
+            Text(Self.detailDateFormatter.string(from: entry.dateValue))
+                .font(.system(.largeTitle, design: .serif).weight(.regular))
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            DepthBadge(depth: entry.depth)
+        }
+    }
+
+    private var readingBody: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
+            ForEach(Array(readingParagraphs.enumerated()), id: \.offset) { _, paragraph in
+                Text(paragraph)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    // Line-height multiplier ~1.7 (target spec): we add raw
+                    // leading on top of the default to land near 1.7×.
+                    .lineSpacing(6)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var noteEditor: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+            Text("YOUR NOTE")
+                .font(.cosmicMicro)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .tracking(2)
+            TextEditor(text: $note)
+                .font(.cosmicBody)
+                .frame(minHeight: 140)
+                .padding(Cosmic.Spacing.sm)
+                .background(Color.cosmicSurface)
+                .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card))
+                .scrollContentBackground(.hidden)
+        }
+    }
+
+    /// DESIGNER: replace with a custom illustration.
+    /// - Target: 160×160 SVG/PDF, 1px stroke in cosmicGold at 60% opacity.
+    /// - Concept: a hand-drawn lunar crescent with three small stars,
+    ///   matching the Teenage-Engineering line-art motif used elsewhere.
+    /// - Behavior: tap → no-op for now; future: link to the natal moon's
+    ///   placement on that day.
+    private var celestialIllustration: some View {
+        VStack {
+            Image(systemName: "moon.stars")
+                .font(.system(size: 64, weight: .light))
+                .foregroundStyle(Color.cosmicGold.opacity(0.6))
+                .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Cosmic.Spacing.lg)
+    }
+
+    @ViewBuilder
+    private var cosmicFooter: some View {
+        if let transit = entry.transitNote, !transit.isEmpty {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                Text("What was happening cosmically")
+                    .font(.cosmicCaption.weight(.semibold))
+                    .foregroundStyle(Color.cosmicGold)
+                    .tracking(0.5)
+                Text(transit)
+                    .font(.cosmicCaption.italic())
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Cosmic.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.cosmicSurface.opacity(0.7))
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                    .stroke(Color.cosmicGold.opacity(0.2), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
         }
     }
 }
