@@ -13,6 +13,7 @@ struct PaywallView: View {
     @State private var isPurchasing = false
     @State private var isRestoring = false
     @State private var purchaseResult: PurchaseResult?
+    @State private var paywallShownAt: Date?
     @State private var showingReportShop = false
     @State private var showingChatPackages = false
     @State private var selectedPlanProductId = ShopCatalog.defaultProProductID
@@ -40,7 +41,13 @@ struct PaywallView: View {
     }
 
     private var paywallVariant: String {
-        RemoteConfigService.shared.string(forKey: "paywall_variant", default: "A")
+        // Wave 13 — prefer AstronovaFlags (portfolio feature flag service)
+        // when it has been configured, fall back to RemoteConfigService.
+        let flag = AstronovaFlags.shared.paywallVariant.rawValue
+        if flag != AstronovaPaywallVariant.default.rawValue {
+            return flag
+        }
+        return RemoteConfigService.shared.string(forKey: "paywall_variant", default: "A")
     }
 
     private var heroIcon: String {
@@ -264,10 +271,35 @@ struct PaywallView: View {
         }
         .accessibilityIdentifier(AccessibilityID.paywallView)
         .onAppear {
+            paywallShownAt = Date()
             Analytics.shared.track(
                 .paywallShown,
-                properties: ["variant": paywallVariant, "context": context.rawValue]
+                properties: [
+                    "variant": paywallVariant,
+                    "context": context.rawValue,
+                    "trigger": context.rawValue,
+                    "paywall_id": "astronova_pro_\(paywallVariant)",
+                    "screen": context.rawValue
+                ]
             )
+        }
+        .onDisappear {
+            // Wave 13 — paywall_dismissed (only if the user didn't convert)
+            let didConvert: Bool = {
+                if case .success = purchaseResult { return true }
+                return false
+            }()
+            if !didConvert {
+                let visibleSeconds = paywallShownAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
+                Analytics.shared.track(
+                    .paywallDismissed,
+                    properties: [
+                        "paywall_id": "astronova_pro_\(paywallVariant)",
+                        "context": context.rawValue,
+                        "time_visible_s": String(visibleSeconds)
+                    ]
+                )
+            }
         }
         .task {
             await storeKitManager.loadProducts()
@@ -471,6 +503,21 @@ struct PaywallView: View {
                 properties: ["product": plan.productId, "context": context.rawValue, "source": "paywall"]
             )
             Analytics.shared.track(.purchaseSuccess, properties: ["product": plan.productId])
+            // Wave 13 — portfolio-standard subscription_started / iap_purchased
+            let isSubscription = ShopCatalog.isProProduct(plan.productId)
+            if isSubscription {
+                Analytics.shared.track(.subscriptionStarted, properties: [
+                    "sku": plan.productId,
+                    "period": plan.billingPlan == .monthlyCommitment ? "year" : "month",
+                    "is_trial": "false",
+                    "tier": "pro"
+                ])
+            } else {
+                Analytics.shared.track(.iapPurchased, properties: [
+                    "sku": plan.productId,
+                    "is_consumable": "true"
+                ])
+            }
             await MainActor.run {
                 OracleQuotaManager.shared.checkSubscription()
                 purchaseResult = .success

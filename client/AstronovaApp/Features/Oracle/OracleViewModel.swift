@@ -85,6 +85,11 @@ final class OracleViewModel: ObservableObject {
             "depth": selectedDepth.rawValue,
             "message_length": "\(userText.count)"
         ])
+        // Portfolio-standard event names for closed-loop analytics (Wave 13).
+        Analytics.shared.track(.oracleMessageSent, properties: [
+            "depth": selectedDepth.rawValue,
+            "message_length": "\(userText.count)"
+        ])
 
         // Add user message
         let userMessage = OracleMessage(
@@ -165,6 +170,10 @@ final class OracleViewModel: ObservableObject {
 
             // Record usage
             quotaManager.recordUsage(depth: selectedDepth)
+
+            // Wave 13 — count successful Oracle sessions for the NPS trigger
+            // ("after Oracle session #5"). Only completed roundtrips count.
+            _ = NPSService.shared.recordOracleSession()
 
         } catch {
             isLoading = false

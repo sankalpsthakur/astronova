@@ -14,6 +14,7 @@ struct MoreOptionsSheet: View {
     @State private var showingDataPrivacy = false
     @State private var showingExportData = false
     @State private var showingAbout = false
+    @State private var analyticsOptedIn: Bool = !PortfolioAnalytics.shared.isOptedOut
 
     var body: some View {
         NavigationStack {
@@ -102,6 +103,34 @@ struct MoreOptionsSheet: View {
                             )
                         }
                         .buttonStyle(.plain)
+
+                        // Wave 13 — anonymous analytics opt-out. Default ON;
+                        // user can switch off at any time. Per
+                        // ANALYTICS_DESIGN §2 this short-circuits every
+                        // track() call and rotates the local UUID.
+                        Toggle(isOn: $analyticsOptedIn) {
+                            HStack(spacing: Cosmic.Spacing.md) {
+                                Image(systemName: "chart.bar.xaxis")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                                    .frame(width: 28)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Share Anonymous Usage")
+                                        .font(.cosmicBody)
+                                        .foregroundStyle(Color.cosmicTextPrimary)
+                                    Text("Helps us improve. No personal data.")
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextTertiary)
+                                }
+                            }
+                        }
+                        .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+                        .padding(.horizontal, Cosmic.Spacing.md)
+                        .padding(.vertical, Cosmic.Spacing.md)
+                        .accessibilityIdentifier("analytics_opt_in_toggle")
+                        .onChange(of: analyticsOptedIn) { _, newValue in
+                            PortfolioAnalytics.shared.isOptedOut = !newValue
+                        }
                     }
 
                     // Support Section

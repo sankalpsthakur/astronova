@@ -136,6 +136,17 @@ struct SelfTabView: View {
             } else {
                 dataService.stopReportPolling()
             }
+            // Wave 13 — chart_viewed event (portfolio standard).
+            Analytics.shared.track(.chartViewed, properties: [
+                "chart_type": "natal_summary",
+                "is_paid": UserDefaults.standard.bool(forKey: "hasAstronovaPro") ? "true" : "false"
+            ])
+            // Peak-trigger review prompt: this is the user's primary daily
+            // surface — the first time it renders after a chart is computed,
+            // ask for a review (subject to 6-month throttle).
+            await MainActor.run {
+                AstronovaReviewPrompts.shared.requestIfPeak(.firstChartCompleted)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .reportPurchased)) { _ in
             guard auth.isAuthenticated else { return }

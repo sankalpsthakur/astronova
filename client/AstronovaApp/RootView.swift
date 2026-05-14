@@ -286,6 +286,7 @@ struct ReportPricing {
 /// Decides which high-level screen to show based on authentication state.
 struct RootView: View {
     @EnvironmentObject private var auth: AuthState
+    @StateObject private var nps = NPSService.shared
 
     var body: some View {
         Group {
@@ -298,6 +299,24 @@ struct RootView: View {
                 SimpleProfileSetupView()
             case .signedIn:
                 SimpleTabBarView()
+            }
+        }
+        // Wave 13 — Global NPS sheet driver. Surfaces from NPSService after
+        // Oracle session #5 or first Cosmic Diary entry (see NPSService).
+        .sheet(isPresented: Binding(
+            get: { nps.pendingTrigger != nil },
+            set: { isPresented in
+                if !isPresented { nps.dismiss() }
+            }
+        )) {
+            if let trigger = nps.pendingTrigger {
+                NPSView(
+                    trigger: trigger,
+                    onDismiss: { nps.dismiss() },
+                    onSubmit: { score, comment in
+                        nps.submit(score: score, comment: comment, trigger: trigger)
+                    }
+                )
             }
         }
     }
@@ -6015,7 +6034,7 @@ struct DataPrivacyView: View {
                 
                 PrivacySection(
                     title: "What We Collect",
-                    content: "• Birth date, time, and location\n• Astrological preferences\n• Usage analytics and session diagnostics (Smartlook)"
+                    content: "• Birth date, time, and location\n• Astrological preferences\n• Anonymous usage events (UUID, never linked to you)\n• Session diagnostics (Smartlook)\n\nYou can turn off anonymous analytics in Settings → Privacy → Share Anonymous Usage."
                 )
                 
                 PrivacySection(

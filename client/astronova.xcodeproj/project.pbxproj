@@ -114,6 +114,18 @@
 		TMPLBF000000000000000010 /* HouseInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000010 /* HouseInsightCard.swift */; };
 		GAM001000000000000000001 /* GamificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000001 /* GamificationModels.swift */; };
 		GAM001000000000000000002 /* GamificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000002 /* GamificationManager.swift */; };
+		WAVE13PA01000000000001 /* PortfolioAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13PA00000000000001 /* PortfolioAnalytics.swift */; };
+		WAVE13FL01000000000001 /* AstronovaFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13FL00000000000001 /* AstronovaFlags.swift */; };
+		WAVE13RV01000000000001 /* AstronovaReviewPrompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13RV00000000000001 /* AstronovaReviewPrompts.swift */; };
+		WAVE13NP01000000000001 /* NPSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13NP00000000000001 /* NPSService.swift */; };
+		WAVE13LU01000000000001 /* LapsedUserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13LU00000000000001 /* LapsedUserService.swift */; };
+		WAVE13ST01000000000001 /* SessionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13ST00000000000001 /* SessionTracker.swift */; };
+		WAVE13NV01000000000001 /* NPSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13NV00000000000001 /* NPSView.swift */; };
+		WAVE13T02000000000001 /* PortfolioAnalyticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000001 /* PortfolioAnalyticsTests.swift */; };
+		WAVE13T02000000000002 /* AstronovaFlagsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000002 /* AstronovaFlagsTests.swift */; };
+		WAVE13T02000000000003 /* NPSServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000003 /* NPSServiceTests.swift */; };
+		WAVE13T02000000000004 /* LapsedUserServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000004 /* LapsedUserServiceTests.swift */; };
+		WAVE13T02000000000005 /* AstronovaReviewPromptsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -264,6 +276,18 @@
 		TMPLFR000000000000000010 /* HouseInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HouseInsightCard.swift; path = AstronovaApp/Features/TimeTravel/Views/HouseInsightCard.swift; sourceTree = SOURCE_ROOT; };
 		GAM000000000000000000001 /* GamificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationModels.swift; sourceTree = "<group>"; };
 		GAM000000000000000000002 /* GamificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationManager.swift; sourceTree = "<group>"; };
+		WAVE13PA00000000000001 /* PortfolioAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioAnalytics.swift; sourceTree = "<group>"; };
+		WAVE13FL00000000000001 /* AstronovaFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaFlags.swift; sourceTree = "<group>"; };
+		WAVE13RV00000000000001 /* AstronovaReviewPrompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaReviewPrompts.swift; sourceTree = "<group>"; };
+		WAVE13NP00000000000001 /* NPSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPSService.swift; sourceTree = "<group>"; };
+		WAVE13LU00000000000001 /* LapsedUserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapsedUserService.swift; sourceTree = "<group>"; };
+		WAVE13ST00000000000001 /* SessionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTracker.swift; sourceTree = "<group>"; };
+		WAVE13NV00000000000001 /* NPSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NPSView.swift; path = AstronovaApp/Features/NPS/NPSView.swift; sourceTree = SOURCE_ROOT; };
+		WAVE13T01000000000001 /* PortfolioAnalyticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioAnalyticsTests.swift; sourceTree = "<group>"; };
+		WAVE13T01000000000002 /* AstronovaFlagsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaFlagsTests.swift; sourceTree = "<group>"; };
+		WAVE13T01000000000003 /* NPSServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPSServiceTests.swift; sourceTree = "<group>"; };
+		WAVE13T01000000000004 /* LapsedUserServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapsedUserServiceTests.swift; sourceTree = "<group>"; };
+		WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaReviewPromptsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -435,6 +459,11 @@
 			isa = PBXGroup;
 			children = (
 				3D01F7F42C0A000000000001 /* AstronovaAppTests.swift */,
+				WAVE13T01000000000001 /* PortfolioAnalyticsTests.swift */,
+				WAVE13T01000000000002 /* AstronovaFlagsTests.swift */,
+				WAVE13T01000000000003 /* NPSServiceTests.swift */,
+				WAVE13T01000000000004 /* LapsedUserServiceTests.swift */,
+				WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */,
 			);
 			path = AstronovaAppTests;
 			sourceTree = "<group>";
@@ -463,6 +492,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0001000000000000000003 /* AnalyticsService.swift */,
+				WAVE13PA00000000000001 /* PortfolioAnalytics.swift */,
 			);
 			path = Analytics;
 			sourceTree = "<group>";
@@ -483,6 +513,7 @@
 				AA0003000000000000000007 /* Paywall */,
 				E2E000300000000000000001 /* Chat */,
 				DIS003000000000000000001 /* Discover */,
+				WAVE13NV00000000000001 /* NPSView.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -522,6 +553,11 @@
 				AA0001000000000000000012 /* ShopCatalog.swift */,
 				E2E000000000000000000003 /* HapticFeedbackService.swift */,
 				CMP000000000000000000008 /* ContactsService.swift */,
+				WAVE13FL00000000000001 /* AstronovaFlags.swift */,
+				WAVE13RV00000000000001 /* AstronovaReviewPrompts.swift */,
+				WAVE13NP00000000000001 /* NPSService.swift */,
+				WAVE13LU00000000000001 /* LapsedUserService.swift */,
+				WAVE13ST00000000000001 /* SessionTracker.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -853,6 +889,13 @@
 				TMPLBF00000000000000000D /* VedicSearchView.swift in Sources */,
 				TMPLBF00000000000000000E /* ShastrijiConsultView.swift in Sources */,
 				TMPLBF00000000000000000F /* ShastrijiCallView.swift in Sources */,
+				WAVE13PA01000000000001 /* PortfolioAnalytics.swift in Sources */,
+				WAVE13FL01000000000001 /* AstronovaFlags.swift in Sources */,
+				WAVE13RV01000000000001 /* AstronovaReviewPrompts.swift in Sources */,
+				WAVE13NP01000000000001 /* NPSService.swift in Sources */,
+				WAVE13LU01000000000001 /* LapsedUserService.swift in Sources */,
+				WAVE13ST01000000000001 /* SessionTracker.swift in Sources */,
+				WAVE13NV01000000000001 /* NPSView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -861,6 +904,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D01F7F52C0A000000000001 /* AstronovaAppTests.swift in Sources */,
+				WAVE13T02000000000001 /* PortfolioAnalyticsTests.swift in Sources */,
+				WAVE13T02000000000002 /* AstronovaFlagsTests.swift in Sources */,
+				WAVE13T02000000000003 /* NPSServiceTests.swift in Sources */,
+				WAVE13T02000000000004 /* LapsedUserServiceTests.swift in Sources */,
+				WAVE13T02000000000005 /* AstronovaReviewPromptsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
