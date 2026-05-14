@@ -7,6 +7,67 @@ enum PaywallContext: String {
     case home
 }
 
+/// PaywallTrigger names the *peak moment* a user has just experienced when a paywall is shown.
+/// Wave 8 UX pass 1 removed the post-onboarding paywall in favor of these peak-anchored entry points.
+/// Use `PaywallTrigger.fire()` from the matching peak — the trigger handles eligibility, analytics,
+/// and shows the paywall via the `paywall.requested` notification.
+enum PaywallTrigger: String {
+    /// First time the user finishes reading their own natal chart (high intent, high taste).
+    case afterFirstChartReading
+    /// User has completed three Oracle (Shastriji) sessions — the curiosity is real.
+    case afterOracleSession3
+    /// User has browsed the report shop and tapped at least one preview card.
+    case afterReportShopBrowse
+
+    /// Map the trigger to the right contextual paywall surface.
+    var paywallContext: PaywallContext {
+        switch self {
+        case .afterFirstChartReading: return .home
+        case .afterOracleSession3:    return .chatLimit
+        case .afterReportShopBrowse:  return .report
+        }
+    }
+
+    /// Eligibility: a trigger should only fire once per user; respects an existing Pro subscription.
+    var eligibilityKey: String { "paywall.trigger.fired.\(rawValue)" }
+
+    /// Returns true if this trigger should show the paywall now.
+    var shouldFire: Bool {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: "hasAstronovaPro") { return false }
+        if defaults.bool(forKey: eligibilityKey) { return false }
+        return true
+    }
+
+    /// Fire the trigger — records it, posts an analytics event, and asks the app to
+    /// present a paywall with the right context. The presenter is decoupled (`Notification`).
+    func fire() {
+        guard shouldFire else { return }
+        let defaults = UserDefaults.standard
+        defaults.set(true, forKey: eligibilityKey)
+
+        Analytics.shared.track(.paywallShown, properties: [
+            "trigger": rawValue,
+            "context": paywallContext.rawValue
+        ])
+
+        NotificationCenter.default.post(
+            name: .paywallRequested,
+            object: nil,
+            userInfo: [
+                "context": paywallContext.rawValue,
+                "trigger": rawValue
+            ]
+        )
+    }
+}
+
+extension Notification.Name {
+    /// Posted when a `PaywallTrigger` fires. The root coordinator should observe this
+    /// and present `PaywallView(context:)` with the supplied context.
+    static let paywallRequested = Notification.Name("astronova.paywall.requested")
+}
+
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var storeKitManager = StoreKitManager.shared

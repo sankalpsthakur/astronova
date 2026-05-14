@@ -135,6 +135,14 @@ struct OracleView: View {
         .sheet(isPresented: $viewModel.showingCreditPacks) {
             ChatPackagesSheet()
         }
+        .overlay {
+            if viewModel.isPreparingCeremony {
+                ShastrijiOpeningCeremony()
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
+        }
+        .animation(.easeInOut(duration: 0.4), value: viewModel.isPreparingCeremony)
     }
 
     private func hideKeyboard() {
@@ -161,4 +169,70 @@ struct OracleView: View {
     }
 }
 
-// ... rest of file unchanged ...
+// MARK: - Shastriji Opening Ceremony
+
+/// 2-second elegant overlay shown when a new Oracle session begins.
+/// Pure typography + a slow-pulsing sigil — no heavy assets, no haptics.
+private struct ShastrijiOpeningCeremony: View {
+    @State private var pulse: Bool = false
+    @State private var dotPhase: Int = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            Color.cosmicVoid
+                .opacity(0.96)
+                .ignoresSafeArea()
+
+            VStack(spacing: Cosmic.Spacing.lg) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.cosmicGold.opacity(0.25), lineWidth: 1)
+                        .frame(width: 96, height: 96)
+                        .scaleEffect(pulse ? 1.15 : 0.95)
+                        .opacity(pulse ? 0.0 : 0.8)
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 28, weight: .light))
+                        .foregroundStyle(Color.cosmicGold)
+                        .scaleEffect(pulse ? 1.05 : 1.0)
+                }
+                .frame(height: 110)
+                .accessibilityHidden(true)
+
+                VStack(spacing: 6) {
+                    Text("Shastriji")
+                        .font(.cosmicHeadline)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .tracking(2.0)
+                        .textCase(.uppercase)
+                    Text("is preparing your reading\(dots)")
+                        .font(.cosmicBody.italic())
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .accessibilityLabel("Shastriji is preparing your reading")
+                }
+            }
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+            // Animate the trailing dots while the ceremony plays (~2s).
+            Task { @MainActor in
+                for i in 1...6 {
+                    try? await Task.sleep(nanoseconds: 330_000_000)
+                    dotPhase = i % 4
+                }
+            }
+        }
+    }
+
+    private var dots: String {
+        switch dotPhase {
+        case 1: return "."
+        case 2: return ".."
+        case 3: return "..."
+        default: return ""
+        }
+    }
+}

@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Oracle Message
 
-struct OracleMessage: Identifiable, Equatable {
+struct OracleMessage: Identifiable, Equatable, Codable {
     let id: String
     let text: String
     let isUser: Bool
@@ -11,7 +11,7 @@ struct OracleMessage: Identifiable, Equatable {
     let timestamp: Date
     var isExpanded: Bool = false
 
-    enum MessageType {
+    enum MessageType: String, Codable {
         case welcome
         case question
         case insight
@@ -32,6 +32,39 @@ struct OracleMessage: Identifiable, Equatable {
     }
 }
 
+// MARK: - Oracle Session Memory
+
+/// Persists the last `maxMessages` exchanged with Shastriji across app launches.
+/// Keyed per user id (or "anon" when unauthenticated). Stored as JSON in UserDefaults —
+/// good enough for short rolling history; for cross-device sync, move to iCloud KVStore.
+struct OracleSessionMemory {
+    static let maxMessages = 5
+    private static let prefix = "oracle.memory.v1."
+    private static let defaults = UserDefaults.standard
+
+    static func key(for userId: String?) -> String {
+        let suffix = (userId?.isEmpty == false ? userId! : "anon")
+        return "\(prefix)\(suffix)"
+    }
+
+    static func load(userId: String?) -> [OracleMessage] {
+        guard let data = defaults.data(forKey: key(for: userId)) else { return [] }
+        return (try? JSONDecoder().decode([OracleMessage].self, from: data)) ?? []
+    }
+
+    static func save(_ messages: [OracleMessage], userId: String?) {
+        // Drop transient welcome messages so they regenerate fresh each session.
+        let persisted = messages.filter { $0.type != .welcome }.suffix(maxMessages)
+        if let data = try? JSONEncoder().encode(Array(persisted)) {
+            defaults.set(data, forKey: key(for: userId))
+        }
+    }
+
+    static func clear(userId: String?) {
+        defaults.removeObject(forKey: key(for: userId))
+    }
+}
+
 // MARK: - Oracle View Model
 
 @MainActor
@@ -47,10 +80,19 @@ final class OracleViewModel: ObservableObject {
     @Published var showingPaywall: Bool = false
     @Published var showingCreditPacks: Bool = false
 
+    /// Shastriji's opening ceremony — true while the "is preparing your reading…" overlay
+    /// shows on a fresh session, briefly hushing the screen before the first message.
+    @Published var isPreparingCeremony: Bool = false
+
     // MARK: - Dependencies
 
     let quotaManager: OracleQuotaManager
     private let apiServices = APIServices.shared
+    /// Memory is keyed per local-device user. Resolved from UserDefaults; falls back to "anon".
+    private var userId: String? {
+        UserDefaults.standard.string(forKey: "userId")
+            ?? UserDefaults.standard.string(forKey: "user_id")
+    }
 
     // MARK: - Contextual Prompts
 
@@ -65,7 +107,25 @@ final class OracleViewModel: ObservableObject {
 
     init(quotaManager: OracleQuotaManager? = nil) {
         self.quotaManager = quotaManager ?? .shared
-        addWelcomeMessage()
+        beginSession()
+    }
+
+    /// Begin a fresh Shastriji session:
+    /// 1. Show the brief opening ceremony.
+    /// 2. Hydrate persisted history (last 5 messages).
+    /// 3. Add a context-aware welcome line from Shastriji.
+    private func beginSession() {
+        let restored = OracleSessionMemory.load(userId: userId)
+        messages = restored
+
+        isPreparingCeremony = true
+        // 2s ceremony — long enough to feel intentional, short enough not to annoy.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard let self else { return }
+            self.isPreparingCeremony = false
+            self.addWelcomeMessage(continuing: !restored.isEmpty)
+        }
     }
 
     // MARK: - Public Methods
@@ -98,6 +158,7 @@ final class OracleViewModel: ObservableObject {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             messages.append(userMessage)
         }
+        persistMemory()
 
         // Clear input and start loading
         inputText = ""
@@ -126,15 +187,34 @@ final class OracleViewModel: ObservableObject {
 
     // MARK: - Private Methods
 
-    private func addWelcomeMessage() {
+    private func addWelcomeMessage(continuing: Bool = false) {
+        // Shastriji's voice — different opener for a returning user vs a fresh seat.
+        let firstTimeOpeners = [
+            "Hmm. Sit with me a moment — let me look at the sky for you.",
+            "Come, settle in. The cosmos has been waiting for this question.",
+            "Ah. There is something to say here. Ask, and I will read what I see."
+        ]
+        let returningOpeners = [
+            "You return. The thread is still warm — what shall we read tonight?",
+            "Welcome back. The sky has moved since we last spoke. What weighs on you?",
+            "Hmm. Where we left off, the Moon was elsewhere. Ask again — gently."
+        ]
+        let pool = continuing ? returningOpeners : firstTimeOpeners
+        let text = pool.randomElement() ?? L10n.Oracle.welcomeMessage
+
         let welcome = OracleMessage(
             id: "welcome",
-            text: L10n.Oracle.welcomeMessage,
+            text: text,
             isUser: false,
             type: .welcome,
             timestamp: Date()
         )
         messages.append(welcome)
+    }
+
+    /// Persist the last 5 messages so the next session can continue the thread.
+    private func persistMemory() {
+        OracleSessionMemory.save(messages, userId: userId)
     }
 
     private func fetchResponse(for question: String) async {
@@ -162,6 +242,7 @@ final class OracleViewModel: ObservableObject {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 messages.append(aiMessage)
             }
+            persistMemory()
 
             // Record usage
             quotaManager.recordUsage(depth: selectedDepth)

@@ -452,8 +452,11 @@ struct SimpleProfileSetupView: View {
                 onComplete: { archetype in
                     gamification.setArchetype(archetype)
                     showingIdentityQuiz = false
+                    // Wave 8 UX pass 1: FTUE no longer ends on a paywall.
+                    // The first paywall now waits for a real peak (chart reading, Oracle session 3,
+                    // or shop browse) — see `PaywallTrigger` below.
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        presentPostOnboardingPaywall()
+                        finishOnboardingWithoutPaywall()
                     }
                 }
             )
@@ -476,13 +479,14 @@ struct SimpleProfileSetupView: View {
             clearProfileSetupProgress: clearProfileSetupProgress,
             onJourneyStart: {
                 // Phase 5: identity quiz + archetype assignment is part of onboarding funnel.
+                // Wave 8 UX pass 1: removed post-onboarding paywall in favor of peak-anchored triggers.
                 if (gamification.archetype ?? "").isEmpty {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
                         showingIdentityQuiz = true
                     }
                 } else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                        presentPostOnboardingPaywall()
+                        finishOnboardingWithoutPaywall()
                     }
                 }
             }
@@ -740,14 +744,20 @@ struct SimpleProfileSetupView: View {
         }
     }
 
-    private func presentPostOnboardingPaywall() {
-        if UserDefaults.standard.bool(forKey: "hasAstronovaPro") {
-            auth.completeProfileSetup()
-            return
-        }
+    /// Wave 8 UX pass 1: replacement for `presentPostOnboardingPaywall`.
+    /// The FTUE now ends on the personalized insight peak — paywall waits for a `PaywallTrigger`.
+    private func finishOnboardingWithoutPaywall() {
+        Analytics.shared.track(.paywallShown, properties: [
+            "trigger": "ftue_complete_paywall_deferred"
+        ])
+        auth.completeProfileSetup()
+    }
 
-        shouldCompleteProfileSetupAfterPaywall = true
-        showingPostOnboardingPaywall = true
+    /// Legacy helper retained for any in-flight code paths that still reference the
+    /// post-onboarding paywall. New code should use `PaywallTrigger` peak moments instead.
+    private func presentPostOnboardingPaywall() {
+        // Deprecated in Wave 8: route through the new path so onboarding ends on a peak.
+        finishOnboardingWithoutPaywall()
     }
 
     private func completeProfileSetupAfterPostOnboardingPaywall() {

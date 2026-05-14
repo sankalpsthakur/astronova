@@ -181,7 +181,38 @@ final class GamificationManager: ObservableObject {
         unlockMilestone(.firstOracleAction)
         unlockActionCard(for: .career)
         markWeeklyChallengeIfNeeded(for: .career)
+
+        // Wave 8 UX pass 1: paywall trigger at the 3rd Oracle session — a real peak,
+        // not the post-onboarding wall.
+        let defaults = UserDefaults.standard
+        let key = "oracle.session.count"
+        let count = defaults.integer(forKey: key) + 1
+        defaults.set(count, forKey: key)
+        if count == 3 {
+            PaywallTrigger.afterOracleSession3.fire()
+        }
+
         persist()
+    }
+
+    /// Wave 8 UX pass 1: call once when the user finishes reading their first natal chart.
+    /// Idempotent — only the first call after install actually fires the paywall trigger.
+    func markFirstChartReading() {
+        let defaults = UserDefaults.standard
+        let key = "chart.firstReadingMarked"
+        guard !defaults.bool(forKey: key) else { return }
+        defaults.set(true, forKey: key)
+        PaywallTrigger.afterFirstChartReading.fire()
+    }
+
+    /// Wave 8 UX pass 1: call when the user opens / browses the reports shop.
+    /// Idempotent per install.
+    func markReportShopBrowse() {
+        let defaults = UserDefaults.standard
+        let key = "shop.firstBrowseMarked"
+        guard !defaults.bool(forKey: key) else { return }
+        defaults.set(true, forKey: key)
+        PaywallTrigger.afterReportShopBrowse.fire()
     }
 
     func markTimeTravelSnapshot() {

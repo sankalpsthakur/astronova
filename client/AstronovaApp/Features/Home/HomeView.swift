@@ -34,6 +34,10 @@ struct HomeView: View {
                     .accessibilityAddTraits(.isHeader)
 
                 if let g = vm.guidance {
+                    if g.resolvedDepth != .general {
+                        DailyDepthBanner(guidance: g)
+                            .padding(.bottom, Cosmic.Spacing.xs)
+                    }
                     HStack(spacing: Cosmic.Spacing.s) {
                         Button {
                             CosmicHaptics.light()
@@ -123,6 +127,8 @@ struct HomeView: View {
                     }
 
                     Button {
+                        // Wave 8 UX pass 1: first-time browse is a peak — fires PaywallTrigger.afterReportShopBrowse.
+                        GamificationManager.shared.markReportShopBrowse()
                         showingReportShop = true
                     } label: {
                         HStack(spacing: Cosmic.Spacing.s) {
@@ -611,6 +617,96 @@ private struct QuickTile: View {
                 )
         )
         .cosmicElevation(.low)
+    }
+}
+
+// MARK: - DailyDepthBanner
+
+/// Variable-depth banner that surfaces extended readings on `.depth` and `.epiphany` days.
+/// Hidden on `.general` days so the home stays simple by default.
+struct DailyDepthBanner: View {
+    let guidance: DailyGuidance
+
+    private var isEpiphany: Bool { guidance.resolvedDepth == .epiphany }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+            HStack(spacing: 6) {
+                Image(systemName: isEpiphany ? "sparkles" : "moonphase.waxing.gibbous")
+                    .font(.caption)
+                    .foregroundStyle(Color.cosmicGold)
+                Text(isEpiphany ? "An epiphany day" : "A deeper day")
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicGold)
+                    .textCase(.uppercase)
+                    .tracking(1.2)
+            }
+
+            if let headline = guidance.headline, !headline.isEmpty {
+                Text(headline)
+                    .font(.cosmicHeadline)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let transit = guidance.transitNote, !transit.isEmpty {
+                Text(transit)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let body = guidance.extendedBody, !body.isEmpty {
+                Text(body)
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let prompt = guidance.reflectionPrompt, !prompt.isEmpty {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "quote.opening")
+                        .font(.caption)
+                        .foregroundStyle(Color.cosmicGold.opacity(0.7))
+                    Text(prompt)
+                        .font(.cosmicBody.italic())
+                        .foregroundStyle(Color.cosmicTextPrimary.opacity(0.85))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 2)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Cosmic.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .fill(Color.cosmicSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: isEpiphany
+                                    ? [.cosmicGold, .planetVenus]
+                                    : [.cosmicPrimary.opacity(0.6), .cosmicGold.opacity(0.4)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isEpiphany ? Cosmic.Border.medium : Cosmic.Border.hairline
+                        )
+                )
+        )
+        .cosmicElevation(.low)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var accessibilityLabel: String {
+        var parts: [String] = [isEpiphany ? "Epiphany day" : "Deeper day"]
+        if let headline = guidance.headline { parts.append(headline) }
+        if let body = guidance.extendedBody { parts.append(body) }
+        if let prompt = guidance.reflectionPrompt { parts.append("Reflect: \(prompt)") }
+        return parts.joined(separator: ". ")
     }
 }
 
