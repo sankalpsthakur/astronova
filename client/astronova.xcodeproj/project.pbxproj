@@ -111,6 +111,8 @@
 		TT001000000000000000004 /* Features/TimeTravel/Views/MeaningStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000004 /* Features/TimeTravel/Views/MeaningStack.swift */; };
 		TT001000000000000000005 /* Features/TimeTravel/Views/TimeSeeker.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000005 /* Features/TimeTravel/Views/TimeSeeker.swift */; };
 		TT001000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */; };
+		TT001000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */; };
+		TT001000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */; };
 		TMPLBF000000000000000010 /* HouseInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000010 /* HouseInsightCard.swift */; };
 		GAM001000000000000000001 /* GamificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000001 /* GamificationModels.swift */; };
 		GAM001000000000000000002 /* GamificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000002 /* GamificationManager.swift */; };
@@ -261,6 +263,8 @@
 		TT000000000000000000004 /* Features/TimeTravel/Views/MeaningStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/MeaningStack.swift; sourceTree = "<group>"; };
 		TT000000000000000000005 /* Features/TimeTravel/Views/TimeSeeker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/TimeSeeker.swift; sourceTree = "<group>"; };
 		TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift; sourceTree = "<group>"; };
+		TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/ChartRevealCeremony.swift; sourceTree = "<group>"; };
+		TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/MarchOfLifeView.swift; sourceTree = "<group>"; };
 		TMPLFR000000000000000010 /* HouseInsightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HouseInsightCard.swift; path = AstronovaApp/Features/TimeTravel/Views/HouseInsightCard.swift; sourceTree = SOURCE_ROOT; };
 		GAM000000000000000000001 /* GamificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationModels.swift; sourceTree = "<group>"; };
 		GAM000000000000000000002 /* GamificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationManager.swift; sourceTree = "<group>"; };
@@ -391,6 +395,8 @@
 				TT000000000000000000004 /* Features/TimeTravel/Views/MeaningStack.swift */,
 				TT000000000000000000005 /* Features/TimeTravel/Views/TimeSeeker.swift */,
 				TT000000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift */,
+				TT000000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift */,
+				TT000000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift */,
 				TMPLFR000000000000000010 /* HouseInsightCard.swift */,
 				F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */,
 				39808353AF2C460DBA69DC37 /* DashaImpactView.swift */,
@@ -782,6 +788,8 @@
 				TT001000000000000000004 /* Features/TimeTravel/Views/MeaningStack.swift in Sources */,
 				TT001000000000000000005 /* Features/TimeTravel/Views/TimeSeeker.swift in Sources */,
 				TT001000000000000000006 /* Features/TimeTravel/Views/TimeTravelSwarmOverlay.swift in Sources */,
+				TT001000000000000000007 /* Features/TimeTravel/Views/ChartRevealCeremony.swift in Sources */,
+				TT001000000000000000008 /* Features/TimeTravel/Views/MarchOfLifeView.swift in Sources */,
 				TMPLBF000000000000000010 /* HouseInsightCard.swift in Sources */,
 				02BF82B08A9C4246B3BD0A51 /* DashaChakraWheelView.swift in Sources */,
 				3ABC5323337547CD8ACB46F0 /* DashaImpactView.swift in Sources */,

@@ -1895,7 +1895,11 @@ struct SimpleTabBarView: View {
     @AppStorage(AstronovaIntentRouteStore.pendingRouteKey) private var pendingIntentRoute = ""
     @State private var keyboardHeight: CGFloat = 0
     @State private var showingUITestPaywall = false
-    
+    // Wave 9 UX pass 2: global paywall coordinator — listens for `.paywallRequested` posted by
+    // `PaywallTrigger.fire()` and presents the contextual paywall sheet.
+    @State private var triggeredPaywallContext: PaywallContext?
+    @State private var triggeredPaywallTrigger: String?
+
     var body: some View {
         ZStack {
             // Content area - extends full screen behind floating tab bar
@@ -1972,6 +1976,28 @@ struct SimpleTabBarView: View {
         )
         .sheet(isPresented: $showingUITestPaywall) {
             PaywallView(context: uiTestPaywallContext)
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { triggeredPaywallContext != nil },
+                set: { presenting in
+                    if !presenting {
+                        triggeredPaywallContext = nil
+                        triggeredPaywallTrigger = nil
+                    }
+                }
+            )
+        ) {
+            PaywallView(context: triggeredPaywallContext ?? .general)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .paywallRequested)) { notification in
+            // Wave 9: peak-anchored paywall presenter. Triggered from `PaywallTrigger.fire()`.
+            // Avoid stomping an in-flight sheet (e.g. UI-test paywall) — queue is single-slot.
+            guard triggeredPaywallContext == nil, !showingUITestPaywall else { return }
+            let userInfo = notification.userInfo ?? [:]
+            let contextRaw = userInfo["context"] as? String ?? PaywallContext.general.rawValue
+            triggeredPaywallContext = PaywallContext(rawValue: contextRaw) ?? .general
+            triggeredPaywallTrigger = userInfo["trigger"] as? String
         }
         .onAppear {
             trackAppLaunch()
@@ -7560,6 +7586,11 @@ struct InlineReportsStoreSheet: View {
             .navigationTitle("Reports Shop")
             .accessibilityIdentifier(AccessibilityID.reportsStoreView)
             .accessibilityElement(children: .contain)
+            .onAppear {
+                // Wave 9 UX pass 2: shop browse is a peak moment — fires PaywallTrigger.afterReportShopBrowse.
+                // GamificationManager handles per-install idempotency.
+                GamificationManager.shared.markReportShopBrowse()
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }

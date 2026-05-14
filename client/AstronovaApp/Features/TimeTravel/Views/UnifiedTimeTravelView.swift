@@ -14,6 +14,13 @@ struct UnifiedTimeTravelView: View {
     @State private var showPlanetSheet = false
     @State private var showDashaSheet = false
     @State private var showGuideSheet = false
+    // Wave 9 UX pass 2 — Move 3: March of Life sheet (G8 endgame surface).
+    @State private var showMarchOfLifeSheet = false
+
+    // Wave 9 UX pass 2 — Move 2: chart-reveal ceremony state.
+    // `chartReadyForCeremony` flips true once the first snapshot commits; the
+    // modifier observes it and presents the ceremony exactly once per install.
+    @State private var chartReadyForCeremony: Bool = false
 
     private var timeTravelLockMessage: String? {
         let profile = auth.profileManager.profile
@@ -177,16 +184,41 @@ struct UnifiedTimeTravelView: View {
                     .onChange(of: state.lastCommittedSnapshotKey) { _, newKey in
                         guard newKey != nil else { return }
                         gamification.markTimeTravelSnapshot()
+                        // Wave 9 UX pass 2: the first time the chart finishes rendering is a peak.
+                        // markFirstChartReading() is idempotent per install and fires
+                        // PaywallTrigger.afterFirstChartReading the first time only.
+                        gamification.markFirstChartReading()
+                        // Trip the chart-reveal ceremony — gated to one-shot inside the modifier.
+                        if !TestEnvironment.shared.isUITest {
+                            chartReadyForCeremony = true
+                        }
                     }
                 }
             }
             .navigationTitle("Time Travel")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showMarchOfLifeSheet = true
+                    } label: {
+                        Image(systemName: "calendar.day.timeline.left")
+                    }
+                    .accessibilityLabel("March of Life")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showGuideSheet = true } label: {
                         Image(systemName: "book.fill")
                     }
+                }
+            }
+            .sheet(isPresented: $showMarchOfLifeSheet) {
+                // Wave 9 UX pass 2 — Move 3: March of Life selector.
+                // Picking a month feeds it back into the existing scrubber so the
+                // Cosmic Map + dasha wheel become the detail surface for that window.
+                MarchOfLifeView(birthDate: auth.profileManager.profile.birthDate) { selected in
+                    state.targetDate = selected
+                    state.onDateCommit()
                 }
             }
             .sheet(isPresented: $showGuideSheet) {
@@ -222,6 +254,9 @@ struct UnifiedTimeTravelView: View {
                 }
             }
         }
+        // Wave 9 UX pass 2 — Move 2: chart-reveal ceremony. Fires exactly once per install
+        // (gated on `@AppStorage("hasSeenChartCeremony")`) when the first snapshot commits.
+        .chartRevealCeremony(when: chartReadyForCeremony)
     }
 
     private var birthTimeAssumptionBanner: some View {
