@@ -94,6 +94,7 @@
 		L10NBF000000000000000002 /* LocaleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000002 /* LocaleFormatter.swift */; };
 		L10NBF000000000000000003 /* CurrencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000003 /* CurrencyManager.swift */; };
 		LAUNCH100000000000001 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = LAUNCH000000000000001 /* LaunchScreen.storyboard */; };
+		PRIVAC100000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIVAC000000000000001 /* PrivacyInfo.xcprivacy */; };
 		SELFNEW01000000000001 /* SelfTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000001 /* SelfTabView.swift */; };
 		SELFNEW01000000000002 /* CosmicPulseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000002 /* CosmicPulseView.swift */; };
 		SELFNEW01000000000003 /* EssenceBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000003 /* EssenceBar.swift */; };
@@ -241,6 +242,7 @@
 		L10NFR000000000000000002 /* LocaleFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleFormatter.swift; sourceTree = "<group>"; };
 		L10NFR000000000000000003 /* CurrencyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyManager.swift; sourceTree = "<group>"; };
 		LAUNCH000000000000001 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		PRIVAC000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ORACLE02000000000001 /* OracleQuotaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OracleQuotaManager.swift; path = AstronovaApp/Features/Oracle/OracleQuotaManager.swift; sourceTree = "<group>"; };
 		ORACLE02000000000002 /* OracleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OracleViewModel.swift; path = AstronovaApp/Features/Oracle/OracleViewModel.swift; sourceTree = "<group>"; };
 		ORACLE02000000000003 /* OracleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OracleView.swift; path = AstronovaApp/Features/Oracle/OracleView.swift; sourceTree = "<group>"; };
@@ -397,6 +399,7 @@
 				DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */,
 				CDFF139DD6F247BDBF102B37 /* DashaModels.swift */,
 				3D01F8152C0A000000000009 /* Info.plist */,
+				PRIVAC000000000000001 /* PrivacyInfo.xcprivacy */,
 				LAUNCH000000000000001 /* LaunchScreen.storyboard */,
 				3D01F8162C0A00000000000A /* AstronovaApp.entitlements */,
 				3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */,
@@ -730,6 +733,7 @@
 				3D01F7E82C0A000000000001 /* Assets.xcassets in Resources */,
 				AA0002000000000000000008 /* remote_config.json in Resources */,
 				LAUNCH100000000000001 /* LaunchScreen.storyboard in Resources */,
+				PRIVAC100000000000001 /* PrivacyInfo.xcprivacy in Resources */,
 				TMPLBF0000000000000000FF /* bell.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

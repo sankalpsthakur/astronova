@@ -87,25 +87,34 @@ final class MonetizationJourneyTests: XCTestCase {
     }
 
     private func openOracleFromTemple(file: StaticString = #filePath, line: UInt = #line) {
+        // Give the Temple tab time to settle after the tab tap. SwiftUI tabs
+        // may not finish rendering by the time the first existence check fires,
+        // especially when the `task` modifier kicks off background loads.
+        RunLoop.current.run(until: Date().addingTimeInterval(0.75))
+
         let quickAccess = anyElement("oracleQuickAccessButton")
-        if quickAccess.waitForExistence(timeout: 8) {
+        if quickAccess.waitForExistence(timeout: 15) {
+            // Scroll the quick-access card into view if it's below the fold.
+            if !quickAccess.isHittable {
+                scrollToElement(quickAccess)
+            }
             quickAccess.tap()
             return
         }
 
         let askOracle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ask the Oracle")).firstMatch
-        if askOracle.waitForExistence(timeout: 8) {
+        if askOracle.waitForExistence(timeout: 10) {
             askOracle.tap()
             return
         }
 
         let askOracleRow = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ask the Oracle")).firstMatch
-        if askOracleRow.waitForExistence(timeout: 4) {
+        if askOracleRow.waitForExistence(timeout: 6) {
             askOracleRow.tap()
             return
         }
 
-        XCTFail("Oracle quick access card should be visible in Temple tab.", file: file, line: line)
+        XCTFail("Oracle quick access card should be visible in Temple tab.\n\nDebug:\n\(app.debugDescription)", file: file, line: line)
     }
 
     private func waitForNotExists(_ element: XCUIElement, timeout: TimeInterval = 8) -> Bool {
