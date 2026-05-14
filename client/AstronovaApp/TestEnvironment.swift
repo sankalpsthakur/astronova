@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import Security
+import UIKit
 
 /// Launch arguments for UI testing
 enum TestLaunchArgument: String {
@@ -92,6 +93,20 @@ final class TestEnvironment {
         guard isUITest else { return }
 
         log("Applying UI test configuration...")
+
+        // Disable UIKit/SwiftUI implicit animations during UI tests. Many views
+        // in this app use `.repeatForever` animations (cosmic backgrounds,
+        // floating stars, pulsating CTAs). They keep the run loop perpetually
+        // busy, which (a) prevents XCUIElement's "wait for app to idle"
+        // heuristic from settling and (b) bloats the accessibility snapshot
+        // payload that XCTest serializes over XPC to the test runner. After
+        // ~10 sequential app launches in a single runner process this XPC
+        // channel gets invalidated with `mach_error 0x10000003`, the runner
+        // exits with SIGTERM, and the in-flight test fails with
+        // "Test crashed with signal term." Disabling animations under tests
+        // dramatically reduces the AX tree churn and stabilises the runner.
+        // See progress/wave4-astronova.md for the full diagnosis.
+        UIView.setAnimationsEnabled(false)
 
         // Reset all state if requested
         if hasArgument(.reset) {

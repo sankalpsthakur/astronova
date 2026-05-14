@@ -84,7 +84,7 @@ struct AstronovaAppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            rootContent
                 .environmentObject(authState)
                 .environmentObject(gamification)
                 .preferredColorScheme(.dark)
@@ -95,6 +95,21 @@ struct AstronovaAppApp: App {
                         Analytics.shared.track(.appLaunched, properties: nil)
                     }
                 }
+        }
+    }
+
+    /// Wraps RootView with a reduce-motion override during UI tests so that
+    /// `repeatForever` animations and decorative cosmic motion don't keep the
+    /// run loop perpetually busy. The existing animation call sites already
+    /// gate their `.repeatForever` modifiers on `accessibilityReduceMotion`,
+    /// so flipping this single environment value short-circuits all of them.
+    @ViewBuilder
+    private var rootContent: some View {
+        if TestEnvironment.shared.isUITest {
+            RootView()
+                .transaction { txn in txn.disablesAnimations = true }
+        } else {
+            RootView()
         }
     }
 }
