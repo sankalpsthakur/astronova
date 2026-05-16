@@ -15,6 +15,13 @@ class SelfDataService: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
+    /// Planet name (capitalised, e.g. "Saturn") → natal house (1–12). Populated from
+    /// the dasha response's optional `natal_snapshot.planets` map. Empty until the
+    /// backend exposes natal placement data; the chart wheel falls back to plain
+    /// decoration in that case.
+    @Published var planetHouseMap: [String: Int] = [:]
+    @Published var transitions: DashaCompleteResponse.TransitionInfo?
+
     // Reports
     @Published var userReports: [DetailedReport] = []
     @Published var isLoadingReports = false
@@ -119,9 +126,31 @@ class SelfDataService: ObservableObject {
             nakshatraLord = calculation.nakshatraLord
         }
 
-        // Extract lagna (we'll need to get this from chart data or add to API)
-        // For now, derive from impact analysis tone or leave nil
-        lagna = nil // TODO: Add lagna to API response
+        // Extract lagna + planet→house map from optional natal snapshot.
+        // Backwards-compatible: when the server hasn't been updated yet, the
+        // snapshot is nil and `lagna`/`planetHouseMap` remain unset, so callers
+        // gracefully fall back to existing behaviour.
+        if let snapshot = response.natalSnapshot {
+            lagna = snapshot.lagna
+            if let planets = snapshot.planets {
+                var map: [String: Int] = [:]
+                for (name, placement) in planets {
+                    if let house = placement.house {
+                        // Normalise to capitalised planet name (e.g. "saturn" → "Saturn")
+                        map[name.capitalized] = house
+                    }
+                }
+                planetHouseMap = map
+            } else {
+                planetHouseMap = [:]
+            }
+        } else {
+            lagna = nil
+            planetHouseMap = [:]
+        }
+
+        // Surface upcoming dasha transitions for the Self tab's "weather forecast" strip.
+        transitions = response.transitions
 
         // Build planetary strengths from impact analysis
         buildPlanetaryStrengths(from: response.impactAnalysis)
@@ -220,6 +249,8 @@ class SelfDataService: ObservableObject {
         moonNakshatra = nil
         nakshatraLord = nil
         lagna = nil
+        planetHouseMap = [:]
+        transitions = nil
         planetaryStrengths = []
         dominantPlanet = nil
         stopReportPolling()

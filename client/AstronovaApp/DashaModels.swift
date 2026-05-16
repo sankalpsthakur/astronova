@@ -39,6 +39,11 @@ struct DashaCompleteResponse: Codable {
     let planetaryKeywords: PlanetaryKeywords
     let transitions: TransitionInfo?
     let education: EducationContent?
+    /// Optional snapshot of natal chart data (lagna + planet→house map) used by
+    /// the Self tab's chart wheel to highlight the house currently lit by the
+    /// active Mahadasha lord. Decoded with `decodeIfPresent` so absent backend
+    /// support is non-fatal — the wheel falls back to pure decoration.
+    let natalSnapshot: NatalSnapshot?
 
     enum CodingKeys: String, CodingKey {
         case dasha
@@ -47,6 +52,18 @@ struct DashaCompleteResponse: Codable {
         case planetaryKeywords = "planetary_keywords"
         case transitions
         case education
+        case natalSnapshot = "natal_snapshot"
+    }
+
+    /// Snapshot of natal placements: lagna sign and planet → house map.
+    struct NatalSnapshot: Codable {
+        let lagna: String?
+        let planets: [String: PlanetPlacement]?
+
+        struct PlanetPlacement: Codable {
+            let sign: String?
+            let house: Int?
+        }
     }
 
     struct DashaDetails: Codable {

@@ -101,6 +101,58 @@ def test_chart_generate_can_return_full_vedic_chart_with_dashas(client):
     assert isinstance(dashas[0].get("endDate"), str)
 
 
+def test_chart_generate_emits_top_level_lagna_for_vedic(client):
+    if not _SWE_OK:
+        pytest.skip("pyswisseph not installed")
+    response = client.post(
+        "/api/v1/chart/generate",
+        json={
+            "birthData": {
+                "date": "1990-01-15",
+                "time": "14:30",
+                "timezone": "UTC",
+                "latitude": 19.0760,
+                "longitude": 72.8777,
+            },
+            "systems": ["vedic"],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, dict)
+
+    # Top-level lagna key (sidereal rashi) for client consumption
+    assert "lagna" in data
+    assert data["lagna"] in EphemerisService.VEDIC_SIGNS
+
+    # Must agree with the nested vedicChart lagna sign
+    assert data["lagna"] == data["vedicChart"]["lagna"]["sign"]
+
+
+def test_chart_generate_omits_lagna_for_western_only(client):
+    if not _SWE_OK:
+        pytest.skip("pyswisseph not installed")
+    response = client.post(
+        "/api/v1/chart/generate",
+        json={
+            "birthData": {
+                "date": "1990-01-15",
+                "time": "14:30",
+                "timezone": "UTC",
+                "latitude": 19.0760,
+                "longitude": 72.8777,
+            },
+            "systems": ["western"],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    # No vedic system requested -> lagna should be null/None
+    assert data.get("lagna") is None
+
+
 def test_chart_aspects_post_returns_list(client):
     if not _SWE_OK:
         pytest.skip("pyswisseph not installed")

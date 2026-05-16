@@ -105,6 +105,7 @@
 		SELFNEW01000000000009 /* ProfileCompleteness.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000009 /* ProfileCompleteness.swift */; };
 		SELFNEW0100000000000A /* QuickBirthEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW0200000000000A /* QuickBirthEditSheet.swift */; };
 		SELFNEW0100000000000B /* ReportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW0200000000000B /* ReportDetailView.swift */; };
+		SELFNEW0100000000000C /* DashaForecastStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW0200000000000C /* DashaForecastStrip.swift */; };
 		TT001000000000000000001 /* TimeTravelSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000001 /* TimeTravelSnapshot.swift */; };
 		TT001000000000000000002 /* Features/TimeTravel/Views/UnifiedTimeTravelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000002 /* Features/TimeTravel/Views/UnifiedTimeTravelView.swift */; };
 		TT001000000000000000003 /* Features/TimeTravel/Views/CosmicMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000003 /* Features/TimeTravel/Views/CosmicMapView.swift */; };
@@ -255,6 +256,7 @@
 		SELFNEW02000000000009 /* ProfileCompleteness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProfileCompleteness.swift; path = AstronovaApp/Features/Self/ProfileCompleteness.swift; sourceTree = "<group>"; };
 		SELFNEW0200000000000A /* QuickBirthEditSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QuickBirthEditSheet.swift; path = AstronovaApp/Features/Self/QuickBirthEditSheet.swift; sourceTree = "<group>"; };
 		SELFNEW0200000000000B /* ReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReportDetailView.swift; path = AstronovaApp/Features/Self/ReportDetailView.swift; sourceTree = "<group>"; };
+		SELFNEW0200000000000C /* DashaForecastStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DashaForecastStrip.swift; path = AstronovaApp/Features/Self/DashaForecastStrip.swift; sourceTree = "<group>"; };
 		TT000000000000000000001 /* TimeTravelSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeTravelSnapshot.swift; sourceTree = "<group>"; };
 		TT000000000000000000002 /* Features/TimeTravel/Views/UnifiedTimeTravelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/UnifiedTimeTravelView.swift; sourceTree = "<group>"; };
 		TT000000000000000000003 /* Features/TimeTravel/Views/CosmicMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features/TimeTravel/Views/CosmicMapView.swift; sourceTree = "<group>"; };
@@ -595,6 +597,7 @@
 				SELFNEW02000000000009 /* ProfileCompleteness.swift */,
 				SELFNEW0200000000000A /* QuickBirthEditSheet.swift */,
 				SELFNEW0200000000000B /* ReportDetailView.swift */,
+				SELFNEW0200000000000C /* DashaForecastStrip.swift */,
 				ORACLE02000000000001 /* OracleQuotaManager.swift */,
 				ORACLE02000000000002 /* OracleViewModel.swift */,
 				ORACLE02000000000003 /* OracleView.swift */,
@@ -766,6 +769,7 @@
 				SELFNEW01000000000009 /* ProfileCompleteness.swift in Sources */,
 				SELFNEW0100000000000A /* QuickBirthEditSheet.swift in Sources */,
 				SELFNEW0100000000000B /* ReportDetailView.swift in Sources */,
+				SELFNEW0100000000000C /* DashaForecastStrip.swift in Sources */,
 				3D01F7E62C0A000000000001 /* RootView.swift in Sources */,
 				L10NBF000000000000000001 /* LocalizedStrings.swift in Sources */,
 				L10NBF000000000000000002 /* LocaleFormatter.swift in Sources */,
@@ -1048,7 +1052,7 @@
 				CODE_SIGN_ENTITLEMENTS = AstronovaApp/AstronovaAppDebug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026051301;
+				CURRENT_PROJECT_VERSION = 2026051601;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
 				ENABLE_APP_SANDBOX = YES;
@@ -1084,7 +1088,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AstronovaApp/AstronovaApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026051301;
+				CURRENT_PROJECT_VERSION = 2026051601;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
 				ENABLE_APP_SANDBOX = YES;
@@ -1117,7 +1121,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026051301;
+				CURRENT_PROJECT_VERSION = 2026051601;
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1137,7 +1141,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026051301;
+				CURRENT_PROJECT_VERSION = 2026051601;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1156,7 +1160,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026051301;
+				CURRENT_PROJECT_VERSION = 2026051601;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
@@ -1174,7 +1178,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026051301;
+				CURRENT_PROJECT_VERSION = 2026051601;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
