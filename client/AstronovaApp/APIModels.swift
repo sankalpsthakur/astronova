@@ -68,7 +68,7 @@ struct WesternChart: Codable {
     let aspects: [Aspect]
 }
 
-/// Vedic chart structure  
+/// Vedic chart structure
 struct VedicChart: Codable {
     let positions: [String: Position]
     let houses: [String: House]

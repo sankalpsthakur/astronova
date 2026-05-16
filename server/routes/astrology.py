@@ -384,6 +384,14 @@ def dashas_complete():
             "mahadasha": maha_impact.get("keywords", []),
             "antardasha": antar_impact.get("keywords", []),
         },
+        "natal_snapshot": {
+            "lagna": asc_sign,
+            "planets": {
+                name.lower(): {"sign": data.get("sign"), "house": data.get("house")}
+                for name, data in planet_data.items()
+                if name.lower() != "ascendant"
+            },
+        },
     }
 
     # Add transition information if requested
