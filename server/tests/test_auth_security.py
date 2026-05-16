@@ -28,6 +28,25 @@ from db import get_connection
 from routes.auth import generate_jwt, validate_jwt
 
 
+VALID_APPLE_ID_TOKEN = "valid-apple-id-token"
+_UNSET = object()
+
+
+def mock_apple_validation(monkeypatch, *, sub="apple-user-001", email=_UNSET):
+    """Mock Apple JWT validation while preserving token-required auth semantics."""
+
+    def fake_validate(id_token):
+        assert id_token == VALID_APPLE_ID_TOKEN
+        payload = {}
+        if sub is not None:
+            payload["sub"] = sub
+        if email is not _UNSET:
+            payload["email"] = email
+        return payload
+
+    monkeypatch.setattr("routes.auth.validate_apple_id_token", fake_validate)
+
+
 @pytest.fixture()
 def test_db_path(tmp_path):
     """Temporary database path for test isolation."""
@@ -80,11 +99,19 @@ def another_user_id():
 class TestAppleSignIn:
     """Test Apple Sign-In authentication flow."""
 
-    def test_apple_auth_valid_complete_data(self, client):
+    def test_apple_auth_valid_complete_data(self, client, monkeypatch):
         """Test Apple auth with all valid fields."""
+        mock_apple_validation(monkeypatch, sub="apple-user-001")
+
         response = client.post(
             "/api/v1/auth/apple",
-            json={"userIdentifier": "apple-user-001", "email": "user@example.com", "firstName": "John", "lastName": "Doe"},
+            json={
+                "idToken": VALID_APPLE_ID_TOKEN,
+                "userIdentifier": "apple-user-001",
+                "email": "user@example.com",
+                "firstName": "John",
+                "lastName": "Doe",
+            },
             content_type="application/json",
         )
 
@@ -100,10 +127,14 @@ class TestAppleSignIn:
         assert data["user"]["lastName"] == "Doe"
         assert data["user"]["fullName"] == "John Doe"
 
-    def test_apple_auth_minimal_data(self, client):
-        """Test Apple auth with only userIdentifier."""
+    def test_apple_auth_minimal_data(self, client, monkeypatch):
+        """Test Apple auth with only token-backed userIdentifier."""
+        mock_apple_validation(monkeypatch, sub="apple-user-002")
+
         response = client.post(
-            "/api/v1/auth/apple", json={"userIdentifier": "apple-user-002"}, content_type="application/json"
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": "apple-user-002"},
+            content_type="application/json",
         )
 
         assert response.status_code == 200
@@ -163,37 +194,26 @@ class TestAppleSignIn:
         assert response.status_code == 401
         assert response.get_json()["code"] == "INVALID_TOKEN"
 
-    def test_apple_auth_no_user_identifier_generates_uuid(self, client):
-        """Test Apple auth without userIdentifier generates UUID."""
+    def test_apple_auth_rejects_missing_token_even_with_email(self, client):
+        """Apple auth must not mint anonymous JWTs without an Apple token."""
         response = client.post("/api/v1/auth/apple", json={"email": "anonymous@example.com"}, content_type="application/json")
 
-        assert response.status_code == 200
-        data = response.get_json()
-
-        # Should generate a UUID for user ID
-        assert "jwtToken" in data
-        assert len(data["user"]["id"]) > 0
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "APPLE_TOKEN_REQUIRED"
 
     def test_apple_auth_empty_json(self, client):
-        """Test Apple auth with empty JSON body."""
+        """Test Apple auth with empty JSON body requires token."""
         response = client.post("/api/v1/auth/apple", json={}, content_type="application/json")
 
-        assert response.status_code == 200
-        data = response.get_json()
-
-        # Should still create user with generated ID
-        assert "jwtToken" in data
-        assert "user" in data
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "APPLE_TOKEN_REQUIRED"
 
     def test_apple_auth_no_json_body(self, client):
-        """Test Apple auth with no JSON body."""
+        """Test Apple auth with no JSON body requires token."""
         response = client.post("/api/v1/auth/apple")
 
-        assert response.status_code == 200
-        data = response.get_json()
-
-        # Should handle gracefully
-        assert "jwtToken" in data
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "APPLE_TOKEN_REQUIRED"
 
     def test_apple_auth_malformed_json(self, client):
         """Test Apple auth with malformed JSON."""
@@ -203,12 +223,20 @@ class TestAppleSignIn:
         data = response.get_json()
         assert data.get("code") == "INVALID_JSON"
 
-    def test_apple_auth_creates_database_record(self, client):
+    def test_apple_auth_creates_database_record(self, client, monkeypatch):
         """Test that Apple auth creates user record in database."""
         user_id = "apple-user-db-test"
+        mock_apple_validation(monkeypatch, sub=user_id)
+
         response = client.post(
             "/api/v1/auth/apple",
-            json={"userIdentifier": user_id, "email": "dbtest@example.com", "firstName": "DB", "lastName": "Test"},
+            json={
+                "idToken": VALID_APPLE_ID_TOKEN,
+                "userIdentifier": user_id,
+                "email": "dbtest@example.com",
+                "firstName": "DB",
+                "lastName": "Test",
+            },
             content_type="application/json",
         )
 
@@ -226,21 +254,34 @@ class TestAppleSignIn:
         assert user["first_name"] == "DB"
         assert user["last_name"] == "Test"
 
-    def test_apple_auth_upsert_existing_user(self, client):
+    def test_apple_auth_upsert_existing_user(self, client, monkeypatch):
         """Test that Apple auth updates existing user."""
         user_id = "apple-user-upsert"
+        mock_apple_validation(monkeypatch, sub=user_id)
 
         # First auth
         response1 = client.post(
             "/api/v1/auth/apple",
-            json={"userIdentifier": user_id, "email": "old@example.com", "firstName": "Old", "lastName": "Name"},
+            json={
+                "idToken": VALID_APPLE_ID_TOKEN,
+                "userIdentifier": user_id,
+                "email": "old@example.com",
+                "firstName": "Old",
+                "lastName": "Name",
+            },
         )
         assert response1.status_code == 200
 
         # Second auth with updated info
         response2 = client.post(
             "/api/v1/auth/apple",
-            json={"userIdentifier": user_id, "email": "new@example.com", "firstName": "New", "lastName": "Name"},
+            json={
+                "idToken": VALID_APPLE_ID_TOKEN,
+                "userIdentifier": user_id,
+                "email": "new@example.com",
+                "firstName": "New",
+                "lastName": "Name",
+            },
         )
         assert response2.status_code == 200
 
@@ -445,6 +486,51 @@ class TestAdminTokenProtection:
         assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
 
 
+class TestSeedTestUserProtection:
+    """Test seed-test-user is not open in production."""
+
+    def test_seed_test_user_requires_admin_token_in_production(self, client, monkeypatch):
+        monkeypatch.setenv("FLASK_ENV", "production")
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+
+        response = client.post("/api/v1/seed-test-user")
+
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
+
+    def test_seed_test_user_returns_503_if_admin_token_unconfigured_in_production(self, client, monkeypatch):
+        monkeypatch.setenv("FLASK_ENV", "production")
+        monkeypatch.delenv("ADMIN_API_TOKEN", raising=False)
+
+        response = client.post("/api/v1/seed-test-user")
+
+        assert response.status_code == 503
+        assert response.get_json()["code"] == "ADMIN_NOT_CONFIGURED"
+
+    def test_seed_test_user_accepts_admin_token_in_production(self, client, monkeypatch):
+        monkeypatch.setenv("FLASK_ENV", "production")
+        monkeypatch.setenv("ADMIN_API_TOKEN", "expected-admin-token")
+
+        response = client.post(
+            "/api/v1/seed-test-user",
+            headers={"X-Admin-Token": "expected-admin-token"},
+        )
+
+        assert response.status_code == 201
+        assert response.get_json()["user_id"] == "appstore-test-user-2026"
+
+    def test_seed_test_user_allows_non_production_without_admin_token(self, client, monkeypatch):
+        monkeypatch.setenv("FLASK_ENV", "development")
+        monkeypatch.delenv("APP_ENV", raising=False)
+        monkeypatch.delenv("ENV", raising=False)
+        monkeypatch.delenv("ADMIN_API_TOKEN", raising=False)
+
+        response = client.post("/api/v1/seed-test-user")
+
+        assert response.status_code == 201
+        assert response.get_json()["user_id"] == "appstore-test-user-2026"
+
+
 class TestLogout:
     """Test logout endpoint."""
 
@@ -597,11 +683,16 @@ class TestCrossUserAccess:
 class TestSQLInjection:
     """Test SQL injection attempts in authentication parameters."""
 
-    def test_sql_injection_in_user_identifier(self, client):
-        """Test SQL injection in userIdentifier field."""
+    def test_sql_injection_in_token_subject(self, client, monkeypatch):
+        """Test SQL injection in validated Apple subject."""
         malicious_id = "'; DROP TABLE users; --"
+        mock_apple_validation(monkeypatch, sub=malicious_id)
 
-        response = client.post("/api/v1/auth/apple", json={"userIdentifier": malicious_id}, content_type="application/json")
+        response = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": malicious_id},
+            content_type="application/json",
+        )
 
         # Should handle safely due to parameterized queries
         assert response.status_code == 200
@@ -615,13 +706,14 @@ class TestSQLInjection:
 
         assert table is not None
 
-    def test_sql_injection_in_email(self, client):
+    def test_sql_injection_in_email(self, client, monkeypatch):
         """Test SQL injection in email field."""
         malicious_email = "test@example.com' OR '1'='1"
+        mock_apple_validation(monkeypatch, sub="test-user")
 
         response = client.post(
             "/api/v1/auth/apple",
-            json={"userIdentifier": "test-user", "email": malicious_email},
+            json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": "test-user", "email": malicious_email},
             content_type="application/json",
         )
 
@@ -702,9 +794,13 @@ class TestInvalidTokenFormats:
 class TestJWTExpiration:
     """Test JWT expiration handling."""
 
-    def test_token_expiration_field_present(self, client):
+    def test_token_expiration_field_present(self, client, monkeypatch):
         """Test that token response includes expiration."""
-        response = client.post("/api/v1/auth/apple", json={"userIdentifier": "test-user"})
+        mock_apple_validation(monkeypatch, sub="test-user")
+        response = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": "test-user"},
+        )
 
         assert response.status_code == 200
         data = response.get_json()
@@ -742,12 +838,17 @@ class TestJWTExpiration:
 class TestRateLimiting:
     """Test rate limiting (if implemented)."""
 
-    def test_rate_limiting_not_implemented(self, client):
+    def test_rate_limiting_not_implemented(self, client, monkeypatch):
         """Test that rate limiting is not currently implemented."""
+        mock_apple_validation(monkeypatch, sub="rate-limit-user")
+
         # Send many requests rapidly
         responses = []
         for i in range(100):
-            response = client.post("/api/v1/auth/apple", json={"userIdentifier": f"user-{i}"})
+            response = client.post(
+                "/api/v1/auth/apple",
+                json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": f"user-{i}"},
+            )
             responses.append(response.status_code)
 
         # All should succeed (no rate limiting)
@@ -805,18 +906,26 @@ class TestDataValidation:
 
         assert response.status_code == 400
 
-    def test_null_values_in_json(self, client):
+    def test_null_values_in_json(self, client, monkeypatch):
         """Test handling of null values in JSON."""
-        response = client.post("/api/v1/auth/apple", json={"userIdentifier": None, "email": None, "firstName": None})
+        mock_apple_validation(monkeypatch, sub="null-values-user")
+        response = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": None, "email": None, "firstName": None},
+        )
 
         # Should handle None values gracefully
         assert response.status_code == 200
 
-    def test_extremely_long_strings(self, client):
+    def test_extremely_long_strings(self, client, monkeypatch):
         """Test handling of extremely long input strings."""
         long_string = "a" * 100000
+        mock_apple_validation(monkeypatch, sub="test")
 
-        response = client.post("/api/v1/auth/apple", json={"userIdentifier": "test", "firstName": long_string})
+        response = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": "test", "firstName": long_string},
+        )
 
         # Should handle without crashing
         assert response.status_code == 200

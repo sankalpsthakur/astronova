@@ -141,7 +141,7 @@ extension AnalyticsEvent {
         case .subscriptionStarted: return .subscriptionStarted
         case .subscriptionCancelled: return .subscriptionCancelled
         case .subscriptionPaused: return .subscriptionPaused
-        case .iapPurchased, .purchaseSuccess: return .iapPurchased
+        case .iapPurchased: return .iapPurchased
         case .referralSent: return .referralSent
         case .referralRedeemed: return .referralRedeemed
         case .cosmicDiaryEntryCreated: return .cosmicDiaryEntryCreated

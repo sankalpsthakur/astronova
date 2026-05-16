@@ -22,6 +22,18 @@ _report_service = ReportGenerationService()
 _VALID_REPORT_DOMAINS = {"general", "love", "career", "money", "health", "family", "spiritual"}
 
 
+def _payment_required_response(feature: str, entitlement: dict):
+    return jsonify(
+        {
+            "error": "payment_required",
+            "code": "PAYMENT_REQUIRED",
+            "feature": feature,
+            "message": "Astronova Pro is required for this feature.",
+            "entitlement": entitlement,
+        }
+    ), 402
+
+
 def _generate_report_async(report_id: str, report_type: str, birth_data: dict | None, domain: str | None = None):
     """Background task to generate report content."""
     try:
@@ -170,6 +182,10 @@ def generate_report():
         domain = None
     if domain and domain not in _VALID_REPORT_DOMAINS:
         domain = None
+
+    entitlement = db.get_premium_entitlement(user_id)
+    if not entitlement["hasPremium"]:
+        return _payment_required_response("report_generation", entitlement)
 
     report_id = str(uuid.uuid4())
     report_title = _get_report_title(report_type)

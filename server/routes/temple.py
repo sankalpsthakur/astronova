@@ -20,6 +20,7 @@ from flask_babel import gettext as _
 
 from db import get_connection
 from middleware import require_auth
+from routes.admin import require_admin_token
 
 logger = logging.getLogger(__name__)
 temple_bp = Blueprint("temple", __name__)
@@ -423,6 +424,7 @@ def get_pandit_availability(pandit_id: str):
 
 
 @temple_bp.route("/bookings", methods=["POST"])
+@require_auth
 def create_booking():
     """
     POST /api/v1/temple/bookings
@@ -441,9 +443,7 @@ def create_booking():
         "specialRequests": "Please include..."
     }
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        return jsonify({"error": _("Authentication required")}), 401
+    user_id = g.user_id
 
     data = request.get_json() or {}
 
@@ -541,6 +541,7 @@ def create_booking():
 
 
 @temple_bp.route("/bookings", methods=["GET"])
+@require_auth
 def list_user_bookings():
     """
     GET /api/v1/temple/bookings
@@ -549,9 +550,7 @@ def list_user_bookings():
     Query params:
     - status: Filter by status (pending, confirmed, completed, cancelled)
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        return jsonify({"error": _("Authentication required")}), 401
+    user_id = g.user_id
 
     status_filter = request.args.get("status")
 
@@ -605,15 +604,14 @@ def list_user_bookings():
 
 
 @temple_bp.route("/bookings/<booking_id>", methods=["GET"])
+@require_auth
 def get_booking(booking_id: str):
     """
     GET /api/v1/temple/bookings/<booking_id>
 
     Get details of a specific booking.
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        return jsonify({"error": _("Authentication required")}), 401
+    user_id = g.user_id
 
     conn = get_connection()
     cur = conn.cursor()
@@ -720,6 +718,7 @@ def cancel_booking(booking_id: str):
 
 
 @temple_bp.route("/bookings/<booking_id>/accept", methods=["POST"])
+@require_admin_token
 def accept_booking(booking_id: str):
     """
     POST /api/v1/temple/bookings/<booking_id>/accept
@@ -939,12 +938,13 @@ def enroll_pandit():
 
 
 @temple_bp.route("/pandit/bookings", methods=["GET"])
+@require_admin_token
 def list_pandit_bookings():
     """
     GET /api/v1/temple/pandit/bookings
 
     List bookings assigned to the pandit.
-    Requires X-Pandit-Id header.
+    Requires admin authorization and X-Pandit-Id header.
     """
     pandit_id = request.headers.get("X-Pandit-Id")
     if not pandit_id:
@@ -996,6 +996,7 @@ def list_pandit_bookings():
 
 
 @temple_bp.route("/pandit/bookings/<booking_id>/join", methods=["GET"])
+@require_admin_token
 def get_pandit_session_link(booking_id: str):
     """
     GET /api/v1/temple/pandit/bookings/<booking_id>/join
@@ -1360,6 +1361,7 @@ def get_vedic_library():
 
 
 @temple_bp.route("/bell/ring", methods=["POST"])
+@require_auth
 def record_bell_ring():
     """
     POST /api/v1/temple/bell/ring
@@ -1367,9 +1369,7 @@ def record_bell_ring():
     Record a bell ring for the authenticated user.
     Body: { "streak": 5, "totalRings": 42 }
     """
-    user_id = request.headers.get("X-User-Id")
-    if not user_id:
-        return jsonify({"error": "Authentication required"}), 401
+    user_id = g.user_id
 
     data = request.get_json() or {}
 

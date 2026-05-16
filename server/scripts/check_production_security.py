@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import urllib.error
@@ -23,8 +24,25 @@ class Response:
     headers: dict[str, str]
 
 
-def fetch(path: str, *, headers: dict[str, str] | None = None) -> Response:
-    request = urllib.request.Request(urljoin(BASE_URL, path.lstrip("/")), headers=headers or {})
+def fetch(
+    path: str,
+    *,
+    method: str = "GET",
+    headers: dict[str, str] | None = None,
+    json_body: dict | None = None,
+) -> Response:
+    request_headers = dict(headers or {})
+    body = None
+    if json_body is not None:
+        body = json.dumps(json_body).encode("utf-8")
+        request_headers.setdefault("Content-Type", "application/json")
+
+    request = urllib.request.Request(
+        urljoin(BASE_URL, path.lstrip("/")),
+        data=body,
+        headers=request_headers,
+        method=method,
+    )
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
             body = response.read()
@@ -68,9 +86,34 @@ def main() -> int:
     openapi = fetch("/api/v1/openapi.yaml")
     spec_text = openapi.body.decode("utf-8", errors="replace")
     check(
-        openapi.status == 200 and len(spec_text) > 1000 and "/api/v1/auth/apple" in spec_text and "paths:" in spec_text,
-        "OpenAPI spec is non-empty and includes auth paths",
+        openapi.status == 200
+        and len(spec_text) > 1000
+        and "/api/v1/auth/apple" in spec_text
+        and "identityToken" in spec_text
+        and "adminTokenAuth" in spec_text
+        and "paths:" in spec_text,
+        "OpenAPI spec is non-empty and includes hardened auth/admin paths",
         f"OpenAPI spec is stale/missing: status={openapi.status}, bytes={openapi.body_size}",
+        failures,
+    )
+
+    tokenless_apple = fetch(
+        "/api/v1/auth/apple",
+        method="POST",
+        json_body={"userIdentifier": "prod-smoke-user"},
+    )
+    check(
+        tokenless_apple.status == 401,
+        "POST /api/v1/auth/apple rejects tokenless Apple auth",
+        f"POST /api/v1/auth/apple without Apple token returned {tokenless_apple.status}",
+        failures,
+    )
+
+    seed_test_user = fetch("/api/v1/seed-test-user", method="POST")
+    check(
+        seed_test_user.status in (401, 503),
+        "POST /api/v1/seed-test-user rejects missing admin token in production",
+        f"POST /api/v1/seed-test-user without admin token returned {seed_test_user.status}",
         failures,
     )
 

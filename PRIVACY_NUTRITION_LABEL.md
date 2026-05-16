@@ -45,7 +45,7 @@ Astronova collects identifiers, usage data, purchase history, and diagnostics to
 
 ## Third-Party SDKs Detected
 
-- **Smartlook Analytics** — session replay + diagnostics  (`https://github.com/smartlook/analytics-swift-package`)
+- **Smartlook Analytics** — package reference present (`https://github.com/smartlook/analytics-swift-package`), but `SmartlookAnalytics` is not linked to the `AstronovaApp` target in the current repo state. Treat Smartlook session replay/diagnostics as pending until a source worker links and verifies the SDK.
 
 ## Required-Reason API Declarations
 
@@ -56,10 +56,10 @@ Astronova collects identifiers, usage data, purchase history, and diagnostics to
 
 Astronova emits analytics through local shims:
 
-- `Analytics.shared.track(...)` fans selected events out to Smartlook and `PortfolioAnalytics`.
+- `Analytics.shared.track(...)` fans selected events out to `PortfolioAnalytics`, and to Smartlook only when the SDK is linked.
 - `PortfolioAnalytics.shared.track(...)` emits portfolio-standard events with `app_id`, random app UUID, session ID, experiment buckets, timestamp, and string-coerced event properties.
-- The Settings toggle `Share Anonymous Usage` maps to `PortfolioAnalytics.shared.isOptedOut`; when off, portfolio events are dropped, buffered portfolio events are cleared, the local UUID is removed, and Smartlook recording/event forwarding is stopped.
+- The Settings toggle `Share Anonymous Usage` maps to `PortfolioAnalytics.shared.isOptedOut`; when off, portfolio events are dropped, buffered portfolio events are cleared, the local UUID is removed, and Smartlook recording/event forwarding is stopped if the SDK has been linked.
 
 ---
 
-Diagnostics events are emitted via the in-house `PortfolioAnalytics` shim and Smartlook session diagnostics when analytics is enabled. Email and name come from Sign in with Apple when you choose to share them.
+Diagnostics events are emitted via the in-house `PortfolioAnalytics` shim. Smartlook session diagnostics remain pending until the SDK is linked and verified. Email and name come from Sign in with Apple when you choose to share them.

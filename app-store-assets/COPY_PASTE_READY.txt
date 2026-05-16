@@ -172,7 +172,7 @@ THIRD-PARTY SERVICES:
 - Video consultations: WebRTC video service (for astrologer consultations)
 - Ephemeris calculations: Swiss Ephemeris library
 - AI guidance: OpenAI API (optional, degrades gracefully)
-- Analytics: Smartlook (session diagnostics and usage analytics)
+- Analytics: portfolio/local analytics. Smartlook package reference exists, but SmartlookAnalytics is not linked in the current Xcode project unless a source worker changes and verifies it before upload.
 
 PERMISSIONS:
 - No location access required (birth location stored manually)

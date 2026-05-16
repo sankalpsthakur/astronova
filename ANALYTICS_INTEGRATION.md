@@ -8,13 +8,22 @@ and feedback infrastructure. For the full operator manual see
 - Privacy posture: default-on telemetry with Settings opt-out. Turning off
   `Share Anonymous Usage` drops portfolio events, clears buffered portfolio
   events, rotates/removes the local analytics UUID, and stops Smartlook
-  recording/event forwarding for the current app session.
+  recording/event forwarding for the current app session when the Smartlook SDK
+  is actually linked.
 - SDK: `IOSAppsAnalytics`, `IOSAppsFlags`, `IOSAppsReviewPrompts`,
   `IOSAppsCrashReporting`, `IOSAppsWinback`.
+- Smartlook status: the Swift package reference exists in the project, but
+  `SmartlookAnalytics` is not linked to the `AstronovaApp` target in the
+  current repo state. Treat Smartlook runtime recording/events as not active
+  unless a source worker links the SDK and re-verifies it.
 
-## Events emitted
+## Event Vocabulary and Current Wiring
 
 From [`umbrella/analytics/IOSAppsAnalytics/.../EventName.swift`](../umbrella/analytics/IOSAppsAnalytics/):
+
+This table is the allowed event vocabulary. Subscription lifecycle events are
+defined as targets, but they are not emitted today; see
+[`SUBSCRIPTION_EVENTS.md`](SUBSCRIPTION_EVENTS.md).
 
 | Event                  | When                                       | Notes |
 |------------------------|--------------------------------------------|-------|
@@ -26,9 +35,9 @@ From [`umbrella/analytics/IOSAppsAnalytics/.../EventName.swift`](../umbrella/ana
 | `paywall_shown`        | Paywall presented                          | `paywall_id`, `build`. |
 | `paywall_dismissed`    | Paywall closed without conversion          |       |
 | `paywall_converted`    | Paywall converts to purchase intent        | Drives baseline `paywall_to_paid = 0.08`. |
-| `subscription_started` | Subscription begins                        |       |
-| `subscription_renewed` | Renewal                                    |       |
-| `subscription_lapsed`  | Grace period exit, downgrade               |       |
+| `subscription_started` | Subscription begins                        | Defined target; not emitted today. |
+| `subscription_renewed` | Renewal                                    | Defined target; not emitted today. |
+| `subscription_lapsed`  | Grace period exit, downgrade               | Defined target; not emitted today. |
 | `iap_purchased`        | Non-renewing IAP (cosmic tier add-ons)     | `amount` minor units. |
 | `referral_sent`        | Share-a-chart action                       |       |
 | `nps_shown` / `nps_submitted` / `nps_dismissed` | NPS surface (post-transit) | `surface` property names the trigger. |
@@ -89,9 +98,9 @@ See `/v1/dashboard/experiments?app=astronova` for live exposure counts.
   timestamp, experiment buckets, and event properties. Treat Product
   Interaction as linked to the random User ID for App Store nutrition-label
   purposes.
-- Smartlook is a session diagnostics provider. When the SDK product is linked
-  and analytics is enabled, session diagnostics may be associated with a
-  Smartlook session/user record, so diagnostics are disclosed as linked to the
-  app's analytics identity.
+- Smartlook is a session diagnostics provider only after the SDK product is
+  linked. In the current repo state, the package reference exists but the SDK is
+  not linked to the app target, so do not claim live Smartlook recording until
+  that source change is made and verified.
 - The privacy manifest declares no cross-app or cross-website tracking:
   `NSPrivacyTracking = false`, with no tracking domains.

@@ -1,10 +1,14 @@
 name: iOS Distribution Preflight
 
+# Credential-safe by default: the source-preflight job validates release
+# settings only. It does not archive or upload unless the manual dispatch input
+# `upload_to_testflight` is set to true and the App Store Connect secrets exist.
+
 on:
   workflow_dispatch:
     inputs:
       upload_to_testflight:
-        description: 'Attempt a real App Store Connect upload'
+        description: 'Attempt a real App Store Connect upload; false runs preflight only'
         required: true
         type: boolean
         default: false
@@ -78,7 +82,8 @@ jobs:
             exit 1
           fi
           if [ "$UPLOAD_TO_TESTFLIGHT" != "true" ]; then
-            echo "::notice::Preflight only. Set upload_to_testflight=true to attempt a real upload."
+            echo "::notice::Preflight only. No archive or TestFlight upload will be attempted."
+            echo "::notice::Set upload_to_testflight=true only after App Store Connect API key, team access, signing/provisioning, bundle ID ownership, and app record gates are ready."
           fi
 
   testflight-upload:

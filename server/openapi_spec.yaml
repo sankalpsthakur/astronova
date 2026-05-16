@@ -19,6 +19,11 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    adminTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
+      description: Admin API token. Production admin endpoints also accept Authorization: Bearer <ADMIN_API_TOKEN>.
       
   schemas:
     Error:
@@ -349,6 +354,7 @@ paths:
   /api/v1/auth/apple:
     post:
       summary: Authenticate with Apple ID
+      description: Requires an Apple-issued idToken or identityToken. Guest/anonymous mode must not call this endpoint.
       tags:
         - Authentication
       requestBody:
@@ -357,14 +363,21 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - idToken
-                - userIdentifier
+              oneOf:
+                - required:
+                    - idToken
+                - required:
+                    - identityToken
               properties:
                 idToken:
                   type: string
+                  description: Apple Sign-In identityToken sent by current iOS clients.
+                identityToken:
+                  type: string
+                  description: Alias for idToken.
                 userIdentifier:
                   type: string
+                  description: Client-observed Apple user identifier. The validated token subject is authoritative.
                 email:
                   type: string
                 firstName:
@@ -387,7 +400,13 @@ paths:
                     type: string
                     format: date-time
         '401':
-          description: Invalid Apple ID token
+          description: Missing or invalid Apple ID token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Invalid request body
           content:
             application/json:
               schema:
@@ -2232,12 +2251,22 @@ paths:
 
   /api/v1/seed-test-user:
     post:
-      summary: Seed a test user for development
+      summary: Seed a test user for development or authorized App Store review setup
+      description: Allowed without an admin token only outside production. In production, ADMIN_API_TOKEN is required via X-Admin-Token or Authorization: Bearer.
       tags:
         - Admin
+      security:
+        - adminTokenAuth: []
+        - bearerAuth: []
       responses:
         '200':
+          description: Test user already exists
+        '201':
           description: Test user created
+        '401':
+          description: Admin token required in production
+        '503':
+          description: Admin token is not configured in production
 
   /api/v1/temple/bell/ring:
     post:

@@ -368,6 +368,13 @@ class TestCompatibilityEndpoint:
 class TestReportsEndpoint:
     """Test /api/v1/reports endpoints."""
 
+    @pytest.fixture(autouse=True)
+    def active_subscription(self, sample_user):
+        """Report-generation happy paths require server-recognized premium."""
+        from db import set_subscription
+
+        set_subscription(sample_user["id"], True, "astronova_pro_monthly")
+
     def test_generate_report_default(self, authenticated_client):
         """Test generating default report."""
         response = authenticated_client.post(
@@ -1012,8 +1019,12 @@ class TestEdgeCases:
         )
         assert response.status_code == 200
 
-    def test_report_no_birth_data(self, authenticated_client):
+    def test_report_no_birth_data(self, authenticated_client, sample_user):
         """Test report generation without any birth data."""
+        from db import set_subscription
+
+        set_subscription(sample_user["id"], True, "astronova_pro_monthly")
+
         response = authenticated_client.post(
             "/api/v1/reports", json={"userId": "test-user-edge-4", "reportType": "birth_chart", "birthData": {}}
         )

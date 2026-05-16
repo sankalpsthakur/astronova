@@ -126,6 +126,7 @@
 		WAVE13T02000000000003 /* NPSServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000003 /* NPSServiceTests.swift */; };
 		WAVE13T02000000000004 /* LapsedUserServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000004 /* LapsedUserServiceTests.swift */; };
 		WAVE13T02000000000005 /* AstronovaReviewPromptsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */; };
+		WAVE13T02000000000006 /* SubscriptionLifecycleAnalyticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000006 /* SubscriptionLifecycleAnalyticsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -288,6 +289,7 @@
 		WAVE13T01000000000003 /* NPSServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPSServiceTests.swift; sourceTree = "<group>"; };
 		WAVE13T01000000000004 /* LapsedUserServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapsedUserServiceTests.swift; sourceTree = "<group>"; };
 		WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaReviewPromptsTests.swift; sourceTree = "<group>"; };
+		WAVE13T01000000000006 /* SubscriptionLifecycleAnalyticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionLifecycleAnalyticsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -464,6 +466,7 @@
 				WAVE13T01000000000003 /* NPSServiceTests.swift */,
 				WAVE13T01000000000004 /* LapsedUserServiceTests.swift */,
 				WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */,
+				WAVE13T01000000000006 /* SubscriptionLifecycleAnalyticsTests.swift */,
 			);
 			path = AstronovaAppTests;
 			sourceTree = "<group>";
@@ -909,6 +912,7 @@
 				WAVE13T02000000000003 /* NPSServiceTests.swift in Sources */,
 				WAVE13T02000000000004 /* LapsedUserServiceTests.swift in Sources */,
 				WAVE13T02000000000005 /* AstronovaReviewPromptsTests.swift in Sources */,
+				WAVE13T02000000000006 /* SubscriptionLifecycleAnalyticsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

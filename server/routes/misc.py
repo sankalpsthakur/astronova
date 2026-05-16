@@ -2,7 +2,9 @@
 Minimal misc endpoints: health and system status.
 """
 
+import hmac
 import logging
+import os
 import sys
 from datetime import datetime
 
@@ -13,6 +15,30 @@ from middleware import require_auth
 
 misc_bp = Blueprint("misc", __name__)
 logger = logging.getLogger(__name__)
+
+
+def _is_production_environment() -> bool:
+    return any(
+        os.environ.get(name, "").lower() == "production"
+        for name in ("FLASK_ENV", "APP_ENV", "ENV")
+    )
+
+
+def _require_admin_token_if_production():
+    if not _is_production_environment():
+        return None
+
+    expected_token = os.environ.get("ADMIN_API_TOKEN")
+    if not expected_token:
+        logger.error("ADMIN_API_TOKEN is not configured; refusing seed-test-user request")
+        return jsonify({"error": "Admin API is not configured", "code": "ADMIN_NOT_CONFIGURED"}), 503
+
+    authorization = request.headers.get("Authorization", "")
+    supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
+    if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+        return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
+
+    return None
 
 
 @misc_bp.route("/health", methods=["GET"])
@@ -78,9 +104,14 @@ def remote_config():
 def seed_test_user():
     """
     Create a test user for App Store review with complete birth data.
-    This endpoint can only be called once - subsequent calls will return existing user.
+    In production, this endpoint requires the configured admin token.
+    Subsequent calls return the existing seeded user.
     """
     from db import get_connection
+
+    production_auth_error = _require_admin_token_if_production()
+    if production_auth_error:
+        return production_auth_error
 
     test_user_id = "appstore-test-user-2026"
     test_email = "appstore-test@astronova.app"

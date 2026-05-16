@@ -1,25 +1,31 @@
 # Smartlook Integration Diagnostic Report
 
-## 🔴 ROOT CAUSE IDENTIFIED
+## Current Status
 
-**Problem**: Smartlook SDK package is downloaded but NOT linked to the AstronovaApp target in Xcode.
+**Docs-pass result:** Smartlook has a Swift package reference, but the
+`SmartlookAnalytics` SDK product is not linked to the `AstronovaApp` target in
+the current repo state.
 
-**Impact**: The `#if canImport(SmartlookAnalytics)` check fails, so Smartlook never initializes and no events are tracked.
+**Impact:** Unless another source worker links the SDK, `#if
+canImport(SmartlookAnalytics)` evaluates to `false`, Smartlook never
+initializes, and Smartlook events/recordings should be treated as inactive.
 
-**Fix**: Open Xcode → Add SmartlookAnalytics to target (see instructions below)
+**Required source change:** Link `SmartlookAnalytics` into the app target in
+Xcode or `project.pbxproj`, then rebuild and verify. This docs-only pass did
+not make that source change.
 
-## ✅ What's Implemented Correctly
+## What's Present
 
-1. **SDK Installation**: ✅
+1. **Package reference**
    - Package: `https://github.com/smartlook/analytics-swift-package`
    - Version: 2.2.15
    - Location: `Package.resolved`
 
-2. **API Key Configuration**: ✅
+2. **API Key Configuration**
    - Project Key: `3ea51a8cc18ecd6b6b43eec84450f694a65569ed`
    - Location: `AstronovaApp/AstronovaAppApp.swift:43`
 
-3. **Initialization Code**: ✅
+3. **Initialization Code**
    ```swift
    Smartlook.instance.preferences.projectKey = "3ea51a8cc18ecd6b6b43eec84450f694a65569ed"
    Smartlook.instance.start()
@@ -27,20 +33,22 @@
    - Runs on app launch (line 22-26 in `AstronovaAppApp.swift`)
    - Skipped in UI test mode to avoid polluting recordings
 
-4. **Analytics Service**: ✅
+4. **Analytics Service**
    - Location: `AstronovaApp/Analytics/AnalyticsService.swift`
    - Tracks 21 different events
    - Properly wrapped in `#if canImport(SmartlookAnalytics)`
 
 ## ⚠️ Confirmed Issue
 
-### ❌ CONFIRMED: Package Not Linked to Target
-**Diagnosis**: The Smartlook package is downloaded (v2.2.15) but NOT linked to the AstronovaApp target.
-- ✅ Package downloaded: `Package.resolved` contains `analytics-swift-package@2.2.15`
-- ❌ Not linked: Zero references to `SmartlookAnalytics` in `project.pbxproj`
-- ❌ Result: `#if canImport(SmartlookAnalytics)` evaluates to `false` → SDK never initializes
+### CONFIRMED: Package Not Linked to Target
+**Diagnosis**: The Smartlook package reference exists, but `SmartlookAnalytics`
+is not linked to the AstronovaApp target.
+- Package reference: `Package.resolved` contains `analytics-swift-package@2.2.15`
+- Not linked: zero references to `SmartlookAnalytics` in `project.pbxproj`
+- Result unless source changes: `#if canImport(SmartlookAnalytics)` evaluates to
+  `false`, so the SDK never initializes
 
-**Fix Required (MUST DO IN XCODE)**:
+**Fix Required (source/Xcode change)**:
 1. Open `astronova.xcodeproj` in Xcode
 2. Select **AstronovaApp** target
 3. Go to **General** → **Frameworks, Libraries, and Embedded Content**
@@ -51,7 +59,7 @@
    - Add **SmartlookAnalytics** from Swift Package Products
 
 ### Issue 2: Debug vs Release Configuration
-**Current Behavior**:
+**Behavior after the SDK is linked**:
 - In DEBUG mode with UI tests: Smartlook is **disabled**
 - In DEBUG mode without UI tests: Smartlook is **enabled**
 - In RELEASE mode: Smartlook is always **enabled**
@@ -74,7 +82,7 @@ This may be returning `false` if the package isn't properly linked.
 
 ### Step 1: Check Package Linking
 ```bash
-cd /Users/sankalp/Projects/astronova/client
+cd /Users/sankalp/Projects/iosapps/astronova/client
 xcodebuild -project astronova.xcodeproj -target AstronovaApp -showBuildSettings | grep PACKAGE
 ```
 
@@ -102,7 +110,8 @@ Run the app and check if events are being logged:
 
 ### Fix 1: Link SmartlookAnalytics to Target (CONFIRMED REQUIRED)
 
-**Current Status**: Package downloaded but not linked (verified via project.pbxproj analysis)
+**Current Status**: Package reference exists, but SDK product is not linked
+(verified via `project.pbxproj` analysis)
 
 **Steps to Fix in Xcode**:
 
@@ -128,16 +137,13 @@ Run the app and check if events are being logged:
 6. Clean build folder (Cmd+Shift+K)
 7. Build and run (Cmd+R)
 
-### Fix 2: Verify in Info.plist
-Add if missing:
-```xml
-<key>NSCameraUsageDescription</key>
-<string>Smartlook records your screen for support purposes</string>
-<key>NSPhotoLibraryUsageDescription</key>
-<string>Smartlook may capture screenshots for session recordings</string>
-```
+### Fix 2: Verify Privacy Copy Before Claiming Smartlook Runtime
 
-### Fix 3: Force Enable in Debug
+Do not claim Smartlook session replay is active in release docs until the SDK is
+linked, a build proves `canImport(SmartlookAnalytics)`, and a fresh device or
+simulator session appears in Smartlook.
+
+### Fix 3: Force Enable in Debug Only for Source-Level Testing
 In `AstronovaAppApp.swift`, temporarily remove the UI test check:
 ```swift
 init() {

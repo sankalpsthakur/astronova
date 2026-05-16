@@ -148,7 +148,7 @@ struct PaywallVariant_TieredV1: View {
             Text("Deeper Journeys")
                 .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicTextPrimary)
-            Text("Unlimited chat, complete journeys, deeper guidance.")
+            Text("Unlimited chat, complete journeys, deeper insights.")
                 .font(.cosmicBody)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.cosmicTextSecondary)
@@ -239,7 +239,7 @@ struct PaywallVariant_TieredV1: View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
             featureRow("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)")
             featureRow("doc.text.fill", "All journey paths included")
-            featureRow("heart.fill", "Love, Career, Money, Health + more")
+            featureRow("heart.fill", "Love, Career, Resources, Energy + more")
             featureRow("clock.fill", "Cancel anytime")
         }
         .padding(Cosmic.Spacing.screen)

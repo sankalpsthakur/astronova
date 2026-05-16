@@ -79,13 +79,13 @@ struct PaywallView: View {
     private var heroSubtitle: String {
         switch (context, paywallVariant) {
         case (.chatLimit, _):
-            return "You’ve hit today’s free limit. Unlock deeper journeys for unlimited guidance."
+            return "You've hit today's free limit. Unlock deeper journeys for unlimited AI chat and insights."
         case (.report, _):
-            return "Unlock deeper journeys: complete bundles, saved progress, and unlimited guidance."
+            return "Unlock deeper journeys: complete bundles, saved progress, and unlimited AI chat."
         case (.home, "B"):
-            return "Your next chapter: premium guidance and unlimited chat."
+            return "Your next chapter: premium insights and unlimited chat."
         default:
-            return "Unlimited chat, complete journeys, and deeper guidance."
+            return "Unlimited chat, complete journeys, and deeper insights."
         }
     }
 
@@ -116,7 +116,7 @@ struct PaywallView: View {
             return [
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
                 ("doc.text.fill", "All journey paths included"),
-                ("heart.fill", "Love, Career, Money, Health + more"),
+                ("heart.fill", "Love, Career, Resources, Energy + more"),
                 ("clock.fill", "Cancel anytime"),
             ]
         }
@@ -503,21 +503,6 @@ struct PaywallView: View {
                 properties: ["product": plan.productId, "context": context.rawValue, "source": "paywall"]
             )
             Analytics.shared.track(.purchaseSuccess, properties: ["product": plan.productId])
-            // Wave 13 — portfolio-standard subscription_started / iap_purchased
-            let isSubscription = ShopCatalog.isProProduct(plan.productId)
-            if isSubscription {
-                Analytics.shared.track(.subscriptionStarted, properties: [
-                    "sku": plan.productId,
-                    "period": plan.billingPlan == .monthlyCommitment ? "year" : "month",
-                    "is_trial": "false",
-                    "tier": "pro"
-                ])
-            } else {
-                Analytics.shared.track(.iapPurchased, properties: [
-                    "sku": plan.productId,
-                    "is_consumable": "true"
-                ])
-            }
             await MainActor.run {
                 OracleQuotaManager.shared.checkSubscription()
                 purchaseResult = .success

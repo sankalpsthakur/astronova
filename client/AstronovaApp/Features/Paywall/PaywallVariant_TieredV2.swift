@@ -243,7 +243,7 @@ struct PaywallVariant_TieredV2: View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
             featureRow("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)")
             featureRow("doc.text.fill", "All journey paths included")
-            featureRow("heart.fill", "Love, Career, Money, Health + more")
+            featureRow("heart.fill", "Love, Career, Resources, Energy + more")
             featureRow("clock.fill", "Cancel anytime")
         }
         .padding(Cosmic.Spacing.screen)

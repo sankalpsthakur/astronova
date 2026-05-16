@@ -29,6 +29,14 @@ if str(SERVER_ROOT) not in sys.path:
     sys.path.append(str(SERVER_ROOT))
 
 
+@pytest.fixture(autouse=True)
+def active_subscription_for_report_error_paths(sample_user):
+    """Error-path report tests should exercise storage/validation, not entitlement."""
+    from db import set_subscription
+
+    set_subscription(sample_user["id"], True, "astronova_pro_monthly")
+
+
 # =============================================================================
 # SECTION 1: Swiss Ephemeris Failures
 # =============================================================================

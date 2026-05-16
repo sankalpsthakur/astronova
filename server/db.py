@@ -382,6 +382,22 @@ def get_subscription(user_id: Optional[str]) -> dict:
     }
 
 
+def get_premium_entitlement(user_id: Optional[str]) -> dict:
+    """Return the server-side premium entitlement from subscription_status only."""
+    subscription = get_subscription(user_id)
+    is_active = bool(subscription.get("isActive"))
+    return {
+        "hasPremium": is_active,
+        "source": "subscription_status",
+        "subscription": subscription,
+    }
+
+
+def has_premium_entitlement(user_id: Optional[str]) -> bool:
+    """Whether the user currently has server-recognized premium access."""
+    return bool(get_premium_entitlement(user_id).get("hasPremium"))
+
+
 def set_subscription(user_id: str, is_active: bool, product_id: Optional[str] = None) -> None:
     """Create or update a user's subscription status."""
     now = datetime.utcnow().isoformat()
