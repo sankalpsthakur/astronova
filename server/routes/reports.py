@@ -11,7 +11,7 @@ from flask import Blueprint, Response, g, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 import db
-from middleware import require_auth
+from middleware import get_authenticated_user_id, require_auth
 from services.pdf import render_report_pdf
 from services.report_generation_service import ReportGenerationService
 
@@ -68,33 +68,23 @@ def user_reports(user_id: str):
     List reports for a user.
 
     SECURITY: Requires Bearer token authentication AND user ID validation.
-    The requesting user must match the user_id in the path or provide valid auth.
+    The requesting user must match the user_id in the path.
     """
-    # Require Bearer token authentication
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({
-            "error": "Authorization required",
-            "code": "AUTH_REQUIRED"
-        }), 401
-
-    token = auth_header.replace("Bearer ", "").strip()
-    if not token or token == "null" or token == "undefined":
-        return jsonify({
-            "error": "Valid authorization token required",
-            "code": "INVALID_TOKEN"
-        }), 401
-
-    # Validate that X-User-Id matches the path user_id (prevents cross-user access)
-    requesting_user = request.headers.get("X-User-Id")
-    if requesting_user and requesting_user != user_id:
+    requesting_user, auth_error = get_authenticated_user_id()
+    if auth_error:
+        return jsonify(auth_error), 401
+    if requesting_user != user_id:
         return jsonify({
             "error": "Access denied - cannot access other user's reports",
             "code": "FORBIDDEN"
         }), 403
 
     try:
-        reports = db.get_user_reports(user_id)
+        try:
+            limit = int(request.args.get("limit", 25))
+        except (TypeError, ValueError):
+            limit = 25
+        reports = db.get_user_report_summaries(user_id, limit=limit)
     except Exception as exc:
         logger.error("Report retrieval failed: %s", exc)
         return jsonify({"error": "Unable to fetch reports right now", "code": "REPORT_QUERY_FAILED"}), 500
@@ -104,9 +94,17 @@ def user_reports(user_id: str):
     for report in reports:
         report_id = report.get("report_id") or report.get("reportId")
         content_raw = report.get("content")
-        summary = ""
+        summary = str(report.get("summary") or "")
         key_insights: list[str] = []
-        if isinstance(content_raw, str) and content_raw.strip():
+        insights_raw = report.get("key_insights_json")
+        if isinstance(insights_raw, str) and insights_raw.strip():
+            try:
+                parsed_insights = json.loads(insights_raw)
+                if isinstance(parsed_insights, list):
+                    key_insights = [str(i) for i in parsed_insights if isinstance(i, str) and i.strip()]
+            except Exception:
+                key_insights = []
+        if not summary and isinstance(content_raw, str) and content_raw.strip():
             try:
                 parsed = json.loads(content_raw)
                 if isinstance(parsed, dict):
@@ -131,7 +129,7 @@ def user_reports(user_id: str):
                 "reportId": report_id,
                 "type": report.get("type"),
                 "title": report.get("title"),
-                "content": content_raw,
+                "content": summary,
                 "summary": summary,
                 "keyInsights": key_insights,
                 "downloadUrl": f"/api/v1/reports/{report_id}/pdf" if report_id else None,
@@ -267,9 +265,15 @@ def _get_report_title(report_type: str) -> str:
 @reports_bp.route("/<report_id>/status", methods=["GET"])
 def get_report_status(report_id: str):
     """Get the current status of a report."""
+    user_id, auth_error = get_authenticated_user_id()
+    if auth_error:
+        return jsonify(auth_error), 401
+
     report = db.get_report(report_id)
     if not report:
         return jsonify({"error": "Report not found", "code": "REPORT_NOT_FOUND"}), 404
+    if report.get("user_id") and report.get("user_id") != user_id:
+        return jsonify({"error": "Access denied - cannot access this report", "code": "FORBIDDEN"}), 403
 
     status = report.get("status", "completed")
 
@@ -308,6 +312,12 @@ def get_pdf(report_id: str):
         report = db.get_report(report_id)
     except Exception:
         report = None
+    if report:
+        user_id, auth_error = get_authenticated_user_id()
+        if auth_error:
+            return jsonify(auth_error), 401
+        if report.get("user_id") and report.get("user_id") != user_id:
+            return jsonify({"error": "Access denied - cannot access this report", "code": "FORBIDDEN"}), 403
 
     # The report generator may run asynchronously. To keep the PDF response
     # stable (and avoid returning a "processing" placeholder), wait briefly

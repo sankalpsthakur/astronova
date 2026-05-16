@@ -67,8 +67,12 @@ struct AstronovaAppApp: App {
             return
         }
 
-        Smartlook.instance.preferences.projectKey = projectKey
-        Smartlook.instance.start()
+        guard AnalyticsConsentController.startSmartlookIfAllowed(projectKey: projectKey) else {
+            #if DEBUG
+            print("ℹ️ [Smartlook] Skipped because anonymous analytics is turned off")
+            #endif
+            return
+        }
 
         #if DEBUG
         print("✅ [Smartlook] Session recording started")

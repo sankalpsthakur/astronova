@@ -38,6 +38,7 @@ struct YourReportsSection: View {
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicGold)
                         }
+                        .accessibilityIdentifier("viewAllReportsButton")
                     }
                 }
 

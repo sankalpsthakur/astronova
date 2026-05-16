@@ -168,6 +168,40 @@ def get_user_reports(user_id: str) -> list[dict]:
     return rows
 
 
+def get_user_report_summaries(user_id: str, limit: int = 25) -> list[dict]:
+    """Return report list metadata without shipping full report bodies."""
+    conn = get_connection()
+    cur = conn.cursor()
+    safe_limit = max(1, min(int(limit), 50))
+    cur.execute(
+        """
+        SELECT
+            report_id,
+            user_id,
+            type,
+            title,
+            CASE
+                WHEN json_valid(content) THEN COALESCE(json_extract(content, '$.summary'), '')
+                ELSE substr(COALESCE(content, ''), 1, 280)
+            END AS summary,
+            CASE
+                WHEN json_valid(content) THEN json_extract(content, '$.keyInsights')
+                ELSE NULL
+            END AS key_insights_json,
+            generated_at,
+            status
+        FROM reports
+        WHERE user_id=?
+        ORDER BY generated_at DESC
+        LIMIT ?
+        """,
+        (user_id, safe_limit),
+    )
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+
 def get_report(report_id: str) -> Optional[dict]:
     conn = get_connection()
     cur = conn.cursor()

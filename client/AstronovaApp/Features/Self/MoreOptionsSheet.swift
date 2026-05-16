@@ -118,7 +118,7 @@ struct MoreOptionsSheet: View {
                                     Text("Share Anonymous Usage")
                                         .font(.cosmicBody)
                                         .foregroundStyle(Color.cosmicTextPrimary)
-                                    Text("Helps us improve. No personal data.")
+                                    Text("Helps us improve using a random app ID.")
                                         .font(.cosmicCaption)
                                         .foregroundStyle(Color.cosmicTextTertiary)
                                 }
@@ -130,6 +130,8 @@ struct MoreOptionsSheet: View {
                         .accessibilityIdentifier("analytics_opt_in_toggle")
                         .onChange(of: analyticsOptedIn) { _, newValue in
                             PortfolioAnalytics.shared.isOptedOut = !newValue
+                            let projectKey = Bundle.main.infoDictionary?["SMARTLOOK_PROJECT_KEY"] as? String
+                            AnalyticsConsentController.applySmartlookConsent(projectKey: projectKey)
                         }
                     }
 

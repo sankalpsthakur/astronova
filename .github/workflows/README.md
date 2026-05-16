@@ -50,22 +50,34 @@ iOS build and test workflow for the SwiftUI client.
 - `swift-lint`: Runs SwiftLint checks
 - `ios-summary`: Aggregates build results
 
-### 3. Deployment (`deploy.yml`)
+### 3. iOS Distribution Preflight (`ios-distribution.yml`)
+
+Manual iOS release-readiness workflow for source-level App Store Connect upload checks.
+
+**Default behavior:** preflight only. It validates `client/ExportOptions.plist`, release build settings, bundle ID, team ID, and build number without requiring App Store Connect credentials.
+
+**Real TestFlight upload:** set `upload_to_testflight=true` on manual dispatch. The upload job runs only then, and fails early with a clear error if any App Store Connect API key secret is missing.
+
+**Required secrets for upload:**
+- `APP_STORE_CONNECT_API_KEY_ID`
+- `APP_STORE_CONNECT_API_ISSUER_ID`
+- `APP_STORE_CONNECT_API_KEY_BASE64` (base64-encoded `.p8` key contents)
+
+### 4. Deployment (`deploy.yml`)
 
 Automated deployment workflow for staging and production environments.
 
 **Features:**
 - Pre-deployment validation (tests, code quality)
-- Staging deployment on main branch
+- Manual staging deployment request
 - Production deployment on version tags
 - 5-minute delayed post-deploy verification via `scripts/deploy-post-push-check.sh`
 - Health check + endpoint smoke coverage for public and auth-protected routes
-- Automatic rollback on failure
-- GitHub release creation for production
+- Explicit failure notice when the Render deploy command is not wired
+- GitHub release creation for production via GitHub CLI
 
 **Triggers:**
-- Push to `main` branch (deploys to staging)
-- Tags matching `v*.*.*` (deploys to production)
+- Tags matching `v*.*.*` (production path)
 - Manual workflow dispatch with environment selection
 
 **Jobs:**
@@ -102,13 +114,13 @@ bash scripts/deploy-post-push-check.sh \
 
 Use the staging URL for staging runs.
 
-### 4. CI (`ci.yml`)
+### 5. CI (`ci.yml`)
 
 Legacy CI workflow (kept for compatibility).
 
 **Status:** Deprecated - Use `test.yml` and `ios.yml` instead.
 
-### 5. Claude Code (`claude.yml`)
+### 6. Claude Code (`claude.yml`)
 
 GitHub integration for Claude Code AI assistance.
 
@@ -135,6 +147,10 @@ Add these secrets to your GitHub repository (Settings > Secrets and variables > 
 3. **ANTHROPIC_API_KEY** (Optional)
    - For Claude Code integration
    - Get from Anthropic dashboard
+
+4. **APP_STORE_CONNECT_API_KEY_ID**, **APP_STORE_CONNECT_API_ISSUER_ID**, **APP_STORE_CONNECT_API_KEY_BASE64** (Optional)
+   - Required only when manually dispatching `ios-distribution.yml` with `upload_to_testflight=true`
+   - The workflow remains preflight-only when upload is not requested
 
 ### Optional Configuration
 
@@ -225,6 +241,7 @@ View workflow runs:
 |----------|--------|-------------|
 | Test Suite | ![Test Suite](https://github.com/yourusername/astronova/actions/workflows/test.yml/badge.svg) | Python testing and coverage |
 | iOS Build | ![iOS Build](https://github.com/yourusername/astronova/actions/workflows/ios.yml/badge.svg) | iOS build and test |
+| iOS Distribution Preflight | ![iOS Distribution Preflight](https://github.com/yourusername/astronova/actions/workflows/ios-distribution.yml/badge.svg) | Manual App Store Connect/TestFlight preflight and gated upload |
 | Deploy | ![Deploy](https://github.com/yourusername/astronova/actions/workflows/deploy.yml/badge.svg) | Deployment to staging/production |
 | Claude Code | ![Claude Code](https://github.com/yourusername/astronova/actions/workflows/claude.yml/badge.svg) | AI code assistance |
 

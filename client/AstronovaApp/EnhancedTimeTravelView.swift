@@ -755,6 +755,7 @@ struct ErrorView: View {
 struct IncompleteProfilePromptView: View {
     let message: String
     @EnvironmentObject private var auth: AuthState
+    @State private var showingProfileEditor = false
 
     var body: some View {
         VStack(spacing: Cosmic.Spacing.screen) {
@@ -772,8 +773,8 @@ struct IncompleteProfilePromptView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
-            NavigationLink {
-                ProfileEditView(profileManager: auth.profileManager)
+            Button {
+                showingProfileEditor = true
             } label: {
                 Label("Complete Birth Data", systemImage: "arrow.right.circle.fill")
                     .font(.cosmicHeadline)
@@ -782,13 +783,23 @@ struct IncompleteProfilePromptView: View {
                     .background(LinearGradient.cosmicAntiqueGold)
                     .foregroundStyle(Color.cosmicVoid)
                     .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
-                    .accessibilityIdentifier(AccessibilityID.completeBirthDataButton)
             }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Complete Birth Data")
+            .accessibilityIdentifier(AccessibilityID.completeBirthDataButton)
+            .accessibilityAddTraits(.isButton)
             .padding(.horizontal, Cosmic.Spacing.xl)
         }
         .padding()
         .padding(.bottom, 80) // Extra padding for tab bar
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.incompleteProfilePrompt)
+        .sheet(isPresented: $showingProfileEditor) {
+            NavigationStack {
+                ProfileEditView(profileManager: auth.profileManager)
+            }
+        }
     }
 }
 

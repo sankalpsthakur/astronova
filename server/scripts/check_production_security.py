@@ -20,6 +20,7 @@ class Response:
     status: int
     body_size: int
     body: bytes
+    headers: dict[str, str]
 
 
 def fetch(path: str, *, headers: dict[str, str] | None = None) -> Response:
@@ -27,10 +28,10 @@ def fetch(path: str, *, headers: dict[str, str] | None = None) -> Response:
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
             body = response.read()
-            return Response(response.status, len(body), body)
+            return Response(response.status, len(body), body, dict(response.headers.items()))
     except urllib.error.HTTPError as error:
         body = error.read()
-        return Response(error.code, len(body), body)
+        return Response(error.code, len(body), body, dict(error.headers.items()))
 
 
 def check(condition: bool, passed: str, failed: str, failures: list[str]) -> None:
@@ -70,6 +71,30 @@ def main() -> int:
         openapi.status == 200 and len(spec_text) > 1000 and "/api/v1/auth/apple" in spec_text and "paths:" in spec_text,
         "OpenAPI spec is non-empty and includes auth paths",
         f"OpenAPI spec is stale/missing: status={openapi.status}, bytes={openapi.body_size}",
+        failures,
+    )
+
+    report_status = fetch("/api/v1/reports/not-a-real-report-id/status")
+    check(
+        report_status.status == 401,
+        "GET /api/v1/reports/{id}/status rejects missing Bearer token",
+        f"GET /api/v1/reports/{{id}}/status without token returned {report_status.status}",
+        failures,
+    )
+
+    subscription = fetch("/api/v1/subscription/status?userId=not-a-real-user")
+    check(
+        subscription.status == 401,
+        "GET /api/v1/subscription/status rejects missing Bearer token",
+        f"GET /api/v1/subscription/status without token returned {subscription.status}",
+        failures,
+    )
+
+    cors_probe = fetch("/health", headers={"Origin": "http://localhost:8080"})
+    check(
+        cors_probe.headers.get("Access-Control-Allow-Origin") != "http://localhost:8080",
+        "localhost CORS origin is not allowed by production",
+        "localhost CORS origin is allowed by production",
         failures,
     )
 

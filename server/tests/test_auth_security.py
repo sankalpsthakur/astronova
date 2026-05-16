@@ -541,6 +541,44 @@ class TestCrossUserAccess:
         response = client.get(f"/api/v1/reports/user/{test_user_id}")
         assert response.status_code == 401
 
+    def test_user_report_list_rejects_valid_token_for_another_user(self, client, auth_token, another_user_id):
+        """A valid JWT cannot list another user's reports by changing the path."""
+        response = client.get(
+            f"/api/v1/reports/user/{another_user_id}",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert response.status_code == 403
+        assert response.get_json()["code"] == "FORBIDDEN"
+
+    def test_report_status_requires_authentication(self, client, test_user_id):
+        """Report status should not reveal report metadata without a JWT."""
+        from db import insert_report
+
+        report_id = "test-report-status-001"
+        insert_report(report_id, test_user_id, "birth_chart", "Test Report", "Test content")
+
+        response = client.get(f"/api/v1/reports/{report_id}/status")
+        assert response.status_code == 401
+
+    def test_report_pdf_rejects_valid_token_for_another_user(self, client, auth_token, another_user_id):
+        """A valid JWT cannot download another user's persisted report PDF."""
+        from db import insert_report
+
+        report_id = "test-report-pdf-001"
+        insert_report(report_id, another_user_id, "birth_chart", "Other Report", "Other content")
+
+        response = client.get(
+            f"/api/v1/reports/{report_id}/pdf",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert response.status_code == 403
+        assert response.get_json()["code"] == "FORBIDDEN"
+
+    def test_subscription_status_requires_authentication(self, client):
+        """Subscription status should not be queryable without a JWT."""
+        response = client.get("/api/v1/subscription/status?userId=test-user-123")
+        assert response.status_code == 401
+
     def test_user_cannot_access_another_users_birth_data(self, client, test_user_id, another_user_id):
         """Test that unauthenticated access to birth data is blocked."""
         from db import upsert_user_birth_data

@@ -6,9 +6,10 @@ import logging
 import sys
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
 from db import get_subscription, init_db
+from middleware import require_auth
 
 misc_bp = Blueprint("misc", __name__)
 logger = logging.getLogger(__name__)
@@ -45,10 +46,15 @@ def system_status():
 
 
 @misc_bp.route("/subscription/status", methods=["GET"])
+@require_auth
 def subscription_status():
-    # Optional userId to check real status; native clients send X-User-Id.
+    # Native clients may still send userId/X-User-Id, but the JWT subject is
+    # authoritative so callers cannot inspect another user's subscription.
     init_db()
-    user_id = request.args.get("userId") or request.headers.get("X-User-Id")
+    requested_user_id = request.args.get("userId") or request.headers.get("X-User-Id")
+    user_id = g.user_id
+    if requested_user_id and requested_user_id != user_id:
+        return jsonify({"error": "Access denied - cannot access other user's subscription", "code": "FORBIDDEN"}), 403
     return jsonify(get_subscription(user_id))
 
 

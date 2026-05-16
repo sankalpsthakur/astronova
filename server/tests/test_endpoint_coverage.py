@@ -600,16 +600,16 @@ class TestSubscriptionEndpoint:
 
     def test_subscription_status_nonexistent_user(self, authenticated_client):
         """Test subscription status for user without subscription."""
-        response = authenticated_client.get("/api/v1/subscription/status?userId=nonexistent-user")
+        response = authenticated_client.get("/api/v1/subscription/status")
         assert response.status_code == 200
         data = response.get_json()
         assert data["isActive"] is False
 
-    def test_subscription_status_with_active_subscription(self, authenticated_client):
+    def test_subscription_status_with_active_subscription(self, authenticated_client, sample_user):
         """Test subscription status for user with active subscription."""
         from db import set_subscription
 
-        user_id = "test-user-sub-1"
+        user_id = sample_user["id"]
         set_subscription(user_id, True, "astronova_pro_monthly")
 
         response = authenticated_client.get(f"/api/v1/subscription/status?userId={user_id}")
@@ -635,11 +635,11 @@ class TestSubscriptionEndpoint:
         assert data["isActive"] is True
         assert data["productId"] == "astronova_pro_monthly"
 
-    def test_subscription_status_with_inactive_subscription(self, authenticated_client):
+    def test_subscription_status_with_inactive_subscription(self, authenticated_client, sample_user):
         """Test subscription status for user with inactive subscription."""
         from db import set_subscription
 
-        user_id = "test-user-sub-2"
+        user_id = sample_user["id"]
         set_subscription(user_id, False, None)
 
         response = authenticated_client.get(f"/api/v1/subscription/status?userId={user_id}")
@@ -647,11 +647,11 @@ class TestSubscriptionEndpoint:
         data = response.get_json()
         assert data["isActive"] is False
 
-    def test_subscription_status_updated_at_field(self, authenticated_client):
+    def test_subscription_status_updated_at_field(self, authenticated_client, sample_user):
         """Test that subscription status includes updatedAt timestamp."""
         from db import set_subscription
 
-        user_id = "test-user-sub-3"
+        user_id = sample_user["id"]
         set_subscription(user_id, True, "yearly_plan")
 
         response = authenticated_client.get(f"/api/v1/subscription/status?userId={user_id}")
@@ -660,20 +660,26 @@ class TestSubscriptionEndpoint:
         assert "updatedAt" in data
         assert data["updatedAt"] is not None
 
-    def test_subscription_status_different_product_ids(self, authenticated_client):
+    def test_subscription_status_different_product_ids(self, authenticated_client, sample_user):
         """Test subscription with various product IDs."""
         from db import set_subscription
 
         product_ids = ["basic", "premium", "pro", "lifetime"]
 
-        for i, product_id in enumerate(product_ids):
-            user_id = f"test-user-sub-product-{i}"
+        for product_id in product_ids:
+            user_id = sample_user["id"]
             set_subscription(user_id, True, product_id)
 
             response = authenticated_client.get(f"/api/v1/subscription/status?userId={user_id}")
             data = response.get_json()
             assert data["isActive"] is True
             assert data["productId"] == product_id
+
+    def test_subscription_status_rejects_cross_user_lookup(self, authenticated_client):
+        """JWT subject is authoritative for subscription lookups."""
+        response = authenticated_client.get("/api/v1/subscription/status?userId=another-user")
+        assert response.status_code == 403
+        assert response.get_json()["code"] == "FORBIDDEN"
 
 
 class TestSystemStatusEndpoint:
@@ -1015,11 +1021,11 @@ class TestEdgeCases:
         data = response.get_json()
         assert "reportId" in data
 
-    def test_subscription_empty_product_id(self, authenticated_client):
+    def test_subscription_empty_product_id(self, authenticated_client, sample_user):
         """Test subscription with empty product ID."""
         from db import set_subscription
 
-        user_id = "test-user-edge-5"
+        user_id = sample_user["id"]
         set_subscription(user_id, True, "")
 
         response = authenticated_client.get(f"/api/v1/subscription/status?userId={user_id}")

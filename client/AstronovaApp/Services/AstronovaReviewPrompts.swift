@@ -36,6 +36,13 @@ public final class AstronovaReviewPrompts {
     /// since the last prompt and (b) we haven't already shown for this peak.
     /// Apple still enforces its own per-year cap underneath.
     public func requestIfPeak(_ peak: AstronovaReviewPeak) {
+        #if DEBUG
+        guard !TestEnvironment.shared.isUITest else {
+            logger.debug("[review-prompt] suppressed during UI tests for peak=\(peak.rawValue, privacy: .public)")
+            return
+        }
+        #endif
+
         guard shouldRequest(for: peak) else {
             logger.debug("[review-prompt] throttled for peak=\(peak.rawValue, privacy: .public)")
             return

@@ -9,6 +9,39 @@ protocol AnalyticsServiceProtocol {
     func track(_ event: AnalyticsEvent, properties: [String: String]?)
 }
 
+enum AnalyticsConsentController {
+    static var isOptedOut: Bool {
+        PortfolioAnalytics.shared.isOptedOut
+    }
+
+    @discardableResult
+    static func startSmartlookIfAllowed(projectKey: String) -> Bool {
+        guard !isOptedOut else {
+            applySmartlookConsent()
+            return false
+        }
+
+        #if canImport(SmartlookAnalytics)
+        Smartlook.instance.preferences.projectKey = projectKey
+        Smartlook.instance.start()
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    static func applySmartlookConsent(projectKey: String? = nil) {
+        #if canImport(SmartlookAnalytics)
+        if isOptedOut {
+            Smartlook.instance.stop()
+        } else if let projectKey {
+            Smartlook.instance.preferences.projectKey = projectKey
+            Smartlook.instance.start()
+        }
+        #endif
+    }
+}
+
 enum AnalyticsEvent: String {
     // EXISTING EVENTS
     case appLaunched = "app_launched"
@@ -132,6 +165,11 @@ final class Analytics: AnalyticsServiceProtocol {
             return
         }
         #endif
+
+        guard !AnalyticsConsentController.isOptedOut else {
+            logger.debug("[ANALYTICS] Skipped (analytics opt-out): \(event.rawValue, privacy: .public)")
+            return
+        }
 
         #if canImport(SmartlookAnalytics)
         // Track to Smartlook
