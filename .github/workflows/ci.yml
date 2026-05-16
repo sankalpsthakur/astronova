@@ -117,7 +117,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
+    - name: Skip when GitHub Dependency graph is disabled
+      if: vars.DEPENDENCY_REVIEW_ENABLED != 'true'
+      run: |
+        echo "::notice::Dependency review skipped. Enable GitHub Dependency graph and set repository variable DEPENDENCY_REVIEW_ENABLED=true to turn this gate on."
     - name: Checkout Repository
+      if: vars.DEPENDENCY_REVIEW_ENABLED == 'true'
       uses: actions/checkout@v4
     - name: Dependency Review
+      if: vars.DEPENDENCY_REVIEW_ENABLED == 'true'
       uses: actions/dependency-review-action@v4

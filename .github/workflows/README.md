@@ -120,6 +120,12 @@ Legacy CI workflow (kept for compatibility).
 
 **Status:** Deprecated - Use `test.yml` and `ios.yml` instead.
 
+**Dependency review:** The dependency-review job is opt-in because GitHub
+Dependency graph is disabled for this repository. Enable Dependency graph in
+repository security settings, then set repository variable
+`DEPENDENCY_REVIEW_ENABLED=true` to make the dependency-review action run on
+pull requests.
+
 ### 6. Claude Code (`claude.yml`)
 
 GitHub integration for Claude Code AI assistance.
