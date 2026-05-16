@@ -23,19 +23,6 @@ struct SelfTabView: View {
         ProfileCompleteness(profile: profile)
     }
 
-    // Upcoming dasha transitions for the forecast strip. SelfDataService is
-    // expected to expose a `transitions` publisher (work in flight on a
-    // parallel branch). Until that lands we resolve via Mirror so this view
-    // compiles regardless and the strip simply renders its empty state.
-    private var dashaTransitions: DashaCompleteResponse.TransitionInfo? {
-        for child in Mirror(reflecting: dataService).children {
-            guard child.label == "transitions" || child.label == "_transitions" else { continue }
-            if let direct = child.value as? DashaCompleteResponse.TransitionInfo? { return direct }
-            if let direct = child.value as? DashaCompleteResponse.TransitionInfo { return direct }
-        }
-        return nil
-    }
-
     private enum SheetDestination: Identifiable {
         case birthEdit
         case settings
@@ -87,20 +74,6 @@ struct SelfTabView: View {
 
                     // HERO: Cosmic Pulse (Dasha)
                     cosmicPulseSection
-
-                    // Centerpiece chart wheel — illuminates the natal house
-                    // currently lit by the active Mahadasha lord ("which room
-                    // the weather is in right now"). Falls back to decoration
-                    // when planet→house data isn't available yet.
-                    chartWheelSection
-
-                    // Upcoming dasha transitions ("weather forecast" strip).
-                    // `transitions` publisher is owned by SelfDataService — wired by parallel work;
-                    // until then the view shows its empty state.
-                    DashaForecastStrip(
-                        transitions: dashaTransitions,
-                        onSeeMore: { activeSheet = .dashaDetail }
-                    )
 
                     // Journey Map (gamified progression)
                     JourneyMapCard(
@@ -284,35 +257,6 @@ struct SelfTabView: View {
             } else {
                 CosmicPulseEmptyView(onSetup: { activeSheet = .birthEdit })
             }
-        }
-    }
-
-    // MARK: - Chart Wheel Section
-
-    /// Compute the natal house currently lit by the active Mahadasha lord.
-    /// Returns nil when planet→house data isn't available (server hasn't
-    /// shipped natal_snapshot yet) — caller treats nil as "decoration only".
-    private var activeMahadashaHouse: Int? {
-        MiniChartWheelView.activeHouse(
-            for: dataService.currentDasha?.planet,
-            in: dataService.planetHouseMap
-        )
-    }
-
-    @ViewBuilder
-    private var chartWheelSection: some View {
-        if canFetchData {
-            VStack(spacing: 0) {
-                MiniChartWheelView(
-                    sunSign: profile.sunSign,
-                    moonSign: nil,
-                    risingSign: dataService.lagna,
-                    size: 180,
-                    activeHouse: activeMahadashaHouse,
-                    mahadashaPlanet: dataService.currentDasha?.planet
-                )
-            }
-            .frame(maxWidth: .infinity)
         }
     }
 

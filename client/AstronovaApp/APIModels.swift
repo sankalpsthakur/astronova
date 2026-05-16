@@ -73,10 +73,6 @@ struct VedicChart: Codable {
     let positions: [String: Position]
     let houses: [String: House]
     let dashas: [Dasha]
-    /// Lagna (ascendant) sign name. Optional for backward compatibility with
-    /// older backend responses; decoded with `decodeIfPresent` semantics via
-    /// synthesized Codable on the optional property.
-    let lagna: String?
 }
 
 /// Chinese chart structure

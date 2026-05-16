@@ -206,7 +206,6 @@ def generate_chart():
     charts: dict[str, dict] = {}
     western_chart_payload: dict | None = None
     vedic_chart_payload: dict | None = None
-    lagna_rashi: str | None = None
 
     if "western" in systems:
         western = _ephem.get_positions_for_date(dt, lat, lon, system="western")
@@ -256,8 +255,6 @@ def generate_chart():
 
         lagna_sign = str(vedic.get("planets", {}).get("ascendant", {}).get("sign", EphemerisService.VEDIC_SIGNS[0]))
         sign_names = list(EphemerisService.VEDIC_SIGNS)
-        if lagna_sign in sign_names:
-            lagna_rashi = lagna_sign
 
         lagna_index = _safe_sign_index(lagna_sign, sign_names)
         if lagna_index is None:
@@ -334,7 +331,6 @@ def generate_chart():
         "westernChart": western_chart_payload,
         "vedicChart": vedic_chart_payload,
         "chineseChart": None,
-        "lagna": lagna_rashi,
         "disclaimer": "For entertainment purposes only. Not professional advice.",
     }
     return jsonify(resp)
