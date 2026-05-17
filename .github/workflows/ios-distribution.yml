@@ -111,8 +111,10 @@ jobs:
       - name: Prepare App Store Connect API key
         run: |
           mkdir -p private_keys
-          printf '%s' "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
-          chmod 600 "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          ASC_KEY_PATH="$PWD/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$ASC_KEY_PATH"
+          chmod 600 "$ASC_KEY_PATH"
+          echo "ASC_KEY_PATH=$ASC_KEY_PATH" >> "$GITHUB_ENV"
 
       - name: Archive release build
         run: |
@@ -122,7 +124,7 @@ jobs:
             -configuration Release \
             -archivePath "$RUNNER_TEMP/AstronovaApp.xcarchive" \
             -allowProvisioningUpdates \
-            -authenticationKeyPath "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8" \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
             -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_ISSUER_ID"
 
@@ -132,6 +134,6 @@ jobs:
             -archivePath "$RUNNER_TEMP/AstronovaApp.xcarchive" \
             -exportOptionsPlist ExportOptions.plist \
             -allowProvisioningUpdates \
-            -authenticationKeyPath "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8" \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
             -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_ISSUER_ID"
