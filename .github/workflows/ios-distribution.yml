@@ -1,0 +1,137 @@
+name: iOS Distribution Preflight
+
+# Credential-safe by default: the source-preflight job validates release
+# settings only. It does not archive or upload unless the manual dispatch input
+# `upload_to_testflight` is set to true and the App Store Connect secrets exist.
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_to_testflight:
+        description: 'Attempt a real App Store Connect upload; false runs preflight only'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  source-preflight:
+    name: Source release preflight
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Validate export options
+        run: |
+          plutil -lint ExportOptions.plist
+          DESTINATION=$(/usr/libexec/PlistBuddy -c 'Print :destination' ExportOptions.plist)
+          METHOD=$(/usr/libexec/PlistBuddy -c 'Print :method' ExportOptions.plist)
+          TEAM_ID=$(/usr/libexec/PlistBuddy -c 'Print :teamID' ExportOptions.plist)
+          if [ "$DESTINATION" != "upload" ]; then
+            echo "::error::ExportOptions.plist destination must be upload for TestFlight."
+            exit 1
+          fi
+          if [ "$METHOD" != "app-store-connect" ]; then
+            echo "::error::ExportOptions.plist method must be app-store-connect."
+            exit 1
+          fi
+          if [ -z "$TEAM_ID" ]; then
+            echo "::error::ExportOptions.plist teamID is empty."
+            exit 1
+          fi
+
+      - name: Verify release build settings
+        run: |
+          xcodebuild -project astronova.xcodeproj \
+            -scheme AstronovaApp \
+            -configuration Release \
+            -showBuildSettings > release-build-settings.txt
+          grep -E 'MARKETING_VERSION|CURRENT_PROJECT_VERSION|PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|CODE_SIGN_STYLE' release-build-settings.txt
+          grep -q 'PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app' release-build-settings.txt
+          grep -q 'DEVELOPMENT_TEAM = ZBSZPCY34Y' release-build-settings.txt
+          grep -q 'CODE_SIGN_STYLE = Automatic' release-build-settings.txt
+
+      - name: Check App Store Connect upload credentials
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          UPLOAD_TO_TESTFLIGHT: ${{ inputs.upload_to_testflight }}
+        run: |
+          missing=0
+          for name in APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_ISSUER_ID APP_STORE_CONNECT_API_KEY_BASE64; do
+            if [ -z "${!name}" ]; then
+              echo "::notice::$name is not configured."
+              missing=1
+            fi
+          done
+          if [ "$UPLOAD_TO_TESTFLIGHT" = "true" ] && [ "$missing" -ne 0 ]; then
+            echo "::error::Cannot upload to TestFlight until all App Store Connect API key secrets are configured."
+            exit 1
+          fi
+          if [ "$UPLOAD_TO_TESTFLIGHT" != "true" ]; then
+            echo "::notice::Preflight only. No archive or TestFlight upload will be attempted."
+            echo "::notice::Set upload_to_testflight=true only after App Store Connect API key, team access, signing/provisioning, bundle ID ownership, and app record gates are ready."
+          fi
+
+  testflight-upload:
+    name: TestFlight upload
+    runs-on: macos-14
+    needs: source-preflight
+    if: inputs.upload_to_testflight == true
+    defaults:
+      run:
+        working-directory: client
+    env:
+      APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          xcodebuild -version
+
+      - name: Prepare App Store Connect API key
+        run: |
+          mkdir -p private_keys
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          chmod 600 "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+
+      - name: Archive release build
+        run: |
+          xcodebuild archive \
+            -project astronova.xcodeproj \
+            -scheme AstronovaApp \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/AstronovaApp.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8" \
+            -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_ISSUER_ID"
+
+      - name: Export and upload to App Store Connect
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/AstronovaApp.xcarchive" \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8" \
+            -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_ISSUER_ID"

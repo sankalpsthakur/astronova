@@ -53,14 +53,23 @@ def create_app():
     app.config["BABEL_SUPPORTED_LOCALES"] = SUPPORTED_LOCALES
     babel.init_app(app, locale_selector=select_locale)
 
-    # CORS configuration - restrict to known origins
-    # iOS native apps don't send Origin headers, so this mainly protects against browser-based attacks
-    allowed_origins = [
+    # CORS configuration - restrict to known browser origins.
+    # iOS native apps do not send Origin headers; localhost is only included
+    # for local development unless explicitly provided through the environment.
+    configured_origins = [
+        origin.strip()
+        for origin in os.environ.get("ASTRONOVA_CORS_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+    allowed_origins = configured_origins or [
         "https://astronova.onrender.com",
         "https://astronova.app",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
     ]
+    if os.environ.get("FLASK_ENV") != "production":
+        allowed_origins.extend([
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+        ])
     CORS(app, origins=allowed_origins, supports_credentials=True)
 
     # Rate limiting to prevent abuse
@@ -329,7 +338,7 @@ def create_app():
         <li><strong>Location Data:</strong> Birth location for chart calculations (not your current location)</li>
         <li><strong>Purchase History:</strong> In-app purchases and subscription status</li>
         <li><strong>Device Identifier:</strong> Anonymous user ID for account management</li>
-        <li><strong>Usage Analytics:</strong> App usage and session diagnostics collected via Smartlook</li>
+        <li><strong>Usage Analytics:</strong> App usage events and session diagnostics collected when Share Anonymous Usage is enabled</li>
     </ul>
 
     <h2>2. How We Use Your Information</h2>
@@ -339,10 +348,11 @@ def create_app():
         <li>Provide compatibility analyses</li>
         <li>Deliver horoscope content</li>
         <li>Manage your subscription</li>
+        <li>Monitor reliability and improve product flows when analytics is enabled</li>
     </ul>
 
     <h2>3. Data Sharing</h2>
-    <p>We do not sell or trade your personal information. Limited service providers (such as Smartlook) process analytics and session diagnostics strictly to help us improve Astronova.</p>
+    <p>We do not sell your personal information or use it to track you across other companies' apps or websites. Limited service providers, including Smartlook when analytics is enabled, process analytics and session diagnostics strictly to help us improve Astronova.</p>
 
     <h2>4. Data Retention</h2>
     <p>We retain your data while your account is active. You can delete your account and all associated data at any time through the app settings.</p>
@@ -355,6 +365,7 @@ def create_app():
     <ul>
         <li>Access your personal data</li>
         <li>Request deletion of your account and data</li>
+        <li>Turn off Share Anonymous Usage in app settings to stop analytics forwarding and Smartlook session diagnostics</li>
         <li>Opt out of promotional communications</li>
     </ul>
 

@@ -23,6 +23,8 @@ services:
         sync: false  # Set via Render dashboard
       - key: DB_PATH
         value: /data/astronova.db
+      - key: ASTRONOVA_CORS_ORIGINS
+        value: https://astronova.onrender.com,https://astronova.app
       - key: FLASK_ENV
         value: production
       - key: FLASK_DEBUG

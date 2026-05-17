@@ -7,6 +7,10 @@ on:
     branches: [ main, dev ]
   workflow_dispatch:  # Allow manual triggering
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   python-backend:
     runs-on: ubuntu-latest
@@ -18,7 +22,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     
@@ -92,7 +96,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     
@@ -113,7 +117,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
+    - name: Skip when GitHub Dependency graph is disabled
+      if: vars.DEPENDENCY_REVIEW_ENABLED != 'true'
+      run: |
+        echo "::notice::Dependency review skipped. Enable GitHub Dependency graph and set repository variable DEPENDENCY_REVIEW_ENABLED=true to turn this gate on."
     - name: Checkout Repository
+      if: vars.DEPENDENCY_REVIEW_ENABLED == 'true'
       uses: actions/checkout@v4
     - name: Dependency Review
-      uses: actions/dependency-review-action@v3
+      if: vars.DEPENDENCY_REVIEW_ENABLED == 'true'
+      uses: actions/dependency-review-action@v4

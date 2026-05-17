@@ -28,9 +28,15 @@ except Exception:  # pragma: no cover
     pytest.skip("pyswisseph not installed", allow_module_level=True)
 
 
+@pytest.fixture(autouse=True)
+def disable_rate_limits(monkeypatch):
+    monkeypatch.setenv("ASTRONOVA_DISABLE_RATE_LIMITS", "1")
+
+
 def _make_auth_client(client):
     """Helper to add JWT auth to a test client."""
     import jwt as pyjwt
+    from db import set_subscription, upsert_user
 
     secret = os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY") or "astronova-dev-secret-change-in-production"
     payload = {
@@ -41,6 +47,8 @@ def _make_auth_client(client):
     }
     token = pyjwt.encode(payload, secret, algorithm="HS256")
     client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {token}"
+    upsert_user("perf-test-user", "perf@test.com", "Perf", "User", "Perf User")
+    set_subscription("perf-test-user", True, "astronova_pro_monthly")
     return client
 
 
@@ -530,16 +538,16 @@ class TestLargePayloadHandling:
             response = authenticated_client.post("/api/v1/reports", json=report_data)
             assert response.status_code == 200
 
-        # Query all reports
+        # Query the recent report window
         start_time = datetime.now()
-        response = authenticated_client.get(f"/api/v1/reports/user/{user_id}")
+        response = authenticated_client.get(f"/api/v1/reports/user/{user_id}?limit=50")
         elapsed_time = (datetime.now() - start_time).total_seconds()
 
         assert response.status_code == 200
         data = response.get_json()
 
-        # Should return all reports
-        assert len(data) >= 50
+        # Should return the bounded recent window without transferring full report bodies
+        assert len(data) == 50
 
         # Should complete in reasonable time
         assert elapsed_time < 0.5, f"Large report query too slow: {elapsed_time*1000:.2f}ms > 500ms"
@@ -716,11 +724,24 @@ class TestAuthenticationPerformance:
     def authenticated_client(self, client):
         return _make_auth_client(client)
 
-    def test_apple_auth_latency(self, authenticated_client, benchmark):
+    def test_apple_auth_latency(self, authenticated_client, benchmark, monkeypatch):
         """Benchmark Apple authentication (target: <200ms)."""
 
+        def fake_validate(id_token):
+            assert id_token == "valid-apple-id-token"
+            return {"sub": "perf-test-user", "email": "perf@test.com"}
+
+        monkeypatch.setattr("routes.auth.validate_apple_id_token", fake_validate)
+
         def authenticate():
-            response = authenticated_client.post("/api/v1/auth/apple", json={"userIdentifier": "perf-test-user", "email": "perf@test.com"})
+            response = authenticated_client.post(
+                "/api/v1/auth/apple",
+                json={
+                    "idToken": "valid-apple-id-token",
+                    "userIdentifier": "perf-test-user",
+                    "email": "perf@test.com",
+                },
+            )
             assert response.status_code == 200
             return response.get_json()
 

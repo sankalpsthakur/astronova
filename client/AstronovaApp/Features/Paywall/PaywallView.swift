@@ -13,6 +13,7 @@ struct PaywallView: View {
     @State private var isPurchasing = false
     @State private var isRestoring = false
     @State private var purchaseResult: PurchaseResult?
+    @State private var paywallShownAt: Date?
     @State private var showingReportShop = false
     @State private var showingChatPackages = false
     @State private var selectedPlanProductId = ShopCatalog.defaultProProductID
@@ -40,7 +41,13 @@ struct PaywallView: View {
     }
 
     private var paywallVariant: String {
-        RemoteConfigService.shared.string(forKey: "paywall_variant", default: "A")
+        // Wave 13 — prefer AstronovaFlags (portfolio feature flag service)
+        // when it has been configured, fall back to RemoteConfigService.
+        let flag = AstronovaFlags.shared.paywallVariant.rawValue
+        if flag != AstronovaPaywallVariant.default.rawValue {
+            return flag
+        }
+        return RemoteConfigService.shared.string(forKey: "paywall_variant", default: "A")
     }
 
     private var heroIcon: String {
@@ -72,13 +79,13 @@ struct PaywallView: View {
     private var heroSubtitle: String {
         switch (context, paywallVariant) {
         case (.chatLimit, _):
-            return "You’ve hit today’s free limit. Unlock deeper journeys for unlimited guidance."
+            return "You've hit today's free limit. Unlock deeper journeys for unlimited AI chat and insights."
         case (.report, _):
-            return "Unlock deeper journeys: complete bundles, saved progress, and unlimited guidance."
+            return "Unlock deeper journeys: complete bundles, saved progress, and unlimited AI chat."
         case (.home, "B"):
-            return "Your next chapter: premium guidance and unlimited chat."
+            return "Your next chapter: premium insights and unlimited chat."
         default:
-            return "Unlimited chat, complete journeys, and deeper guidance."
+            return "Unlimited chat, complete journeys, and deeper insights."
         }
     }
 
@@ -109,7 +116,7 @@ struct PaywallView: View {
             return [
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
                 ("doc.text.fill", "All journey paths included"),
-                ("heart.fill", "Love, Career, Money, Health + more"),
+                ("heart.fill", "Love, Career, Resources, Energy + more"),
                 ("clock.fill", "Cancel anytime"),
             ]
         }
@@ -264,10 +271,35 @@ struct PaywallView: View {
         }
         .accessibilityIdentifier(AccessibilityID.paywallView)
         .onAppear {
+            paywallShownAt = Date()
             Analytics.shared.track(
                 .paywallShown,
-                properties: ["variant": paywallVariant, "context": context.rawValue]
+                properties: [
+                    "variant": paywallVariant,
+                    "context": context.rawValue,
+                    "trigger": context.rawValue,
+                    "paywall_id": "astronova_pro_\(paywallVariant)",
+                    "screen": context.rawValue
+                ]
             )
+        }
+        .onDisappear {
+            // Wave 13 — paywall_dismissed (only if the user didn't convert)
+            let didConvert: Bool = {
+                if case .success = purchaseResult { return true }
+                return false
+            }()
+            if !didConvert {
+                let visibleSeconds = paywallShownAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
+                Analytics.shared.track(
+                    .paywallDismissed,
+                    properties: [
+                        "paywall_id": "astronova_pro_\(paywallVariant)",
+                        "context": context.rawValue,
+                        "time_visible_s": String(visibleSeconds)
+                    ]
+                )
+            }
         }
         .task {
             await storeKitManager.loadProducts()

@@ -67,8 +67,12 @@ struct AstronovaAppApp: App {
             return
         }
 
-        Smartlook.instance.preferences.projectKey = projectKey
-        Smartlook.instance.start()
+        guard AnalyticsConsentController.startSmartlookIfAllowed(projectKey: projectKey) else {
+            #if DEBUG
+            print("ℹ️ [Smartlook] Skipped because anonymous analytics is turned off")
+            #endif
+            return
+        }
 
         #if DEBUG
         print("✅ [Smartlook] Session recording started")
@@ -90,12 +94,45 @@ struct AstronovaAppApp: App {
                 .preferredColorScheme(.dark)
                 .onAppear {
                     Self.setupAnalyticsOnce()
+                    Self.setupPortfolioAnalyticsOnce()
 
                     if !TestEnvironment.shared.isUITest {
                         Analytics.shared.track(.appLaunched, properties: nil)
                     }
                 }
         }
+    }
+
+    // MARK: - Portfolio Analytics (Wave 13 closed-loop)
+
+    @MainActor private static var hasStartedPortfolioAnalytics = false
+
+    @MainActor
+    private static func setupPortfolioAnalyticsOnce() {
+        guard !hasStartedPortfolioAnalytics else { return }
+        hasStartedPortfolioAnalytics = true
+
+        #if DEBUG
+        if TestEnvironment.shared.isUITest {
+            print("🔍 [PortfolioAnalytics] skipped — UI test mode")
+            return
+        }
+        #endif
+
+        // Endpoint comes from the static remote-config (telemetry.iosapps.io
+        // per ANALYTICS_DESIGN §7). Missing endpoint is non-fatal: events are
+        // buffered locally and the package no-ops on send.
+        let endpoint = (Bundle.main.infoDictionary?["IOSAPPS_TELEMETRY_ENDPOINT"] as? String)
+            .flatMap(URL.init(string:))
+        PortfolioAnalytics.shared.configure(appID: .astronova, endpoint: endpoint)
+
+        // Feature flags — defaults are baked in; remote refresh is best-effort.
+        let flagsEndpoint = (Bundle.main.infoDictionary?["IOSAPPS_FLAGS_ENDPOINT"] as? String)
+            .flatMap(URL.init(string:))
+        AstronovaFlags.shared.configure(endpoint: flagsEndpoint)
+
+        // Begin emitting app_open / session_start / session_end.
+        SessionTracker.shared.start()
     }
 }
 

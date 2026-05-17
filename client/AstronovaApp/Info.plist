@@ -40,6 +40,8 @@
 	<string>Astronova uses your contacts to help you explore compatibility with friends and loved ones based on their birth dates.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Astronova needs microphone access to communicate during video sessions.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Astronova uses your location only when you choose to look up a birth place or timezone for your chart.</string>
 	<key>SECURE_ENVELOPE_ALGORITHM</key>
 	<string>AES-256-GCM</string>
 	<key>SECURE_ENVELOPE_VERSION</key>

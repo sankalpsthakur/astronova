@@ -29,6 +29,14 @@ if str(SERVER_ROOT) not in sys.path:
     sys.path.append(str(SERVER_ROOT))
 
 
+@pytest.fixture(autouse=True)
+def active_subscription_for_report_error_paths(sample_user):
+    """Error-path report tests should exercise storage/validation, not entitlement."""
+    from db import set_subscription
+
+    set_subscription(sample_user["id"], True, "astronova_pro_monthly")
+
+
 # =============================================================================
 # SECTION 1: Swiss Ephemeris Failures
 # =============================================================================
@@ -243,7 +251,7 @@ class TestDatabaseFailures:
         with patch("db.get_connection", side_effect=sqlite3.OperationalError("unable to open database")):
             # This will raise an exception in the route handler
             # Testing that it doesn't expose sensitive information
-            response = authenticated_client.get("/api/v1/reports/user/test-user")
+            response = authenticated_client.get("/api/v1/reports/user/test-user-123")
 
             # Should return 500 with generic error message
             assert response.status_code == 500
@@ -732,7 +740,7 @@ class TestErrorMessageSafety:
             "db.get_connection",
             side_effect=sqlite3.OperationalError("unable to open database file at /secret/path/astronova.db"),
         ):
-            response = authenticated_client.get("/api/v1/reports/user/test-user")
+            response = authenticated_client.get("/api/v1/reports/user/test-user-123")
 
             assert response.status_code == 500
             data = response.get_json()

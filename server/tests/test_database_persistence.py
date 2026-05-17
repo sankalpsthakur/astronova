@@ -37,6 +37,21 @@ from db import (
     upsert_user_birth_data,
 )
 
+VALID_APPLE_ID_TOKEN = "valid-apple-id-token"
+
+
+def mock_apple_validation(monkeypatch, *, sub: str, email: str | None = None) -> None:
+    """Mock Apple token verification while keeping token-required auth semantics."""
+
+    def fake_validate(id_token):
+        assert id_token == VALID_APPLE_ID_TOKEN
+        payload = {"sub": sub}
+        if email is not None:
+            payload["email"] = email
+        return payload
+
+    monkeypatch.setattr("routes.auth.validate_apple_id_token", fake_validate)
+
 
 @pytest.fixture
 def test_db_connection(db):
@@ -95,6 +110,8 @@ class TestReportPersistence:
     def test_report_api_persists_to_database(self, authenticated_client, test_db_connection, sample_user):
         """Verify report created via API is persisted to database."""
         user_id = sample_user["id"]
+        set_subscription(user_id, True, "astronova_pro_monthly")
+
         # Make API request
         response = authenticated_client.post(
             "/api/v1/reports/generate",
@@ -402,13 +419,20 @@ class TestUserAuthPersistence:
         assert row["first_name"] == "New"
         assert row["full_name"] == "New Name"
 
-    def test_auth_api_creates_user(self, client, test_db_connection):
+    def test_auth_api_creates_user(self, client, test_db_connection, monkeypatch):
         """Verify Apple auth API creates user in database."""
         user_identifier = f"test-apple-user-{uuid.uuid4()}"
+        mock_apple_validation(monkeypatch, sub=user_identifier, email="apple@example.com")
 
         response = client.post(
             "/api/v1/auth/apple",
-            json={"userIdentifier": user_identifier, "email": "apple@example.com", "firstName": "Apple", "lastName": "User"},
+            json={
+                "idToken": VALID_APPLE_ID_TOKEN,
+                "userIdentifier": user_identifier,
+                "email": "apple@example.com",
+                "firstName": "Apple",
+                "lastName": "User",
+            },
         )
 
         assert response.status_code == 200
@@ -727,14 +751,21 @@ class TestDataIntegrity:
 class TestEndToEndScenarios:
     """Test complete end-to-end scenarios combining multiple operations."""
 
-    def test_complete_user_journey(self, client, test_db_connection):
+    def test_complete_user_journey(self, client, test_db_connection, monkeypatch):
         """Test a complete user journey: auth -> birth data -> chat -> report."""
         user_id = f"test-journey-{uuid.uuid4()}"
+        mock_apple_validation(monkeypatch, sub=user_id, email="journey@example.com")
 
         # Step 1: User authenticates
         auth_response = client.post(
             "/api/v1/auth/apple",
-            json={"userIdentifier": user_id, "email": "journey@example.com", "firstName": "Journey", "lastName": "Test"},
+            json={
+                "idToken": VALID_APPLE_ID_TOKEN,
+                "userIdentifier": user_id,
+                "email": "journey@example.com",
+                "firstName": "Journey",
+                "lastName": "Test",
+            },
         )
         assert auth_response.status_code == 200
         jwt_token = auth_response.get_json()["jwtToken"]
@@ -779,6 +810,7 @@ class TestEndToEndScenarios:
             assert cur.fetchone()["cnt"] >= 2  # User + assistant messages
 
         # Step 4: User generates report
+        set_subscription(user_id, True, "astronova_pro_monthly")
         report_response = client.post(
             "/api/v1/reports/generate",
             json={

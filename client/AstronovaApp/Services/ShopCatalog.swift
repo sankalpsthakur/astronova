@@ -144,17 +144,17 @@ struct ShopCatalog {
         .init(
             id: "money",
             productId: reportProductIDs[3],
-            title: "Wealth & Money",
-            subtitle: "Income & risk cycles",
-            icon: "dollarsign.circle.fill",
+            title: "Resource Cycles",
+            subtitle: "Timing themes & capacity patterns",
+            icon: "chart.line.uptrend.xyaxis",
             color: .green
         ),
         .init(
             id: "health",
             productId: reportProductIDs[4],
-            title: "Health & Vitality",
-            subtitle: "Energy & recovery",
-            icon: "cross.case.fill",
+            title: "Energy Patterns",
+            subtitle: "Personal rhythms & restorative timing",
+            icon: "sun.max.fill",
             color: .teal
         ),
         .init(
@@ -178,7 +178,7 @@ struct ShopCatalog {
     // Central list of chat credit packs
     static let chatPacks: [ChatPack] = [
         .init(id: "c5", productId: "chat_credits_5", title: "50 Credits", subtitle: "Regular use", credits: chatCreditAmounts["chat_credits_5", default: 50]),
-        .init(id: "c15", productId: "chat_credits_15", title: "150 Credits", subtitle: "Extended guidance", credits: chatCreditAmounts["chat_credits_15", default: 150]),
+        .init(id: "c15", productId: "chat_credits_15", title: "150 Credits", subtitle: "Extended sessions", credits: chatCreditAmounts["chat_credits_15", default: 150]),
         .init(id: "c50", productId: "chat_credits_50", title: "500 Credits", subtitle: "Best value", credits: chatCreditAmounts["chat_credits_50", default: 500])
     ]
 

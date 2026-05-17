@@ -136,6 +136,17 @@ struct SelfTabView: View {
             } else {
                 dataService.stopReportPolling()
             }
+            // Wave 13 — chart_viewed event (portfolio standard).
+            Analytics.shared.track(.chartViewed, properties: [
+                "chart_type": "natal_summary",
+                "is_paid": UserDefaults.standard.bool(forKey: "hasAstronovaPro") ? "true" : "false"
+            ])
+            // Peak-trigger review prompt: this is the user's primary daily
+            // surface — the first time it renders after a chart is computed,
+            // ask for a review (subject to 6-month throttle).
+            await MainActor.run {
+                AstronovaReviewPrompts.shared.requestIfPeak(.firstChartCompleted)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .reportPurchased)) { _ in
             guard auth.isAuthenticated else { return }
@@ -228,6 +239,7 @@ struct SelfTabView: View {
                 LoadingView(style: .cosmic, message: "Aligning with the cosmos...")
             }
         }
+        .allowsHitTesting(false)
     }
 
     // MARK: - Name Header
@@ -239,6 +251,24 @@ struct SelfTabView: View {
                 .foregroundStyle(Color.cosmicTextPrimary)
 
             Spacer()
+
+            Button {
+                CosmicHaptics.medium()
+                activeSheet = .reportShop
+            } label: {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color.cosmicGold)
+                    .frame(width: 38, height: 38)
+                    .background(Color.cosmicGold.opacity(0.12), in: Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.cosmicGold.opacity(0.16), lineWidth: Cosmic.Border.hairline)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Reports Shop")
+            .accessibilityIdentifier(AccessibilityID.reportsShopButton)
         }
     }
 
@@ -310,22 +340,52 @@ struct SelfTabView: View {
     private var reportsSection: some View {
         Group {
             if !dataService.userReports.isEmpty {
-                YourReportsSection(
-                    reports: dataService.userReports,
-                    onReportTap: { report in
-                        if report.status?.lowercased() == "completed" {
-                            activeSheet = .reportDetail(report)
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                    YourReportsSection(
+                        reports: dataService.userReports,
+                        onReportTap: { report in
+                            if report.status?.lowercased() == "completed" {
+                                activeSheet = .reportDetail(report)
+                            }
+                        },
+                        onViewAllTap: {
+                            activeSheet = .reportsLibrary
                         }
-                    },
-                    onViewAllTap: {
-                        activeSheet = .reportsLibrary
-                    }
-                )
+                    )
+
+                    reportsShopButton
+                }
             } else {
                 // Empty state with CTA to browse reports
                 ReportsEmptyState(onBrowse: { activeSheet = .reportShop })
             }
         }
+    }
+
+    private var reportsShopButton: some View {
+        Button {
+            CosmicHaptics.medium()
+            activeSheet = .reportShop
+        } label: {
+            HStack(spacing: Cosmic.Spacing.s) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Browse More Reports")
+                    .font(.cosmicCalloutEmphasis)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundStyle(Color.cosmicGold)
+            .padding(Cosmic.Spacing.m)
+            .background(Color.cosmicGold.opacity(0.12), in: RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                    .stroke(Color.cosmicGold.opacity(0.16), lineWidth: Cosmic.Border.hairline)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("reportsShopSecondaryButton")
     }
 
     // MARK: - Foundation Section
@@ -529,29 +589,29 @@ private struct ReportsEmptyState: View {
     let onBrowse: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Cosmic.Spacing.m) {
-            HStack {
-                Text("Your Reports")
-                    .font(.cosmicHeadline)
-                    .foregroundStyle(Color.cosmicTextPrimary)
+        Button {
+            CosmicHaptics.medium()
+            onBrowse()
+        } label: {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.m) {
+                HStack {
+                    Text("Your Reports")
+                        .font(.cosmicHeadline)
+                        .foregroundStyle(Color.cosmicTextPrimary)
 
-                Spacer()
-            }
+                    Spacer()
+                }
 
-            VStack(spacing: Cosmic.Spacing.m) {
-                Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 32))
-                    .foregroundStyle(Color.cosmicGold.opacity(0.5))
+                VStack(spacing: Cosmic.Spacing.m) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.system(size: 32))
+                        .foregroundStyle(Color.cosmicGold.opacity(0.5))
 
-                Text("Deep cosmic insights await")
-                    .font(.cosmicCallout)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-                    .multilineTextAlignment(.center)
+                    Text("Deep cosmic insights await")
+                        .font(.cosmicCallout)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .multilineTextAlignment(.center)
 
-                Button {
-                    CosmicHaptics.medium()
-                    onBrowse()
-                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                         Text("Explore Reports")
@@ -562,14 +622,15 @@ private struct ReportsEmptyState: View {
                     .padding(.vertical, Cosmic.Spacing.sm)
                     .background(Color.cosmicGold.opacity(0.15), in: Capsule())
                 }
-                .accessibilityIdentifier(AccessibilityID.reportsShopButton)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Cosmic.Spacing.lg)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Cosmic.Spacing.lg)
+            .padding(Cosmic.Spacing.m)
+            .background(Color.cosmicSurface)
+            .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
         }
-        .padding(Cosmic.Spacing.m)
-        .background(Color.cosmicSurface)
-        .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("reportsShopSecondaryButton")
     }
 }
 

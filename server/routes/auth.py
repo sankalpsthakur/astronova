@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -120,17 +119,8 @@ def validate_apple_id_token(id_token: str) -> dict:
     except jwt.InvalidTokenError as e:
         raise ValueError(_("Invalid token: %(error)s") % {"error": str(e)})
     except ImportError:
-        # PyJWT not installed - skip validation in development
-        logger.warning("PyJWT not installed - skipping Apple token validation")
-        # Return minimal decoded payload from unverified token
-        import base64
-
-        parts = id_token.split(".")
-        if len(parts) >= 2:
-            # Add padding if needed
-            payload = parts[1] + "=" * (4 - len(parts[1]) % 4)
-            return json.loads(base64.urlsafe_b64decode(payload))
-        raise ValueError(_("Invalid token format"))
+        logger.error("PyJWT is required for Apple Sign-In token validation")
+        raise ValueError(_("Apple token validation is unavailable"))
 
 
 # JWT secret key - in production, use a strong random secret from environment.
@@ -224,7 +214,7 @@ def apple_auth():
         "lastName": "Doe"
     }
 
-    The identityToken is validated against Apple's public keys to ensure:
+    The identityToken/idToken is required and validated against Apple's public keys to ensure:
     - The token was issued by Apple
     - The token is for our app (bundle ID)
     - The token has not expired
@@ -257,32 +247,33 @@ def apple_auth():
     first_name = data.get("firstName")
     last_name = data.get("lastName")
 
-    # Validate Apple identity token if provided
-    if identity_token:
-        try:
-            decoded_token = validate_apple_id_token(identity_token)
+    if not identity_token or not isinstance(identity_token, str) or not identity_token.strip():
+        return jsonify({
+            "error": _("Apple identity token is required"),
+            "code": "APPLE_TOKEN_REQUIRED",
+        }), 401
 
-            # Extract user info from validated token
-            # Apple's sub claim is the user identifier
-            token_user_id = decoded_token.get("sub")
-            token_email = decoded_token.get("email")
+    try:
+        decoded_token = validate_apple_id_token(identity_token.strip())
 
-            # Use token values as authoritative if available
-            if token_user_id:
-                user_identifier = token_user_id
-            if token_email:
-                email = token_email
+        # Extract user info from validated token
+        # Apple's sub claim is the user identifier
+        token_user_id = decoded_token.get("sub")
+        token_email = decoded_token.get("email")
 
-            logger.info(f"Apple Sign-In validated for user: {user_identifier}")
+        if not token_user_id:
+            return jsonify({"error": _("Apple identity token is missing subject"), "code": "INVALID_TOKEN"}), 401
 
-        except ValueError as e:
-            logger.warning(f"Apple token validation failed: {e}")
-            return jsonify({"error": str(e), "code": "INVALID_TOKEN"}), 401
+        # Use token values as authoritative if available
+        user_identifier = token_user_id
+        if token_email:
+            email = token_email
 
-    # Generate a user ID if none provided
-    if not user_identifier:
-        user_identifier = str(uuid.uuid4())
-        logger.info(f"Generated anonymous user ID: {user_identifier}")
+        logger.info(f"Apple Sign-In validated for user: {user_identifier}")
+
+    except ValueError as e:
+        logger.warning(f"Apple token validation failed: {e}")
+        return jsonify({"error": str(e), "code": "INVALID_TOKEN"}), 401
 
     full_name = (f"{first_name or ''} {last_name or ''}").strip() or (email or _("User"))
 

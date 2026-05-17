@@ -1,6 +1,6 @@
 # App Store Submission Checklist
 
-## ✅ Screenshots - COMPLETE
+## Screenshots - Prepared, Upload Pending
 
 All screenshots captured and resized to **1284 × 2778px** (iPhone 6.7" display requirement):
 
@@ -11,39 +11,40 @@ All screenshots captured and resized to **1284 × 2778px** (iPhone 6.7" display 
 - ✅ Screenshot 5: Oracle AI chat interface - 238KB
 - ✅ Screenshot 6: Self tab cosmic pulse - 2.3MB
 
-**Total:** 6 high-quality screenshots ready for upload
+**Total:** 6 screenshot files prepared for upload. App Store Connect upload
+status must be verified separately.
 
-## 📝 Text Content - READY
+## Text Content - Drafted, Public URL Verification Pending
 
 All text content prepared in `COPY_PASTE_READY.txt`:
 
 - ✅ Promotional Text: 143 characters (limit: 170)
 - ✅ Description: 2,847 characters (limit: 4,000)
 - ✅ Keywords: 99 characters (limit: 100)
-- ✅ Support URL: https://astronova.onrender.com/support (verified live)
+- [ ] Support URL: https://astronova.onrender.com/support (verify live before submission)
 - ✅ Marketing URL: https://astronova.onrender.com
-- ✅ Privacy Policy URL: https://astronova.onrender.com/privacy (live)
-- ✅ Terms of Service URL: https://astronova.onrender.com/terms (live)
+- [ ] Privacy Policy URL: https://astronova.onrender.com/privacy (verify live before submission)
+- [ ] Terms of Service URL: https://astronova.onrender.com/terms (verify live before submission)
 
-## 👤 Test Account - READY
+## Test Account - External Gate
 
-Created for App Store reviewers:
-- ✅ User ID: `appstore-test-user-2026`
-- ✅ Email: `appstore-test@astronova.app`
-- ✅ Complete birth data: Jan 15, 1990, 2:30 PM, New York, NY
-- ✅ Active Pro subscription for testing premium features
-- ✅ No password needed (can skip Apple Sign-In during testing)
+Planned reviewer account:
+- [ ] User ID: `appstore-test-user-2026`
+- [ ] Email: `appstore-test@astronova.app`
+- [ ] Complete birth data: Jan 15, 1990, 2:30 PM, New York, NY
+- [ ] Pro entitlement or sandbox subscription verified for premium testing
+- [ ] Skip-sign-in path verified in the uploaded build
 
-## 🔗 Backend Infrastructure - READY
+## Backend Infrastructure - Verify Before Submission
 
-- ✅ Support URL endpoint deployed: `/support`
-- ✅ Terms endpoint deployed: `/terms`
-- ✅ Privacy endpoint deployed: `/privacy`
-- ✅ All endpoints use correct email: admin@100xai.engineering
-- ✅ Test user seeded in database
-- ✅ Backend API live at: https://astronova.onrender.com
+- [ ] Support URL endpoint deployed: `/support`
+- [ ] Terms endpoint deployed: `/terms`
+- [ ] Privacy endpoint deployed: `/privacy`
+- [ ] All endpoints use correct email: admin@100xai.engineering
+- [ ] Test user seeded in database, if reviewer credentials are used
+- [ ] Backend API live at: https://astronova.onrender.com
 
-## 📋 App Review Information - READY
+## App Review Information - Drafted
 
 **Notes for Reviewer** (from `COPY_PASTE_READY.txt`):
 
@@ -80,6 +81,7 @@ THIRD-PARTY SERVICES:
 - Video consultations: WebRTC video service (for pandit consultations)
 - Ephemeris calculations: Swiss Ephemeris library
 - AI guidance: OpenAI API (optional, degrades gracefully)
+- Analytics: portfolio/local analytics. Smartlook package reference exists, but SmartlookAnalytics is not linked in the current Xcode project unless a source worker changes and verifies it before upload.
 
 PERMISSIONS:
 - No location access required (birth location stored manually)
@@ -98,8 +100,14 @@ Please contact us if you have any questions during review.
 
 ### Version Information
 - ✅ Version: 1.0
-- ✅ Build: [Upload via Xcode]
+- [ ] Build uploaded and selected in App Store Connect
 - ✅ Copyright: 2026 Astronova
+
+### IAP Products
+- [ ] Configure 12 products in App Store Connect.
+- [ ] Include `astronova_pro_12_month_commitment` and `astronova_pro_monthly`.
+- [ ] Include 7 report non-consumables and 3 chat-credit consumables.
+- [ ] Sandbox-test products before review.
 
 ## 🚀 Next Steps
 
@@ -120,8 +128,10 @@ Please contact us if you have any questions during review.
    - Paste reviewer notes
    - Verify all URLs work
 
-4. **Submit for Review:**
+4. **Submit for Review only after external gates are green:**
    - Select manual release
+   - Confirm an uploaded build is selected
+   - Confirm IAP products and reviewer access work
    - Submit for review
    - Monitor status in App Store Connect
 
@@ -138,5 +148,6 @@ Please contact us if you have any questions during review.
 
 ---
 
-**Status:** ✅ All materials ready for App Store submission!
+**Status:** Draft materials prepared; App Store Connect upload, live URL checks,
+IAP records, and reviewer account gates remain pending.
 **Date Prepared:** January 9, 2026

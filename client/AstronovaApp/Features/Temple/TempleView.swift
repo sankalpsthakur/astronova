@@ -11,7 +11,7 @@ import SwiftUI
 
 struct TempleView: View {
     @EnvironmentObject private var gamification: GamificationManager
-    @State private var showingOracle = false
+    @State private var activeSheet: TempleSheet?
     @State private var muhurats: [Muhurat] = Muhurat.sampleMuhurats()
     @State private var diyPoojas: [DIYPooja] = DIYPooja.samples
     @State private var planetPositions: [DetailedPlanetaryPosition] = []
@@ -76,9 +76,23 @@ struct TempleView: View {
         .task {
             await loadTempleData()
         }
-        .sheet(isPresented: $showingOracle) {
-            OracleView()
-                .environmentObject(gamification)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .oracle:
+                OracleView()
+                    .environmentObject(gamification)
+            }
+        }
+    }
+
+    private enum TempleSheet: Identifiable {
+        case oracle
+
+        var id: String {
+            switch self {
+            case .oracle:
+                return "oracle"
+            }
         }
     }
 
@@ -87,7 +101,7 @@ struct TempleView: View {
     private var oracleQuickAccessSection: some View {
         Button {
             CosmicHaptics.medium()
-            showingOracle = true
+            activeSheet = .oracle
         } label: {
             HStack(spacing: Cosmic.Spacing.md) {
                 ZStack {

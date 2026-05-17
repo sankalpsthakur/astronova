@@ -286,6 +286,7 @@ struct ReportPricing {
 /// Decides which high-level screen to show based on authentication state.
 struct RootView: View {
     @EnvironmentObject private var auth: AuthState
+    @StateObject private var nps = NPSService.shared
 
     var body: some View {
         Group {
@@ -298,6 +299,24 @@ struct RootView: View {
                 SimpleProfileSetupView()
             case .signedIn:
                 SimpleTabBarView()
+            }
+        }
+        // Wave 13 — Global NPS sheet driver. Surfaces from NPSService after
+        // Oracle session #5 or first Cosmic Diary entry (see NPSService).
+        .sheet(isPresented: Binding(
+            get: { nps.pendingTrigger != nil },
+            set: { isPresented in
+                if !isPresented { nps.dismiss() }
+            }
+        )) {
+            if let trigger = nps.pendingTrigger {
+                NPSView(
+                    trigger: trigger,
+                    onDismiss: { nps.dismiss() },
+                    onSubmit: { score, comment in
+                        nps.submit(score: score, comment: comment, trigger: trigger)
+                    }
+                )
             }
         }
     }
@@ -3564,6 +3583,7 @@ final class OracleQuotaManager: ObservableObject {
     }
 
     func refresh() {
+        objectWillChange.send()
         loadDailyUsage()
         checkSubscription()
     }
@@ -3723,8 +3743,42 @@ final class OracleViewModel: ObservableObject {
 
 struct OracleView: View {
     @StateObject private var viewModel = OracleViewModel()
+    @ObservedObject private var quotaManager = OracleQuotaManager.shared
     @EnvironmentObject private var auth: AuthState
     @State private var showingSignInPrompt = false
+    @State private var activeSheet: OracleSheet?
+    private let onBuyCredits: (() -> Void)?
+    private let onUpgrade: (() -> Void)?
+
+    private enum OracleSheet: Identifiable {
+        case paywall
+        case creditPacks
+
+        var id: String {
+            switch self {
+            case .paywall:
+                return "paywall"
+            case .creditPacks:
+                return "creditPacks"
+            }
+        }
+    }
+
+    init(
+        onBuyCredits: (() -> Void)? = nil,
+        onUpgrade: (() -> Void)? = nil
+    ) {
+        self.onBuyCredits = onBuyCredits
+        self.onUpgrade = onUpgrade
+    }
+
+    private var allowsOracleInteraction: Bool {
+        auth.isAuthenticated || TestEnvironment.shared.isUITest
+    }
+
+    private var shouldShowSignInOverlay: Bool {
+        !auth.isAuthenticated && !TestEnvironment.shared.isUITest
+    }
 
     var body: some View {
         NavigationStack {
@@ -3734,11 +3788,11 @@ struct OracleView: View {
 
                 VStack(spacing: 0) {
                     // Limit banner (when quota exhausted)
-                    if viewModel.quotaManager.isLimited {
+                    if quotaManager.isLimited {
                         OracleQuotaBanner(
-                            resetCountdown: viewModel.quotaManager.resetCountdown,
-                            onBuyCredits: { viewModel.showingCreditPacks = true },
-                            onUpgrade: { viewModel.showingPaywall = true }
+                            resetCountdown: quotaManager.resetCountdown,
+                            onBuyCredits: { presentCreditPacks() },
+                            onUpgrade: { presentPaywall() }
                         )
                     }
 
@@ -3790,7 +3844,7 @@ struct OracleView: View {
                         text: $viewModel.inputText,
                         depth: $viewModel.selectedDepth,
                         prompts: viewModel.contextualPrompts,
-                        isDisabled: viewModel.isLoading || viewModel.quotaManager.isLimited || !auth.isAuthenticated,
+                        isDisabled: viewModel.isLoading || quotaManager.isLimited || !allowsOracleInteraction,
                         onSend: { viewModel.sendMessage() },
                         onPromptTap: { viewModel.selectPrompt($0) }
                     )
@@ -3798,7 +3852,7 @@ struct OracleView: View {
                 }
 
                 // Sign-in overlay when not authenticated
-                if !auth.isAuthenticated {
+                if shouldShowSignInOverlay {
                     OracleSignInOverlay(
                         onSignIn: {
                             // Navigate to sign in (using the onboarding flow)
@@ -3819,18 +3873,23 @@ struct OracleView: View {
             }
         }
         .onAppear {
-            viewModel.quotaManager.refresh()
+            quotaManager.refresh()
 
             // Show sign-in prompt if not authenticated
-            if !auth.isAuthenticated {
+            if shouldShowSignInOverlay {
                 showingSignInPrompt = true
             }
         }
-        .sheet(isPresented: $viewModel.showingPaywall) {
-            PaywallView(context: .chatLimit)
+        .onReceive(NotificationCenter.default.publisher(for: .purchaseCompleted)) { _ in
+            quotaManager.refresh()
         }
-        .sheet(isPresented: $viewModel.showingCreditPacks) {
-            ChatPackagesSheet()
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .paywall:
+                PaywallView(context: .chatLimit)
+            case .creditPacks:
+                ChatPackagesSheet()
+            }
         }
     }
 
@@ -3839,6 +3898,22 @@ struct OracleView: View {
             #selector(UIResponder.resignFirstResponder),
             to: nil, from: nil, for: nil
         )
+    }
+
+    private func presentCreditPacks() {
+        if let onBuyCredits {
+            onBuyCredits()
+        } else {
+            activeSheet = .creditPacks
+        }
+    }
+
+    private func presentPaywall() {
+        if let onUpgrade {
+            onUpgrade()
+        } else {
+            activeSheet = .paywall
+        }
     }
 }
 
@@ -5922,7 +5997,7 @@ struct PrivacyPolicyView: View {
             bulletPoints: [
                 "Profile details you provide (name, date, time, and place of birth)",
                 "Optional preferences you set inside the app",
-                "Usage analytics and session diagnostics collected via Smartlook to improve stability"
+                "Usage analytics and session diagnostics collected when Share Anonymous Usage is enabled"
             ]
         )
     }
@@ -5944,6 +6019,7 @@ struct PrivacyPolicyView: View {
             bulletPoints: [
                 "Update or delete birth details at any time from Settings",
                 "Export your data as a JSON file from Settings › Data & Privacy",
+                "Turn off Share Anonymous Usage to stop analytics event forwarding and Smartlook session diagnostics",
                 "Request deletion of your account from Delete Account (signed-in users)"
             ]
         )
@@ -5952,7 +6028,7 @@ struct PrivacyPolicyView: View {
     private var thirdPartySection: some View {
         PolicySection(
             title: "Third-Party Access",
-            content: "We do not sell or share your personal data with third parties. Limited service providers (such as Smartlook) process analytics and session diagnostics strictly to help us improve Astronova."
+            content: "We do not sell your personal data or use it to track you across other companies' apps or websites. Limited service providers, including Smartlook when analytics is enabled, process analytics and session diagnostics strictly to help us improve Astronova."
         )
     }
 
@@ -6015,7 +6091,7 @@ struct DataPrivacyView: View {
                 
                 PrivacySection(
                     title: "What We Collect",
-                    content: "• Birth date, time, and location\n• Astrological preferences\n• Usage analytics and session diagnostics (Smartlook)"
+                    content: "• Birth date, time, and location\n• Astrological preferences\n• Pseudonymous usage events tied to a random app UUID\n• Session diagnostics when Share Anonymous Usage is enabled\n\nYou can turn off anonymous analytics in Settings → Privacy → Share Anonymous Usage. Turning it off stops analytics forwarding, clears buffered portfolio events, rotates the analytics UUID, and stops Smartlook diagnostics."
                 )
                 
                 PrivacySection(

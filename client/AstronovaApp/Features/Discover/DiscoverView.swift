@@ -22,6 +22,10 @@ struct DiscoverView: View {
     @State private var reminderMessage = ""
     @State private var showingDailySignal = false
 
+    private var shouldLoadReports: Bool {
+        auth.isAuthenticated || TestEnvironment.shared.isUITest
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
             // Background
@@ -44,10 +48,10 @@ struct DiscoverView: View {
         .navigationTitle("Discover")
         .navigationBarTitleDisplayMode(.large)
         .refreshable {
-            await viewModel.refresh(shouldLoadReports: auth.isAuthenticated)
+            await viewModel.refresh(shouldLoadReports: shouldLoadReports)
         }
         .task {
-            await viewModel.load(profile: auth.profileManager.profile, shouldLoadReports: auth.isAuthenticated)
+            await viewModel.load(profile: auth.profileManager.profile, shouldLoadReports: shouldLoadReports)
 
             // Check if we should show report shop (triggered from PaywallView)
             if triggerShowReportShop {
@@ -63,7 +67,7 @@ struct DiscoverView: View {
             }
         }
         .onAppear {
-            guard auth.isAuthenticated else { return }
+            guard shouldLoadReports else { return }
             Task {
                 await viewModel.loadUserReports()
             }
@@ -75,7 +79,7 @@ struct DiscoverView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .reportPurchased)) { _ in
-            guard auth.isAuthenticated else { return }
+            guard shouldLoadReports else { return }
             Task {
                 await viewModel.loadUserReports()
             }
@@ -144,6 +148,21 @@ struct DiscoverView: View {
                 }
                 .padding(.horizontal, Cosmic.Spacing.m)
                 .padding(.top, Cosmic.Spacing.m)
+
+                // Keep purchased/generated reports near the top of the daily hub.
+                if !viewModel.userReports.isEmpty {
+                    YourReportsSection(
+                        reports: viewModel.userReports,
+                        onReportTap: { report in
+                            selectedReport = report
+                            showingReportDetail = true
+                        },
+                        onViewAllTap: {
+                            showingReportsLibrary = true
+                        }
+                    )
+                    .padding(.horizontal, Cosmic.Spacing.m)
+                }
 
                 ArcanaCollectionSection(
                     cards: gamification.allArcanaCards,
@@ -224,21 +243,6 @@ struct DiscoverView: View {
                     }
                 )
                 .padding(.horizontal, Cosmic.Spacing.m)
-
-                // Your Reports (if any)
-                if !viewModel.userReports.isEmpty {
-                    YourReportsSection(
-                        reports: viewModel.userReports,
-                        onReportTap: { report in
-                            selectedReport = report
-                            showingReportDetail = true
-                        },
-                        onViewAllTap: {
-                            showingReportsLibrary = true
-                        }
-                    )
-                    .padding(.horizontal, Cosmic.Spacing.m)
-                }
 
                 // Actions row
                 actionsRow(snapshot)
