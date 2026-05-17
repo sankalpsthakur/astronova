@@ -33,7 +33,7 @@
 		</dict>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
-	<true/>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Astronova needs camera access for video sessions during your bookings.</string>
 	<key>NSContactsUsageDescription</key>
