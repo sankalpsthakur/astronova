@@ -94,13 +94,63 @@ shipping that.
        `render services delete srv-d18qol15pdvs73cro650 --confirm`.
        This destroys the original disk — make sure step 5 succeeded first.
 
+## Created Render service (live as of 2026-05-18)
+
+- **`astronova-ghcr`** — `srv-d85e3q1kh4rs73drb8p0`
+  - URL: `https://astronova-ghcr.onrender.com`
+  - Runtime: `image`, Plan: `starter`, Region: `oregon`
+  - Image: `ghcr.io/sankalpsthakur/astronova-server:latest`
+  - Healthcheck: `/health`
+  - First deploy: **live**, no env vars set
+  - **Disk:** `null` (no persistent volume). The original `astronova` service
+    has a 1 GB disk at `/data` containing `astronova.db` — see migration
+    section below.
+
+### Smoke evidence (run by the agent)
+
+| Endpoint | Old `astronova` | New `astronova-ghcr` |
+|----------|----------------|---------------------|
+| `GET /health` | `200 {"status":"ok"}` | `200 {"status":"ok"}` |
+| `GET /api/v1/health` | `200 healthy` | `200 healthy` |
+| `POST /api/v1/chart/generate` (malformed payload) | `400 VALIDATION_ERROR` | `400 VALIDATION_ERROR` |
+
+Responses are byte-identical; the new service is serving correctly from
+the GHCR image build of the current `main` Dockerfile.
+
+## Env vars / secrets the operator must verify
+
+The new service has **no env vars set**. The current `astronova` service
+(`srv-d18qol15pdvs73cro650`) has these set; copy via dashboard:
+
+| Key                       | Notes                                       |
+|---------------------------|---------------------------------------------|
+| `SECRET_KEY`              | Flask session signing — copy from old        |
+| `JWT_SECRET_KEY`          | JWT signing — copy from old                  |
+| `ADMIN_API_TOKEN`         | Admin endpoints — copy from old              |
+| `APPLE_BUNDLE_ID`         | `com.astronova.app`                          |
+| `GEMINI_API_KEY`          | `sync:false` on old — copy from dashboard    |
+| `DB_PATH`                 | `/data/astronova.db` (set this even if no disk attached — the app expects the env var) |
+| `ASTRONOVA_CORS_ORIGINS`  | Add new URL: `https://astronova.onrender.com,https://astronova.app,https://astronova-ghcr.onrender.com` |
+| `FLASK_ENV`               | `production`                                 |
+| `FLASK_DEBUG`             | `false`                                      |
+| `PORT`                    | `10000` (Render image default)               |
+
+(The `version:"minimal"` you see in health responses without env vars means
+the app gracefully degrades to a stub mode when secrets are missing. Set
+the real values for full production behavior.)
+
 ## What this PR DID and did NOT do
 
 Did:
 - Add `.github/workflows/build-server-image.yml` (builds `server/Dockerfile`,
   tags `ghcr.io/sankalpsthakur/astronova-server:latest` + `:<short-sha>`,
   pushes to GHCR on `main` and `infra/**` branches and via manual dispatch).
-- Create a new Render web service `astronova-ghcr` pointing at the GHCR image.
+- Push the first image successfully — workflow run completed `success`,
+  package is at `ghcr.io/sankalpsthakur/astronova-server:latest` (public).
+- Create a new Render web service `astronova-ghcr` (starter plan, image
+  runtime) pointing at the GHCR image. First deploy `live`.
+- Verify `/health`, `/api/v1/health`, `/api/v1/chart/generate` parity with
+  the old service.
 - Document everything below.
 
 Did NOT:
@@ -112,16 +162,20 @@ Did NOT:
 
 ## Known gaps (operator must do manually)
 
-- **Disk + database migration** — biggest gap, called out above.
-- **GHCR package visibility** — one-click in GitHub UI after first push.
-- **Disk attachment on new service** — `render services create --from` may
-  not clone the disk spec. Verify the new service has a 1 GB disk mounted at
-  `/data` before doing the DB copy. If not, attach one via dashboard or
-  API call (`disks: - name: disk, mountPath: /data, sizeGB: 1`).
-- **Env var `GEMINI_API_KEY`** is `sync: false` on the existing service
-  (set manually via dashboard). Confirm it carries to the new service via
-  `--from` clone; if not, set it manually before first request that needs
-  Gemini.
+- **CRITICAL: SQLite DB migration.** Biggest gap. Existing service has a
+  1 GB disk at `/data` holding `astronova.db`. The new service has
+  **`disk: null`** (confirmed: the CLI did not auto-create one). Before any
+  iOS base-URL cutover the operator must:
+  1. Attach a 1 GB disk at `/data` to `astronova-ghcr` via dashboard
+     (Settings -> Disks -> Add).
+  2. Copy `astronova.db` from the old disk to the new disk (see procedure
+     above).
+- **All env vars / secrets** — see the env-var table above. None were copied
+  by the CLI (no `--from` clone was attempted because that path was rejected
+  for cram and the same conflict applies here). The app is currently in
+  `version:"minimal"` stub mode.
+- **GHCR package visibility** — already public for this repo. No action.
+- **iOS base-URL flip** — separate iOS PR after DB migration + env vars done.
 
 ## GHCR image
 
