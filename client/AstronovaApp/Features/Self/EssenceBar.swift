@@ -8,6 +8,10 @@ struct EssenceBar: View {
     let moonNakshatra: String?
     let lagna: String?
     let nakshatraLord: String?
+    /// Audit A0d: when birth time is unknown, the Lagna (ascendant) is computed
+    /// against a 12:00 noon stand-in and is therefore approximate. Show this
+    /// inline so users know the reading isn't a precise calculation.
+    var lagnaIsApproximate: Bool = false
 
     var body: some View {
         HStack(spacing: Cosmic.Spacing.lg) {
@@ -28,7 +32,7 @@ struct EssenceBar: View {
             EssenceChip(
                 symbol: "⬆",
                 label: lagna != nil ? "\(lagna!) Lagna" : "—",
-                sublabel: nil,
+                sublabel: lagna != nil && lagnaIsApproximate ? "(approximate)" : nil,
                 color: .cosmicGold
             )
         }

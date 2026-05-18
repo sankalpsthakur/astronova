@@ -8,16 +8,27 @@ struct MiniChartWheelView: View {
     let moonSign: String?
     let risingSign: String?
     let size: CGFloat
+    /// Audit A0d: when the rising sign is computed against an unknown birth
+    /// time (12:00 noon stand-in), mark the ascendant glyph with a "?" so
+    /// the wheel signals that house cusps are not precise.
+    let risingIsApproximate: Bool
 
     @State private var isBreathing = false
     @State private var wheelRotation: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(sunSign: String? = nil, moonSign: String? = nil, risingSign: String? = nil, size: CGFloat = 120) {
+    init(
+        sunSign: String? = nil,
+        moonSign: String? = nil,
+        risingSign: String? = nil,
+        size: CGFloat = 120,
+        risingIsApproximate: Bool = false
+    ) {
         self.sunSign = sunSign
         self.moonSign = moonSign
         self.risingSign = risingSign
         self.size = size
+        self.risingIsApproximate = risingIsApproximate
     }
 
     var body: some View {
@@ -107,7 +118,7 @@ struct MiniChartWheelView: View {
 
                 // Ascendant marker
                 if risingSign != nil {
-                    AscendantMarker(size: size * 0.08)
+                    AscendantMarker(size: size * 0.08, isApproximate: risingIsApproximate)
                         .offset(x: size * 0.35, y: 0)
                 }
             }
@@ -162,6 +173,7 @@ private struct PlanetMarker: View {
 
 private struct AscendantMarker: View {
     let size: CGFloat
+    var isApproximate: Bool = false
 
     var body: some View {
         ZStack {
@@ -170,7 +182,18 @@ private struct AscendantMarker: View {
                 .font(.system(size: size))
                 .foregroundStyle(Color.cosmicGold)
                 .shadow(color: .cosmicGold.opacity(0.5), radius: 2)
+            // Audit A0d: subtle "?" overlay when houses/ascendant are
+            // computed without a precise birth time.
+            if isApproximate {
+                Text("?")
+                    .font(.system(size: size * 0.9, weight: .bold))
+                    .foregroundStyle(Color.cosmicWarning)
+                    .offset(x: size * 0.6, y: -size * 0.6)
+                    .shadow(color: .black.opacity(0.4), radius: 1)
+                    .accessibilityHidden(true)
+            }
         }
+        .accessibilityLabel(isApproximate ? "Ascendant marker (approximate)" : "Ascendant marker")
     }
 }
 
