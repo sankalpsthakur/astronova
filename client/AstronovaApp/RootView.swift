@@ -1090,7 +1090,16 @@ struct EnhancedBirthDateStepView: View {
                                 .stroke(Color.cosmicTextTertiary.opacity(0.25), lineWidth: Cosmic.Border.hairline)
                         )
                 )
-                
+
+                // Entertainment disclaimer (audit A0c): surface short legal copy
+                // where birth data is first collected, above the inputs.
+                Text(AstronovaCopy.shortAstrologyDisclaimer)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Cosmic.Spacing.lg)
+                    .accessibilityIdentifier("onboarding.disclaimer")
+
                 // Enhanced date picker with validation
                 VStack(spacing: 12) {
                     DatePicker(
