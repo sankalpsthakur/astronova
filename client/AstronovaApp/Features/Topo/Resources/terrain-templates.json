@@ -1,0 +1,218 @@
+{
+  "version": 1,
+  "drivers": [
+    {
+      "id": "sun_moon_baseline",
+      "label": "Sun-Moon Aspect",
+      "vedic_overlay": "Surya-Chandra yoga — applies if the natal Surya-Chandra angle is also activated by current gochara. Amavasya and Purnima are extreme cases.",
+      "axes": {
+        "current_weather": "Sun and Moon at {aspect_angle}. Will and mood pull different directions.",
+        "most_likely_default": "Override the feeling. Push the schedule. Call the discomfort laziness.",
+        "highest_agency_move": "Name the split out loud. Pick one of the two, not both.",
+        "best_use": "Decisions that need both head and gut to agree.",
+        "avoid": "Forcing alignment by 5pm. Sleeping on it works better."
+      }
+    },
+    {
+      "id": "mercury_aspect",
+      "label": "Mercury Major Aspect",
+      "vedic_overlay": "Budha drishti — applies if natal Budha is in {house} or rules a kendra. Mental signature dominates the day.",
+      "axes": {
+        "current_weather": "Mercury {aspect_type} {aspect_partner}. Thinking moves at an unusual speed.",
+        "most_likely_default": "Over-explain. Restate what was already understood. Cc more people.",
+        "highest_agency_move": "One sentence. Then stop. Let the silence do half the work.",
+        "best_use": "Naming the real question. Writing the version no one will edit.",
+        "avoid": "Defending a position twice. Talking to convince a closed room."
+      }
+    },
+    {
+      "id": "venus_aspect",
+      "label": "Venus Major Aspect",
+      "vedic_overlay": "Shukra drishti — applies if natal Shukra is in {house} or aspects the 7th bhava. Relational signature is loud today.",
+      "axes": {
+        "current_weather": "Venus {aspect_type} {aspect_partner}. Connection runs warm or sticky.",
+        "most_likely_default": "Smooth it over. Stay nice past the point of honesty.",
+        "highest_agency_move": "Say the warm thing and the true thing in the same sentence.",
+        "best_use": "Repair conversations. Aesthetic decisions. Things that need taste.",
+        "avoid": "Agreeing to terms you'll resent. Buying it because it's pretty."
+      }
+    },
+    {
+      "id": "mars_aspect",
+      "label": "Mars Major Aspect",
+      "vedic_overlay": "Mangal drishti — applies if natal Mangal is in {house} or rules the lagna. Drive runs hot, edges sharper.",
+      "axes": {
+        "current_weather": "Mars {aspect_type} {aspect_partner}. Drive runs hot. Friction available.",
+        "most_likely_default": "Move first, ask later. Win the small fight, lose the day.",
+        "highest_agency_move": "Pick the right target. Burn the energy on the worthy enemy.",
+        "best_use": "Hard physical work. The conversation you've been avoiding. Cold starts.",
+        "avoid": "Replying angry. Driving angry. Sending the screenshot."
+      }
+    },
+    {
+      "id": "saturn_aspect",
+      "label": "Saturn Major Aspect",
+      "vedic_overlay": "Shani drishti — applies if natal Shani is in {house} or active sade sati window. Pressure compounds across days.",
+      "axes": {
+        "current_weather": "Saturn {aspect_type} {aspect_partner}. Weight settles on whatever's unfinished.",
+        "most_likely_default": "Treat the pressure as a verdict. Shrink the ambition to match.",
+        "highest_agency_move": "One real task, done all the way. Not five half-done.",
+        "best_use": "The boring spine of the project. Maintenance. The audit.",
+        "avoid": "Quitting on a Saturn day. Big promises. New commitments."
+      }
+    },
+    {
+      "id": "jupiter_aspect",
+      "label": "Jupiter Major Aspect",
+      "vedic_overlay": "Guru drishti — applies if natal Guru is in a kendra or trikona. Expansion signature, with overreach risk.",
+      "axes": {
+        "current_weather": "Jupiter {aspect_type} {aspect_partner}. The room feels bigger than it is.",
+        "most_likely_default": "Say yes to the next three things. Stretch the timeline by feel.",
+        "highest_agency_move": "Pick one thing to grow. Refuse the other two clearly.",
+        "best_use": "Teaching. Pitching. Asking for the larger version of the deal.",
+        "avoid": "Committing to scope you can't staff. Borrowing against next quarter."
+      }
+    },
+    {
+      "id": "mercury_retrograde",
+      "label": "Mercury Retrograde Active",
+      "vedic_overlay": "Budha vakri — applies extra if natal Budha is in a dusthana (6, 8, 12). Communication loops harder.",
+      "axes": {
+        "current_weather": "Communication runs slow and looped. Old conversations resurface. Signal drops.",
+        "most_likely_default": "Send the text twice. Reread email. Assume silence means something.",
+        "highest_agency_move": "Wait. One question, not three. Write the draft, sleep.",
+        "best_use": "Editing. Reviewing. Returning to unfinished work. Apology calls.",
+        "avoid": "New contracts. New devices. Public announcements. Final answers."
+      }
+    },
+    {
+      "id": "venus_retrograde",
+      "label": "Venus Retrograde Active",
+      "vedic_overlay": "Shukra vakri — applies extra if natal Shukra is in 7th or 5th bhava. Old relational threads return.",
+      "axes": {
+        "current_weather": "Venus retrograde. Old affections, old aesthetics, old money questions resurface.",
+        "most_likely_default": "Reach out to someone you closed the door on. Buy the nostalgia.",
+        "highest_agency_move": "Reread before you reopen. Most of these doors closed for reasons.",
+        "best_use": "Re-evaluating values. Pruning what you no longer love.",
+        "avoid": "Defining a new relationship. Major aesthetic overhauls. Big purchases."
+      }
+    },
+    {
+      "id": "mars_retrograde",
+      "label": "Mars Retrograde Active",
+      "vedic_overlay": "Mangal vakri — applies extra if natal Mangal is in 1, 4, 7, 8, or 12. Drive turns inward, sharp.",
+      "axes": {
+        "current_weather": "Mars retrograde. Forward motion stalls. The fight wants to be internal.",
+        "most_likely_default": "Push harder against the same wall. Confuse stuck for lazy.",
+        "highest_agency_move": "Stop pushing the door. Walk around. Or sit down.",
+        "best_use": "Redoing what was rushed. Strength work. The internal cleanup.",
+        "avoid": "Picking new fights. Launching new attacks. Surgery if elective."
+      }
+    },
+    {
+      "id": "moon_void_or_tithi_kshaya",
+      "label": "Moon Void-of-Course / Tithi Kshaya",
+      "vedic_overlay": "Tithi kshaya or rikta tithi (4, 9, 14) — null actions. Western void-of-course Moon parallel.",
+      "axes": {
+        "current_weather": "Moon void until {void_end_time}. Nothing initiated here takes root.",
+        "most_likely_default": "Start something important anyway. Force a decision through.",
+        "highest_agency_move": "Move admin. Move maintenance. Leave the new thing for later.",
+        "best_use": "Inbox. Errands. Cleaning. Conversations without an agenda.",
+        "avoid": "Signing. Launching. Proposing. First meetings. First dates."
+      }
+    },
+    {
+      "id": "eclipse_window",
+      "label": "Eclipse Window (within 7 days)",
+      "vedic_overlay": "Grahana — applies extra if natal Surya or Chandra is within 3° of the eclipse axis. Karmic load increases.",
+      "axes": {
+        "current_weather": "Eclipse within {eclipse_distance_days} days. The ground under decisions shifts.",
+        "most_likely_default": "Act on the new information immediately. Treat the surge as truth.",
+        "highest_agency_move": "Note what surfaced. Wait three days before acting on it.",
+        "best_use": "Honest observation. Journaling. Witnessing what's actually changing.",
+        "avoid": "Burning the bridge today. Eclipse insight reads different by Friday."
+      }
+    },
+    {
+      "id": "dasha_antardasha_activation",
+      "label": "Vedic Antardasha Lord Activated by Transit",
+      "vedic_overlay": "Pratyantar — applies extra if the antardasha lord is also the lagnesh or 10th lord. Full activation.",
+      "axes": {
+        "current_weather": "{antardasha_lord} antardasha lit by transit. Your current chapter speaks.",
+        "most_likely_default": "Run the {antardasha_lord} script you always run. The old groove.",
+        "highest_agency_move": "Notice the groove. Take the {antardasha_lord} action you've been avoiding.",
+        "best_use": "The work {antardasha_lord} actually came to teach. Not the symptom.",
+        "avoid": "Treating today as random. This is the dasha asking."
+      }
+    }
+  ],
+  "dasha_overlays": [
+    {
+      "graha": "Surya",
+      "context": "User in Surya mahadasha. Every transit is filtered through Surya's themes — identity, visibility, authority, the father line. Today's signature compounds with the question of who you're being seen as. Hits to {house} read as identity events, not weather."
+    },
+    {
+      "graha": "Chandra",
+      "context": "User in Chandra mahadasha. Every transit is filtered through Chandra's themes — mood, mother, public, the inner home. Today's signature compounds with whatever the emotional body is already carrying. Hits to {house} read as mood events, not facts."
+    },
+    {
+      "graha": "Mangal",
+      "context": "User in Mangal mahadasha. Every transit is filtered through Mangal's themes — drive, conflict, brothers, blood and edge. Today's signature compounds with whatever fight is already underway. Hits to {house} read as combat, even when no one threw a punch."
+    },
+    {
+      "graha": "Budha",
+      "context": "User in Budha mahadasha. Every transit is filtered through Budha's themes — words, deals, hands, the nervous system. Today's signature compounds with whatever message is already in the air. Hits to {house} read as communication events first."
+    },
+    {
+      "graha": "Guru",
+      "context": "User in Guru mahadasha. Every transit is filtered through Guru's themes — meaning, teachers, expansion, the long arc. Today's signature compounds with where you're already growing. Hits to {house} read as lessons, not accidents."
+    },
+    {
+      "graha": "Shukra",
+      "context": "User in Shukra mahadasha. Every transit is filtered through Shukra's themes — love, value, taste, what you draw toward you. Today's signature compounds with whatever desire is already running. Hits to {house} read as relational, even when alone."
+    },
+    {
+      "graha": "Shani",
+      "context": "User in Shani mahadasha. Every transit is filtered through Shani's themes — limits, time, responsibility, the long bill. Today's signature compounds with the work already owed. Hits to {house} read as deadlines and structural facts."
+    },
+    {
+      "graha": "Rahu",
+      "context": "User in Rahu mahadasha. Every transit is filtered through Rahu's themes — hunger, foreign, obsession, the unmapped. Today's signature compounds with whatever you can't stop thinking about. Hits to {house} read as fixation, not preference."
+    },
+    {
+      "graha": "Ketu",
+      "context": "User in Ketu mahadasha. Every transit is filtered through Ketu's themes — release, the past life, what falls away. Today's signature compounds with what's already loosening. Hits to {house} read as endings, even small ones."
+    }
+  ],
+  "pattern_activation_hints": [
+    {
+      "pattern_id": "recognition_threat",
+      "transit_signature": "Active when Mars aspects natal Sun/MC/Asc within 3° OR Mangal antardasha runs OR a transit hits 10H."
+    },
+    {
+      "pattern_id": "control_under_uncertainty",
+      "transit_signature": "Active when Saturn aspects natal Moon/Mercury/Asc within 5° OR Shani sade sati OR Mercury stations."
+    },
+    {
+      "pattern_id": "solitude_recharge",
+      "transit_signature": "Active when Moon transits 12H/4H OR Chandra antardasha runs OR Moon-Neptune/Saturn aspect within 4°."
+    },
+    {
+      "pattern_id": "fast_execution_slow_recovery",
+      "transit_signature": "Active when Mars-Jupiter aspect within 3° OR Mangal-Guru antardasha pair OR transit Mars in 1H/10H."
+    },
+    {
+      "pattern_id": "emotional_delayed_processing",
+      "transit_signature": "Active when Moon-Saturn or Moon-Pluto aspect within 4° OR Chandra in 8H/12H by transit OR eclipse within 7 days."
+    }
+  ],
+  "tone_rules": [
+    "No prediction. The report describes conditions and the user's agency inside those conditions. Never the outcome. \"Mars hot today\" is fine. \"You'll fight your boss\" is not. Astrology is the weather, not the verdict.",
+    "No mysticism. No \"the universe wants,\" no \"the cosmos is asking,\" no \"divine timing.\" The planets are clocks, not authors. Lines read like a barometer, not a horoscope column.",
+    "Avoid is permission. The Avoid axis is a hall pass to skip something costly today. It is never a curse, never a warning of punishment. \"Avoid signing contracts\" means the day is bad for that specific action — not that signing one is forbidden by fate.",
+    "Best Use is leverage. This axis names the user's edge today, not the planet's gift. The phrasing puts the user as the agent. \"Channel into hard physical work\" — not \"Mars gives you energy.\"",
+    "Verbs follow axis. Current Weather is observational (\"runs hot,\" \"settles on,\" \"loops\"). Most Likely Default is descriptive (\"send the text twice\"). Highest Agency Move is imperative (\"wait,\" \"name,\" \"pick one\"). Best Use is imperative or noun phrase. Avoid is noun phrase, never a full sentence.",
+    "Twelve words maximum per line. Hard cap. The engine truncates and re-renders if a substitution exceeds it. Density is the point. Every word load-bearing.",
+    "No emojis. No exclamation marks except inside quoted mantras the user can read aloud."
+  ]
+}

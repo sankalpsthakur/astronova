@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "patterns": [
+    {
+      "id": "recognition_threat",
+      "name": "Recognition Threat",
+      "activation_level": "high",
+      "summary": "Competence questioned publicly; you counter-attack to prove the questioner wrong.",
+      "western_drivers": [
+        { "planet": "Mars", "role": "primary" },
+        { "planet": "Sun", "role": "ego" },
+        { "house": 10, "role": "status" }
+      ],
+      "vedic_drivers": [
+        { "graha": "Mangal", "role": "primary" },
+        { "graha": "Surya", "role": "ego" },
+        { "bhava": 10, "role": "status" },
+        { "dasha_lord": "Mangal", "role": "amplifier" }
+      ],
+      "detection_cues": [
+        "Mars in 10H, 1H, or conjunct Sun within 5°",
+        "Sun-Mars aspect (square, opposition, conjunction)",
+        "Mangal mahadasha or antardasha active, or Mangal in 10th bhava"
+      ],
+      "loop": {
+        "stimulus": "Your competence is questioned in front of people who matter.",
+        "default_script": "Counter-attack. Prove the questioner wrong. Escalate volume or precision.",
+        "hidden_need": "To be seen as capable and respected by this specific audience.",
+        "low_consciousness_output": "You win the argument and lose the relationship. Status drops anyway.",
+        "high_consciousness_route": "Pause 7 seconds. Separate the critique from the critic. Ask one clarifying question.",
+        "optimal_action": "Let me clarify the actual issue before I respond."
+      },
+      "body_signature": [
+        "Heat in the face and chest within two seconds. Jaw and shoulders lock. Breath shortens high in the ribs."
+      ],
+      "activation_score_inputs": [
+        "Mars transit to natal Sun, Mars, or 10H ruler (orb under 3°)",
+        "Saturn transit squaring or opposing natal Mars",
+        "Active Mangal antardasha within a Surya or Shani mahadasha"
+      ]
+    },
+    {
+      "id": "control_under_uncertainty",
+      "name": "Control Under Uncertainty",
+      "activation_level": "high",
+      "summary": "An unpredictable variable appears; you over-prepare and freeze instead of acting.",
+      "western_drivers": [
+        { "planet": "Saturn", "role": "primary" },
+        { "planet": "Mercury", "role": "planning" },
+        { "house": 6, "role": "routine" },
+        { "house": 10, "role": "outcome" }
+      ],
+      "vedic_drivers": [
+        { "graha": "Shani", "role": "primary" },
+        { "graha": "Budha", "role": "planning" },
+        { "bhava": 6, "role": "routine" },
+        { "bhava": 10, "role": "outcome" },
+        { "dasha_lord": "Shani", "role": "amplifier" }
+      ],
+      "detection_cues": [
+        "Saturn in 1H, 6H, or 10H, or aspecting the Moon",
+        "Mercury-Saturn aspect (conjunction, square, opposition)",
+        "Shani mahadasha active, or Shani in kendra (1, 4, 7, 10) bhavas"
+      ],
+      "loop": {
+        "stimulus": "A plan you depend on develops a variable you cannot predict.",
+        "default_script": "Over-prepare. Build redundant systems. Demand certainty from people who do not have it.",
+        "hidden_need": "A felt sense of safety before action is allowed to begin.",
+        "low_consciousness_output": "Decision paralysis. The window closes while you are still planning.",
+        "high_consciousness_route": "One breath. Name the smallest reversible action and do only that within 60 seconds.",
+        "optimal_action": "I will do the next 10-minute step and re-decide after that."
+      },
+      "body_signature": [
+        "Cold tightness in the gut. Eyes narrow, scanning. Hands grip whatever they are near."
+      ],
+      "activation_score_inputs": [
+        "Saturn transit to natal Moon, Mercury, or ascendant (orb under 5°)",
+        "Stationary Mercury or Mercury retrograde squaring natal Saturn",
+        "Shani sade sati or ashtama shani phase active"
+      ]
+    },
+    {
+      "id": "solitude_recharge",
+      "name": "Solitude Recharge",
+      "activation_level": "medium",
+      "summary": "A day saturated with input; you push through instead of taking the solitude you need.",
+      "western_drivers": [
+        { "planet": "Moon", "role": "primary" },
+        { "house": 12, "role": "retreat" },
+        { "house": 4, "role": "private base" }
+      ],
+      "vedic_drivers": [
+        { "graha": "Chandra", "role": "primary" },
+        { "bhava": 12, "role": "retreat" },
+        { "bhava": 4, "role": "private base" },
+        { "dasha_lord": "Chandra", "role": "amplifier" }
+      ],
+      "detection_cues": [
+        "Moon in 12H, 4H, or in Cancer/Pisces",
+        "Moon-Neptune or Moon-Saturn aspect",
+        "Chandra mahadasha or antardasha active, or Chandra in 12th bhava"
+      ],
+      "loop": {
+        "stimulus": "A full day of input — meetings, messages, ambient social demand.",
+        "default_script": "Push through. Stay available. Treat the need for solitude as weakness.",
+        "hidden_need": "Unbroken time alone to metabolize input and reset baseline.",
+        "low_consciousness_output": "You stay reachable, get nothing absorbed, and wake up irritable.",
+        "high_consciousness_route": "Block 30 minutes. No phone. No music with lyrics. Single window of stillness.",
+        "optimal_action": "I am offline until 4 — text me only if it is on fire."
+      },
+      "body_signature": [
+        "Heaviness behind the eyes. The skin feels thin. Voices sound louder than they are."
+      ],
+      "activation_score_inputs": [
+        "Moon transit through natal 12H or 4H",
+        "Full Moon or eclipse within 7 days of natal Moon",
+        "Chandra antardasha inside a Shani or Rahu mahadasha"
+      ]
+    },
+    {
+      "id": "fast_execution_slow_recovery",
+      "name": "Fast Execution / Slow Recovery",
+      "activation_level": "medium",
+      "summary": "A clear deadline lands; you sprint through, skip recovery, then crash into fog.",
+      "western_drivers": [
+        { "planet": "Mars", "role": "execution" },
+        { "planet": "Mercury", "role": "speed" },
+        { "house": 6, "role": "work cycle" },
+        { "house": 8, "role": "recovery" }
+      ],
+      "vedic_drivers": [
+        { "graha": "Mangal", "role": "execution" },
+        { "graha": "Budha", "role": "speed" },
+        { "bhava": 6, "role": "work cycle" },
+        { "bhava": 8, "role": "recovery" },
+        { "dasha_lord": "Mangal", "role": "amplifier" },
+        { "dasha_lord": "Budha", "role": "amplifier" }
+      ],
+      "detection_cues": [
+        "Mars-Mercury conjunction or trine",
+        "Mars in 3H or 6H",
+        "Mangal-Budha yoga, or Mangal in upachaya bhavas (3, 6, 10, 11)"
+      ],
+      "loop": {
+        "stimulus": "A clear task with a deadline you respect.",
+        "default_script": "Sprint to completion. Skip food, sleep, and transition time. Queue the next task immediately.",
+        "hidden_need": "A nervous system that has actually returned to baseline before the next push.",
+        "low_consciousness_output": "Three days of brilliance, then a week of foggy underperformance you blame on yourself.",
+        "high_consciousness_route": "After ship, wait 24 hours before committing to the next sprint. No exceptions.",
+        "optimal_action": "I shipped. The next decision happens tomorrow, not now."
+      },
+      "body_signature": [
+        "A wired buzz in the limbs after delivery. Sleep is shallow. Appetite is off — either ravenous or absent."
+      ],
+      "activation_score_inputs": [
+        "Mars transit conjunct or trine natal Mercury",
+        "Jupiter transit to natal Mars (amplifies output, masks fatigue)",
+        "Mangal antardasha inside a Budha or Guru mahadasha"
+      ]
+    },
+    {
+      "id": "emotional_delayed_processing",
+      "name": "Emotional Delayed Processing",
+      "activation_level": "medium",
+      "summary": "Something lands emotionally; you file it away and the charge misfires days later.",
+      "western_drivers": [
+        { "planet": "Moon", "role": "primary" },
+        { "planet": "Mercury", "role": "articulation" },
+        { "house": 4, "role": "interior" },
+        { "house": 8, "role": "depth" }
+      ],
+      "vedic_drivers": [
+        { "graha": "Chandra", "role": "primary" },
+        { "graha": "Budha", "role": "articulation" },
+        { "bhava": 4, "role": "interior" },
+        { "bhava": 8, "role": "depth" },
+        { "dasha_lord": "Chandra", "role": "amplifier" },
+        { "dasha_lord": "Budha", "role": "amplifier" }
+      ],
+      "detection_cues": [
+        "Moon-Mercury hard aspect (square, opposition), or Moon in 8H",
+        "Mercury in 12H, or Mercury combust by Sun",
+        "Chandra in 8th bhava, or Budha aspected by Shani"
+      ],
+      "loop": {
+        "stimulus": "Something lands emotionally — a comment, a loss, an unexpected kindness.",
+        "default_script": "File it. Stay functional. Respond with logistics, not feeling.",
+        "hidden_need": "Time and language to know what you actually feel before you have to perform a reaction.",
+        "low_consciousness_output": "The feeling surfaces three days later, attached to a wrong target — someone trivial gets the full charge.",
+        "high_consciousness_route": "Wait 24 hours before any reply that is not strictly logistical. Write the feeling down once.",
+        "optimal_action": "I will get back to you on this tomorrow — I want to think clearly first."
+      },
+      "body_signature": [
+        "A small delay between hearing words and feeling them. Throat tightens hours later. Dreams get vivid."
+      ],
+      "activation_score_inputs": [
+        "Moon transit to natal Mercury or 8H cusp",
+        "Mercury retrograde over natal Moon",
+        "Chandra antardasha inside a Budha mahadasha, or Shani drishti on natal Chandra"
+      ]
+    }
+  ]
+}
