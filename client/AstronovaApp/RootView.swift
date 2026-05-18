@@ -40,6 +40,7 @@ struct ProfileSetupContentView: View {
     @Binding var fullName: String
     @Binding var birthDate: Date
     @Binding var birthTime: Date
+    @Binding var birthTimeUnknown: Bool
     @Binding var birthPlace: String
     @Binding var showingPersonalizedInsight: Bool
     @Binding var personalizedInsight: String
@@ -91,7 +92,7 @@ struct ProfileSetupContentView: View {
                 case 2:
                     EnhancedBirthDateStepView(birthDate: $birthDate, onQuickStart: handleQuickStart)
                 case 3:
-                    EnhancedBirthTimeStepView(birthTime: $birthTime)
+                    EnhancedBirthTimeStepView(birthTime: $birthTime, unknownTime: $birthTimeUnknown)
                 default:
                     EnhancedBirthPlaceStepView(
                         birthPlace: $birthPlace,
@@ -404,6 +405,10 @@ struct SimpleProfileSetupView: View {
         let noon = Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date()) ?? Date()
         return noon.timeIntervalSince1970
     }()
+    /// Audit A0d: persisted flag so the "unknown birth time" choice survives
+    /// step navigation and onboarding restoration. Source of truth for
+    /// nil-ing out `profile.birthTime` at save time.
+    @AppStorage("profile_setup_birth_time_unknown") private var birthTimeUnknown: Bool = false
 
     /// Default birth date is 25 years ago to make it obvious user should set their actual date
     private static var defaultBirthDateTimestamp: Double {
@@ -453,6 +458,7 @@ struct SimpleProfileSetupView: View {
                 fullName: $fullName,
                 birthDate: birthDate,
                 birthTime: birthTime,
+                birthTimeUnknown: $birthTimeUnknown,
                 birthPlace: $birthPlace,
                 showingPersonalizedInsight: $showingPersonalizedInsight,
                 personalizedInsight: $personalizedInsight,
@@ -624,7 +630,11 @@ struct SimpleProfileSetupView: View {
         // Save the profile data with error handling
         auth.profileManager.profile.fullName = fullName
         auth.profileManager.profile.birthDate = birthDate.wrappedValue
-        auth.profileManager.profile.birthTime = birthTime.wrappedValue
+        // Audit A0d: when the user toggled "I don't know my birth time",
+        // store nil instead of a fake noon value. Downstream UI (EssenceBar
+        // lagna chip, ascendant displays) checks `profile.birthTime == nil`
+        // to label approximate readings.
+        auth.profileManager.profile.birthTime = birthTimeUnknown ? nil : birthTime.wrappedValue
         auth.profileManager.profile.birthPlace = birthPlace
         
         // For birth place, search for coordinates and timezone only if provided
@@ -734,15 +744,19 @@ struct SimpleProfileSetupView: View {
         fullName = ""
         birthDateTimestamp = Self.defaultBirthDateTimestamp
         birthTimeTimestamp = Date().timeIntervalSince1970
+        birthTimeUnknown = false
         birthPlace = ""
     }
-    
+
     private func restoreProfileProgress() {
         // If we have saved profile data, populate the profile manager
         if !fullName.isEmpty || currentStep > 0 {
             auth.profileManager.profile.fullName = fullName
             auth.profileManager.profile.birthDate = birthDate.wrappedValue
-            auth.profileManager.profile.birthTime = birthTime.wrappedValue
+            // Audit A0d: preserve "unknown" semantics during restore too, so
+            // the profile reflects what the user actually said rather than a
+            // silent noon default written during onboarding pause.
+            auth.profileManager.profile.birthTime = birthTimeUnknown ? nil : birthTime.wrappedValue
             auth.profileManager.profile.birthPlace = birthPlace
         }
     }
@@ -1244,8 +1258,11 @@ struct EnhancedBirthDateStepView: View {
 
 struct EnhancedBirthTimeStepView: View {
     @Binding var birthTime: Date
+    // Audit A0d: lift unknownTime out of local @State and into the binding so
+    // the parent ProfileSetup can persist & honor it at save time
+    // (profile.birthTime becomes nil rather than a silent noon default).
+    @Binding var unknownTime: Bool
     @State private var animateIcon = false
-    @State private var unknownTime = false
     @State private var showWhy = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -8946,6 +8963,7 @@ struct CompellingLandingView: View {
             "profile_setup_name",
             "profile_setup_birth_date",
             "profile_setup_birth_time",
+            "profile_setup_birth_time_unknown",
             "profile_setup_birth_place"
         ].forEach { UserDefaults.standard.removeObject(forKey: $0) }
         UserDefaults.standard.set(true, forKey: "profile_setup_restart_requested")

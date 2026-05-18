@@ -9,6 +9,9 @@ struct SelfTabView: View {
     @EnvironmentObject private var gamification: GamificationManager
     @StateObject private var dataService = SelfDataService()
     @AppStorage("hasAstronovaPro") private var hasProSubscription = false
+    /// Audit A0d: one-time hint about approximate Lagna / house calculations
+    /// when the user opted out of providing a precise birth time.
+    @AppStorage("self.approximateBirthTimeHintDismissed") private var approximateHintDismissed = false
 
     @State private var foundationExpanded = false
     @State private var activeSheet: SheetDestination?
@@ -95,6 +98,12 @@ struct SelfTabView: View {
 
                     // Essence Bar (Nakshatra + Lagna) - requires full data for lagna
                     if completeness.canCalculateLagna && (dataService.moonNakshatra != nil || dataService.lagna != nil) {
+                        // Audit A0d: one-time hint when birth time is unknown.
+                        // Shown directly above the section that displays the
+                        // approximate Lagna so the warning has context.
+                        if profile.birthTime == nil && !approximateHintDismissed {
+                            approximateBirthTimeHint
+                        }
                         essenceSection
                     }
 
@@ -305,8 +314,45 @@ struct SelfTabView: View {
         EssenceBar(
             moonNakshatra: dataService.moonNakshatra,
             lagna: dataService.lagna,
-            nakshatraLord: dataService.nakshatraLord
+            nakshatraLord: dataService.nakshatraLord,
+            // Audit A0d: nil birthTime => server computed Lagna against a 12:00
+            // noon stand-in, so flag it as approximate to the user.
+            lagnaIsApproximate: profile.birthTime == nil
         )
+    }
+
+    // MARK: - Approximate Birth Time Hint
+
+    private var approximateBirthTimeHint: some View {
+        HStack(alignment: .top, spacing: Cosmic.Spacing.sm) {
+            Image(systemName: "clock.badge.questionmark")
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicWarning)
+            Text("Without a precise birth time, ascendant and house calculations are approximate.")
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+            Button {
+                approximateHintDismissed = true
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .padding(4)
+            }
+            .accessibilityLabel("Dismiss birth time hint")
+        }
+        .padding(Cosmic.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.soft, style: .continuous)
+                .fill(Color.cosmicWarning.opacity(0.12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.soft, style: .continuous)
+                        .stroke(Color.cosmicWarning.opacity(0.25), lineWidth: 0.5)
+                )
+        )
+        .accessibilityIdentifier("self.approximateBirthTimeHint")
     }
 
     // MARK: - Today's Energy Section
