@@ -371,7 +371,7 @@ private struct LogMomentSheet: View {
 
     private var saveButton: some View {
         Button {
-            save()
+            Task { @MainActor in save() }
         } label: {
             Text("Save")
                 .font(.system(size: 16, weight: .semibold))

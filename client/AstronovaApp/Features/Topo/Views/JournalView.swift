@@ -490,7 +490,9 @@ struct JournalComposeView: View {
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.cosmicSurface))
             }
             .buttonStyle(.plain)
-            Button(action: save) {
+            Button {
+                Task { @MainActor in save() }
+            } label: {
                 Text("Save")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.cosmicVoid)
