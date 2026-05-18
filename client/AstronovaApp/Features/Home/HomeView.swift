@@ -339,6 +339,7 @@ struct HomeView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("home.readHoroscopeAloud")
             .accessibilityLabel(speech.isSpeaking
                                 ? "Stop reading horoscope"
                                 : "Read horoscope aloud")

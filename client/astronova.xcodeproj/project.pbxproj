@@ -92,6 +92,7 @@
 		E2E001000000000000000001 /* TestEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000001 /* TestEnvironment.swift */; };
 		E2E001000000000000000002 /* MonetizationJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000002 /* MonetizationJourneyTests.swift */; };
 		E2E001000000000000000003 /* HapticFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000003 /* HapticFeedbackService.swift */; };
+		QA260518A000000000000001 /* JourneyAcceptanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = QA260518A000000000000000 /* JourneyAcceptanceTests.swift */; };
 		SPEECH00100000000000001 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SPEECH00000000000000001 /* SpeechService.swift */; };
 		E2E001000000000000000004 /* CosmicDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000004 /* CosmicDesignSystem.swift */; };
 		E2E001000000000000000005 /* CosmicTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000005 /* CosmicTypography.swift */; };
@@ -260,6 +261,7 @@
 		E2E000000000000000000001 /* TestEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestEnvironment.swift; sourceTree = "<group>"; };
 		E2E000000000000000000002 /* MonetizationJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonetizationJourneyTests.swift; sourceTree = "<group>"; };
 		E2E000000000000000000003 /* HapticFeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackService.swift; sourceTree = "<group>"; };
+		QA260518A000000000000000 /* JourneyAcceptanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyAcceptanceTests.swift; sourceTree = "<group>"; };
 		SPEECH00000000000000001 /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		E2E000000000000000000004 /* CosmicDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicDesignSystem.swift; sourceTree = "<group>"; };
 		E2E000000000000000000005 /* CosmicTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicTypography.swift; sourceTree = "<group>"; };
@@ -500,6 +502,7 @@
 				3D01F7FE2C0A000000000001 /* AstronovaAppUITests.swift */,
 				3D01F8002C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift */,
 				E2E000000000000000000002 /* MonetizationJourneyTests.swift */,
+				QA260518A000000000000000 /* JourneyAcceptanceTests.swift */,
 			);
 			path = AstronovaAppUITests;
 			sourceTree = "<group>";
@@ -1068,6 +1071,7 @@
 				3D01F8012C0A000000000001 /* AstronovaAppUITestsLaunchTests.swift in Sources */,
 				3D01F7FF2C0A000000000001 /* AstronovaAppUITests.swift in Sources */,
 				E2E001000000000000000002 /* MonetizationJourneyTests.swift in Sources */,
+				QA260518A000000000000001 /* JourneyAcceptanceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

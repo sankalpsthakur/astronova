@@ -21,6 +21,7 @@ enum TestLaunchArgument: String {
     case mockPurchases = "UITEST_MOCK_PURCHASES"
     case enableLogging = "UITEST_ENABLE_LOGGING"
     case presentPaywall = "UITEST_PRESENT_PAYWALL"
+    case offlineBackend = "UITEST_OFFLINE_BACKEND"
 }
 
 /// Environment keys for passing test values
@@ -53,6 +54,7 @@ final class TestEnvironment {
         hasArgument(.mockPurchases) ||
         hasArgument(.enableLogging) ||
         hasArgument(.presentPaywall) ||
+        hasArgument(.offlineBackend) ||
         getRawValue(for: .startTabIndex) != nil
     }
 
