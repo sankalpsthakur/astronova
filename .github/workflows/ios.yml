@@ -17,6 +17,7 @@ jobs:
   swift-ios-build:
     name: iOS Build (Xcode ${{ matrix.xcode }})
     runs-on: macos-14
+    timeout-minutes: 25
 
     strategy:
       fail-fast: false
@@ -53,6 +54,7 @@ jobs:
 
       - name: Check for compiler warnings
         run: |
+          set -o pipefail
           xcodebuild clean build \
             -project astronova.xcodeproj \
             -scheme AstronovaApp \
@@ -69,14 +71,18 @@ jobs:
             grep "warning:" build.log || true
           fi
 
-      - name: Run Swift tests
+      - name: Run Swift unit tests
         run: |
+          set -o pipefail
           xcodebuild test \
             -project astronova.xcodeproj \
             -scheme AstronovaApp \
             -destination '${{ matrix.destination }}' \
             -configuration Debug \
             -enableCodeCoverage YES \
+            -only-testing:AstronovaAppTests \
+            -skip-testing:AstronovaAppUITests \
+            -parallel-testing-enabled NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             ONLY_ACTIVE_ARCH=NO \

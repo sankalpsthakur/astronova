@@ -18,6 +18,14 @@ import gzip
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def active_subscription_for_pdf_tests(sample_user):
+    """PDF happy paths create paid reports, so grant server-side entitlement."""
+    from db import set_subscription
+
+    set_subscription(sample_user["id"], True, "astronova_pro_monthly")
+
+
 class TestPDFEndpoints:
     """Test suite for PDF binary response endpoints."""
 

@@ -117,6 +117,10 @@ struct OracleView: View {
         }
         .onAppear {
             viewModel.quotaManager.refresh()
+            // Wave 13 — oracle session lifecycle event
+            Analytics.shared.track(.oracleSessionStarted, properties: [
+                "model": AstronovaFlags.shared.oracleModel.rawValue
+            ])
             // Check if we should show chat packages (triggered from PaywallView)
             if triggerShowChatPackages {
                 triggerShowChatPackages = false

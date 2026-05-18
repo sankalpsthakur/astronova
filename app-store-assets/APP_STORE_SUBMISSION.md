@@ -1,8 +1,15 @@
-# Shastriji - App Store Submission Materials
+# Astronova - App Store Submission Materials
 
 **Version:** 1.0
 **Date:** January 9, 2026
 **Bundle ID:** com.astronova.app
+
+**Release status:** Draft materials only. No TestFlight upload, App Store build
+selection, or public App Store listing is confirmed in this document.
+
+**External gates:** App Store Connect access, API key secrets, signing assets,
+bundle ID/App ID ownership, sandbox IAP records, reviewer/test account creation,
+and public URL verification must be completed outside this docs-only pass.
 
 ---
 
@@ -29,7 +36,9 @@
    - Ratings, specializations, and availability
    - Demonstrates professional consultation services
 
-**Note:** Screenshots have been captured on iPhone 16 Pro Max simulator. Use the following screenshots from the testing session above.
+**Note:** Screenshot files are present under `app-store-assets/screenshots/`.
+Upload status must be verified in App Store Connect; this document does not
+claim screenshots are already uploaded.
 
 ---
 
@@ -55,7 +64,7 @@ Discover your astrological blueprint with daily insights, Vimshottari dasha time
 ```
 🌟 DISCOVER YOUR COSMIC BLUEPRINT
 
-Shastriji brings the ancient wisdom of Vedic astrology into the modern age. Get personalized daily insights, explore your life's timeline through Vimshottari dasha, connect with your personal Shastriji, and book authentic sacred rituals—all in one beautifully designed app.
+Astronova brings the ancient wisdom of Vedic astrology into the modern age. Get personalized daily insights, explore your life's timeline through Vimshottari dasha, connect with expert astrologers, and book authentic sacred rituals—all in one beautifully designed app.
 
 ✨ DAILY COSMIC INSIGHTS
 Start each day with personalized astrological guidance tailored to your birth chart. Discover how planetary transits influence seven key life domains:
@@ -188,6 +197,7 @@ astrology,vedic,pooja,horoscope,jyotish,temple,puja,kundli,birth chart,spiritual
 https://astronova.onrender.com/support
 ```
 *Note: Create this endpoint or use existing help/contact page*
+*Gate: verify this URL live before pasting into App Store Connect.*
 
 ### Marketing URL (Optional)
 ```
@@ -206,6 +216,8 @@ https://astronova.onrender.com
 - Password: `ReviewAstro2026!`
 
 *Note: Create this test account with complete birth data filled in so reviewers can test all features.*
+*Gate: this account must be created and verified before submission; do not mark
+review credentials complete from this document alone.*
 
 ### Contact Information
 - **First Name:** Sankalp
@@ -248,7 +260,9 @@ THIRD-PARTY SERVICES:
 - Video consultations: WebRTC video service (for astrologer consultations)
 - Ephemeris calculations: Swiss Ephemeris library
 - AI guidance: OpenAI API (optional, degrades gracefully)
-- Analytics: Smartlook (session diagnostics and usage analytics)
+- Analytics: portfolio/local analytics. Smartlook package reference exists, but
+  `SmartlookAnalytics` is not linked in the current Xcode project unless a
+  source worker changes and verifies it before upload.
 
 PERMISSIONS:
 - No location access required (birth location stored manually)
@@ -290,13 +304,14 @@ Before submitting, ensure:
 - [ ] Backend API (https://astronova.onrender.com) is running
 - [ ] Privacy Policy URL is live
 - [ ] Terms of Service URL is live
-- [ ] Build uploaded via Xcode Cloud or Transporter
-- [ ] Build selected in App Store Connect
+- [ ] 12 App Store products configured: `astronova_pro_12_month_commitment`, `astronova_pro_monthly`, 7 report products, and 3 chat-credit products
+- [ ] Build archived and uploaded via Xcode Cloud or Transporter
+- [ ] Uploaded build selected in App Store Connect
 - [ ] App Review Information filled out completely
 - [ ] Contact information is current
 - [ ] Age rating set to 4+
 - [ ] Pricing and availability configured
-- [ ] Subscription products created (if using)
+- [ ] Subscription products created and sandbox tested
 
 ---
 

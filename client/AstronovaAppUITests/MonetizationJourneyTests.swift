@@ -28,11 +28,37 @@ final class MonetizationJourneyTests: XCTestCase {
     // MARK: - Helper Methods
 
     private func anyElement(_ identifier: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@", identifier)).firstMatch
+        if buttonLikeIdentifiers.contains(identifier) {
+            let button = app.buttons[identifier]
+            if button.exists {
+                return button
+            }
+        }
+        return app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@", identifier)).firstMatch
     }
 
     private func firstElement(withIdentifierPrefix prefix: String) -> XCUIElement {
-        app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix)).firstMatch
+        let button = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix)).firstMatch
+        if button.exists {
+            return button
+        }
+        return app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix)).firstMatch
+    }
+
+    private var buttonLikeIdentifiers: Set<String> {
+        [
+            "buyChatPackagesButton",
+            "buyDetailedReportButton",
+            "completeBirthDataButton",
+            "doneButton",
+            "getChatPackagesButton",
+            "goUnlimitedButton",
+            "oracleQuickAccessButton",
+            "reportsShopButton",
+            "sendMessageButton",
+            "startProButton",
+            "viewAllReportsButton"
+        ]
     }
 
     private func elementCount(withIdentifierPrefix prefix: String) -> Int {
@@ -117,12 +143,48 @@ final class MonetizationJourneyTests: XCTestCase {
         return !element.exists
     }
 
-    private func scrollToElement(_ element: XCUIElement, maxSwipes: Int = 6) {
+    private func scrollToElement(_ element: XCUIElement, maxSwipes: Int = 10) {
         var attempts = 0
         while !element.isHittable && attempts < maxSwipes {
             app.swipeUp()
             attempts += 1
         }
+    }
+
+    private func tapVisibleElement(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+        let topTapInset: CGFloat = 20
+        let bottomTapInset: CGFloat = 110
+        let tappableMinY = app.frame.minY + topTapInset
+        let tappableMaxY = app.frame.maxY - bottomTapInset
+        let scrollContainer = app.scrollViews.firstMatch
+        var attempts = 0
+
+        while element.exists, attempts < 12 {
+            let frame = element.frame
+            if element.isHittable { break }
+
+            if frame.isEmpty || frame.midY > tappableMaxY {
+                (scrollContainer.exists ? scrollContainer : app).swipeUp()
+            } else if frame.midY < tappableMinY {
+                (scrollContainer.exists ? scrollContainer : app).swipeDown()
+            } else {
+                break
+            }
+            attempts += 1
+        }
+
+        if element.isHittable {
+            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            return
+        }
+
+        let frame = element.frame
+        guard element.exists, !frame.isEmpty, frame.maxY >= tappableMinY, frame.minY <= tappableMaxY else {
+            XCTFail("Element should be visible before tapping. Frame: \(frame)", file: file, line: line)
+            return
+        }
+
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
     private func dismissAlertIfPresent(buttonLabel: String, timeout: TimeInterval = 3) {
@@ -252,7 +314,7 @@ final class MonetizationJourneyTests: XCTestCase {
 
         let getPackages = anyElement("getChatPackagesButton")
         XCTAssertTrue(getPackages.waitForExistence(timeout: 8), "Get Chat Packages CTA should be visible")
-        getPackages.tap()
+        tapVisibleElement(getPackages)
 
         let packagesSheet = anyElement("chatPackagesSheet")
         XCTAssertTrue(
@@ -305,7 +367,7 @@ final class MonetizationJourneyTests: XCTestCase {
             XCTFail("Go Unlimited CTA should exist on the banner.\n\nDebug:\n\(app.debugDescription)")
             return
         }
-        goUnlimited.tap()
+        tapVisibleElement(goUnlimited)
 
         let paywall = anyElement("paywallView")
         XCTAssertTrue(paywall.waitForExistence(timeout: 8), "Paywall should open")
@@ -335,8 +397,7 @@ final class MonetizationJourneyTests: XCTestCase {
 
         let reportsShopButton = anyElement("reportsShopButton")
         if reportsShopButton.waitForExistence(timeout: 10) {
-            scrollToElement(reportsShopButton)
-            reportsShopButton.tap()
+            tapVisibleElement(reportsShopButton)
         } else {
             let reportsShopLink = app.staticTexts["Reports Shop"]
             XCTAssertTrue(reportsShopLink.waitForExistence(timeout: 5), "Reports Shop entry should exist in Manage")
@@ -363,7 +424,7 @@ final class MonetizationJourneyTests: XCTestCase {
         // Back to Discover and open the library.
         tapTab("homeTab")
 
-        let viewAll = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'View all'")).firstMatch
+        let viewAll = anyElement("viewAllReportsButton")
         XCTAssertTrue(viewAll.waitForExistence(timeout: 12), "View All should appear once at least one report exists")
         scrollToElement(viewAll)
         viewAll.tap()
@@ -424,8 +485,7 @@ final class MonetizationJourneyTests: XCTestCase {
 
         let reportsShopButton = anyElement("reportsShopButton")
         if reportsShopButton.waitForExistence(timeout: 10) {
-            scrollToElement(reportsShopButton)
-            reportsShopButton.tap()
+            tapVisibleElement(reportsShopButton)
         } else {
             let reportsShopLink = app.staticTexts["Reports Shop"]
             XCTAssertTrue(reportsShopLink.waitForExistence(timeout: 5), "Reports Shop entry should exist in Manage")

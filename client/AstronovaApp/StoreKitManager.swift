@@ -20,6 +20,16 @@ class StoreKitManager: ObservableObject {
     
     private var storeKitProducts: [Product] = []
     private var updateListenerTask: Task<Void, Error>?
+
+    enum PurchaseAnalyticsSource: String {
+        case purchaseFlow = "purchase_flow"
+        case transactionUpdate = "transaction_update"
+    }
+
+    struct PurchaseAnalyticsEmission: Equatable {
+        let event: AnalyticsEvent
+        let properties: [String: String]
+    }
     
     // Product IDs defined in App Store Connect
     private var productIDs: [String] {
@@ -108,7 +118,7 @@ class StoreKitManager: ObservableObject {
                 let transaction = try checkVerified(verification)
                 
                 // Handle successful purchase
-                await handleSuccessfulPurchase(transaction: transaction)
+                await handleSuccessfulPurchase(transaction: transaction, analyticsSource: .purchaseFlow)
                 
                 // Finish the transaction
                 await transaction.finish()
@@ -239,7 +249,46 @@ class StoreKitManager: ObservableObject {
         }
     }
     
-    private func handleSuccessfulPurchase(transaction: StoreKit.Transaction) async {
+    static func purchaseAnalyticsEvents(
+        for productID: String,
+        source: PurchaseAnalyticsSource
+    ) -> [PurchaseAnalyticsEmission] {
+        var properties = [
+            "sku": productID,
+            "product": productID,
+            "source": source.rawValue
+        ]
+
+        if ShopCatalog.isProProduct(productID) {
+            let plan = ShopCatalog.proPlan(for: productID)
+            properties["product_type"] = "subscription"
+            properties["tier"] = "pro"
+            properties["period"] = plan.billingPlan == .monthlyCommitment ? "year" : "month"
+            properties["billing_plan"] = plan.billingPlan == .monthlyCommitment ? "monthly_commitment" : "standard"
+            properties["is_trial"] = "false"
+            return [.init(event: .subscriptionStarted, properties: properties)]
+        }
+
+        if let credits = ShopCatalog.chatCreditAmounts[productID] {
+            properties["product_type"] = "consumable"
+            properties["is_consumable"] = "true"
+            properties["credits"] = String(credits)
+            return [.init(event: .iapPurchased, properties: properties)]
+        }
+
+        if ShopCatalog.reportProductIDs.contains(productID) {
+            properties["product_type"] = "non_consumable"
+            properties["is_consumable"] = "false"
+            return [.init(event: .iapPurchased, properties: properties)]
+        }
+
+        return []
+    }
+
+    private func handleSuccessfulPurchase(
+        transaction: StoreKit.Transaction,
+        analyticsSource: PurchaseAnalyticsSource? = nil
+    ) async {
         await MainActor.run {
             if ShopCatalog.isProProduct(transaction.productID) {
                 self.hasProSubscription = true
@@ -266,6 +315,12 @@ class StoreKitManager: ObservableObject {
                 name: .purchaseCompleted,
                 object: transaction.productID
             )
+        }
+
+        if let analyticsSource {
+            for emission in Self.purchaseAnalyticsEvents(for: transaction.productID, source: analyticsSource) {
+                Analytics.shared.track(emission.event, properties: emission.properties)
+            }
         }
     }
     

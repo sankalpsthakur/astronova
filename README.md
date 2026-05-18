@@ -1,4 +1,4 @@
-# Shastriji
+# Astronova
 
 [![Test Suite](https://github.com/yourusername/astronova/actions/workflows/test.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/test.yml)
 [![iOS Build](https://github.com/yourusername/astronova/actions/workflows/ios.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/ios.yml)
@@ -7,7 +7,13 @@
 [![Swift 5.9](https://img.shields.io/badge/swift-5.9-orange.svg)](https://swift.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Shastriji** — iOS SwiftUI app + Flask backend for Vedic and Western astrology: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and an animated Time Travel visualization.
+**Astronova** — iOS SwiftUI app + Flask backend for Vedic and Western astrology: horoscopes, birth charts, compatibility analysis, Vimshottari dasha timelines, and an animated Time Travel visualization.
+
+## Release Status
+
+- No TestFlight or App Store build upload is confirmed from this repository.
+- `.github/workflows/ios-distribution.yml` runs a manual source preflight by default. A real upload only runs when `upload_to_testflight=true` and the App Store Connect API key secrets, Apple Developer team access, signing assets, bundle ID ownership, and App Store Connect app record are all available.
+- The public App Store URL is pending. Do not publish a store link until App Store Connect shows an approved/live Astronova listing.
 
 ## Features
 

@@ -3,12 +3,64 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify, request
 from flask_babel import gettext as _
 
-from db import add_chat_message, ensure_conversation, get_user_birth_data, init_db, upsert_user_birth_data
+from db import (
+    add_chat_message,
+    ensure_conversation,
+    get_premium_entitlement,
+    get_user_birth_data,
+    init_db,
+    upsert_user_birth_data,
+)
 from middleware import require_auth
 from services.chat_response_service import ChatResponseService, ChatServiceError
 
 chat_bp = Blueprint("chat", __name__)
 _chat_service = ChatResponseService()
+
+
+_FREE_CHAT_DEPTHS = {"quick", "daily", "free", ""}
+
+
+def _requested_chat_depth(data: dict) -> str:
+    for key in ("depth", "oracleDepth", "readingDepth"):
+        value = data.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip().lower()
+
+    context = data.get("context")
+    if isinstance(context, str):
+        for item in context.replace("&", ";").split(";"):
+            key, separator, value = item.partition("=")
+            if separator and key.strip().lower() == "depth":
+                return value.strip().lower()
+
+    return "quick"
+
+
+def _truthy_flag(value) -> bool:
+    if value is True:
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes"}
+    return False
+
+
+def _is_paid_chat_request(data: dict) -> bool:
+    if any(_truthy_flag(data.get(key)) for key in ("requiresPremium", "premium", "isPremium")):
+        return True
+    return _requested_chat_depth(data) not in _FREE_CHAT_DEPTHS
+
+
+def _payment_required_response(feature: str, entitlement: dict):
+    return jsonify(
+        {
+            "error": "payment_required",
+            "code": "PAYMENT_REQUIRED",
+            "feature": feature,
+            "message": "Astronova Pro is required for this feature.",
+            "entitlement": entitlement,
+        }
+    ), 402
 
 
 @chat_bp.route("", methods=["GET"])
@@ -35,6 +87,11 @@ def chat():
     message = data.get("message", "")
     user_id = g.user_id  # Use authenticated user ID from decorator
     conversation_id = data.get("conversationId")
+
+    if _is_paid_chat_request(data):
+        entitlement = get_premium_entitlement(user_id)
+        if not entitlement["hasPremium"]:
+            return _payment_required_response("oracle_chat_deep", entitlement)
 
     # Support optional birth data in request for immediate personalization
     birth_data = data.get("birthData")

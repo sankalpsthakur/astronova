@@ -9,6 +9,39 @@ protocol AnalyticsServiceProtocol {
     func track(_ event: AnalyticsEvent, properties: [String: String]?)
 }
 
+enum AnalyticsConsentController {
+    static var isOptedOut: Bool {
+        PortfolioAnalytics.shared.isOptedOut
+    }
+
+    @discardableResult
+    static func startSmartlookIfAllowed(projectKey: String) -> Bool {
+        guard !isOptedOut else {
+            applySmartlookConsent()
+            return false
+        }
+
+        #if canImport(SmartlookAnalytics)
+        Smartlook.instance.preferences.projectKey = projectKey
+        Smartlook.instance.start()
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    static func applySmartlookConsent(projectKey: String? = nil) {
+        #if canImport(SmartlookAnalytics)
+        if isOptedOut {
+            Smartlook.instance.stop()
+        } else if let projectKey {
+            Smartlook.instance.preferences.projectKey = projectKey
+            Smartlook.instance.start()
+        }
+        #endif
+    }
+}
+
 enum AnalyticsEvent: String {
     // EXISTING EVENTS
     case appLaunched = "app_launched"
@@ -66,6 +99,58 @@ enum AnalyticsEvent: String {
     case apiError = "api_error"
     case authenticationError = "authentication_error"
     case decodingError = "decoding_error"
+
+    // WAVE 13 FEEDBACK LOOPS — portfolio-standard names mirrored locally so
+    // existing Smartlook callsites continue to work while the new
+    // PortfolioAnalytics pipeline catches the same events.
+    case appOpen = "app_open"
+    case sessionStart = "session_start"
+    case sessionEnd = "session_end"
+    case chartViewed = "chart_viewed"
+    case oracleSessionStarted = "oracle_session_started"
+    case oracleMessageSent = "oracle_message_sent"
+    case paywallDismissed = "paywall_dismissed"
+    case paywallConverted = "paywall_converted"
+    case subscriptionStarted = "subscription_started"
+    case subscriptionCancelled = "subscription_cancelled"
+    case subscriptionPaused = "subscription_paused"
+    case iapPurchased = "iap_purchased"
+    case referralSent = "referral_sent"
+    case referralRedeemed = "referral_redeemed"
+    case cosmicDiaryEntryCreated = "cosmic_diary_entry_created"
+    case futureLetterScheduled = "future_letter_scheduled"
+    case npsShown = "nps_shown"
+    case npsSubmitted = "nps_submitted"
+}
+
+extension AnalyticsEvent {
+    /// Map a Smartlook-side event into its portfolio-standard counterpart.
+    /// Events that don't have a portfolio peer return nil and stay
+    /// Smartlook-only.
+    var portfolioCounterpart: PortfolioEvent? {
+        switch self {
+        case .appLaunched, .appOpen: return .appOpen
+        case .sessionStart: return .sessionStart
+        case .sessionEnd: return .sessionEnd
+        case .chartGenerated, .chartViewed: return .chartViewed
+        case .oracleSessionStarted: return .oracleSessionStarted
+        case .oracleChatSent, .oracleMessageSent: return .oracleMessageSent
+        case .paywallShown: return .paywallShown
+        case .paywallDismissed: return .paywallDismissed
+        case .paywallConversion, .paywallConverted: return .paywallConverted
+        case .subscriptionStarted: return .subscriptionStarted
+        case .subscriptionCancelled: return .subscriptionCancelled
+        case .subscriptionPaused: return .subscriptionPaused
+        case .iapPurchased: return .iapPurchased
+        case .referralSent: return .referralSent
+        case .referralRedeemed: return .referralRedeemed
+        case .cosmicDiaryEntryCreated: return .cosmicDiaryEntryCreated
+        case .futureLetterScheduled: return .futureLetterScheduled
+        case .npsShown: return .npsShown
+        case .npsSubmitted: return .npsSubmitted
+        default: return nil
+        }
+    }
 }
 
 final class Analytics: AnalyticsServiceProtocol {
@@ -80,6 +165,11 @@ final class Analytics: AnalyticsServiceProtocol {
             return
         }
         #endif
+
+        guard !AnalyticsConsentController.isOptedOut else {
+            logger.debug("[ANALYTICS] Skipped (analytics opt-out): \(event.rawValue, privacy: .public)")
+            return
+        }
 
         #if canImport(SmartlookAnalytics)
         // Track to Smartlook
@@ -97,6 +187,11 @@ final class Analytics: AnalyticsServiceProtocol {
         #else
         logger.warning("[ANALYTICS] ⚠️ Smartlook SDK not available - event logged locally only: \(event.rawValue, privacy: .public)")
         #endif
+
+        // Fan out to portfolio analytics (Wave 13 closed-loop)
+        if let portfolioEvent = event.portfolioCounterpart {
+            PortfolioAnalytics.shared.track(portfolioEvent, properties: properties ?? [:])
+        }
 
         // Keep debug logging
         #if DEBUG

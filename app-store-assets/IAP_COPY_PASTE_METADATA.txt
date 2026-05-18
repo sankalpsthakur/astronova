@@ -6,6 +6,38 @@ Use this file to quickly fill in all product metadata in
 App Store Connect.
 
 =================================================================
+CURRENT SKU TRUTH
+=================================================================
+
+Astronova currently expects 12 App Store products:
+2 Pro subscriptions, 7 report non-consumables, and 3 chat-credit consumables.
+The current default Pro plan is `astronova_pro_12_month_commitment`; keep it
+configured alongside `astronova_pro_monthly`.
+
+=================================================================
+SUBSCRIPTION: astronova_pro_12_month_commitment
+=================================================================
+
+DISPLAY NAME:
+Astronova Pro 12-Month Plan
+
+DESCRIPTION:
+Unlock the full power of Astronova with a 12-month Pro plan:
+
+• Unlimited Ask the Oracle (AI chat guidance)
+• All detailed astrological reports included
+• Love, Career, Money, Health, Family, Spiritual reports
+• Priority cosmic insights
+• Ad-free experience
+• 14-day free trial, then 12-month Pro access
+
+Current local StoreKit price: $119.88. Confirm App Store Connect duration,
+price, and renewal copy match the final approved product setup before upload.
+
+Terms: https://astronova.onrender.com/terms
+Privacy: https://astronova.onrender.com/privacy
+
+=================================================================
 SUBSCRIPTION: astronova_pro_monthly
 =================================================================
 
@@ -149,7 +181,7 @@ END OF METADATA
 
 NEXT STEPS:
 
-1. Fix chat credit Reference Names (5, 15, 50 - not 50, 150, 50!)
+1. Configure all 12 current SKUs, including `astronova_pro_12_month_commitment`.
 2. Create subscription in Subscriptions section
 3. For each product, click it and add this metadata
 4. Save each product

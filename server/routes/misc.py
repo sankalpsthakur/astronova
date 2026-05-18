@@ -2,16 +2,43 @@
 Minimal misc endpoints: health and system status.
 """
 
+import hmac
 import logging
+import os
 import sys
 from datetime import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
 from db import get_subscription, init_db
+from middleware import require_auth
 
 misc_bp = Blueprint("misc", __name__)
 logger = logging.getLogger(__name__)
+
+
+def _is_production_environment() -> bool:
+    return any(
+        os.environ.get(name, "").lower() == "production"
+        for name in ("FLASK_ENV", "APP_ENV", "ENV")
+    )
+
+
+def _require_admin_token_if_production():
+    if not _is_production_environment():
+        return None
+
+    expected_token = os.environ.get("ADMIN_API_TOKEN")
+    if not expected_token:
+        logger.error("ADMIN_API_TOKEN is not configured; refusing seed-test-user request")
+        return jsonify({"error": "Admin API is not configured", "code": "ADMIN_NOT_CONFIGURED"}), 503
+
+    authorization = request.headers.get("Authorization", "")
+    supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
+    if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+        return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
+
+    return None
 
 
 @misc_bp.route("/health", methods=["GET"])
@@ -45,10 +72,15 @@ def system_status():
 
 
 @misc_bp.route("/subscription/status", methods=["GET"])
+@require_auth
 def subscription_status():
-    # Optional userId to check real status; native clients send X-User-Id.
+    # Native clients may still send userId/X-User-Id, but the JWT subject is
+    # authoritative so callers cannot inspect another user's subscription.
     init_db()
-    user_id = request.args.get("userId") or request.headers.get("X-User-Id")
+    requested_user_id = request.args.get("userId") or request.headers.get("X-User-Id")
+    user_id = g.user_id
+    if requested_user_id and requested_user_id != user_id:
+        return jsonify({"error": "Access denied - cannot access other user's subscription", "code": "FORBIDDEN"}), 403
     return jsonify(get_subscription(user_id))
 
 
@@ -72,9 +104,14 @@ def remote_config():
 def seed_test_user():
     """
     Create a test user for App Store review with complete birth data.
-    This endpoint can only be called once - subsequent calls will return existing user.
+    In production, this endpoint requires the configured admin token.
+    Subsequent calls return the existing seeded user.
     """
     from db import get_connection
+
+    production_auth_error = _require_admin_token_if_production()
+    if production_auth_error:
+        return production_auth_error
 
     test_user_id = "appstore-test-user-2026"
     test_email = "appstore-test@astronova.app"

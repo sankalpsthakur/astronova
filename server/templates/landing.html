@@ -133,6 +133,11 @@
             color: var(--gold-primary);
         }
 
+        .nav-link.pending {
+            color: var(--gold-primary);
+            cursor: default;
+        }
+
         /* Hero */
         .hero {
             min-height: 90vh;
@@ -219,6 +224,14 @@
         .btn-primary:hover {
             background: var(--gold-primary);
             color: #000;
+        }
+
+        .btn-disabled,
+        .btn-disabled:hover {
+            background: rgba(212, 175, 55, 0.08);
+            color: var(--text-muted);
+            border-color: var(--border-hover);
+            cursor: default;
         }
 
         /* Trust Banner */
@@ -388,7 +401,7 @@
             <div class="logo-icon"></div>
             ASTRONOVA
         </div>
-        <a href="https://apps.apple.com/app/id6449557484" class="nav-link">Get App</a>
+        <span class="nav-link pending">App Store Pending</span>
     </nav>
 
     <header class="hero">
@@ -398,7 +411,7 @@
             most important decisions.</p>
 
         <div class="btn-group">
-            <a href="https://apps.apple.com/app/id6449557484" class="btn btn-primary">Download for iOS</a>
+            <span class="btn btn-primary btn-disabled">iOS Launch Pending</span>
         </div>
     </header>
 

@@ -53,13 +53,13 @@
       "internalID": "410004",
       "localizations": [
         {
-          "description": "A detailed wealth and money astrology report.",
-          "displayName": "Wealth & Money",
+          "description": "A detailed resource-cycle astrology report focused on timing themes and capacity patterns.",
+          "displayName": "Resource Cycles",
           "locale": "en_US"
         }
       ],
       "productID": "report_money",
-      "referenceName": "Wealth and Money Report",
+      "referenceName": "Resource Cycles Report",
       "type": "NonConsumable"
     },
     {
@@ -68,13 +68,13 @@
       "internalID": "410005",
       "localizations": [
         {
-          "description": "A detailed health and vitality astrology report.",
-          "displayName": "Health & Vitality",
+          "description": "A detailed energy-pattern astrology report focused on personal rhythms and restorative timing.",
+          "displayName": "Energy Patterns",
           "locale": "en_US"
         }
       ],
       "productID": "report_health",
-      "referenceName": "Health and Vitality Report",
+      "referenceName": "Energy Patterns Report",
       "type": "NonConsumable"
     },
     {
@@ -180,7 +180,7 @@
           },
           "localizations": [
             {
-              "description": "Unlimited Oracle chat, Pro reports, saved journeys, and advanced astrological guidance.",
+              "description": "Unlimited Oracle chat, Pro journeys, saved progress, and advanced astrological insights.",
               "displayName": "Astronova Pro Monthly",
               "locale": "en_US"
             }
@@ -206,7 +206,7 @@
           },
           "localizations": [
             {
-              "description": "Unlimited Oracle chat, Pro reports, saved journeys, and advanced astrological guidance with a 12-month commitment.",
+              "description": "Unlimited Oracle chat, Pro journeys, saved progress, and advanced astrological insights with a 12-month commitment.",
               "displayName": "Astronova Pro 12-Month Plan",
               "locale": "en_US"
             }

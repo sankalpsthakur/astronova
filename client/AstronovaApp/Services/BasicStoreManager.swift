@@ -22,6 +22,10 @@ final class BasicStoreManager: ObservableObject {
             }
             let purchaseKey = "purchased_\(productId)"
             UserDefaults.standard.set(true, forKey: purchaseKey)
+            NotificationCenter.default.post(
+                name: .purchaseCompleted,
+                object: productId
+            )
         }
         return true
     }
