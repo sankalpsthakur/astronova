@@ -1,0 +1,252 @@
+import SwiftUI
+
+struct SettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var auth: AuthState
+    @StateObject private var storeKit = StoreKitManager.shared
+    @StateObject private var quota = ProQuotaManager.shared
+    @AppStorage("hasAstronovaPro") private var hasPro: Bool = false
+
+    @State private var showingPaywall = false
+    @State private var showingReportsLibrary = false
+    @State private var showingReportShop = false
+    @State private var showingOracle = false
+    @State private var showingPrivacy = false
+    @State private var restoreMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.cosmicVoid.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 16) {
+                        proStatusCard
+                        sectionHeader("REPORTS")
+                        actionRow(
+                            icon: "doc.text.fill",
+                            title: "My Reports",
+                            subtitle: "Open the reports you already have"
+                        ) { showingReportsLibrary = true }
+                        actionRow(
+                            icon: "cart.fill",
+                            title: "Buy Reports",
+                            subtitle: "Birth, compatibility, career, more"
+                        ) { showingReportShop = true }
+
+                        sectionHeader("ASK")
+                        actionRow(
+                            icon: "sparkles",
+                            title: "Ask the Oracle",
+                            subtitle: "Open chat with token packs"
+                        ) { showingOracle = true }
+
+                        sectionHeader("ACCOUNT")
+                        if auth.isAuthenticated {
+                            actionRow(
+                                icon: "person.crop.circle.fill",
+                                title: "Signed in",
+                                subtitle: auth.profileManager.profile.fullName.isEmpty ? "Apple ID" : auth.profileManager.profile.fullName
+                            ) {}
+                            actionRow(
+                                icon: "rectangle.portrait.and.arrow.right",
+                                title: "Sign out",
+                                subtitle: nil,
+                                tint: .cosmicError
+                            ) {
+                                auth.signOut()
+                            }
+                        } else {
+                            actionRow(
+                                icon: "person.crop.circle.badge.plus",
+                                title: "Sign in",
+                                subtitle: "Open onboarding to sign in with Apple"
+                            ) {}
+                        }
+
+                        sectionHeader("LEGAL")
+                        actionRow(icon: "hand.raised.fill", title: "Privacy", subtitle: nil) { showingPrivacy = true }
+                        actionRow(
+                            icon: "arrow.counterclockwise",
+                            title: "Restore purchases",
+                            subtitle: restoreMessage
+                        ) {
+                            Task {
+                                let ok = await storeKit.restorePurchases()
+                                restoreMessage = ok ? "Restored." : "No previous purchases found."
+                            }
+                        }
+
+                        Spacer(minLength: 32)
+                        appVersionFooter
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                }
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .font(.system(size: 15, weight: .semibold))
+                }
+            }
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView(context: .general)
+        }
+        .sheet(isPresented: $showingReportsLibrary) {
+            ReportsLibraryView(reports: [])
+        }
+        .sheet(isPresented: $showingReportShop) {
+            InlineReportsStoreSheet()
+                .environmentObject(auth)
+        }
+        .sheet(isPresented: $showingOracle) {
+            OracleView()
+                .environmentObject(auth)
+        }
+        .sheet(isPresented: $showingPrivacy) {
+            NavigationStack {
+                ScrollView {
+                    Text("Astronova does not sell your data. Birth details, journal entries, decisions, and navigation rules are stored locally on your device. See the in-app Privacy policy for details.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .padding(20)
+                }
+                .navigationTitle("Privacy")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+    }
+
+    // MARK: - Pro status
+
+    private var proStatusCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: hasPro ? "checkmark.seal.fill" : "sparkle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(hasPro ? Color.cosmicGold : Color.cosmicAmethyst)
+                Text(hasPro ? "Astronova Pro" : "Free plan")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                Spacer()
+            }
+            if !hasPro {
+                Text("Quota:")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(2)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                quotaLine("Decisions this month", used: quota.decisionsUsedThisMonth, limit: ProQuotaManager.decisionMonthlyLimit)
+                quotaLine("Pattern details this week", used: quota.patternViewsUsedThisWeek, limit: ProQuotaManager.patternWeeklyLimit)
+                quotaLine("Insights this month", used: quota.insightsViewsUsedThisMonth, limit: ProQuotaManager.insightsMonthlyLimit)
+                Button {
+                    showingPaywall = true
+                } label: {
+                    Text("Get Pro")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color.cosmicVoid)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.cosmicGold)
+                        )
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text("Unlimited decisions, full pattern library, full insights.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.cosmicTextSecondary)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.cosmicSurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(hasPro ? Color.cosmicGold.opacity(0.4) : Color.cosmicAmethyst.opacity(0.25), lineWidth: 1)
+        )
+    }
+
+    private func quotaLine(_ label: String, used: Int, limit: Int) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 13))
+                .foregroundStyle(Color.cosmicTextSecondary)
+            Spacer()
+            Text("\(min(used, limit)) / \(limit)")
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .foregroundStyle(used >= limit ? Color.cosmicError : Color.cosmicTextPrimary)
+        }
+    }
+
+    // MARK: - Section + Action row
+
+    private func sectionHeader(_ text: String) -> some View {
+        HStack {
+            Text(text)
+                .font(.system(size: 10, weight: .semibold))
+                .tracking(2)
+                .foregroundStyle(Color.cosmicTextTertiary)
+            Spacer()
+        }
+        .padding(.horizontal, 4)
+        .padding(.top, 10)
+    }
+
+    private func actionRow(
+        icon: String,
+        title: String,
+        subtitle: String?,
+        tint: Color = .cosmicTextPrimary,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            HapticFeedbackService.shared.selection()
+            action()
+        } label: {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 28, height: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(tint)
+                    if let subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.cosmicTextTertiary)
+                            .lineLimit(2)
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.cosmicTextTertiary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.cosmicSurface)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var appVersionFooter: some View {
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "?"
+        let build = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "?"
+        return Text("Astronova \(version) (\(build))")
+            .font(.system(size: 10, weight: .medium))
+            .tracking(1)
+            .foregroundStyle(Color.cosmicTextTertiary)
+            .padding(.bottom, 24)
+    }
+}

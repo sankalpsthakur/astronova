@@ -1,0 +1,391 @@
+{
+  "version": 1,
+  "protocols": [
+    {
+      "id": "anger_mars",
+      "emotion": "Anger",
+      "emoji": "🔥",
+      "planet": "Mars",
+      "planet_vedic": "Mangal",
+      "color_hint": "red",
+      "vedic_correspondence": "Mangal — element fire (agni), direction south, day Tuesday, mantra \"Om Angarakaya Namaha\"",
+      "energy_is_for": "Cutting through what no longer serves; defending what matters.",
+      "steps": [
+        {
+          "index": 1,
+          "title": "Name",
+          "duration_seconds": 5,
+          "body": "\"I am feeling anger.\" Say it out loud or in your head. Do not justify it. Do not story it."
+        },
+        {
+          "index": 2,
+          "title": "Locate",
+          "duration_seconds": 10,
+          "body": "Where is it in your body?\n\nPut a hand on the strongest location.",
+          "options": [
+            "Heat in face, jaw, throat",
+            "Tightness in chest, fists",
+            "Pressure behind the eyes"
+          ]
+        },
+        {
+          "index": 3,
+          "title": "Breathe",
+          "duration_seconds": 15,
+          "body": "Mars breath: inhale 4 counts through the nose. Hold 2. Exhale 6 through the mouth with sound (audible \"haaa\"). Three rounds.",
+          "breath": {
+            "inhale": 4,
+            "hold": 2,
+            "exhale": 6,
+            "rounds": 3,
+            "exhale_sound": "haaa"
+          }
+        },
+        {
+          "index": 4,
+          "title": "Reframe",
+          "duration_seconds": 10,
+          "body": "This is fuel, not fault. Anger means a boundary was crossed or a value was violated. The question is not \"how do I stop being angry\" — it's \"what is this anger asking me to protect?\""
+        },
+        {
+          "index": 5,
+          "title": "Route",
+          "duration_seconds": 30,
+          "body": "Pick one:",
+          "options": [
+            {
+              "condition": "If at someone",
+              "action": "Ask the clarifying question. \"Help me understand what you meant by ___.\""
+            },
+            {
+              "condition": "If at a situation",
+              "action": "Write the boundary in one sentence. \"From now on, I do not ___.\""
+            },
+            {
+              "condition": "If at yourself",
+              "action": "Identify the unmet need. \"What did I want that I didn't get?\""
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "title": "Optional ritual",
+          "duration_seconds": 0,
+          "body": "Light a red candle. Or splash cold water on wrists. Or do 10 push-ups. Mars wants discharge through the body, not the mouth."
+        }
+      ],
+      "do_not": [
+        "Send the text.",
+        "Make the decision.",
+        "Speak in the meeting."
+      ],
+      "do_not_window_minutes": 7
+    },
+    {
+      "id": "sadness_moon",
+      "emotion": "Sadness",
+      "emoji": "💧",
+      "planet": "Moon",
+      "planet_vedic": "Chandra",
+      "color_hint": "blue",
+      "vedic_correspondence": "Chandra — element water (jala), direction northwest, day Monday, mantra \"Om Chandraya Namaha\"",
+      "energy_is_for": "Receiving, releasing, integrating what the day did not let you feel.",
+      "steps": [
+        {
+          "index": 1,
+          "title": "Name",
+          "duration_seconds": 5,
+          "body": "\"I am feeling sadness.\" Say it. Do not minimize it. Do not call it tired, fine, or off."
+        },
+        {
+          "index": 2,
+          "title": "Locate",
+          "duration_seconds": 10,
+          "body": "Where is it in your body?\n\nPut a hand on the strongest location. Let it rest there.",
+          "options": [
+            "Heaviness behind the eyes, throat",
+            "Hollow in the chest or stomach",
+            "Weight in the shoulders"
+          ]
+        },
+        {
+          "index": 3,
+          "title": "Breathe",
+          "duration_seconds": 20,
+          "body": "Moon breath: inhale 6 counts through the nose. Exhale 8 counts through the nose, longer than the inhale. Soft, no force. Two rounds.",
+          "breath": {
+            "inhale": 6,
+            "exhale": 8,
+            "rounds": 3
+          }
+        },
+        {
+          "index": 4,
+          "title": "Reframe",
+          "duration_seconds": 10,
+          "body": "Sadness is the body metabolizing a loss — small or large, named or unnamed. It is not a problem to fix. It is water passing through. Your only job is to let it pass."
+        },
+        {
+          "index": 5,
+          "title": "Route",
+          "duration_seconds": 30,
+          "body": "Pick one:",
+          "options": [
+            {
+              "condition": "Somatic release",
+              "action": "Let the tears come if they are there. One long sigh. A slow 5-minute walk, no phone."
+            },
+            {
+              "condition": "Water",
+              "action": "Drink a full glass slowly. Or splash your face. Or step into the shower. If you can reach an ocean, lake, or river — go."
+            },
+            {
+              "condition": "Name the loss",
+              "action": "One sentence. \"I am sad because ___ is not what I wanted it to be.\""
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "title": "Optional ritual",
+          "duration_seconds": 0,
+          "body": "Light a white or silver candle. Place a bowl of water near you. Look at the moon if it is night. Chandra does not ask you to be okay — only to be present with what is."
+        }
+      ],
+      "do_not": [
+        "Scroll.",
+        "Numb.",
+        "Call the person you broke up with."
+      ],
+      "do_not_window_minutes": 20
+    },
+    {
+      "id": "fear_saturn",
+      "emotion": "Fear",
+      "emoji": "🪨",
+      "planet": "Saturn",
+      "planet_vedic": "Shani",
+      "color_hint": "indigo",
+      "vedic_correspondence": "Shani — element earth and air, direction west, day Saturday, mantra \"Om Shanaye Namaha\"",
+      "energy_is_for": "Structural caution; respect for limits; long-term wisdom that the lizard brain mistakes for danger now.",
+      "steps": [
+        {
+          "index": 1,
+          "title": "Name",
+          "duration_seconds": 5,
+          "body": "\"I am feeling fear.\" Not anxious. Not stressed. Fear. The precise word is the first weight off."
+        },
+        {
+          "index": 2,
+          "title": "Locate",
+          "duration_seconds": 10,
+          "body": "Where is it in your body?\n\nPut a hand on the strongest location. Feet flat on the floor.",
+          "options": [
+            "Tightness in the gut, shallow breath",
+            "Buzzing in the chest, racing heart",
+            "Cold hands, locked shoulders"
+          ]
+        },
+        {
+          "index": 3,
+          "title": "Breathe",
+          "duration_seconds": 20,
+          "body": "Saturn breath: box breath. Inhale 4. Hold 4. Exhale 4. Hold 4. Two rounds. Mouth closed throughout.",
+          "breath": {
+            "inhale": 4,
+            "hold": 4,
+            "exhale": 4,
+            "hold_after_exhale": 4,
+            "rounds": 4
+          }
+        },
+        {
+          "index": 4,
+          "title": "Reframe",
+          "duration_seconds": 10,
+          "body": "Fear is your nervous system asking for structure, not escape. It is information about a future you have not built scaffolding for yet. The task is to give it scaffolding."
+        },
+        {
+          "index": 5,
+          "title": "Route",
+          "duration_seconds": 30,
+          "body": "Two sentences, written down. Phone notes, paper, whatever is closest.\n\nIf you cannot verify anything in 24 hours, the fear is about something further out. Schedule a 15-minute block this week to plan it. Then close the loop.",
+          "options": [
+            {
+              "condition": "Worst case",
+              "action": "\"The worst that can happen is ___.\" Specific. One sentence."
+            },
+            {
+              "condition": "Verifiable next",
+              "action": "\"In the next 24 hours I can verify ___.\" One concrete check — a message, a search, a number, a person."
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "title": "Optional ritual",
+          "duration_seconds": 0,
+          "body": "Light a dark blue or black candle. Touch the earth — barefoot on floor, hand on stone, palm on a tree. Shani is slow on purpose. He is asking you to slow down with him."
+        }
+      ],
+      "do_not": [
+        "Catastrophize on the phone.",
+        "Make the irreversible choice.",
+        "Refresh the page."
+      ],
+      "do_not_window_minutes": 30
+    },
+    {
+      "id": "desire_venus",
+      "emotion": "Desire",
+      "emoji": "🌸",
+      "planet": "Venus",
+      "planet_vedic": "Shukra",
+      "color_hint": "pink",
+      "vedic_correspondence": "Shukra — element water (jala), direction southeast, day Friday, mantra \"Om Shukraya Namaha\"",
+      "energy_is_for": "Pointing at what is meaningful; calibrating your values; showing you where you want to grow toward.",
+      "steps": [
+        {
+          "index": 1,
+          "title": "Name",
+          "duration_seconds": 5,
+          "body": "\"I am feeling desire.\" Or wanting. Or pull. Name the object: \"I want ___.\" Out loud is better."
+        },
+        {
+          "index": 2,
+          "title": "Locate",
+          "duration_seconds": 10,
+          "body": "Where is it in your body?\n\nPut a hand on the chest, palm flat.",
+          "options": [
+            "Warmth in the chest, heart racing",
+            "Pull in the lower belly, the hips",
+            "Lightness in the head, restlessness"
+          ]
+        },
+        {
+          "index": 3,
+          "title": "Breathe",
+          "duration_seconds": 20,
+          "body": "Heart breath: hand on chest. Inhale 5 through the nose, into the hand. Exhale 5 through the nose. Slow, even. Three rounds. Let the hand feel the rise and fall.",
+          "breath": {
+            "inhale": 5,
+            "exhale": 5,
+            "rounds": 3
+          }
+        },
+        {
+          "index": 4,
+          "title": "Reframe",
+          "duration_seconds": 10,
+          "body": "Desire is a compass needle, not a command. It points. It does not say \"now.\" The signal matters. The timing is yours."
+        },
+        {
+          "index": 5,
+          "title": "Route",
+          "duration_seconds": 30,
+          "body": "Distinguish craving from longing.\n\nWrite one sentence: \"This is craving / longing because ___.\"\n\nThen: **wait 24 hours before acting.** If at hour 24 it is still there, it is longing. Act with care. If it dissolved, it was craving. Notice what it was actually pointing at.",
+          "options": [
+            {
+              "condition": "Craving",
+              "action": "Craving is away from something — a feeling you do not want to have. Boredom, loneliness, smallness. The object is incidental."
+            },
+            {
+              "condition": "Longing",
+              "action": "Longing is toward something — a quality of life you want more of. Beauty, intimacy, mastery, meaning. The object is a doorway."
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "title": "Optional ritual",
+          "duration_seconds": 0,
+          "body": "Light a white or pink candle. Eat something sweet, slowly. Look at something beautiful for 60 seconds — art, a face, a flower, the sky. Shukra teaches that beauty is not optional; it is how the soul calibrates."
+        }
+      ],
+      "do_not": [
+        "Send the message.",
+        "Buy the thing.",
+        "Open the app."
+      ],
+      "do_not_window_minutes": 1440
+    },
+    {
+      "id": "confusion_mercury",
+      "emotion": "Confusion",
+      "emoji": "🌫️",
+      "planet": "Mercury",
+      "planet_vedic": "Budha",
+      "color_hint": "teal",
+      "vedic_correspondence": "Budha — element earth and air, direction north, day Wednesday, mantra \"Om Budhaya Namaha\"",
+      "energy_is_for": "Information that has not sorted yet. The mind is mid-process, not broken.",
+      "steps": [
+        {
+          "index": 1,
+          "title": "Name",
+          "duration_seconds": 5,
+          "body": "\"I am feeling confusion.\" Not stupid. Not behind. Confused. The data is in; the pattern is not."
+        },
+        {
+          "index": 2,
+          "title": "Locate",
+          "duration_seconds": 10,
+          "body": "Where is it in your body?\n\nPut a hand on the forehead or the back of the neck.",
+          "options": [
+            "Static behind the eyes, fog in the forehead",
+            "Tightness across the temples",
+            "Restlessness in the hands, the jaw"
+          ]
+        },
+        {
+          "index": 3,
+          "title": "Breathe",
+          "duration_seconds": 20,
+          "body": "Mercury breath: equal breath. Inhale 4 through the nose. Exhale 4 through the nose. Mouth closed. Four rounds. Eyes soft or closed.",
+          "breath": {
+            "inhale": 4,
+            "exhale": 4,
+            "rounds": 4
+          }
+        },
+        {
+          "index": 4,
+          "title": "Reframe",
+          "duration_seconds": 10,
+          "body": "Confusion is not the absence of thought. It is too much thought, unsorted. The fix is not more input. The fix is structure."
+        },
+        {
+          "index": 5,
+          "title": "Route",
+          "duration_seconds": 30,
+          "body": "Three sentences. Write them down.\n\nIf the third sentence is answerable — go find the answer. If it is not, the decision is not ready yet. That is a fact, not a failure.",
+          "options": [
+            {
+              "condition": "What I know",
+              "action": "One thing that is certain."
+            },
+            {
+              "condition": "What I don't know",
+              "action": "One thing that is genuinely unclear."
+            },
+            {
+              "condition": "What I'd need to know to decide",
+              "action": "One specific piece of information."
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "title": "Optional ritual",
+          "duration_seconds": 0,
+          "body": "Light a green candle. Pick up a pen and write longhand for two minutes — anything, do not lift the pen. Or take a 10-minute walk without your phone. Budha sorts in motion and in ink, not in the scroll."
+        }
+      ],
+      "do_not": [
+        "Ask three more people.",
+        "Open another tab.",
+        "Decide."
+      ],
+      "do_not_window_minutes": 60
+    }
+  ]
+}

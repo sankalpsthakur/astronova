@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "domains": [
+    {
+      "id": "career",
+      "name": "Career",
+      "tagline": "Public work, status, calling.",
+      "terrain_metaphor": "Cities — built environment, networks, scaffolding.",
+      "icon_sf_symbol": "building.2",
+      "color_hint": "gold",
+      "western_factors": [
+        { "factor": "10H ruler condition and dignity", "weight": 0.30 },
+        { "factor": "MC sign and aspects", "weight": 0.25 },
+        { "factor": "Saturn placement and aspects", "weight": 0.25 },
+        { "factor": "Sun house and dignity", "weight": 0.20 }
+      ],
+      "vedic_factors": [
+        { "factor": "10th bhava lord strength and placement", "weight": 0.30 },
+        { "factor": "Current Shani dasha or antardasha activation", "weight": 0.25 },
+        { "factor": "Atmakaraka aspect or placement in 10H", "weight": 0.25 },
+        { "factor": "Karakamsa Sun and 10th from Arudha Lagna", "weight": 0.20 }
+      ],
+      "intensity_high_signature": "Benefics aspect the 10H or its ruler while MC sits in a cardinal sign with angular planets supporting status.",
+      "friction_signature": "Saturn-Mars hard aspect to 10H ruler or an eclipse falling on the MC/IC axis.",
+      "opportunity_signature": "Jupiter transit through 10H or trine to MC during a favorable 10L dasha period.",
+      "associated_patterns": ["recognition_threat", "fast_execution_slow_recovery"]
+    },
+    {
+      "id": "relationships",
+      "name": "Relationships",
+      "tagline": "Partnership, attraction, mutual flow.",
+      "terrain_metaphor": "Rivers — current, confluence, shared direction.",
+      "icon_sf_symbol": "person.2",
+      "color_hint": "pink",
+      "western_factors": [
+        { "factor": "7H ruler condition and aspects", "weight": 0.30 },
+        { "factor": "Venus dignity and house placement", "weight": 0.25 },
+        { "factor": "Descendant sign and any planet conjunct DSC", "weight": 0.25 },
+        { "factor": "Moon condition and Venus-Moon synthesis", "weight": 0.20 }
+      ],
+      "vedic_factors": [
+        { "factor": "7th bhava lord strength and Upapada Lagna", "weight": 0.30 },
+        { "factor": "Shukra (Venus) dignity and Darakaraka condition", "weight": 0.25 },
+        { "factor": "Navamsa 7H and lord of D9 lagna", "weight": 0.25 },
+        { "factor": "Current Venus or 7L dasha or antardasha", "weight": 0.20 }
+      ],
+      "intensity_high_signature": "Venus angular and well-aspected with the 7H ruler dignified or conjunct a benefic on the DSC.",
+      "friction_signature": "Saturn or Mars afflicting 7H ruler or Venus combust with hard aspects from outer planets.",
+      "opportunity_signature": "Jupiter transit through 7H or Venus-Jupiter conjunction by transit during 7L dasha.",
+      "associated_patterns": ["emotional_delayed_processing", "control_under_uncertainty"]
+    },
+    {
+      "id": "family",
+      "name": "Family",
+      "tagline": "Roots, lineage, the place you return to.",
+      "terrain_metaphor": "Forests — home, belonging, ancestral ground.",
+      "icon_sf_symbol": "house",
+      "color_hint": "green",
+      "western_factors": [
+        { "factor": "4H ruler condition and aspects", "weight": 0.30 },
+        { "factor": "Moon placement and dignity", "weight": 0.30 },
+        { "factor": "IC sign and any planet conjunct IC", "weight": 0.20 },
+        { "factor": "Cancer ruler placement and 3H ruler condition", "weight": 0.20 }
+      ],
+      "vedic_factors": [
+        { "factor": "4th bhava lord strength and placement", "weight": 0.30 },
+        { "factor": "Chandra (Moon) dignity and Matrukaraka condition", "weight": 0.25 },
+        { "factor": "4th from Moon and aspects to Chandra Lagna", "weight": 0.25 },
+        { "factor": "Current 4L or Moon dasha or antardasha", "weight": 0.20 }
+      ],
+      "intensity_high_signature": "Moon angular and dignified with 4H ruler well-placed and aspected by Jupiter or Venus.",
+      "friction_signature": "Saturn or Ketu in 4H or Moon-Saturn hard aspect with the IC under transit affliction.",
+      "opportunity_signature": "Jupiter transit through 4H or favorable Moon dasha activating the IC axis.",
+      "associated_patterns": ["solitude_recharge", "emotional_delayed_processing"]
+    },
+    {
+      "id": "money",
+      "name": "Money",
+      "tagline": "Resources, accumulation, what you can hold.",
+      "terrain_metaphor": "Mountains and Vaults — reserves, weight, slow build.",
+      "icon_sf_symbol": "dollarsign.circle",
+      "color_hint": "bronze",
+      "western_factors": [
+        { "factor": "2H ruler condition and dignity", "weight": 0.30 },
+        { "factor": "Jupiter placement and dignity", "weight": 0.25 },
+        { "factor": "Venus condition and 2H aspects", "weight": 0.25 },
+        { "factor": "8H ruler and 11H ruler condition", "weight": 0.20 }
+      ],
+      "vedic_factors": [
+        { "factor": "2nd bhava lord strength and Dhana yogas", "weight": 0.30 },
+        { "factor": "11th bhava lord placement and aspects", "weight": 0.25 },
+        { "factor": "Guru (Jupiter) and Shukra (Venus) dignity", "weight": 0.25 },
+        { "factor": "Current 2L, 11L, or Jupiter dasha or antardasha", "weight": 0.20 }
+      ],
+      "intensity_high_signature": "Jupiter or Venus angular with strong 2H and 11H rulers forming a Dhana yoga.",
+      "friction_signature": "Saturn or Rahu afflicting 2H ruler or 8H ruler in a hard aspect to 2H during a malefic dasha.",
+      "opportunity_signature": "Jupiter transit through 2H or 11H during a benefic 2L or 11L dasha period.",
+      "associated_patterns": ["control_under_uncertainty", "fast_execution_slow_recovery"]
+    },
+    {
+      "id": "inner_world",
+      "name": "Inner World",
+      "tagline": "Shadow, dream, the part that needs the dark.",
+      "terrain_metaphor": "Caves — subconscious, hidden chambers, depth.",
+      "icon_sf_symbol": "moon.stars",
+      "color_hint": "indigo",
+      "western_factors": [
+        { "factor": "12H ruler condition and placement", "weight": 0.30 },
+        { "factor": "Moon-Neptune aspect and Neptune house", "weight": 0.25 },
+        { "factor": "8H ruler condition and aspects", "weight": 0.25 },
+        { "factor": "Pluto house placement and 4H ruler condition", "weight": 0.20 }
+      ],
+      "vedic_factors": [
+        { "factor": "12th bhava lord strength and placement", "weight": 0.30 },
+        { "factor": "Ketu placement and nakshatra dispositor", "weight": 0.25 },
+        { "factor": "8th bhava lord and Rahu-Ketu axis aspects", "weight": 0.25 },
+        { "factor": "Current Ketu, 12L, or 8L dasha or antardasha", "weight": 0.20 }
+      ],
+      "intensity_high_signature": "Strong 12H or 8H emphasis with Moon-Neptune contact and Ketu activating the nakshatra of a luminary.",
+      "friction_signature": "Hard transits from Saturn or Pluto to natal Moon or 12L during a Ketu or 8L dasha.",
+      "opportunity_signature": "Jupiter transit through 12H or 8H bringing insight during a benefic 12L sub-period.",
+      "associated_patterns": ["solitude_recharge", "emotional_delayed_processing", "control_under_uncertainty"]
+    },
+    {
+      "id": "creativity",
+      "name": "Creativity",
+      "tagline": "Spark, expression, the thing that wants out.",
+      "terrain_metaphor": "Volcanoes — pressure, eruption, transformation through heat.",
+      "icon_sf_symbol": "paintpalette",
+      "color_hint": "coral",
+      "western_factors": [
+        { "factor": "5H ruler condition and dignity", "weight": 0.30 },
+        { "factor": "Sun placement and dignity", "weight": 0.25 },
+        { "factor": "Venus and Mars aspects to 5H", "weight": 0.25 },
+        { "factor": "Jupiter placement and 9H ruler condition", "weight": 0.20 }
+      ],
+      "vedic_factors": [
+        { "factor": "5th bhava lord strength and Putrakaraka condition", "weight": 0.30 },
+        { "factor": "Surya (Sun) and Mangal (Mars) dignity and aspects to 5H", "weight": 0.25 },
+        { "factor": "Guru (Jupiter) placement and 9th bhava condition", "weight": 0.25 },
+        { "factor": "Current 5L, Sun, or Jupiter dasha or antardasha", "weight": 0.20 }
+      ],
+      "intensity_high_signature": "5H ruler dignified with Sun or Jupiter angular and Venus-Mars contact supporting expressive flow.",
+      "friction_signature": "Saturn afflicting 5H ruler or Mars-Sun hard aspect under a malefic dasha squeezing output.",
+      "opportunity_signature": "Jupiter transit through 5H or 9H during a Sun or 5L dasha activating natal creative significators.",
+      "associated_patterns": ["fast_execution_slow_recovery", "recognition_threat"]
+    }
+  ]
+}

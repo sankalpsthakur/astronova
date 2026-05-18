@@ -67,7 +67,7 @@ class StoreKitManager: ObservableObject {
                 var newCommitmentDisplayPrices: [String: String] = [:]
                 for product in storeKitProducts {
                     newProducts[product.id] = product.displayPrice
-                    #if compiler(>=6.2)
+                    #if STOREKIT_PRICING_TERMS_AVAILABLE
                     if #available(iOS 26.4, *),
                        let pricingTerms = Self.monthlyPricingTerms(for: product) {
                         newMonthlyBillingPlanPrices[product.id] = pricingTerms.billingDisplayPrice
@@ -220,7 +220,7 @@ class StoreKitManager: ObservableObject {
         case .standard:
             return try await product.purchase()
         case .monthlyCommitment:
-            #if compiler(>=6.2)
+            #if STOREKIT_PRICING_TERMS_AVAILABLE
             if #available(iOS 26.4, *), Self.monthlyPricingTerms(for: product) != nil {
                 return try await product.purchase(options: [.billingPlanType(.monthly)])
             }
@@ -229,7 +229,7 @@ class StoreKitManager: ObservableObject {
         }
     }
 
-    #if compiler(>=6.2)
+    #if STOREKIT_PRICING_TERMS_AVAILABLE
     @available(iOS 26.4, *)
     private static func monthlyPricingTerms(for product: Product) -> Product.SubscriptionInfo.PricingTerms? {
         guard let subscription = product.subscription else { return nil }

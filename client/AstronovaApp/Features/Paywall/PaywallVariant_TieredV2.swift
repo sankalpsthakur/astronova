@@ -57,6 +57,22 @@ struct PaywallVariant_TieredV2: View {
         plan.fallbackCommitmentDisplayPrice
     }
 
+    /// Wave-0 guard: if the 12-month commitment SKU failed to load (e.g.
+    /// `MISSING_METADATA` in App Store Connect) the trial/Subscribe tap
+    /// would route through a SKU StoreKit never returned and silently
+    /// fail. When the loaded catalog is missing it, fall back to monthly
+    /// so the default action is purchasable. Only adjusts the *default*
+    /// selection — explicit user taps on the 12-month card are preserved.
+    private func adjustDefaultPlanIfAnnualUnavailable() {
+        guard selectedPlanProductId == ShopCatalog.pro12MonthCommitmentProductID else { return }
+        let loaded = storeKitManager.products
+        guard !loaded.isEmpty else { return }
+        if loaded[ShopCatalog.pro12MonthCommitmentProductID] == nil,
+           loaded[ShopCatalog.proMonthlyProductID] != nil {
+            selectedPlanProductId = ShopCatalog.proMonthlyProductID
+        }
+    }
+
     private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
     private let privacyURL = URL(string: "https://astronova-ghcr.onrender.com/privacy")!
     private let manageSubscriptionsURL = URL(string: "https://apps.apple.com/account/subscriptions")!
@@ -102,7 +118,10 @@ struct PaywallVariant_TieredV2: View {
                 ]
             )
         }
-        .task { await storeKitManager.loadProducts() }
+        .task {
+            await storeKitManager.loadProducts()
+            adjustDefaultPlanIfAnnualUnavailable()
+        }
         .alert(item: $purchaseResult) { result in
             switch result {
             case .success:

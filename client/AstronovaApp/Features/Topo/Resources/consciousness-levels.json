@@ -1,0 +1,485 @@
+{
+  "version": 1,
+  "planets": [
+    {
+      "id": "sun",
+      "western_name": "Sun",
+      "vedic_name": "Surya",
+      "western_theme": "Identity, vitality, will, the core self",
+      "vedic_theme": "Surya — soul, father, authority, dignity; the karaka of atma (self)",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Sun",
+          "keywords": ["Ego", "pride", "performance", "demand"],
+          "body_cue": "Puffed chest, raised chin, tight throat",
+          "behavior": "Needs to be seen; collapses when overlooked"
+        },
+        {
+          "level": 2,
+          "name": "Productive Sun",
+          "keywords": ["Confidence", "ambition", "presence", "ownership"],
+          "body_cue": "Upright posture, steady eye contact, full breath",
+          "behavior": "Takes the stage; signs his name to the work"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Sun",
+          "keywords": ["Sovereign authority", "clarity of purpose", "dignity"],
+          "body_cue": "Centered weight, calm gaze, unhurried speech",
+          "behavior": "Leads without needing applause; chooses what to bless"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Sun",
+          "keywords": ["Light without strain", "generative presence", "quiet kingship"],
+          "body_cue": "Soft eyes, steady breath, hands at rest",
+          "behavior": "Warms a room by entering it; gives credit and keeps the throne"
+        }
+      ],
+      "growth_edge_2_to_3": "Stop performing for the audience that already chose you.",
+      "growth_edge_3_to_4": "Lead from the body, not the title — let presence do the work.",
+      "regression_trigger": "Public dismissal, being overlooked, status threat."
+    },
+    {
+      "id": "moon",
+      "western_name": "Moon",
+      "vedic_name": "Chandra",
+      "western_theme": "Emotion, mood, mother, inner life",
+      "vedic_theme": "Chandra — mind, mother, comfort, fluctuation; the karaka of manas (mind)",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Moon",
+          "keywords": ["Moodiness", "neediness", "withdrawal", "flooding"],
+          "body_cue": "Shallow chest breath, hunched shoulders, watery eyes",
+          "behavior": "Reads tone as threat; vanishes or clings"
+        },
+        {
+          "level": 2,
+          "name": "Productive Moon",
+          "keywords": ["Care", "empathy", "attunement", "nourishment"],
+          "body_cue": "Open face, relaxed jaw, listening lean",
+          "behavior": "Notices what the room needs; tends without being asked"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Moon",
+          "keywords": ["Felt-sense steadiness", "emotional honesty", "regulated rhythm"],
+          "body_cue": "Belly breath, soft shoulders, unhurried pace",
+          "behavior": "Names the feeling without drowning in it"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Moon",
+          "keywords": ["Containing presence", "oceanic calm", "mother to many"],
+          "body_cue": "Slow breath cycle, warm gaze, settled hands",
+          "behavior": "Holds others' weather without taking it on"
+        }
+      ],
+      "growth_edge_2_to_3": "Feel the feeling without acting on it for sixty seconds.",
+      "growth_edge_3_to_4": "Let your nervous system be the room — stop managing, start holding.",
+      "regression_trigger": "Sleep loss, unmet need for closeness, sudden loneliness."
+    },
+    {
+      "id": "mercury",
+      "western_name": "Mercury",
+      "vedic_name": "Budha",
+      "western_theme": "Mind, speech, learning, exchange",
+      "vedic_theme": "Budha — intellect, communication, commerce, wit; the karaka of buddhi (discernment)",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Mercury",
+          "keywords": ["Chatter", "deflection", "anxiety", "scattering"],
+          "body_cue": "Fast shallow breath, darting eyes, finger-tapping",
+          "behavior": "Talks over silence; argues to feel safe"
+        },
+        {
+          "level": 2,
+          "name": "Productive Mercury",
+          "keywords": ["Curiosity", "clarity", "articulation", "learning"],
+          "body_cue": "Bright eyes, leaning in, hands shaping the air",
+          "behavior": "Finds the question; makes the complex legible"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Mercury",
+          "keywords": ["Precise speech", "discerning silence", "signal over noise"],
+          "body_cue": "Stilled hands, paced breath, deliberate pauses",
+          "behavior": "Says less, lands harder; cuts the thread that isn't true"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Mercury",
+          "keywords": ["Translator energy", "wisdom in plain words", "no wasted syllable"],
+          "body_cue": "Quiet face, soft gaze, breath between sentences",
+          "behavior": "Speaks once and the room reorganizes around it"
+        }
+      ],
+      "growth_edge_2_to_3": "Pause three seconds before every sentence you wanted to rush.",
+      "growth_edge_3_to_4": "Stop teaching, start naming. One sentence, no qualifier.",
+      "regression_trigger": "Feeling unintelligent, being interrupted, information overload."
+    },
+    {
+      "id": "venus",
+      "western_name": "Venus",
+      "vedic_name": "Shukra",
+      "western_theme": "Love, beauty, value, pleasure",
+      "vedic_theme": "Shukra — relationship, refinement, art, partnership; the karaka of kalatra (spouse) and bhoga (enjoyment)",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Venus",
+          "keywords": ["Craving", "vanity", "dependency", "comparison"],
+          "body_cue": "Self-touch checking, posed stillness, scanning gaze",
+          "behavior": "Performs lovability; resents what she chases"
+        },
+        {
+          "level": 2,
+          "name": "Productive Venus",
+          "keywords": ["Charm", "taste", "generosity", "magnetism"],
+          "body_cue": "Relaxed smile, open hands, easy breath",
+          "behavior": "Curates a beautiful room; makes others feel chosen"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Venus",
+          "keywords": ["Discerning love", "valued self", "clean reciprocity"],
+          "body_cue": "Settled posture, steady eye contact, unhurried touch",
+          "behavior": "Receives without flinching; refuses without guilt"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Venus",
+          "keywords": ["Beauty as truth", "devotion without losing self", "sovereign warmth"],
+          "body_cue": "Soft face, grounded weight, slow open gaze",
+          "behavior": "Loves on her own terms; her presence is the gift"
+        }
+      ],
+      "growth_edge_2_to_3": "Receive a compliment without deflecting or repaying it.",
+      "growth_edge_3_to_4": "Let what you love change you in public.",
+      "regression_trigger": "Rejection, comparison wound, scarcity of affection."
+    },
+    {
+      "id": "mars",
+      "western_name": "Mars",
+      "vedic_name": "Mangal",
+      "western_theme": "Drive, action, anger, will",
+      "vedic_theme": "Mangal — courage, blood, brothers, competition; the karaka of energy and bhratru (siblings)",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Mars",
+          "keywords": ["Anger", "impatience", "conflict", "domination"],
+          "body_cue": "Jaw clenched, heat in face, fists",
+          "behavior": "Reacts before thinking; treats conversations as fights to win"
+        },
+        {
+          "level": 2,
+          "name": "Productive Mars",
+          "keywords": ["Execution", "courage", "directness", "competition"],
+          "body_cue": "Forward lean, steady breath, focused gaze",
+          "behavior": "Picks a target and moves; finishes what others stall on"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Mars",
+          "keywords": ["Calm force", "disciplined action", "clean boundaries"],
+          "body_cue": "Relaxed shoulders, low slow voice, deliberate pace",
+          "behavior": "Says no without apology; deploys force only when it changes the outcome"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Mars",
+          "keywords": ["Protector energy", "leadership", "precision under pressure"],
+          "body_cue": "Settled chest, present eyes, hands open",
+          "behavior": "Steady in crisis; others borrow his nervous system"
+        }
+      ],
+      "growth_edge_2_to_3": "Wait one full breath before the punch — verbal or physical.",
+      "growth_edge_3_to_4": "Use force only for what you love, never for what you fear.",
+      "regression_trigger": "Disrespect, blocked goal, perceived weakness in self."
+    },
+    {
+      "id": "jupiter",
+      "western_name": "Jupiter",
+      "vedic_name": "Guru",
+      "western_theme": "Expansion, meaning, faith, growth",
+      "vedic_theme": "Guru — wisdom, teacher, dharma, children; the karaka of jnana (knowledge) and putra (progeny)",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Jupiter",
+          "keywords": ["Overreach", "dogma", "bloat", "moralizing"],
+          "body_cue": "Expansive gestures, raised voice, jutting jaw",
+          "behavior": "Lectures uninvited; promises what he can't carry"
+        },
+        {
+          "level": 2,
+          "name": "Productive Jupiter",
+          "keywords": ["Optimism", "teaching", "generosity", "vision"],
+          "body_cue": "Open chest, warm voice, broad smile",
+          "behavior": "Lifts the room; opens doors for others"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Jupiter",
+          "keywords": ["Wise counsel", "principled growth", "faith with feet"],
+          "body_cue": "Steady posture, paced speech, listening eyes",
+          "behavior": "Says the hard true thing kindly; invests in long arcs"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Jupiter",
+          "keywords": ["Living dharma", "blessing presence", "embodied wisdom"],
+          "body_cue": "Soft eyes, unhurried breath, hands at rest",
+          "behavior": "Doesn't preach; people leave him clearer about themselves"
+        }
+      ],
+      "growth_edge_2_to_3": "Ask one more question before offering the answer.",
+      "growth_edge_3_to_4": "Stop teaching the lesson — be the lesson.",
+      "regression_trigger": "Being doubted, sense of meaninglessness, contraction of horizon."
+    },
+    {
+      "id": "saturn",
+      "western_name": "Saturn",
+      "vedic_name": "Shani",
+      "western_theme": "Structure, discipline, time, limitation",
+      "vedic_theme": "Shani — duty, longevity, the working class, justice; the karaka of ayus (lifespan) and karma (work)",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Saturn",
+          "keywords": ["Fear", "rigidity", "scarcity", "cynicism"],
+          "body_cue": "Tight jaw, hunched shoulders, locked knees",
+          "behavior": "Says no out of dread; mistakes control for safety"
+        },
+        {
+          "level": 2,
+          "name": "Productive Saturn",
+          "keywords": ["Discipline", "patience", "reliability", "craft"],
+          "body_cue": "Erect spine, steady breath, slow hands",
+          "behavior": "Shows up daily; does the unglamorous work"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Saturn",
+          "keywords": ["Mature authority", "lawful structure", "time as ally"],
+          "body_cue": "Grounded stance, low slow voice, deliberate pace",
+          "behavior": "Builds systems that outlast moods; honors the long timeline"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Saturn",
+          "keywords": ["Elder wisdom", "gravity", "justice without cruelty"],
+          "body_cue": "Settled weight, soft serious eyes, unhurried breath",
+          "behavior": "Holds the line nobody else will hold; ages like good stone"
+        }
+      ],
+      "growth_edge_2_to_3": "Set the boundary on Monday so Friday doesn't need one.",
+      "growth_edge_3_to_4": "Surrender the timeline you can't control without dropping the standard.",
+      "regression_trigger": "Loss of control, public failure, time pressure on a long project."
+    },
+    {
+      "id": "rahu",
+      "western_name": "Rahu",
+      "vedic_name": "Rahu",
+      "western_theme": "(North node) — Hunger for the unfamiliar, future-pull, obsession",
+      "vedic_theme": "Rahu — the eclipse-maker, foreigner, taboo, amplification; the karaka of desire and worldly ambition",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Rahu",
+          "keywords": ["Craving", "grasping", "illusion", "addiction"],
+          "body_cue": "Restless legs, scanning eyes, shallow rapid breath",
+          "behavior": "Chases the next hit; mistakes intensity for meaning"
+        },
+        {
+          "level": 2,
+          "name": "Productive Rahu",
+          "keywords": ["Hunger", "ambition", "novelty", "edge-seeking"],
+          "body_cue": "Forward gaze, alert posture, quickened pulse",
+          "behavior": "Pursues what others won't; thrives at the frontier"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Rahu",
+          "keywords": ["Channeled desire", "taboo as instrument", "foreign mastery"],
+          "body_cue": "Steady gaze, paced breath, deliberate reach",
+          "behavior": "Builds the unconventional career; turns hunger into craft"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Rahu",
+          "keywords": ["Sovereignty in the new domain", "alchemized desire", "native to the foreign"],
+          "body_cue": "Calm in unfamiliar rooms, open hands, settled jaw",
+          "behavior": "Owns the territory he was once obsessed with; the outsider becomes the standard"
+        }
+      ],
+      "growth_edge_2_to_3": "Stay with one obsession for a full year before chasing the next.",
+      "growth_edge_3_to_4": "Become the thing instead of consuming it.",
+      "regression_trigger": "Boredom, loss of novelty, fear of having arrived."
+    },
+    {
+      "id": "ketu",
+      "western_name": "Ketu",
+      "vedic_name": "Ketu",
+      "western_theme": "(South node) — Renunciation, past mastery, detachment",
+      "vedic_theme": "Ketu — the headless one, moksha, intuition, the abandoned skill; the karaka of liberation and isolation",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Ketu",
+          "keywords": ["Dissociation", "avoidance", "nihilism", "withdrawal"],
+          "body_cue": "Glazed eyes, slack posture, breath held high",
+          "behavior": "Vanishes mid-conversation; calls quitting wisdom"
+        },
+        {
+          "level": 2,
+          "name": "Productive Ketu",
+          "keywords": ["Detachment", "focus", "monastic ease", "simplification"],
+          "body_cue": "Stilled limbs, soft gaze, slow exhale",
+          "behavior": "Drops the noise; works alone, finishes deep"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Ketu",
+          "keywords": ["Discerning renunciation", "intuitive cut", "holy economy of effort"],
+          "body_cue": "Quiet body, unhurried breath, minimal gesture",
+          "behavior": "Knows what to abandon; keeps only what burns clean"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Ketu",
+          "keywords": ["Wise non-attachment", "embodied liberation", "presence without grip"],
+          "body_cue": "Open chest, soft eyes, breath barely visible",
+          "behavior": "Holds nothing and lacks nothing; leaves no residue"
+        }
+      ],
+      "growth_edge_2_to_3": "Renounce on purpose, not by default.",
+      "growth_edge_3_to_4": "Stay fully here while holding nothing.",
+      "regression_trigger": "Overwhelm, demand for engagement, threat to solitude."
+    },
+    {
+      "id": "uranus",
+      "western_name": "Uranus",
+      "vedic_name": null,
+      "western_theme": "Disruption, awakening, individuation, the future",
+      "vedic_theme": "(Modern, no classical karaka) — sudden insight, electricity, rupture of pattern",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Uranus",
+          "keywords": ["Rebellion", "erratic", "contrarian", "shock"],
+          "body_cue": "Twitchy limbs, sharp breath, sudden gestures",
+          "behavior": "Breaks things to feel free; allergic to all structure"
+        },
+        {
+          "level": 2,
+          "name": "Productive Uranus",
+          "keywords": ["Originality", "invention", "independence", "signal"],
+          "body_cue": "Alert posture, bright eyes, quick clean movement",
+          "behavior": "Sees the pattern others miss; builds the new instrument"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Uranus",
+          "keywords": ["Disciplined disruption", "future-pull", "calibrated risk"],
+          "body_cue": "Steady stance, focused gaze, controlled spark",
+          "behavior": "Breaks what should break; keeps what should keep"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Uranus",
+          "keywords": ["Sovereign individuator", "electric calm", "future-as-present"],
+          "body_cue": "Settled body, clear eyes, unhurried but alive",
+          "behavior": "Walks into the room from ten years ahead; rewires without violence"
+        }
+      ],
+      "growth_edge_2_to_3": "Keep one structure on purpose to prove freedom isn't chaos.",
+      "growth_edge_3_to_4": "Disrupt from love, not from itch.",
+      "regression_trigger": "Forced conformity, slow institutions, loss of autonomy."
+    },
+    {
+      "id": "neptune",
+      "western_name": "Neptune",
+      "vedic_name": null,
+      "western_theme": "Dissolution, imagination, transcendence, the unseen",
+      "vedic_theme": "(Modern, no classical karaka) — dream, devotion, mist, the porous self",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Neptune",
+          "keywords": ["Escapism", "delusion", "fog", "victimhood"],
+          "body_cue": "Unfocused eyes, slumped frame, sighing breath",
+          "behavior": "Drifts away from the hard thing; rewrites reality to soothe"
+        },
+        {
+          "level": 2,
+          "name": "Productive Neptune",
+          "keywords": ["Imagination", "empathy", "art", "devotion"],
+          "body_cue": "Soft gaze, open face, slow breath",
+          "behavior": "Makes the felt-thing visible; channels something larger"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Neptune",
+          "keywords": ["Discerning vision", "sober mysticism", "art with edges"],
+          "body_cue": "Grounded stance, steady eyes, paced breath",
+          "behavior": "Dreams on paper; tests the vision against the world"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Neptune",
+          "keywords": ["Sacred presence", "dissolved ego", "lucid mystic"],
+          "body_cue": "Soft body, clear gaze, breath like tide",
+          "behavior": "Holds the invisible without losing the floor"
+        }
+      ],
+      "growth_edge_2_to_3": "Put the dream on a deadline.",
+      "growth_edge_3_to_4": "Surrender the self without losing the witness.",
+      "regression_trigger": "Harsh reality check, betrayal of an ideal, exhaustion."
+    },
+    {
+      "id": "pluto",
+      "western_name": "Pluto",
+      "vedic_name": null,
+      "western_theme": "Power, depth, death-rebirth, transformation",
+      "vedic_theme": "(Modern, no classical karaka) — buried force, taboo authority, total renewal",
+      "levels": [
+        {
+          "level": 1,
+          "name": "Reactive Pluto",
+          "keywords": ["Control", "obsession", "manipulation", "vendetta"],
+          "body_cue": "Locked jaw, narrowed eyes, held breath",
+          "behavior": "Squeezes what he fears losing; punishes through silence"
+        },
+        {
+          "level": 2,
+          "name": "Productive Pluto",
+          "keywords": ["Intensity", "depth", "focus", "regenerative work"],
+          "body_cue": "Steady stare, slow deep breath, contained body",
+          "behavior": "Goes where others won't look; rebuilds from rubble"
+        },
+        {
+          "level": 3,
+          "name": "Strategic Pluto",
+          "keywords": ["Sovereign power", "alchemical work", "clean shadow"],
+          "body_cue": "Quiet posture, low even voice, unhurried gaze",
+          "behavior": "Wields power without performing it; transforms instead of dominating"
+        },
+        {
+          "level": 4,
+          "name": "Mastered Pluto",
+          "keywords": ["Death-and-rebirth presence", "total honesty", "regenerator"],
+          "body_cue": "Settled chest, soft serious eyes, breath like deep water",
+          "behavior": "Walks people through their own undoing without flinching"
+        }
+      ],
+      "growth_edge_2_to_3": "Release one grip per week — relationship, story, identity.",
+      "growth_edge_3_to_4": "Let yourself be transformed by what you transform.",
+      "regression_trigger": "Loss of control over the unspeakable, exposure of the hidden, deep betrayal."
+    }
+  ]
+}

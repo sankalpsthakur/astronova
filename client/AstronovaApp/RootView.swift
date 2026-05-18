@@ -1908,24 +1908,23 @@ struct SimpleTabBarView: View {
     var body: some View {
         ZStack {
             // Content area - extends full screen behind floating tab bar
+            // SUNSET 2026-05-18: legacy tab views (DiscoverView, SelfTabView, ConnectView,
+            // TempleView, TimeTravelTab) replaced by Topo overlay tabs. Files retained
+            // in repo for git-history reference and may be deleted in a follow-up.
             Group {
                 switch selectedTab {
                 case 0:
-                    NavigationStack {
-                        DiscoverView()
-                    }
+                    TodayTerrainView()
                 case 1:
-                    TimeTravelTab()
+                    MyMapView()
                 case 2:
-                    TempleView()
+                    PauseLayerView()
                 case 3:
-                    ConnectView()
+                    DecisionSimulatorView()
                 case 4:
-                    SelfTabView()
+                    JournalView()
                 default:
-                    NavigationStack {
-                        DiscoverView()
-                    }
+                    TodayTerrainView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -2036,18 +2035,18 @@ struct SimpleTabBarView: View {
     private func applyPendingIntentRoute() {
         guard let route = AstronovaIntentRouteStore.consume() else { return }
 
+        // SUNSET 2026-05-18: legacy routes remap to the new Topo tab structure.
+        // .timeTravel → Map (closest astrological-time surface).
+        // .temple → Pulse (the in-the-moment ritual surface).
+        // .connect → Decide.
+        // .profile → Journal (the user's data lives there now; Settings is sheet-based).
         let targetTab: Int
         switch route {
-        case .today:
-            targetTab = 0
-        case .timeTravel:
-            targetTab = 1
-        case .temple:
-            targetTab = 2
-        case .connect:
-            targetTab = 3
-        case .profile:
-            targetTab = 4
+        case .today:      targetTab = 0
+        case .timeTravel: targetTab = 1
+        case .temple:     targetTab = 2
+        case .connect:    targetTab = 3
+        case .profile:    targetTab = 4
         }
 
         withAnimation(.easeInOut(duration: 0.3)) {
@@ -2230,12 +2229,13 @@ struct TimeTravelTab: View {
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
 
+    // SUNSET 2026-05-18: TopoSelf tab labels.
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
-        (title: L10n.Tabs.discover, icon: "moon.stars.fill", customIcon: nil),
-        (title: L10n.Tabs.timeTravel, icon: "clock.arrow.circlepath", customIcon: nil),
-        (title: L10n.Tabs.temple, icon: "building.columns.fill", customIcon: nil),
-        (title: L10n.Tabs.connect, icon: "person.2.square.stack.fill", customIcon: nil),
-        (title: L10n.Tabs.profile, icon: "person.crop.circle.fill", customIcon: nil)
+        (title: "Today", icon: "sun.max.fill", customIcon: nil),
+        (title: "Map", icon: "hexagon.fill", customIcon: nil),
+        (title: "Pulse", icon: "waveform.path.ecg", customIcon: nil),
+        (title: "Decide", icon: "arrow.triangle.branch", customIcon: nil),
+        (title: "Journal", icon: "book.closed.fill", customIcon: nil)
     ]
 
     private func tabIdentifier(for index: Int) -> String {
@@ -2325,12 +2325,13 @@ struct CustomTabBar: View {
 struct FloatingTabBar: View {
     @Binding var selectedTab: Int
 
+    // SUNSET 2026-05-18: TopoSelf tab labels.
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
-        (title: L10n.Tabs.discover, icon: "moon.stars.fill", customIcon: nil),
-        (title: L10n.Tabs.timeTravel, icon: "clock.arrow.circlepath", customIcon: nil),
-        (title: L10n.Tabs.temple, icon: "building.columns.fill", customIcon: nil),
-        (title: L10n.Tabs.connect, icon: "person.2.square.stack.fill", customIcon: nil),
-        (title: L10n.Tabs.profile, icon: "person.crop.circle.fill", customIcon: nil)
+        (title: "Today", icon: "sun.max.fill", customIcon: nil),
+        (title: "Map", icon: "hexagon.fill", customIcon: nil),
+        (title: "Pulse", icon: "waveform.path.ecg", customIcon: nil),
+        (title: "Decide", icon: "arrow.triangle.branch", customIcon: nil),
+        (title: "Journal", icon: "book.closed.fill", customIcon: nil)
     ]
 
     private func tabIdentifier(for index: Int) -> String {
