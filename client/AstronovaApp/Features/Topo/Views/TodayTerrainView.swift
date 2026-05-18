@@ -391,6 +391,7 @@ private struct LogMomentSheet: View {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    @MainActor
     private func save() {
         let entry = JournalEntry(
             whatHappened: text.trimmingCharacters(in: .whitespacesAndNewlines),

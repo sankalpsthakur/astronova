@@ -504,6 +504,7 @@ struct JournalComposeView: View {
         .padding(.top, 6)
     }
 
+    @MainActor
     private func save() {
         guard isValid else { return }
         let base = editingEntry
