@@ -630,11 +630,14 @@ struct SimpleProfileSetupView: View {
         // Save the profile data with error handling
         auth.profileManager.profile.fullName = fullName
         auth.profileManager.profile.birthDate = birthDate.wrappedValue
-        // Audit A0d: when the user toggled "I don't know my birth time",
-        // store nil instead of a fake noon value. Downstream UI (EssenceBar
-        // lagna chip, ascendant displays) checks `profile.birthTime == nil`
-        // to label approximate readings.
-        auth.profileManager.profile.birthTime = birthTimeUnknown ? nil : birthTime.wrappedValue
+        // Audit A0d: keep `birthTime` populated (the wheel already pins it to
+        // 12:00 noon when the user toggles "unknown") so the server can still
+        // compute a lagna against a noon stand-in. Track precision separately
+        // via `isBirthTimeKnown` so downstream UI can label results as
+        // approximate without breaking the API contract or
+        // ProfileCompleteness gates.
+        auth.profileManager.profile.birthTime = birthTime.wrappedValue
+        auth.profileManager.profile.isBirthTimeKnown = !birthTimeUnknown
         auth.profileManager.profile.birthPlace = birthPlace
         
         // For birth place, search for coordinates and timezone only if provided
@@ -753,10 +756,10 @@ struct SimpleProfileSetupView: View {
         if !fullName.isEmpty || currentStep > 0 {
             auth.profileManager.profile.fullName = fullName
             auth.profileManager.profile.birthDate = birthDate.wrappedValue
-            // Audit A0d: preserve "unknown" semantics during restore too, so
-            // the profile reflects what the user actually said rather than a
-            // silent noon default written during onboarding pause.
-            auth.profileManager.profile.birthTime = birthTimeUnknown ? nil : birthTime.wrappedValue
+            // Audit A0d: birthTime stays set (noon stand-in is fine for
+            // computations); track explicit precision via isBirthTimeKnown.
+            auth.profileManager.profile.birthTime = birthTime.wrappedValue
+            auth.profileManager.profile.isBirthTimeKnown = !birthTimeUnknown
             auth.profileManager.profile.birthPlace = birthPlace
         }
     }

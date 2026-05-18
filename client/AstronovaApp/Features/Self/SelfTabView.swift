@@ -98,10 +98,11 @@ struct SelfTabView: View {
 
                     // Essence Bar (Nakshatra + Lagna) - requires full data for lagna
                     if completeness.canCalculateLagna && (dataService.moonNakshatra != nil || dataService.lagna != nil) {
-                        // Audit A0d: one-time hint when birth time is unknown.
-                        // Shown directly above the section that displays the
-                        // approximate Lagna so the warning has context.
-                        if profile.birthTime == nil && !approximateHintDismissed {
+                        // Audit A0d: one-time hint when the user explicitly
+                        // toggled "unknown" birth time. Shown directly above
+                        // the section that displays the approximate Lagna so
+                        // the warning has context.
+                        if profile.isBirthTimeApproximate && !approximateHintDismissed {
                             approximateBirthTimeHint
                         }
                         essenceSection
@@ -315,9 +316,10 @@ struct SelfTabView: View {
             moonNakshatra: dataService.moonNakshatra,
             lagna: dataService.lagna,
             nakshatraLord: dataService.nakshatraLord,
-            // Audit A0d: nil birthTime => server computed Lagna against a 12:00
-            // noon stand-in, so flag it as approximate to the user.
-            lagnaIsApproximate: profile.birthTime == nil
+            // Audit A0d: server computed Lagna against a 12:00 noon stand-in
+            // when the user toggled "unknown" birth time; flag the chip so
+            // users see the reading isn't precise.
+            lagnaIsApproximate: profile.isBirthTimeApproximate
         )
     }
 
