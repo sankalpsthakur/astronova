@@ -389,11 +389,16 @@ struct QuickBirthEditView: View {
     private func loadCurrentProfile() {
         fullName = profile.fullName
         birthDate = profile.birthDate
+        // Audit A0d: birthTime is always populated (noon stand-in if unknown),
+        // so use `isBirthTimeKnown` as the source of truth for the toggle.
+        // Treat nil/true as "known" to preserve behavior for profiles persisted
+        // before this flag existed.
         if let time = profile.birthTime {
             birthTime = time
-            hasBirthTime = true
+            hasBirthTime = profile.isBirthTimeKnown != false
         } else {
             birthTime = defaultBirthTime(for: profile.birthDate)
+            hasBirthTime = false
         }
         birthPlace = profile.birthPlace ?? ""
         if let lat = profile.birthLatitude, let lon = profile.birthLongitude {
@@ -474,7 +479,13 @@ struct QuickBirthEditView: View {
         var updatedProfile = profile
         updatedProfile.fullName = fullName
         updatedProfile.birthDate = birthDate
-        updatedProfile.birthTime = hasBirthTime ? birthTime : nil
+        // Audit A0d: always populate birthTime so server-side lagna/dasha
+        // calculations have a value to work with. Use the wheel value when
+        // user provided a time, fall back to noon when "unknown" was
+        // toggled. Track precision separately via `isBirthTimeKnown` so the
+        // UI can surface "(approximate)" on derived readings.
+        updatedProfile.birthTime = hasBirthTime ? birthTime : defaultBirthTime(for: birthDate)
+        updatedProfile.isBirthTimeKnown = hasBirthTime
         if shouldSavePlace {
             updatedProfile.birthPlace = query
         }

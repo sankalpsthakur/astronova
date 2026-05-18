@@ -5,33 +5,49 @@ struct UserProfile: Codable {
     var fullName: String
     var birthDate: Date
     var birthTime: Date?
+    /// Audit A0d: tracks whether `birthTime` is the user's actual reported
+    /// time or a 12:00 noon stand-in we use for calculations when the user
+    /// said "I don't know". Stored as `Bool?` (rather than non-optional Bool
+    /// defaulting to true) so old persisted profiles decode without
+    /// migration. Treat `nil` and `true` identically: birth time is known.
+    /// Only `false` indicates an explicit "unknown" signal from the user.
+    var isBirthTimeKnown: Bool?
     var birthPlace: String?
     var birthLatitude: Double?
     var birthLongitude: Double?
     var timezone: String?
-    
+
     // Additional profile information
     var profileImageURL: String?
     var bio: String?
     var sunSign: String?
     var moonSign: String?
     var risingSign: String?
-    
+
     // Computed property for birth coordinates
     var birthCoordinates: CLLocationCoordinate2D? {
         guard let lat = birthLatitude, let lon = birthLongitude else { return nil }
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
-    
+
+    /// `true` unless the user explicitly toggled the "unknown" birth-time
+    /// affordance during onboarding/edit. UI surfaces that compute against
+    /// the ascendant (Lagna, house cusps) should treat results as
+    /// approximate when this is `false`.
+    var isBirthTimeApproximate: Bool {
+        isBirthTimeKnown == false
+    }
+
     /// Default birth date is 25 years ago to make it obvious user should set their actual date
     private static var defaultBirthDate: Date {
         Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
     }
 
-    init(fullName: String = "", birthDate: Date? = nil, birthTime: Date? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
+    init(fullName: String = "", birthDate: Date? = nil, birthTime: Date? = nil, isBirthTimeKnown: Bool? = nil, birthPlace: String? = nil, birthLatitude: Double? = nil, birthLongitude: Double? = nil, timezone: String? = nil) {
         self.fullName = fullName
         self.birthDate = birthDate ?? Self.defaultBirthDate
         self.birthTime = birthTime
+        self.isBirthTimeKnown = isBirthTimeKnown
         self.birthPlace = birthPlace
         self.birthLatitude = birthLatitude
         self.birthLongitude = birthLongitude
