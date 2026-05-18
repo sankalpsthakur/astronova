@@ -6240,8 +6240,8 @@ struct AboutView: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
                 
                 VStack(spacing: 16) {
-                    Link("Privacy Policy", destination: URL(string: "https://astronova.onrender.com/privacy")!)
-                    Link("Terms of Service", destination: URL(string: "https://astronova.onrender.com/terms")!)
+                    Link("Privacy Policy", destination: URL(string: "https://astronova-ghcr.onrender.com/privacy")!)
+                    Link("Terms of Service", destination: URL(string: "https://astronova-ghcr.onrender.com/terms")!)
                 }
                 .font(.cosmicCallout)
                 
@@ -7474,8 +7474,8 @@ struct InlineReportsStoreSheet: View {
     private let offers: [ShopCatalog.Report] = ShopCatalog.reports
 
     // App Store compliance URLs
-    private let termsURL = URL(string: "https://astronova.onrender.com/terms")!
-    private let privacyURL = URL(string: "https://astronova.onrender.com/privacy")!
+    private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
+    private let privacyURL = URL(string: "https://astronova-ghcr.onrender.com/privacy")!
 
     private enum AlertState: Identifiable {
         case purchaseSuccess(String)

@@ -55,8 +55,8 @@ struct PaywallVariant_TieredV2: View {
         plan.fallbackCommitmentDisplayPrice
     }
 
-    private let termsURL = URL(string: "https://astronova.onrender.com/terms")!
-    private let privacyURL = URL(string: "https://astronova.onrender.com/privacy")!
+    private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
+    private let privacyURL = URL(string: "https://astronova-ghcr.onrender.com/privacy")!
     private let manageSubscriptionsURL = URL(string: "https://apps.apple.com/account/subscriptions")!
 
     var body: some View {

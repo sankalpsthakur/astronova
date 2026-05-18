@@ -24,14 +24,14 @@ final class AppConfig {
         #if DEBUG
         // Debug + Simulator: use production (local server not running)
         #if targetEnvironment(simulator)
-        apiBaseURL = "https://astronova.onrender.com"
+        apiBaseURL = "https://astronova-ghcr.onrender.com"
         #else
         // Debug + Real device: use production (for testing)
-        apiBaseURL = "https://astronova.onrender.com"
+        apiBaseURL = "https://astronova-ghcr.onrender.com"
         #endif
         #else
         // Release: always use production
-        apiBaseURL = "https://astronova.onrender.com"
+        apiBaseURL = "https://astronova-ghcr.onrender.com"
         #endif
     }
 }

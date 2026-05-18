@@ -12,8 +12,8 @@ struct ChatPackagesSheet: View {
     private let packs: [ShopCatalog.ChatPack] = ShopCatalog.chatPacks
 
     // App Store compliance URLs
-    private let termsURL = URL(string: "https://astronova.onrender.com/terms")!
-    private let privacyURL = URL(string: "https://astronova.onrender.com/privacy")!
+    private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
+    private let privacyURL = URL(string: "https://astronova-ghcr.onrender.com/privacy")!
 
     var body: some View {
         NavigationStack {
