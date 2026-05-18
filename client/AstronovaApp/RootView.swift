@@ -2232,7 +2232,7 @@ struct CustomTabBar: View {
 
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
         (title: L10n.Tabs.discover, icon: "moon.stars.fill", customIcon: nil),
-        (title: L10n.Tabs.timeTravel, icon: "clock", customIcon: nil),
+        (title: L10n.Tabs.timeTravel, icon: "clock.arrow.circlepath", customIcon: nil),
         (title: L10n.Tabs.temple, icon: "building.columns.fill", customIcon: nil),
         (title: L10n.Tabs.connect, icon: "person.2.square.stack.fill", customIcon: nil),
         (title: L10n.Tabs.profile, icon: "person.crop.circle.fill", customIcon: nil)
@@ -2327,7 +2327,7 @@ struct FloatingTabBar: View {
 
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
         (title: L10n.Tabs.discover, icon: "moon.stars.fill", customIcon: nil),
-        (title: L10n.Tabs.timeTravel, icon: "clock", customIcon: nil),
+        (title: L10n.Tabs.timeTravel, icon: "clock.arrow.circlepath", customIcon: nil),
         (title: L10n.Tabs.temple, icon: "building.columns.fill", customIcon: nil),
         (title: L10n.Tabs.connect, icon: "person.2.square.stack.fill", customIcon: nil),
         (title: L10n.Tabs.profile, icon: "person.crop.circle.fill", customIcon: nil)

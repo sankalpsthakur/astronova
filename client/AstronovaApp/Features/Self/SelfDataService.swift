@@ -119,9 +119,9 @@ class SelfDataService: ObservableObject {
             nakshatraLord = calculation.nakshatraLord
         }
 
-        // Extract lagna (we'll need to get this from chart data or add to API)
-        // For now, derive from impact analysis tone or leave nil
-        lagna = nil // TODO: Add lagna to API response
+        // Lagna feeds the EssenceBar (identity row). Pulled from the optional
+        // natal_snapshot on the dasha response — nil until the backend ships it.
+        lagna = response.natalSnapshot?.lagna
 
         // Build planetary strengths from impact analysis
         buildPlanetaryStrengths(from: response.impactAnalysis)
