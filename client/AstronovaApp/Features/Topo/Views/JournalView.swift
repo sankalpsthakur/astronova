@@ -5,9 +5,12 @@ import SwiftUI
 struct JournalView: View {
     @StateObject private var journal = JournalStore.shared
     @StateObject private var pauseLog = PauseLogStore.shared
+    @StateObject private var quota = ProQuotaManager.shared
+    @AppStorage("hasAstronovaPro") private var hasPro: Bool = false
     @State private var tab: Tab = .timeline
     @State private var filter: TimelineFilter = .all
     @State private var showCompose = false
+    @State private var showingPaywall = false
 
     enum Tab: String, CaseIterable, Identifiable {
         case timeline, insights
@@ -31,6 +34,13 @@ struct JournalView: View {
                         filterBar
                         timeline
                     } else {
+                        if !hasPro {
+                            Text("Pro · used \(quota.insightsViewsUsedThisMonth) / \(ProQuotaManager.insightsMonthlyLimit) this month")
+                                .font(.system(size: 11, weight: .semibold)).tracking(0.8)
+                                .foregroundStyle(Color.cosmicTextTertiary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 20).padding(.bottom, 6)
+                        }
                         InsightsView()
                     }
                 }
@@ -48,6 +58,7 @@ struct JournalView: View {
                 }
             }
             .sheet(isPresented: $showCompose) { JournalComposeView() }
+            .sheet(isPresented: $showingPaywall) { PaywallView(context: .general) }
             .navigationDestination(for: JournalEntry.self) { JournalEntryDetailView(entry: $0) }
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -70,7 +81,17 @@ struct JournalView: View {
         HStack(spacing: 8) {
             ForEach(Tab.allCases) { v in
                 Button {
-                    HapticFeedbackService.shared.selection(); tab = v
+                    HapticFeedbackService.shared.selection()
+                    if v == .insights {
+                        if quota.canViewInsights {
+                            tab = v
+                            quota.recordInsightsView()
+                        } else {
+                            showingPaywall = true
+                        }
+                    } else {
+                        tab = v
+                    }
                 } label: {
                     Text(v.label)
                         .font(.system(size: 13, weight: .semibold))

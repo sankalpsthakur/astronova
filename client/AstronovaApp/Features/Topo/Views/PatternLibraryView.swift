@@ -6,6 +6,11 @@ struct PatternLibraryView: View {
     private let patterns = TopoContentLoader.shared.patterns
     private let activeNow = PatternMatcher.shared.topActive(limit: 3)
 
+    @StateObject private var quota = ProQuotaManager.shared
+    @State private var showingPaywall = false
+    @State private var pendingPattern: Pattern?
+    @AppStorage("hasAstronovaPro") private var hasPro: Bool = false
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -26,9 +31,21 @@ struct PatternLibraryView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Pattern.self) { pattern in
+            .navigationDestination(item: $pendingPattern) { pattern in
                 PatternDetailView(pattern: pattern)
             }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView(context: .general)
+            }
+        }
+    }
+
+    private func openPattern(_ pattern: Pattern) {
+        if quota.canViewPatternDetail {
+            quota.recordPatternView()
+            pendingPattern = pattern
+        } else {
+            showingPaywall = true
         }
     }
 
@@ -52,6 +69,11 @@ struct PatternLibraryView: View {
             Text("Loops your chart runs by default.")
                 .font(.system(size: 14, weight: .regular))
                 .foregroundStyle(Color.cosmicTextSecondary)
+            if !hasPro {
+                Text("Pro · 1 free pattern detail / week — \(quota.patternViewsUsedThisWeek)/\(ProQuotaManager.patternWeeklyLimit) used")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.cosmicTextTertiary)
+            }
         }
     }
 
@@ -61,7 +83,9 @@ struct PatternLibraryView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(activeNow) { activation in
-                        NavigationLink(value: activation.pattern) {
+                        Button {
+                            openPattern(activation.pattern)
+                        } label: {
                             ActiveCard(activation: activation)
                         }
                         .buttonStyle(.plain)
@@ -77,7 +101,9 @@ struct PatternLibraryView: View {
             SectionLabel("ALL PATTERNS")
             VStack(spacing: 12) {
                 ForEach(patterns) { pattern in
-                    NavigationLink(value: pattern) {
+                    Button {
+                        openPattern(pattern)
+                    } label: {
                         PatternRow(pattern: pattern)
                     }
                     .buttonStyle(.plain)

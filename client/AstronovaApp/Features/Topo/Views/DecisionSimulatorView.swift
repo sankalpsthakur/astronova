@@ -54,7 +54,10 @@ private func primaryButton(_ title: String, enabled: Bool = true, action: @escap
 struct DecisionSimulatorView: View {
     @StateObject private var decisionStore = DecisionStore.shared
     @StateObject private var ruleStore = NavigationRuleStore.shared
+    @StateObject private var quota = ProQuotaManager.shared
+    @AppStorage("hasAstronovaPro") private var hasPro: Bool = false
     @State private var showCompose = false
+    @State private var showingPaywall = false
     @State private var pendingResult: Decision?
 
     var body: some View {
@@ -74,6 +77,9 @@ struct DecisionSimulatorView: View {
             .navigationBarHidden(true)
             .fullScreenCover(isPresented: $showCompose) {
                 DecisionComposeView { pendingResult = $0 }
+            }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView(context: .general)
             }
             .navigationDestination(for: Decision.self) { DecisionResultView(decision: $0) }
             .navigationDestination(isPresented: Binding(
@@ -99,20 +105,33 @@ struct DecisionSimulatorView: View {
     }
 
     private var primaryCTA: some View {
-        Button {
-            HapticFeedbackService.shared.mediumImpact()
-            showCompose = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "plus.circle.fill").font(.system(size: 18, weight: .semibold))
-                Text("New Decision").font(.system(size: 17, weight: .semibold))
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                HapticFeedbackService.shared.mediumImpact()
+                if quota.canRunDecision {
+                    showCompose = true
+                } else {
+                    showingPaywall = true
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "plus.circle.fill").font(.system(size: 18, weight: .semibold))
+                    Text("New Decision").font(.system(size: 17, weight: .semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .topoCardBackground(Color.cosmicAccent, radius: 14)
+                .foregroundStyle(Color.cosmicVoid)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .topoCardBackground(Color.cosmicAccent, radius: 14)
-            .foregroundStyle(Color.cosmicVoid)
+            .buttonStyle(.plain)
+
+            if !hasPro {
+                Text("\(quota.decisionsRemaining) free decisions left this month")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        .buttonStyle(.plain)
     }
 
     private var recentDecisionsSection: some View {
@@ -318,6 +337,7 @@ struct DecisionComposeView: View {
             output: nil
         )
         decision.output = DecisionEngine.shared.simulate(decision)
+        ProQuotaManager.shared.recordDecisionRun()
         DecisionStore.shared.add(decision)
         HapticFeedbackService.shared.success()
         onCommit(decision)

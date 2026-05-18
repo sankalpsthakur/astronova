@@ -6,6 +6,7 @@ struct TodayTerrainView: View {
     @State private var showPauseLayer = false
     @State private var showLogMoment = false
     @State private var showPatternDetail = false
+    @State private var showSettings = false
 
     var body: some View {
         ZStack {
@@ -24,6 +25,9 @@ struct TodayTerrainView: View {
             if let pattern = dominantPattern {
                 PatternDetailView(pattern: pattern)
             }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet()
         }
     }
 
@@ -70,7 +74,7 @@ struct TodayTerrainView: View {
     }
 
     private var topBar: some View {
-        HStack {
+        HStack(spacing: 12) {
             Text(dateLabel)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.cosmicTextSecondary)
@@ -82,6 +86,14 @@ struct TodayTerrainView: View {
             } label: {
                 Image(systemName: "pause.circle")
                     .font(.system(size: 22, weight: .regular))
+                    .foregroundStyle(Color.cosmicTextPrimary)
+            }
+            Button {
+                HapticFeedbackService.shared.lightImpact()
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 20, weight: .regular))
                     .foregroundStyle(Color.cosmicTextPrimary)
             }
         }
