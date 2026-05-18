@@ -1,9 +1,12 @@
 import SwiftUI
 import UserNotifications
+import AVFoundation
+import UIKit
 
 struct HomeView: View {
     @EnvironmentObject private var auth: AuthState
     @StateObject private var vm: HomeViewModel
+    @ObservedObject private var speech = SpeechService.shared
     @State private var mood: Double = 0.5
     @State private var showShareSheet = false
     @State private var shareImage: UIImage?
@@ -17,6 +20,11 @@ struct HomeView: View {
     @State private var userReports: [DetailedReport] = []
     @State private var hasSubscription = false
     @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
+
+    // A4 — Daily horoscope arrival cue (one-shot per session).
+    // See `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A4.
+    @State private var horoscopeAudioPlayer: AVAudioPlayer?
+    @State private var didChimeHoroscopeArrival = false
 
     private let apiServices = APIServices.shared
 
@@ -102,6 +110,10 @@ struct HomeView: View {
                             .padding(.vertical, 2)
                         }
                     }
+
+                    // A4 / A6 — "Read horoscope aloud" button.
+                    // See `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A4 + §0.3.
+                    readHoroscopeAloudButton(for: g)
 
                     VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
                         Text("Deepen your day")
@@ -247,11 +259,91 @@ struct HomeView: View {
             }
         }
         .onAppear { Analytics.shared.track(.homeViewed, properties: nil) }
+        .onChange(of: vm.guidance?.date) { oldValue, newValue in
+            // A4 — Daily horoscope arrival cue. Fires once per session when
+            // the daily horoscope first loads (nil → non-nil) so the user
+            // gets a tactile + audible signal that today's reading has
+            // arrived. Pull-to-refresh on the same day is a no-op.
+            guard !didChimeHoroscopeArrival,
+                  oldValue == nil,
+                  newValue != nil else { return }
+            didChimeHoroscopeArrival = true
+            fireHoroscopeArrivalCue()
+        }
+    }
+
+    // MARK: - A4 Horoscope Arrival Cue
+
+    /// Fires the haptic + bell + VoiceOver announcement triplet once the
+    /// horoscope finishes loading. Per
+    /// `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A4.
+    /// Uses a dedicated AVAudioPlayer instance — does NOT share the bell
+    /// player owned by `TempleBellAnimationView`.
+    private func fireHoroscopeArrivalCue() {
+        HapticFeedbackService.shared.horoscopeReveal()
+
+        UIAccessibility.post(notification: .announcement,
+                             argument: "Today's horoscope is ready")
+
+        if horoscopeAudioPlayer == nil,
+           let url = Bundle.main.url(forResource: "bell", withExtension: "wav") {
+            horoscopeAudioPlayer = try? AVAudioPlayer(contentsOf: url)
+            horoscopeAudioPlayer?.volume = 0.6 // light single ring per A4 spec
+            horoscopeAudioPlayer?.prepareToPlay()
+        }
+        horoscopeAudioPlayer?.currentTime = 0
+        horoscopeAudioPlayer?.play()
     }
 
     private var headerTitle: String {
         let name = auth.profileManager.profile.fullName
         return name.isEmpty ? "Today" : "Today for \(name)"
+    }
+
+    /// Renders the "Read horoscope aloud" button on the daily horoscope card.
+    /// Tapping uses `SpeechService` to narrate the horoscope body text.
+    /// Falls back gracefully (no button) when there's no body text to read.
+    @ViewBuilder
+    private func readHoroscopeAloudButton(for guidance: DailyGuidance) -> some View {
+        let bodyText = guidance.horoscopeText ?? guidance.sourceSummary ?? guidance.focus
+        if !bodyText.isEmpty {
+            Button {
+                HapticFeedbackService.shared.selection()
+                // Toggle: if already speaking, stop. Else, start.
+                if speech.isSpeaking {
+                    speech.stop()
+                } else {
+                    speech.speak(bodyText)
+                }
+            } label: {
+                HStack(spacing: Cosmic.Spacing.s) {
+                    Image(systemName: speech.isSpeaking
+                          ? "stop.circle.fill"
+                          : "speaker.wave.2.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text(speech.isSpeaking
+                         ? "Stop reading"
+                         : "Read horoscope aloud")
+                        .font(.cosmicCalloutEmphasis)
+                    Spacer()
+                }
+                .foregroundStyle(Color.cosmicGold)
+                .padding(Cosmic.Spacing.m)
+                .background(Color.cosmicGold.opacity(0.10),
+                            in: RoundedRectangle(cornerRadius: Cosmic.Radius.card,
+                                                 style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                        .stroke(Color.cosmicGold.opacity(0.20),
+                                lineWidth: Cosmic.Border.hairline)
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(speech.isSpeaking
+                                ? "Stop reading horoscope"
+                                : "Read horoscope aloud")
+            .accessibilityHint("Uses voice synthesis to narrate today's horoscope")
+        }
     }
 
     private func checkSubscriptionStatus() {

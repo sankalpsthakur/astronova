@@ -8,6 +8,20 @@ class HapticFeedbackService {
 
     private init() {}
 
+    // MARK: - Settings Gate
+
+    /// UserDefaults key used by the in-app "Reduce haptics" toggle.
+    /// MUST match the @AppStorage key in MoreOptionsSheet.
+    /// Per `feedback-design-wave-2026-05-18.md` §0.4 — iOS does not expose a
+    /// public "reduce haptics" system setting, so we provide our own.
+    static let reduceHapticsKey = "astronova.reduce_haptics"
+
+    /// Single guard checked at the top of every public generator method.
+    /// When `true`, all haptic firings are bypassed.
+    static var isReduced: Bool {
+        UserDefaults.standard.bool(forKey: reduceHapticsKey)
+    }
+
     // MARK: - Hardware Support Check
 
     /// Check if the device supports haptics
@@ -19,21 +33,21 @@ class HapticFeedbackService {
 
     /// Light impact for subtle interactions (button taps, small selections)
     func lightImpact() {
-        guard supportsHaptics else { return }
+        guard supportsHaptics, !Self.isReduced else { return }
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
     }
 
     /// Medium impact for standard interactions (navigation, confirmations)
     func mediumImpact() {
-        guard supportsHaptics else { return }
+        guard supportsHaptics, !Self.isReduced else { return }
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
     }
 
     /// Heavy impact for significant actions (important confirmations, errors)
     func heavyImpact() {
-        guard supportsHaptics else { return }
+        guard supportsHaptics, !Self.isReduced else { return }
         let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
         impactFeedback.impactOccurred()
     }
@@ -42,21 +56,21 @@ class HapticFeedbackService {
 
     /// Success feedback for positive outcomes
     func success() {
-        guard supportsHaptics else { return }
+        guard supportsHaptics, !Self.isReduced else { return }
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.success)
     }
 
     /// Warning feedback for caution situations
     func warning() {
-        guard supportsHaptics else { return }
+        guard supportsHaptics, !Self.isReduced else { return }
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.warning)
     }
 
     /// Error feedback for negative outcomes
     func error() {
-        guard supportsHaptics else { return }
+        guard supportsHaptics, !Self.isReduced else { return }
         let notificationFeedback = UINotificationFeedbackGenerator()
         notificationFeedback.notificationOccurred(.error)
     }
@@ -65,7 +79,7 @@ class HapticFeedbackService {
 
     /// Selection feedback for picker changes, list selections
     func selection() {
-        guard supportsHaptics else { return }
+        guard supportsHaptics, !Self.isReduced else { return }
         let selectionFeedback = UISelectionFeedbackGenerator()
         selectionFeedback.selectionChanged()
     }

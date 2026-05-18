@@ -1,4 +1,6 @@
 import SwiftUI
+import AudioToolbox
+import UIKit
 
 enum PaywallContext: String {
     case general
@@ -485,6 +487,7 @@ struct PaywallView: View {
                 await MainActor.run {
                     OracleQuotaManager.shared.checkSubscription()
                     purchaseResult = .success
+                    firePurchaseSuccessCue()
                 }
             } else {
                 await MainActor.run {
@@ -506,11 +509,32 @@ struct PaywallView: View {
             await MainActor.run {
                 OracleQuotaManager.shared.checkSubscription()
                 purchaseResult = .success
+                firePurchaseSuccessCue()
             }
         } else {
             await MainActor.run {
                 purchaseResult = .error("Purchase could not be completed. You were not charged.")
             }
+        }
+    }
+
+    // MARK: - A3 Purchase Success Cue
+
+    /// Fires the celebration haptic + system sound 1407 + TTS "Cosmic access
+    /// unlocked" + VoiceOver announcement after a successful purchase.
+    /// Per `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A3.
+    /// Sound fires before TTS so the duck doesn't silence the confirmation tone.
+    @MainActor
+    private func firePurchaseSuccessCue() {
+        HapticFeedbackService.shared.celebration()
+        AudioServicesPlaySystemSound(1407)
+        UIAccessibility.post(notification: .announcement,
+                             argument: "Cosmic access unlocked")
+
+        // Defer TTS by ~600ms so the system sound finishes before the
+        // .duckOthers audio-session category silences everything else.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            SpeechService.shared.speak("Cosmic access unlocked")
         }
     }
 

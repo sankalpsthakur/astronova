@@ -1,5 +1,7 @@
 import SwiftUI
 import Combine
+import AudioToolbox
+import UIKit
 
 // MARK: - Unified Time Travel View
 // North Star: "Pick any month/year → instantly see what changes, why it matters, what to do next."
@@ -14,6 +16,13 @@ struct UnifiedTimeTravelView: View {
     @State private var showPlanetSheet = false
     @State private var showDashaSheet = false
     @State private var showGuideSheet = false
+
+    // A1 — Dasha transition punctuation.
+    // See `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A1.
+    // Tracks the last seen antardasha lord so we only fire when it changes
+    // (not on every snapshot commit). Pratyantardasha/antardasha shifts are
+    // the most "felt" timeline beats — that's the moment to punctuate.
+    @State private var lastDashaLord: String?
 
     private var timeTravelLockMessage: String? {
         let profile = auth.profileManager.profile
@@ -177,6 +186,14 @@ struct UnifiedTimeTravelView: View {
                     .onChange(of: state.lastCommittedSnapshotKey) { _, newKey in
                         guard newKey != nil else { return }
                         gamification.markTimeTravelSnapshot()
+                    }
+                    .onChange(of: state.displaySnapshot?.currentDasha.antardasha.lord) { oldLord, newLord in
+                        // A1 — Dasha transition punctuation. Fires when the
+                        // user scrubs across a dasha period boundary (the
+                        // antardasha lord actually flips). Initial nil →
+                        // first-value transition is suppressed so the cue
+                        // doesn't fire on simple page load.
+                        firePhaseTransitionCueIfNeeded(oldLord: oldLord, newLord: newLord)
                     }
                 }
             }
@@ -412,6 +429,36 @@ struct UnifiedTimeTravelView: View {
         case .aspect:
             break
         }
+    }
+
+    // MARK: - A1 Dasha Transition Cue
+
+    /// Fires the dasha transition punctuation when the antardasha lord
+    /// changes between scrub positions. Suppresses the initial load
+    /// (nil → first value) and same-lord re-emits.
+    /// Per `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A1.
+    private func firePhaseTransitionCueIfNeeded(oldLord: String?, newLord: String?) {
+        guard let newLord, !newLord.isEmpty else {
+            lastDashaLord = nil
+            return
+        }
+        // First-time arrival should establish baseline, not fire.
+        if lastDashaLord == nil && oldLord == nil {
+            lastDashaLord = newLord
+            return
+        }
+        // Already at this lord — no cue.
+        if newLord == lastDashaLord { return }
+        lastDashaLord = newLord
+
+        HapticFeedbackService.shared.phaseTransition()
+
+        // System sound 1057 — subtle bell, per A1 spec.
+        AudioServicesPlaySystemSound(1057)
+
+        // VoiceOver parallel signal (§0.4).
+        UIAccessibility.post(notification: .announcement,
+                             argument: "Dasha shift to \(newLord)")
     }
 }
 

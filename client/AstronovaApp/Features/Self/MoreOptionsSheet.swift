@@ -16,6 +16,11 @@ struct MoreOptionsSheet: View {
     @State private var showingAbout = false
     @State private var analyticsOptedIn: Bool = !PortfolioAnalytics.shared.isOptedOut
 
+    // Sensory accessibility toggles
+    // See `launch-artifacts/feedback-design-wave-2026-05-18.md` §0.3 + §0.4
+    @AppStorage("astronova.voice_reading_enabled") private var voiceReadingEnabled: Bool = true
+    @AppStorage("astronova.reduce_haptics") private var reduceHaptics: Bool = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -64,6 +69,58 @@ struct MoreOptionsSheet: View {
                         ) {
                             // Open appearance settings
                         }
+                    }
+
+                    // Voice & Haptics Section
+                    // See `launch-artifacts/feedback-design-wave-2026-05-18.md` §0.3 + §0.4
+                    OptionsSection(title: "Voice & Haptics") {
+                        Toggle(isOn: $voiceReadingEnabled) {
+                            HStack(spacing: Cosmic.Spacing.md) {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(Color.cosmicGold)
+                                    .frame(width: 28)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Voice reading")
+                                        .font(.cosmicBody)
+                                        .foregroundStyle(Color.cosmicTextPrimary)
+                                    Text("Read horoscope and confirmations aloud.")
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextTertiary)
+                                }
+                            }
+                        }
+                        .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+                        .padding(.horizontal, Cosmic.Spacing.md)
+                        .padding(.vertical, Cosmic.Spacing.md)
+                        .accessibilityIdentifier("voice_reading_toggle")
+                        .onChange(of: voiceReadingEnabled) { _, newValue in
+                            if !newValue {
+                                // Stop any in-flight narration when disabled.
+                                SpeechService.shared.stop()
+                            }
+                        }
+
+                        Toggle(isOn: $reduceHaptics) {
+                            HStack(spacing: Cosmic.Spacing.md) {
+                                Image(systemName: "hand.tap.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(Color.cosmicAmethyst)
+                                    .frame(width: 28)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Reduce haptics")
+                                        .font(.cosmicBody)
+                                        .foregroundStyle(Color.cosmicTextPrimary)
+                                    Text("Silence all tactile feedback throughout the app.")
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextTertiary)
+                                }
+                            }
+                        }
+                        .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+                        .padding(.horizontal, Cosmic.Spacing.md)
+                        .padding(.vertical, Cosmic.Spacing.md)
+                        .accessibilityIdentifier("reduce_haptics_toggle")
                     }
 
                     // Privacy Section

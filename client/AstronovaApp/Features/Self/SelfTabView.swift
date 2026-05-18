@@ -1,4 +1,6 @@
 import SwiftUI
+import AVFoundation
+import UIKit
 
 // MARK: - Self Tab View
 // "Living Cosmic Mirror" - Vedic-centric, dasha-focused, uniquely Astronova
@@ -12,6 +14,11 @@ struct SelfTabView: View {
 
     @State private var foundationExpanded = false
     @State private var activeSheet: SheetDestination?
+
+    // A2 — Chart-load chime (one-shot per session).
+    // See `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A2.
+    @State private var chartLoadAudioPlayer: AVAudioPlayer?
+    @State private var didChimeChartLoad = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -172,6 +179,17 @@ struct SelfTabView: View {
                     await dataService.fetchData(for: profile)
                 }
             }
+        }
+        .onChange(of: dataService.currentDasha?.planet) { oldValue, newValue in
+            // A2 — Chart-load chime. Fires once per session when the natal
+            // dasha data first arrives (nil → non-nil). Subsequent refreshes
+            // do not retrigger so the cue stays meaningful.
+            // See `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A2.
+            guard !didChimeChartLoad,
+                  oldValue == nil,
+                  newValue != nil else { return }
+            didChimeChartLoad = true
+            fireChartLoadCue()
         }
         .sheet(item: $activeSheet) { destination in
             switch destination {
@@ -419,6 +437,30 @@ struct SelfTabView: View {
             currentYear: 1,
             totalYears: 7
         )
+    }
+
+    // MARK: - A2 Chart-Load Cue
+
+    /// Fires the haptic + bell + VoiceOver announcement triplet once the
+    /// natal chart data finishes loading. Per
+    /// `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A2.
+    /// Uses its own AVAudioPlayer instance — does NOT tap the bell player
+    /// owned by `TempleBellAnimationView`.
+    private func fireChartLoadCue() {
+        HapticFeedbackService.shared.loadingComplete()
+
+        // VoiceOver parallel signal (§0.4 accessibility floor).
+        UIAccessibility.post(notification: .announcement,
+                             argument: "Your chart is ready")
+
+        // Lazy-init a per-view bell player. Failures are non-fatal.
+        if chartLoadAudioPlayer == nil,
+           let url = Bundle.main.url(forResource: "bell", withExtension: "wav") {
+            chartLoadAudioPlayer = try? AVAudioPlayer(contentsOf: url)
+            chartLoadAudioPlayer?.prepareToPlay()
+        }
+        chartLoadAudioPlayer?.currentTime = 0
+        chartLoadAudioPlayer?.play()
     }
 }
 

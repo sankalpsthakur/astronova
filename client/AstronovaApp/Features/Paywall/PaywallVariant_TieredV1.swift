@@ -1,4 +1,6 @@
 import SwiftUI
+import AudioToolbox
+import UIKit
 
 /// Astronova paywall — tiered_v1 variant.
 ///
@@ -380,6 +382,7 @@ struct PaywallVariant_TieredV1: View {
             await MainActor.run {
                 OracleQuotaManager.shared.checkSubscription()
                 purchaseResult = .success
+                firePurchaseSuccessCue()
             }
         } else {
             await MainActor.run {
@@ -397,6 +400,22 @@ struct PaywallVariant_TieredV1: View {
         await MainActor.run {
             OracleQuotaManager.shared.checkSubscription()
             purchaseResult = restored ? .restored : .restoredNone
+        }
+    }
+
+    // MARK: - A3 Purchase Success Cue
+
+    /// Fires the celebration haptic + system sound 1407 + TTS "Cosmic access
+    /// unlocked" + VoiceOver announcement after a successful purchase.
+    /// Per `launch-artifacts/feedback-design-wave-2026-05-18.md` §1.1 A3.
+    @MainActor
+    private func firePurchaseSuccessCue() {
+        HapticFeedbackService.shared.celebration()
+        AudioServicesPlaySystemSound(1407)
+        UIAccessibility.post(notification: .announcement,
+                             argument: "Cosmic access unlocked")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            SpeechService.shared.speak("Cosmic access unlocked")
         }
     }
 }

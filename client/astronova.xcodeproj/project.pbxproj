@@ -70,6 +70,7 @@
 		E2E001000000000000000001 /* TestEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000001 /* TestEnvironment.swift */; };
 		E2E001000000000000000002 /* MonetizationJourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000002 /* MonetizationJourneyTests.swift */; };
 		E2E001000000000000000003 /* HapticFeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000003 /* HapticFeedbackService.swift */; };
+		SPEECH00100000000000001 /* SpeechService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SPEECH00000000000000001 /* SpeechService.swift */; };
 		E2E001000000000000000004 /* CosmicDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000004 /* CosmicDesignSystem.swift */; };
 		E2E001000000000000000005 /* CosmicTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000005 /* CosmicTypography.swift */; };
 		E2E001000000000000000006 /* CosmicMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2E000000000000000000006 /* CosmicMotion.swift */; };
@@ -231,6 +232,7 @@
 		E2E000000000000000000001 /* TestEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestEnvironment.swift; sourceTree = "<group>"; };
 		E2E000000000000000000002 /* MonetizationJourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonetizationJourneyTests.swift; sourceTree = "<group>"; };
 		E2E000000000000000000003 /* HapticFeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticFeedbackService.swift; sourceTree = "<group>"; };
+		SPEECH00000000000000001 /* SpeechService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechService.swift; sourceTree = "<group>"; };
 		E2E000000000000000000004 /* CosmicDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicDesignSystem.swift; sourceTree = "<group>"; };
 		E2E000000000000000000005 /* CosmicTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicTypography.swift; sourceTree = "<group>"; };
 		E2E000000000000000000006 /* CosmicMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicMotion.swift; sourceTree = "<group>"; };
@@ -555,6 +557,7 @@
 				AA0001000000000000000011 /* BasicStoreManager.swift */,
 				AA0001000000000000000012 /* ShopCatalog.swift */,
 				E2E000000000000000000003 /* HapticFeedbackService.swift */,
+				SPEECH00000000000000001 /* SpeechService.swift */,
 				CMP000000000000000000008 /* ContactsService.swift */,
 				WAVE13FL00000000000001 /* AstronovaFlags.swift */,
 				WAVE13RV00000000000001 /* AstronovaReviewPrompts.swift */,
@@ -851,6 +854,7 @@
 				AA0002000000000000000012 /* ShopCatalog.swift in Sources */,
 				E2E001000000000000000001 /* TestEnvironment.swift in Sources */,
 				E2E001000000000000000003 /* HapticFeedbackService.swift in Sources */,
+				SPEECH00100000000000001 /* SpeechService.swift in Sources */,
 				E2E001000000000000000004 /* CosmicDesignSystem.swift in Sources */,
 				E2E001000000000000000005 /* CosmicTypography.swift in Sources */,
 				E2E001000000000000000006 /* CosmicMotion.swift in Sources */,
