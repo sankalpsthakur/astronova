@@ -6489,12 +6489,15 @@ struct CalendarGridView: View {
         let daysFromPreviousMonth = (firstWeekday - calendar.firstWeekday + 7) % 7
         
         var days: [Date] = []
-        var date = calendar.date(byAdding: .day, value: -daysFromPreviousMonth, to: monthStart)!
-        
+        // Safe: small day offsets on Gregorian calendar always resolve.
+        // Fallback uses monthStart so the grid still renders the current month
+        // even if calendar arithmetic ever returns nil.
+        var date = calendar.date(byAdding: .day, value: -daysFromPreviousMonth, to: monthStart) ?? monthStart
+
         // Generate 42 days (6 weeks)
         for _ in 0..<42 {
             days.append(date)
-            date = calendar.date(byAdding: .day, value: 1, to: date)!
+            date = calendar.date(byAdding: .day, value: 1, to: date) ?? date
         }
         
         return days

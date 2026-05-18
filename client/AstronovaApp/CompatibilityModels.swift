@@ -540,7 +540,11 @@ enum ZodiacSign: String, Codable, CaseIterable {
     }
 
     var startDegree: Double {
-        Double(ZodiacSign.allCases.firstIndex(of: self)! * 30)
+        // Safe: every ZodiacSign case is in ZodiacSign.allCases by definition,
+        // so firstIndex(of:) is non-nil. Guard returns 0° (Aries) as a sane
+        // fallback if a future refactor ever breaks that invariant.
+        guard let index = ZodiacSign.allCases.firstIndex(of: self) else { return 0 }
+        return Double(index * 30)
     }
 }
 
@@ -768,7 +772,9 @@ extension RelationshipNowInsight {
 extension NextShift {
     static var mock: NextShift {
         NextShift(
-            date: Calendar.current.date(byAdding: .day, value: 12, to: Date())!,
+            // Safe: adding a positive day delta to a valid Date can't fail in
+            // Gregorian calendar; fall back to today if the calendar ever does.
+            date: Calendar.current.date(byAdding: .day, value: 12, to: Date()) ?? Date(),
             daysUntil: 12,
             whatChanges: "Mars enters friction with your composite Venus",
             newState: .friction,
@@ -784,7 +790,9 @@ extension JourneyForecast {
 
         return JourneyForecast(
             dailyMarkers: (0..<30).map { dayOffset in
-                let date = calendar.date(byAdding: .day, value: dayOffset, to: today)!
+                // Safe: small positive day offsets on Gregorian calendar; fall
+                // back to today rather than crashing the mock generator.
+                let date = calendar.date(byAdding: .day, value: dayOffset, to: today) ?? today
                 let intensity: DayIntensity
                 switch dayOffset % 7 {
                 case 0, 1: intensity = .peak
@@ -801,14 +809,15 @@ extension JourneyForecast {
             },
             peakWindows: [
                 PeakWindow(
-                    startDate: calendar.date(byAdding: .day, value: 3, to: today)!,
-                    endDate: calendar.date(byAdding: .day, value: 7, to: today)!,
+                    // Safe fallbacks: positive day offsets on Gregorian calendar.
+                    startDate: calendar.date(byAdding: .day, value: 3, to: today) ?? today,
+                    endDate: calendar.date(byAdding: .day, value: 7, to: today) ?? today,
                     label: "Harmony window",
                     suggestion: "Great for important conversations or romantic plans"
                 ),
                 PeakWindow(
-                    startDate: calendar.date(byAdding: .day, value: 18, to: today)!,
-                    endDate: calendar.date(byAdding: .day, value: 22, to: today)!,
+                    startDate: calendar.date(byAdding: .day, value: 18, to: today) ?? today,
+                    endDate: calendar.date(byAdding: .day, value: 22, to: today) ?? today,
                     label: "Connection peak",
                     suggestion: "Ideal for deepening emotional bonds"
                 )
