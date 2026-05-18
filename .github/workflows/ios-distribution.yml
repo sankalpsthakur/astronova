@@ -19,7 +19,7 @@ permissions:
 jobs:
   source-preflight:
     name: Source release preflight
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         working-directory: client
@@ -30,7 +30,7 @@ jobs:
 
       - name: Select Xcode version
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_26.4.app/Contents/Developer
           xcodebuild -version
 
       - name: Validate export options
@@ -88,7 +88,7 @@ jobs:
 
   testflight-upload:
     name: TestFlight upload
-    runs-on: macos-15
+    runs-on: macos-26
     needs: source-preflight
     if: inputs.upload_to_testflight == true
     defaults:
@@ -105,7 +105,7 @@ jobs:
 
       - name: Select Xcode version
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_26.4.app/Contents/Developer
           xcodebuild -version
 
       - name: Prepare App Store Connect API key
@@ -128,8 +128,10 @@ jobs:
             -authenticationKeyPath "$ASC_KEY_PATH" \
             -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_ISSUER_ID" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            OTHER_SWIFT_FLAGS="$(inherited) -D STOREKIT_PRICING_TERMS_AVAILABLE" \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=ZBSZPCY34Y
 
       - name: Export and upload to App Store Connect
         run: |
@@ -141,5 +143,6 @@ jobs:
             -authenticationKeyID "$APP_STORE_CONNECT_API_KEY_ID" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_API_ISSUER_ID" \
             CODE_SIGN_IDENTITY="Apple Distribution" \
+            OTHER_SWIFT_FLAGS="$(inherited) -D STOREKIT_PRICING_TERMS_AVAILABLE" \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=ZBSZPCY34Y
