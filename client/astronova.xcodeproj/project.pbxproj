@@ -74,6 +74,7 @@
 		CMP001000000000000000007 /* RelationshipDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000007 /* RelationshipDetailView.swift */; };
 		CMP001000000000000000008 /* ContactsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000008 /* ContactsService.swift */; };
 		CMP001000000000000000009 /* ContactPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000009 /* ContactPickerView.swift */; };
+		ASTRO001000000000000COPY1 /* AstronovaCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASTRO000000000000000COPY1 /* AstronovaCopy.swift */; };
 		D71E47F8936E2830D8E3DFB2 /* TempleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E3043F1B1EB12D1759F3C0C /* TempleView.swift */; };
 		DBC9488459AA8B0BCEDDC4CD /* terrain-templates.json in Resources */ = {isa = PBXBuildFile; fileRef = E841928B88D58E633DA2F145 /* terrain-templates.json */; };
 		DIS001000000000000000001 /* CosmicLensView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000001 /* CosmicLensView.swift */; };
@@ -241,6 +242,7 @@
 		CMP000000000000000000007 /* RelationshipDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelationshipDetailView.swift; sourceTree = "<group>"; };
 		CMP000000000000000000008 /* ContactsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsService.swift; sourceTree = "<group>"; };
 		CMP000000000000000000009 /* ContactPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactPickerView.swift; sourceTree = "<group>"; };
+		ASTRO000000000000000COPY1 /* AstronovaCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaCopy.swift; sourceTree = "<group>"; };
 		DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedTimeTravelView.swift; sourceTree = "<group>"; };
 		DC49B49B089C31480EE3EB92 /* ProQuotaManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProQuotaManager.swift; sourceTree = "<group>"; };
 		DIS000000000000000000001 /* CosmicLensView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicLensView.swift; sourceTree = "<group>"; };
@@ -463,6 +465,7 @@
 				CMP000000000000000000006 /* ConnectView.swift */,
 				CMP000000000000000000007 /* RelationshipDetailView.swift */,
 				CMP000000000000000000009 /* ContactPickerView.swift */,
+				ASTRO000000000000000COPY1 /* AstronovaCopy.swift */,
 				3D01F7E72C0A000000000001 /* Assets.xcassets */,
 				3D01F7E92C0A000000000001 /* Preview Content */,
 			);
@@ -985,6 +988,7 @@
 				CMP001000000000000000006 /* ConnectView.swift in Sources */,
 				CMP001000000000000000007 /* RelationshipDetailView.swift in Sources */,
 				CMP001000000000000000008 /* ContactsService.swift in Sources */,
+				ASTRO001000000000000COPY1 /* AstronovaCopy.swift in Sources */,
 				CMP001000000000000000009 /* ContactPickerView.swift in Sources */,
 				DIS001000000000000000001 /* CosmicLensView.swift in Sources */,
 				DIS001000000000000000002 /* NowNextActBar.swift in Sources */,

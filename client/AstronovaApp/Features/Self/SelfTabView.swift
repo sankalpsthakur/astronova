@@ -79,6 +79,15 @@ struct SelfTabView: View {
                     nameHeader
                         .padding(.top, Cosmic.Spacing.lg)
 
+                    // Entertainment disclaimer (audit A0c): small caption above
+                    // the Cosmic Pulse hero, prominent without being intrusive.
+                    Text(AstronovaCopy.shortAstrologyDisclaimer)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("self.disclaimer")
+
                     // HERO: Cosmic Pulse (Dasha)
                     cosmicPulseSection
 
