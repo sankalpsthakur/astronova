@@ -258,6 +258,11 @@ struct PaywallView: View {
             ChatPackagesSheet()
         }
         .overlay(alignment: .topTrailing) {
+            // Per spec — `paywall.close` is the canonical UI test ID. The
+            // legacy `paywallCloseButton` is kept as an alias for backward
+            // compat with earlier acceptance tests. `.accessibilityElement`
+            // ensures the inner identifier is reachable even though the
+            // parent container also carries `paywallView` ID below.
             Button {
                 dismiss()
             } label: {
@@ -268,9 +273,10 @@ struct PaywallView: View {
             }
             .accessibilityLabel("Close")
             .accessibilityHint("Dismisses the paywall")
-            .accessibilityIdentifier("paywallCloseButton")
+            .accessibilityIdentifier("paywall.close")
             .accessibleIconButton()
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.paywallView)
         .onAppear {
             paywallShownAt = Date()

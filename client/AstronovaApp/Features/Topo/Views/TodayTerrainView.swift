@@ -7,6 +7,7 @@ struct TodayTerrainView: View {
     @State private var showLogMoment = false
     @State private var showPatternDetail = false
     @State private var showSettings = false
+    @StateObject private var speech = SpeechService.shared
 
     var body: some View {
         ZStack {
@@ -39,6 +40,7 @@ struct TodayTerrainView: View {
                 topBar
                 hero
                 if let snapshot {
+                    readHoroscopeAloudButton(for: snapshot)
                     axesCard(snapshot)
                     logMomentButton
                     if let pattern = dominantPattern {
@@ -109,6 +111,60 @@ struct TodayTerrainView: View {
                 .font(.system(size: 15, weight: .regular))
                 .foregroundStyle(Color.cosmicTextSecondary)
         }
+    }
+
+    /// Wave 3b A4 — "Read horoscope aloud" button.
+    /// Synthesizes a short narration from the day's terrain axes and pipes it
+    /// through `SpeechService`. Re-wired into TodayTerrainView after the
+    /// TopoSelf redesign sunset the legacy HomeView (see launch-artifacts
+    /// /feedback-design-wave-2026-05-18.md §0.3).
+    private func readHoroscopeAloudButton(for snap: TerrainSnapshot) -> some View {
+        let body = composeReadAloudBody(for: snap)
+        return Button {
+            HapticFeedbackService.shared.selection()
+            if speech.isSpeaking {
+                speech.stop()
+            } else {
+                speech.speak(body)
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: speech.isSpeaking
+                      ? "stop.circle.fill"
+                      : "speaker.wave.2.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                Text(speech.isSpeaking ? "Stop reading" : "Read horoscope aloud")
+                    .font(.system(size: 15, weight: .semibold))
+                Spacer()
+            }
+            .foregroundStyle(Color.cosmicGold)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.cosmicGold.opacity(0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.cosmicGold.opacity(0.20), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("home.readHoroscopeAloud")
+        .accessibilityLabel(speech.isSpeaking
+                            ? "Stop reading horoscope"
+                            : "Read horoscope aloud")
+        .accessibilityHint("Uses voice synthesis to narrate today's terrain")
+    }
+
+    /// Glue today's axes into a coherent sentence we can hand to TTS.
+    private func composeReadAloudBody(for snap: TerrainSnapshot) -> String {
+        let segments = [
+            "Today's weather. \(snap.axes.currentWeather)",
+            "Your most likely default. \(snap.axes.mostLikelyDefault)",
+            "Highest agency move. \(snap.axes.highestAgencyMove)"
+        ].filter { !$0.isEmpty }
+        return segments.joined(separator: " ")
     }
 
     private func axesCard(_ snap: TerrainSnapshot) -> some View {

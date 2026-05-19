@@ -181,6 +181,13 @@ final class TestEnvironment {
             UserDefaults.standard.removeObject(forKey: key)
         }
 
+        // Wave 3b QA — reset the speech-call counter so J5/J6 start clean.
+        // The key matches `SpeechService.debugSpeakCallCounterKey` (DEBUG only).
+        UserDefaults.standard.removeObject(forKey: "astronova.qa.speech_speak_counter")
+        // Reset the voice reading flag to its default (ON) for deterministic
+        // toggle-flip tests.
+        UserDefaults.standard.removeObject(forKey: "astronova.voice_reading_enabled")
+
         UserDefaults.standard.synchronize()
         log("State reset complete")
     }
@@ -347,11 +354,16 @@ enum AccessibilityID {
 
     // Paywall
     static let paywallView = "paywallView"
+    static let paywallClose = "paywall.close" // Wave 3b — replaces legacy `paywallCloseButton`
     static let startProButton = "startProButton"
     static let restorePurchasesButton = "restorePurchasesButton"
     static let buyDetailedReportButton = "buyDetailedReportButton"
     static let buyChatPackagesButton = "buyChatPackagesButton"
     static let paywallFooter = "paywallFooter"
+
+    // Wave 3b — Voice + Read aloud
+    static let homeReadHoroscopeAloud = "home.readHoroscopeAloud"
+    static let settingsVoiceReadingToggle = "settings.voiceReading.toggle"
 
     // Chat Packages
     static let chatPackagesSheet = "chatPackagesSheet"
