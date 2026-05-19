@@ -6,6 +6,10 @@ struct SettingsSheet: View {
     @StateObject private var storeKit = StoreKitManager.shared
     @StateObject private var quota = ProQuotaManager.shared
     @AppStorage("hasAstronovaPro") private var hasPro: Bool = false
+    // Wave 3b A1 — Voice reading toggle. Re-wired into SettingsSheet after
+    // the TopoSelf redesign sunset MoreOptionsSheet (the original home for
+    // this toggle). Backed by the same UserDefaults key SpeechService reads.
+    @AppStorage("astronova.voice_reading_enabled") private var voiceReadingEnabled: Bool = true
 
     @State private var showingPaywall = false
     @State private var showingReportsLibrary = false
@@ -63,6 +67,9 @@ struct SettingsSheet: View {
                             ) {}
                         }
 
+                        sectionHeader("VOICE")
+                        voiceReadingToggleRow
+
                         sectionHeader("LEGAL")
                         actionRow(icon: "hand.raised.fill", title: "Privacy", subtitle: nil) { showingPrivacy = true }
                         actionRow(
@@ -116,6 +123,41 @@ struct SettingsSheet: View {
                 }
                 .navigationTitle("Privacy")
                 .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+    }
+
+    // MARK: - Voice reading toggle (Wave 3b A1)
+
+    private var voiceReadingToggleRow: some View {
+        Toggle(isOn: $voiceReadingEnabled) {
+            HStack(spacing: 14) {
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color.cosmicGold)
+                    .frame(width: 28, height: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Voice reading")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                    Text("Read horoscope and confirmations aloud.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.cosmicSurface)
+        )
+        .accessibilityIdentifier("settings.voiceReading.toggle")
+        .onChange(of: voiceReadingEnabled) { _, newValue in
+            if !newValue {
+                SpeechService.shared.stop()
             }
         }
     }

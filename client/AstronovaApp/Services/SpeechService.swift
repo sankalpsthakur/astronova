@@ -27,6 +27,15 @@ final class SpeechService: NSObject, ObservableObject {
     private let logger = Logger(subsystem: "com.astronova.app", category: "tts")
     private var didConfigureSession = false
 
+    #if DEBUG
+    /// Wave 3b QA counter — increments on every successful call into `speak(_:)`
+    /// that reaches the synthesizer (i.e. not gated out by VoiceOver or the
+    /// voice-reading toggle). UI tests read it via `UserDefaults` to verify
+    /// J5 (button increments) and J6 (toggle gates) without scraping the
+    /// audio session. NEVER read this in production paths.
+    static let debugSpeakCallCounterKey = "astronova.qa.speech_speak_counter"
+    #endif
+
     override private init() {
         super.init()
         synthesizer.delegate = self
@@ -86,6 +95,13 @@ final class SpeechService: NSObject, ObservableObject {
         utterance.volume = 1.0
 
         synthesizer.speak(utterance)
+
+        #if DEBUG
+        // Increment the QA counter only AFTER we've decided to speak —
+        // i.e. it captures the "speech actually happened" event.
+        let current = UserDefaults.standard.integer(forKey: Self.debugSpeakCallCounterKey)
+        UserDefaults.standard.set(current + 1, forKey: Self.debugSpeakCallCounterKey)
+        #endif
     }
 
     func stop() {

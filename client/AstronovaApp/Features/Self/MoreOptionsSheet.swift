@@ -120,7 +120,7 @@ struct MoreOptionsSheet: View {
                         .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
                         .padding(.horizontal, Cosmic.Spacing.md)
                         .padding(.vertical, Cosmic.Spacing.md)
-                        .accessibilityIdentifier("reduce_haptics_toggle")
+                        .accessibilityIdentifier("settings.reduceHaptics.toggle")
                     }
 
                     // Privacy Section
