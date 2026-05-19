@@ -4,6 +4,7 @@ import StoreKit
 import AuthenticationServices
 import CoreLocation
 import MapKit
+import WebKit
 
 enum PersonalizationCopy {
     static func quickStartInsight(name: String, birthDate: Date) -> String {
@@ -5951,122 +5952,94 @@ struct ProfileSettingsRow: View {
     }
 }
 
+// MARK: - Legal Document WKWebView Wrapper
+//
+// PrivacyPolicyView and TermsOfServiceView load the canonical legal copy from
+// the GHCR-hosted backend so the in-app text always matches what legal/App
+// Store review sees on the marketing site. Inline SwiftUI copies had drifted
+// from the web canon; this WKWebView wrapper keeps them in lockstep.
+
+/// Loads a remote URL inside a WKWebView with a progress indicator overlay.
+/// Used for Privacy Policy and Terms of Service — both render the canonical
+/// web copy from `astronova-ghcr.onrender.com`.
+struct PrivacyWebView: UIViewRepresentable {
+    let url: URL
+    @Binding var isLoading: Bool
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isLoading: $isLoading)
+    }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.navigationDelegate = context.coordinator
+        webView.accessibilityIdentifier = "privacy.webview"
+        webView.load(URLRequest(url: url))
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        private var isLoadingBinding: Binding<Bool>
+
+        init(isLoading: Binding<Bool>) {
+            self.isLoadingBinding = isLoading
+        }
+
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            isLoadingBinding.wrappedValue = true
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            isLoadingBinding.wrappedValue = false
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            isLoadingBinding.wrappedValue = false
+        }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            isLoadingBinding.wrappedValue = false
+        }
+    }
+}
+
 struct PrivacyPolicyView: View {
-    private let lastUpdated = "June 2025"
+    private let url = URL(string: "https://astronova-ghcr.onrender.com/privacy")!
+    @State private var isLoading = true
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                header
-                disclaimerSection
-                overviewSection
-                dataWeCollectSection
-                howWeUseDataSection
-                dataControlSection
-                thirdPartySection
-                contactSection
+        ZStack {
+            PrivacyWebView(url: url, isLoading: $isLoading)
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .scaleEffect(1.2)
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(Color(UIColor.systemGroupedBackground))
         .navigationTitle("Privacy Policy")
         .navigationBarTitleDisplayMode(.inline)
     }
+}
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Astronova Privacy Policy")
-                .font(.title2.weight(.semibold))
-            Text("Last updated \(lastUpdated)")
-                .font(.cosmicCaption)
-                .foregroundStyle(Color.cosmicTextSecondary)
+struct TermsOfServiceView: View {
+    private let url = URL(string: "https://astronova-ghcr.onrender.com/terms")!
+    @State private var isLoading = true
+
+    var body: some View {
+        ZStack {
+            PrivacyWebView(url: url, isLoading: $isLoading)
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .scaleEffect(1.2)
+            }
         }
-    }
-
-    // MARK: - Entertainment & Legal Disclaimer (App Store Compliance)
-    private var disclaimerSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            PolicySection(
-                title: "Important Disclaimer",
-                content: "Astronova is an entertainment application. All astrological content, including horoscopes, birth charts, compatibility analyses, forecasts, and insights, is provided for entertainment and informational purposes only."
-            )
-
-            PolicySection(
-                title: "Not Professional Advice",
-                bulletPoints: [
-                    "Health Forecasts: Astrological health insights are not medical advice. Always consult a qualified healthcare provider for medical concerns.",
-                    "Career & Wealth Forecasts: Career and financial insights are not professional financial, investment, or career counseling. Consult appropriate professionals for important decisions.",
-                    "Relationship Insights: Compatibility readings are for entertainment and should not replace professional relationship counseling.",
-                    "Life Decisions: Astronova should not be used as the sole basis for making important life decisions."
-                ]
-            )
-
-            Text("By using Astronova, you acknowledge that astrological interpretations are subjective and based on traditional systems, not scientific evidence.")
-                .font(.cosmicCaption)
-                .foregroundStyle(Color.cosmicTextTertiary)
-                .italic()
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.cosmicWarning.opacity(0.1))
-        )
-    }
-
-    private var overviewSection: some View {
-        PolicySection(
-            title: "Overview",
-            content: "Astronova is designed to deliver personalized astrology experiences while respecting your privacy. This policy explains what data we collect, how we use it, and the choices you have."
-        )
-    }
-
-    private var dataWeCollectSection: some View {
-        PolicySection(
-            title: "Information We Collect",
-            bulletPoints: [
-                "Profile details you provide (name, date, time, and place of birth)",
-                "Optional preferences you set inside the app",
-                "Usage analytics and session diagnostics collected when Share Anonymous Usage is enabled"
-            ]
-        )
-    }
-
-    private var howWeUseDataSection: some View {
-        PolicySection(
-            title: "How We Use Your Data",
-            bulletPoints: [
-                "Generate charts and insights tailored to your profile",
-                "Maintain your account and sync preferences across devices",
-                "Monitor app performance and fix bugs using aggregated analytics"
-            ]
-        )
-    }
-
-    private var dataControlSection: some View {
-        PolicySection(
-            title: "Your Choices",
-            bulletPoints: [
-                "Update or delete birth details at any time from Settings",
-                "Export your data as a JSON file from Settings › Data & Privacy",
-                "Turn off Share Anonymous Usage to stop analytics event forwarding and Smartlook session diagnostics",
-                "Request deletion of your account from Delete Account (signed-in users)"
-            ]
-        )
-    }
-
-    private var thirdPartySection: some View {
-        PolicySection(
-            title: "Third-Party Access",
-            content: "We do not sell your personal data or use it to track you across other companies' apps or websites. Limited service providers, including Smartlook when analytics is enabled, process analytics and session diagnostics strictly to help us improve Astronova."
-        )
-    }
-
-    private var contactSection: some View {
-        PolicySection(
-            title: "Contact Us",
-            content: "Questions about this policy? Email admin@100xai.engineering and we will respond within 48 hours."
-        )
+        .background(Color(UIColor.systemGroupedBackground))
+        .navigationTitle("Terms of Service")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -6270,8 +6243,12 @@ struct AboutView: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
                 
                 VStack(spacing: 16) {
-                    Link("Privacy Policy", destination: URL(string: "https://astronova-ghcr.onrender.com/privacy")!)
-                    Link("Terms of Service", destination: URL(string: "https://astronova-ghcr.onrender.com/terms")!)
+                    NavigationLink("Privacy Policy") {
+                        PrivacyPolicyView()
+                    }
+                    NavigationLink("Terms of Service") {
+                        TermsOfServiceView()
+                    }
                 }
                 .font(.cosmicCallout)
                 
