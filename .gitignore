@@ -126,6 +126,7 @@ AUDIT_REPORT.md
 CI_CD_*.txt
 
 # IDE
+.claude/
 .idea/
 .vscode/
 *.swp
@@ -140,5 +141,7 @@ client/.derivedData/
 docs/ux-journey-e2e/screenshots/
 
 # Temporary files
+.scratch/
+server/data/
 tmp/
 main
