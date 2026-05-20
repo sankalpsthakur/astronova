@@ -17,6 +17,29 @@ struct AstronovaAppApp: App {
     @StateObject private var gamification = GamificationManager()
 
     init() {
+        // MARK: - Portfolio Analytics SDK (Wave 13)
+        // The `IOSAppsAnalytics` Swift package is not yet a direct dependency
+        // of the AstronovaApp Xcode target — the in-app `PortfolioAnalytics`
+        // shim (Analytics/PortfolioAnalytics.swift) mirrors its public surface
+        // and is configured below in `setupPortfolioAnalyticsOnce()`. Once the
+        // SPM dep lands, replace the shim per ANALYTICS_INTEGRATION.md:
+        //
+        // import IOSAppsAnalytics
+        // IOSAppsAnalytics.shared.configure(
+        //     appID: .astronova,
+        //     endpoint: URL(string: "https://telemetry.iosapps.io/v1/events")!
+        // )
+        //
+        // PostHog session replay (D7) is wired by linking `posthog-ios` and
+        // calling `SessionReplay.shared.bind(...)` per the example in
+        // astronova/ANALYTICS_INTEGRATION.md. Deferred until the package
+        // dependency is added.
+        //
+        // NetworkLogger: AstronovaAPI's URLSession is built in
+        // `Services/Network/AstronovaAPIClient.swift`. Add
+        // `NetworkLogger.instrument(config)` there once the SDK is linked.
+        // (Out of scope here — task forbids touching non-@main files.)
+
         // Apply UI test configuration if running in test mode
         TestEnvironment.shared.applyTestConfiguration()
 

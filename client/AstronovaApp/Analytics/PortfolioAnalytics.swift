@@ -3,15 +3,13 @@ import os
 
 // MARK: - PortfolioAnalytics
 //
-// In-app shim that mirrors the surface of the `IOSAppsAnalytics` Swift package
-// (umbrella/analytics/IOSAppsAnalytics). Wave 13 lands the package as a real
-// SPM dependency across the portfolio; until that integration lands, this
-// file is the locally-vendored equivalent so events can be wired now.
+// Self-contained: this is the source of truth for astronova's analytics
+// surface. Originally derived from a shared design doc; that doc has been
+// retired and the schema now lives in `ANALYTICS_INTEGRATION.md`.
 //
-// When the package becomes a real dependency, this file can be replaced with
-// `import IOSAppsAnalytics` + `typealias PortfolioAnalytics = IOSAppsAnalytics`.
-//
-// Schema is defined in `umbrella/analytics/ANALYTICS_DESIGN.md`.
+// Public API: `PortfolioAnalytics.shared.track(...)`. Add new events by
+// adding a case to `PortfolioEvent` and updating `ANALYTICS_INTEGRATION.md`
+// in the same PR.
 
 /// Standardized event names. New events must be added to ANALYTICS_DESIGN.md
 /// first per the design's update rule.
@@ -93,7 +91,7 @@ struct PortfolioAnalyticsEvent: Codable {
 }
 
 /// Public SDK entry point. Singleton-scoped for the host app's lifetime.
-/// Mirrors `IOSAppsAnalytics.shared` in `umbrella/analytics/IOSAppsAnalytics`.
+/// Local analytics interface for astronova.
 public final class PortfolioAnalytics {
     public static let shared = PortfolioAnalytics()
 
