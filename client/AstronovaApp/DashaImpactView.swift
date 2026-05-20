@@ -220,6 +220,7 @@ struct DeltaIndicator: View {
             Image(systemName: delta >= 0 ? "arrow.up" : "arrow.down")
                 .font(.cosmicMicro)
                 .fontWeight(.bold)
+                .accessibilityHidden(true)
 
             Text(String(format: "%.1f", abs(delta)))
                 .font(.cosmicMicro)
@@ -233,6 +234,8 @@ struct DeltaIndicator: View {
             Capsule()
                 .fill((delta >= 0 ? Color.cosmicSuccess : Color.cosmicError).opacity(0.15))
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(delta >= 0 ? "Up by \(String(format: "%.1f", abs(delta)))" : "Down by \(String(format: "%.1f", abs(delta)))")
     }
 }
 
@@ -285,6 +288,8 @@ struct DashaDetailCardView: View {
                             .font(.cosmicTitle2)
                             .foregroundStyle(Color.cosmicTextSecondary)
                     }
+                    .accessibilityLabel("Close")
+                    .accessibilityHint("Dismisses the dasha details")
                 }
 
                 Divider()

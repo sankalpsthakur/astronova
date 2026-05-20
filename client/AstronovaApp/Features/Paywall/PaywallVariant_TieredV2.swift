@@ -207,6 +207,7 @@ struct PaywallVariant_TieredV2: View {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
                         .foregroundStyle(isSelected ? Color.cosmicGold : Color.cosmicTextTertiary)
+                        .accessibilityHidden(true)
                 }
                 Text(plan.title)
                     .font(.cosmicHeadline)
@@ -228,6 +229,8 @@ struct PaywallVariant_TieredV2: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("proPlanOption_\(plan.productId)")
+        .accessibilityLabel("\(plan.title), most chosen. \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
+        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
     }
 
     private var monthlyDemotedRow: some View {
@@ -241,6 +244,7 @@ struct PaywallVariant_TieredV2: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 16))
                     .foregroundStyle(isSelected ? Color.cosmicGold : Color.cosmicTextTertiary)
+                    .accessibilityHidden(true)
                 Text(plan.title).font(.cosmicCallout)
                 Spacer()
                 Text("\(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
@@ -258,6 +262,8 @@ struct PaywallVariant_TieredV2: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("proPlanOption_\(plan.productId)")
+        .accessibilityLabel("\(plan.title), \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
+        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
     }
 
     private var featureList: some View {

@@ -79,6 +79,7 @@ struct MeaningStack: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.cosmicCallout)
                             .foregroundStyle(Color.cosmicError)
+                            .accessibilityHidden(true)
 
                         Text(snapshot.now.risk.isEmpty ? "Be mindful" : snapshot.now.risk)
                             .font(.cosmicCalloutEmphasis)
@@ -102,6 +103,7 @@ struct MeaningStack: View {
                         Image(systemName: "sparkles")
                             .font(.cosmicCallout)
                             .foregroundStyle(Color.cosmicSuccess)
+                            .accessibilityHidden(true)
 
                         Text(snapshot.now.opportunity.isEmpty ? "Growth available" : snapshot.now.opportunity)
                             .font(.cosmicCalloutEmphasis)
@@ -297,6 +299,7 @@ struct MeaningStack: View {
                     .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
+            .accessibilityLabel("Expand meaning details")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

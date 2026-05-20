@@ -133,6 +133,10 @@ struct TimeSeeker: View {
                             handleDragEnd(velocity: value.predictedEndTranslation.width - value.translation.width)
                         }
                 )
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Timeline scrubber")
+                .accessibilityValue("\(monthYearString), \(relativeDescription)")
+                .accessibilityHint("Drag left or right to scrub through months")
             }
             .frame(height: 24)
 
