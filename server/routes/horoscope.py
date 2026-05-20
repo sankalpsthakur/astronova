@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import os
+import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -11,6 +14,84 @@ from services.ephemeris_service import EphemerisService
 
 horoscope_bp = Blueprint("horoscope", __name__)
 _ephem = EphemerisService()
+
+# --- Curated interpretation library (real content, not template generation) ---
+_ASTROLOGY_DATA_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data",
+    "astrology",
+)
+
+
+def _load_json(path: str) -> dict:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"[horoscope] failed to load {path}: {exc}", file=sys.stderr)
+        return {}
+
+
+_ASPECT_INTERPRETATIONS = _load_json(
+    os.path.join(_ASTROLOGY_DATA_DIR, "aspect_interpretations.json")
+)
+_SIGN_ARCHETYPES = _load_json(
+    os.path.join(_ASTROLOGY_DATA_DIR, "sign_archetypes.json")
+)
+
+
+def _interpretation_for(transit: str, natal: str, aspect_type: str) -> str | None:
+    """Return a hand-curated interpretation string for a (transit, aspect, natal) tuple, or None.
+
+    Aspect interpretations live in data/astrology/aspect_interpretations.json. Capitalization
+    in the JSON is title-case (e.g. 'Sun'); ephemeris returns lowercase. Normalize here.
+    """
+    if not _ASPECT_INTERPRETATIONS:
+        return None
+    t = (transit or "").title()
+    n = (natal or "").title()
+    a = (aspect_type or "").lower()
+    return (
+        _ASPECT_INTERPRETATIONS.get(t, {}).get(n, {}).get(a)
+    )
+
+
+def _archetype_line(sign: str) -> str | None:
+    """Return a single grounding line from the sign archetype: archetype + this_year_question."""
+    if not _SIGN_ARCHETYPES:
+        return None
+    arch = _SIGN_ARCHETYPES.get((sign or "").lower())
+    if not arch:
+        return None
+    archetype = arch.get("archetype", "").strip()
+    question = arch.get("this_year_question", "").strip()
+    if archetype and question:
+        return f"{archetype} {question}"
+    return archetype or question or None
+
+
+# Traditional planetary rulerships for grounded lucky-element selection.
+_PLANET_COLOR = {
+    "sun": "Gold",
+    "moon": "Silver",
+    "mercury": "Yellow",
+    "venus": "Green",
+    "mars": "Red",
+    "jupiter": "Purple",
+    "saturn": "Black",
+    "uranus": "Electric Blue",
+    "neptune": "Sea Green",
+    "pluto": "Maroon",
+}
+_PLANET_DAY = {
+    "sun": "Sunday",
+    "moon": "Monday",
+    "mars": "Tuesday",
+    "mercury": "Wednesday",
+    "jupiter": "Thursday",
+    "venus": "Friday",
+    "saturn": "Saturday",
+}
 
 VALID_SIGNS = [
     "aries",
@@ -165,22 +246,116 @@ def _calculate_aspects_to_natal(transit_planets: dict, natal_planets: dict, orb:
 
 
 def _generate_horoscope(sign: str, dt: datetime, period: str, natal_data: dict = None) -> tuple[str, dict]:
-    """Generate personalized horoscope based on current planetary transits and optional natal chart."""
-    traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
+    """Generate horoscope grounded in real curated interpretations.
 
-    # Get current planetary positions
+    Order of preference:
+      1. If natal data is present and yields tight aspects (orb < 3°), use hand-curated
+         interpretations from aspect_interpretations.json for the top 1-2 aspects.
+      2. Always append a sign-archetype line from sign_archetypes.json (real content,
+         not keyword interpolation).
+      3. Only if neither of those produced content do we fall back to the legacy template
+         generator — and we keep that fallback specifically so the route never 500s.
+
+    Lucky elements are derived from actual transiting planet rulerships, not day_of_year
+    modulo a hardcoded list.
+    """
+    # Get current planetary positions for transit-aware fallback + lucky-element selection
     positions = _ephem.get_positions_for_date(dt)
     planets = positions.get("planets", {})
-
-    # Analyze key transits (simplified - real version would check aspects)
-    sun_sign = planets.get("sun", {}).get("sign", "")
-    moon_sign = planets.get("moon", {}).get("sign", "")
-    venus_sign = planets.get("venus", {}).get("sign", "")
 
     # Calculate aspects if natal data provided
     natal_aspects = []
     if natal_data:
         natal_aspects = _calculate_aspects_to_natal(planets, natal_data)
+
+    # ── 1. Curated content path ───────────────────────────────────────────────
+    curated_parts: list[str] = []
+
+    # Pull the top 1-2 tightest aspects and look up hand-written interpretations.
+    if natal_aspects:
+        tight = sorted(
+            [a for a in natal_aspects if a["orb"] < 3.0],
+            key=lambda a: a["orb"],
+        )
+        limit = 1 if period == "daily" else 2
+        for aspect in tight[:limit]:
+            line = _interpretation_for(
+                transit=aspect["transit"],
+                natal=aspect["natal"],
+                aspect_type=aspect["aspect"],
+            )
+            if line:
+                curated_parts.append(line)
+
+    # Always include the archetype framing — that's real content tied to the sign.
+    arche = _archetype_line(sign)
+    if arche:
+        curated_parts.append(arche)
+
+    if curated_parts:
+        # Period determines how much real content we surface — daily is short, monthly longer.
+        max_parts = {"daily": 2, "weekly": 3, "monthly": 4}.get(period, 2)
+        content = " ".join(curated_parts[:max_parts])
+        lucky_elements = _grounded_lucky_elements(sign, planets, natal_aspects)
+        return content, lucky_elements
+
+    # ── 2. Legacy template fallback (kept so the API never 500s) ──────────────
+    return _generate_horoscope_template_fallback(sign, dt, period, natal_data, planets, natal_aspects)
+
+
+def _grounded_lucky_elements(sign: str, planets: dict, natal_aspects: list) -> dict:
+    """Derive lucky color/number/day from actual transit data — not modulo arithmetic.
+
+    color: dominant transiting planet (from tightest natal aspect; falls back to today's Sun ruler)
+    number: degree-of-sun rounded into 1-12 range (not a hash of day-of-year)
+    day: traditional planetary day-ruler of that dominant planet
+    """
+    # Dominant planet: tightest natal aspect's transit, else today's Sun-sign ruler
+    dominant: str = ""
+    if natal_aspects:
+        dominant = (sorted(natal_aspects, key=lambda a: a["orb"])[0]["transit"] or "").lower()
+    if not dominant:
+        # Fall back to the sign's traditional ruler
+        traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
+        dominant = traits.get("ruler", "Sun").lower()
+
+    color = _PLANET_COLOR.get(dominant, "Gold")
+    day = _PLANET_DAY.get(dominant, "Sunday")
+
+    sun_deg = planets.get("sun", {}).get("degree", 0.0) or 0.0
+    try:
+        number = int(sun_deg) % 12 + 1
+    except (TypeError, ValueError):
+        number = 7
+
+    traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
+    return {
+        "color": color,
+        "number": number,
+        "day": day,
+        "element": traits["element"],
+        "ruler": traits["ruler"],
+    }
+
+
+def _generate_horoscope_template_fallback(
+    sign: str,
+    dt: datetime,
+    period: str,
+    natal_data: dict | None,
+    planets: dict,
+    natal_aspects: list,
+) -> tuple[str, dict]:
+    """Legacy templated string-concatenation generator. Kept ONLY as the never-fail fallback
+    when the curated library doesn't cover the user's specific transit set. Do not extend
+    this — extend aspect_interpretations.json instead.
+    """
+    traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
+
+    # Analyze key transits
+    sun_sign = planets.get("sun", {}).get("sign", "")
+    moon_sign = planets.get("moon", {}).get("sign", "")
+    venus_sign = planets.get("venus", {}).get("sign", "")
 
     # Generate context-aware guidance based on transits
     guidance_parts = []
