@@ -20,6 +20,10 @@ struct PaywallVariant_TieredV2: View {
     @State private var showingChatPackages = false
     @State private var showOtherOptions = false
     @State private var selectedPlanProductId = ShopCatalog.pro12MonthCommitmentProductID
+    /// `true` when the StoreKit catalog returned but neither the 12-month nor
+    /// monthly Pro SKU is present. We disable the primary CTA and surface a
+    /// loading banner so the user isn't left tapping a no-op trial button.
+    @State private var allProductsUnavailable = false
 
     private let context: PaywallContext
 
@@ -47,6 +51,12 @@ struct PaywallVariant_TieredV2: View {
         ShopCatalog.proPlan(for: selectedPlanProductId)
     }
 
+    private var ctaTitle: String {
+        if isPurchasing { return "Starting trial..." }
+        if allProductsUnavailable { return "Plans loading..." }
+        return "Start 7-day Cosmic trial"
+    }
+
     private func billingDisplayPrice(for plan: ShopCatalog.ProPlan) -> String {
         storeKitManager.monthlyBillingPlanPrices[plan.productId] ??
         plan.fallbackBillingDisplayPrice
@@ -63,14 +73,34 @@ struct PaywallVariant_TieredV2: View {
     /// fail. When the loaded catalog is missing it, fall back to monthly
     /// so the default action is purchasable. Only adjusts the *default*
     /// selection — explicit user taps on the 12-month card are preserved.
+    ///
+    /// If *both* the 12-month and monthly SKUs are missing we can't fall
+    /// back to anything purchasable, so we raise `allProductsUnavailable`
+    /// and let the view disable the CTA + surface a banner.
     private func adjustDefaultPlanIfAnnualUnavailable() {
-        guard selectedPlanProductId == ShopCatalog.pro12MonthCommitmentProductID else { return }
         let loaded = storeKitManager.products
         guard !loaded.isEmpty else { return }
-        if loaded[ShopCatalog.pro12MonthCommitmentProductID] == nil,
-           loaded[ShopCatalog.proMonthlyProductID] != nil {
+        let annualMissing = loaded[ShopCatalog.pro12MonthCommitmentProductID] == nil
+        let monthlyMissing = loaded[ShopCatalog.proMonthlyProductID] == nil
+        if annualMissing && monthlyMissing {
+            allProductsUnavailable = true
+            return
+        }
+        allProductsUnavailable = false
+        guard selectedPlanProductId == ShopCatalog.pro12MonthCommitmentProductID else { return }
+        if annualMissing, !monthlyMissing {
             selectedPlanProductId = ShopCatalog.proMonthlyProductID
         }
+    }
+
+    /// Returns `true` if the given plan's SKU is missing from the loaded
+    /// StoreKit catalog. Used to disable individual plan rows so the user
+    /// can't pick a SKU that will silently fail to purchase. Returns `false`
+    /// while products are still loading (empty catalog).
+    private func isPlanUnavailable(_ plan: ShopCatalog.ProPlan) -> Bool {
+        let loaded = storeKitManager.products
+        guard !loaded.isEmpty else { return false }
+        return loaded[plan.productId] == nil
     }
 
     private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
@@ -82,6 +112,9 @@ struct PaywallVariant_TieredV2: View {
             VStack(spacing: Cosmic.Spacing.xl) {
                 hero
                 cosmicTrialCard
+                if allProductsUnavailable {
+                    plansLoadingBanner
+                }
                 annualHeroCard
                 monthlyDemotedRow
                 featureList
@@ -188,9 +221,37 @@ struct PaywallVariant_TieredV2: View {
         .accessibilityIdentifier("cosmicTrialCard")
     }
 
+    /// Non-tappable banner shown above the plan picker when *all* Pro SKUs
+    /// failed to load. Keeps the user informed instead of leaving a no-op
+    /// trial button as the only visible affordance.
+    private var plansLoadingBanner: some View {
+        HStack(spacing: Cosmic.Spacing.sm) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(Color.cosmicGold)
+                .accessibilityHidden(true)
+            Text("Plans loading — try again in a moment")
+                .font(.cosmicCallout)
+                .foregroundStyle(Color.cosmicTextPrimary)
+            Spacer()
+        }
+        .padding(Cosmic.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.cosmicGold.opacity(0.12), in: RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .stroke(Color.cosmicGold.opacity(0.35), lineWidth: Cosmic.Border.thin)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywallPlansLoadingBanner")
+        .accessibilityLabel("Plans loading. Try again in a moment.")
+        .accessibilityAddTraits(.isStaticText)
+    }
+
     private var annualHeroCard: some View {
         let plan = ShopCatalog.proPlans.first { $0.productId == ShopCatalog.pro12MonthCommitmentProductID } ?? ShopCatalog.proPlans[0]
         let isSelected = selectedPlanProductId == plan.productId
+        let unavailable = isPlanUnavailable(plan)
         return Button {
             CosmicHaptics.light()
             selectedPlanProductId = plan.productId
@@ -226,16 +287,19 @@ struct PaywallVariant_TieredV2: View {
                 RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
                     .stroke(Color.cosmicGold, lineWidth: Cosmic.Border.thick)
             )
+            .opacity(unavailable ? 0.5 : 1.0)
         }
         .buttonStyle(.plain)
+        .disabled(unavailable)
         .accessibilityIdentifier("proPlanOption_\(plan.productId)")
         .accessibilityLabel("\(plan.title), most chosen. \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
-        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
+        .accessibilityHint(unavailable ? "Unavailable while plans are loading" : (isSelected ? "Currently selected" : "Double tap to select"))
     }
 
     private var monthlyDemotedRow: some View {
         let plan = ShopCatalog.proPlans.first { $0.productId == ShopCatalog.proMonthlyProductID } ?? ShopCatalog.proPlans[0]
         let isSelected = selectedPlanProductId == plan.productId
+        let unavailable = isPlanUnavailable(plan)
         return Button {
             CosmicHaptics.light()
             selectedPlanProductId = plan.productId
@@ -258,12 +322,13 @@ struct PaywallVariant_TieredV2: View {
                 RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
                     .stroke(Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.thin)
             )
-            .opacity(isSelected ? 1.0 : 0.78)
+            .opacity(unavailable ? 0.5 : (isSelected ? 1.0 : 0.78))
         }
         .buttonStyle(.plain)
+        .disabled(unavailable)
         .accessibilityIdentifier("proPlanOption_\(plan.productId)")
         .accessibilityLabel("\(plan.title), \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
-        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
+        .accessibilityHint(unavailable ? "Unavailable while plans are loading" : (isSelected ? "Currently selected" : "Double tap to select"))
     }
 
     private var featureList: some View {
@@ -343,14 +408,16 @@ struct PaywallVariant_TieredV2: View {
             } label: {
                 HStack(spacing: Cosmic.Spacing.sm) {
                     if isPurchasing { ProgressView().tint(Color.cosmicVoid) }
-                    Text(isPurchasing ? "Starting trial..." : "Start 7-day Cosmic trial")
+                    Text(ctaTitle)
                         .font(.cosmicBodyEmphasis)
                         .lineLimit(2)
                         .minimumScaleFactor(0.78)
                 }
             }
             .buttonStyle(.cosmicPrimary)
+            .disabled(allProductsUnavailable)
             .accessibilityIdentifier(AccessibilityID.startProButton)
+            .accessibilityHint(allProductsUnavailable ? "Plans loading. Try again in a moment." : "")
 
             Button {
                 CosmicHaptics.light()
