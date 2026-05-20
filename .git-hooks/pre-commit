@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Pre-commit hook: block private-key file types from being committed.
+#
+# Why: a CloudKit Server-to-Server private key (cloudkit_private_key.pem) was
+# leaked to this repo in commit 1f6048b. See SECURITY-CLOUDKIT-ROTATION.md.
+# This hook is the local defense-in-depth that prevents a repeat.
+#
+# Install (once per clone):
+#   git config core.hooksPath .git-hooks
+#   chmod +x .git-hooks/pre-commit
+#
+# Bypass (use ONLY with explicit justification, e.g. test fixture in tests/fixtures/):
+#   git commit --no-verify
+#
+# CI should also run a secret scanner (gitleaks/trufflehog) in case --no-verify
+# is used inappropriately.
+
+set -euo pipefail
+
+# File extensions that almost always indicate a private key / signing material.
+# Extend if you add new credential formats.
+FORBIDDEN_REGEX='\.(pem|p8|p12|pfx|key)$'
+
+# Optional allowlist — paths that are intentionally key-shaped (e.g. fixtures
+# with dummy keys). Add full paths or directory prefixes here ONLY after
+# confirming the contents are non-secret.
+ALLOWLIST=(
+  # "tests/fixtures/dummy-key.pem"
+)
+
+# Collect staged Added/Copied/Modified/Renamed files (skip Deleted).
+staged="$(git diff --cached --name-only --diff-filter=ACMR || true)"
+
+if [ -z "$staged" ]; then
+  exit 0
+fi
+
+# Find offending files.
+blocked=()
+while IFS= read -r path; do
+  [ -z "$path" ] && continue
+  if printf '%s\n' "$path" | grep -qiE "$FORBIDDEN_REGEX"; then
+    allowed=0
+    for ok in "${ALLOWLIST[@]:-}"; do
+      [ -z "$ok" ] && continue
+      if [ "$path" = "$ok" ] || [[ "$path" == "$ok"/* ]]; then
+        allowed=1
+        break
+      fi
+    done
+    if [ "$allowed" -eq 0 ]; then
+      blocked+=("$path")
+    fi
+  fi
+done <<< "$staged"
+
+if [ "${#blocked[@]}" -gt 0 ]; then
+  printf '\n\033[31mERROR: pre-commit hook blocked the commit.\033[0m\n' >&2
+  printf 'The following staged files look like private keys / signing material:\n\n' >&2
+  for f in "${blocked[@]}"; do
+    printf '  - %s\n' "$f" >&2
+  done
+  printf '\nPolicy: *.pem, *.p8, *.p12, *.pfx, *.key files must NEVER be committed.\n' >&2
+  printf 'See SECURITY-CLOUDKIT-ROTATION.md for the incident that motivated this hook.\n\n' >&2
+  printf 'If this file is genuinely safe (a non-secret test fixture):\n' >&2
+  printf '  1. Confirm the contents are non-secret (no real keys).\n' >&2
+  printf '  2. Add the path to ALLOWLIST in .git-hooks/pre-commit.\n' >&2
+  printf '  3. Re-commit.\n\n' >&2
+  printf 'To bypass entirely (NOT recommended — leaves a trail in git reflog):\n' >&2
+  printf '  git commit --no-verify\n\n' >&2
+  exit 1
+fi
+
+exit 0

@@ -11,7 +11,15 @@ Flask-Babel==4.0.0
 
 # Apple Sign-In token validation
 pyjwt>=2.8.0,<3.0.0
-cryptography>=41.0.0,<43.0.0
+# Security (2026-05-20): bumped from <43.0.0 to >=46.0.7 to resolve
+#   CVE-2026-26007, CVE-2026-34073, CVE-2026-39892 (fixed in 46.0.5/46.0.6/46.0.7),
+#   plus the original 4 CVEs against 42.0.8 from <43.0.0 cap.
+cryptography>=46.0.7,<47.0.0
+# Security (2026-05-20): bumped from 25.1.0 to >=26.0.0 to resolve
+#   CVE-2026-27448 and CVE-2026-27459.
+pyopenssl>=26.0.0,<27.0.0
+# Security (2026-05-20): bumped to >=3.10 to resolve idna 3.13 DoS CVE.
+idna>=3.10
 requests>=2.31.0,<3.0.0
 
 # AI chat services (Gemini preferred, OpenAI fallback)
@@ -25,8 +33,10 @@ pyswisseph>=2.10.0,<3.0.0
 geopy>=2.4.0,<3.0.0
 
 # Testing
-pytest>=7.4.0,<8.0.0
-pytest-benchmark>=4.0.0,<5.0.0
-pytest-cov>=4.1.0,<5.0.0
+# Security (2026-05-20): bumped to >=9.0.3 to resolve CVE-2025-71176 in pytest
+#   (dev-only path, but eliminated to keep audit clean).
+pytest>=9.0.3,<10.0.0
+pytest-benchmark>=4.0.0,<6.0.0
+pytest-cov>=4.1.0,<7.0.0
 memory-profiler>=0.61.0,<1.0.0
 freezegun>=1.5.0,<2.0.0
