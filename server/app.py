@@ -13,6 +13,7 @@ from werkzeug.exceptions import HTTPException
 from db import get_user_preferred_language, init_db
 from errors import SwissEphemerisUnavailableError
 from middleware import add_request_id, log_request_response, setup_logging
+from portfolio_analytics import install as install_portfolio_analytics
 from routes import (
     admin_bp,
     astrology_bp,
@@ -38,6 +39,10 @@ babel = Babel()
 
 def create_app():
     app = Flask(__name__)
+
+    # Tier 1 portfolio analytics: emit one structured JSON line per request.
+    # See server/portfolio_analytics.py and ANALYTICS_INTEGRATION.md.
+    install_portfolio_analytics(app, app_id="astronova")
 
     def select_locale() -> str:
         user_id = request.headers.get("X-User-Id")

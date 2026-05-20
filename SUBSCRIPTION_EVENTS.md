@@ -3,7 +3,7 @@
 **Status:** Partial implementation (Wave 13). Verified direct StoreKit purchases
 now emit typed purchase-success analytics; renewal/cancel/grace states remain
 documented below.
-**Source of truth:** `umbrella/analytics/ANALYTICS_DESIGN.md` §4 (monetization).
+**Source of truth:** [`ANALYTICS_INTEGRATION.md`](ANALYTICS_INTEGRATION.md) — monetization event vocabulary.
 **Implementation target:** local `StoreKitManager` until the portfolio
 `SubscriptionEventEmitter` package is linked.
 
