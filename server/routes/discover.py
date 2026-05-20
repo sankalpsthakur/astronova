@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import os
+import sys
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
@@ -15,6 +18,55 @@ from services.ephemeris_service import EphemerisService
 discover_bp = Blueprint("discover", __name__)
 _ephem = EphemerisService()
 _dasha = DashaService()
+
+# --- Curated content libraries (real, hand-written guidance — not template strings) ---
+_ASTROLOGY_DATA_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data",
+    "astrology",
+)
+
+
+def _load_curated(filename: str) -> dict:
+    try:
+        with open(os.path.join(_ASTROLOGY_DATA_DIR, filename), "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"[discover] failed to load {filename}: {exc}", file=sys.stderr)
+        return {}
+
+
+_DOMAIN_ACTIONS = _load_curated("domain_actions.json")
+_DOMAIN_INSIGHTS = _load_curated("domain_insights.json")
+
+
+def _curated_action(domain: str, energy_state: str) -> Optional[Dict[str, str]]:
+    """Return hand-curated {do, avoid, why} for a (domain, energy_state) pair, or None."""
+    if not _DOMAIN_ACTIONS:
+        return None
+    entry = _DOMAIN_ACTIONS.get(domain, {}).get(energy_state)
+    if isinstance(entry, dict) and "do" in entry and "avoid" in entry:
+        return entry
+    return None
+
+
+def _intensity_band(intensity: float) -> str:
+    if intensity >= 0.7:
+        return "high"
+    if intensity >= 0.4:
+        return "moderate"
+    return "gentle"
+
+
+def _curated_insight(domain_key: str, intensity: float) -> Optional[Dict[str, str]]:
+    """Return hand-curated {opener, middle_with_driver, closer} for a (domain, band) pair."""
+    if not _DOMAIN_INSIGHTS:
+        return None
+    band = _intensity_band(intensity)
+    entry = _DOMAIN_INSIGHTS.get(domain_key, {}).get(band)
+    if isinstance(entry, dict):
+        return entry
+    return None
 
 # Domain mapping for insights - expanded to 7 life domains
 DOMAINS = {
@@ -235,31 +287,42 @@ def _generate_narrative_tiles(
 
 
 def _generate_actions(energy_state: str, domain_weights: Dict[str, float]) -> List[Dict[str, str]]:
-    """Generate recommended actions based on energy state and dominant domains."""
-    actions = []
+    """Generate recommended actions.
 
-    # Primary action based on energy state
-    if energy_state == "flowing":
-        actions.append({"id": "act_1", "text": "Start a new project", "type": "do"})
-    elif energy_state == "intense":
-        actions.append({"id": "act_1", "text": "Focus on one priority", "type": "do"})
-    elif energy_state == "quiet":
-        actions.append({"id": "act_1", "text": "Reflect and journal", "type": "do"})
-    else:  # volatile
-        actions.append({"id": "act_1", "text": "Stay flexible with plans", "type": "do"})
+    Curated path: read from data/astrology/domain_actions.json which holds real
+    hand-written guidance per (domain, energy_state). Falls back to a minimal
+    inline list only when the curated library is missing the lookup key.
+    """
+    actions: List[Dict[str, str]] = []
 
-    # Domain-specific action
-    top_domain = max(domain_weights, key=domain_weights.get)
-    domain_actions = {
+    top_domain = max(domain_weights, key=domain_weights.get) if domain_weights else "self"
+    curated = _curated_action(top_domain, energy_state)
+
+    if curated:
+        # Real hand-written content path.
+        actions.append({"id": "act_1", "text": curated["do"], "type": "do"})
+        actions.append({"id": "act_2", "text": curated["avoid"], "type": "avoid"})
+        if curated.get("why"):
+            actions.append({"id": "act_3", "text": curated["why"], "type": "context"})
+        return actions
+
+    # ── Fallback (kept so the endpoint never returns nothing) ──────────────
+    energy_defaults = {
+        "flowing": "Start a new project",
+        "intense": "Focus on one priority",
+        "quiet": "Reflect and journal",
+        "volatile": "Stay flexible with plans",
+    }
+    actions.append({"id": "act_1", "text": energy_defaults.get(energy_state, "Stay grounded"), "type": "do"})
+    legacy_domain_defaults = {
         "self": {"do": "Invest in personal growth", "avoid": "Overcommitting to others"},
         "love": {"do": "Reach out to someone you care about", "avoid": "Forcing difficult conversations"},
         "work": {"do": "Tackle your most important task", "avoid": "Procrastinating on deadlines"},
         "mind": {"do": "Learn something new", "avoid": "Information overload"},
     }
-    if top_domain in domain_actions:
-        actions.append({"id": "act_2", "text": domain_actions[top_domain]["do"], "type": "do"})
-        actions.append({"id": "act_3", "text": domain_actions[top_domain]["avoid"], "type": "avoid"})
-
+    if top_domain in legacy_domain_defaults:
+        actions.append({"id": "act_2", "text": legacy_domain_defaults[top_domain]["do"], "type": "do"})
+        actions.append({"id": "act_3", "text": legacy_domain_defaults[top_domain]["avoid"], "type": "avoid"})
     return actions
 
 
@@ -475,43 +538,77 @@ def _generate_domain_insights(planets: Dict[str, Any], moon_phase: float = 0.5) 
 
 
 def _generate_full_insight(domain: str, drivers: List[Dict[str, Any]], intensity: float) -> str:
-    """Generate a detailed paragraph insight for a domain."""
+    """Generate a domain insight grounded in real curated content.
+
+    Reads from data/astrology/domain_insights.json with intensity bands (high/moderate/gentle).
+    A driver phrase is constructed from the strongest aspect if available; otherwise the
+    middle is skipped entirely. Falls back to the legacy template only when the curated
+    library is missing the lookup key.
+    """
+    # Map the discover 7-domain key to the 4-domain curated set.
+    domain_key_map = {
+        "personal": "self", "self": "self",
+        "love": "love", "relationships": "love",
+        "work": "work", "career": "work", "finances": "work",
+        "mind": "mind", "growth": "mind", "purpose": "mind", "health": "self",
+    }
+    curated_key = domain_key_map.get(domain, "self")
+
+    curated = _curated_insight(curated_key, intensity)
+    if curated:
+        # Build a driver phrase from real aspect data when available.
+        driver_phrase = ""
+        if drivers:
+            top = drivers[0]
+            planet = (top.get("planet") or "").strip().title()
+            sign = (top.get("sign") or "").strip().title()
+            aspect = (top.get("aspect") or "").strip().lower()
+            if planet and aspect:
+                # Speak in concrete terms about the actual aspect, not "supportive/dynamic energy".
+                tone_map = {
+                    "conjunction": "concentrates on",
+                    "trine": "eases the channel to",
+                    "sextile": "opens a small door to",
+                    "square": "presses on",
+                    "opposition": "pulls against",
+                }
+                verb = tone_map.get(aspect, "touches")
+                driver_phrase = f"{planet} {verb} this area."
+            elif planet and sign:
+                driver_phrase = f"{planet} is moving through {sign}, shifting how you meet this area."
+
+        opener = curated.get("opener", "")
+        closer = curated.get("closer", "")
+        if driver_phrase and curated.get("middle_with_driver"):
+            middle = curated["middle_with_driver"].format(driver_phrase=driver_phrase)
+        else:
+            middle = ""
+        return " ".join(p for p in [opener, middle, closer] if p).strip()
+
+    # ── Fallback (legacy template; only fires when curated library missing) ──
     domain_config = LIFE_DOMAINS.get(domain, {})
     display_name = domain_config.get("displayName", domain.capitalize())
-
-    # Build insight based on drivers
     if intensity >= 0.7:
         opener = f"Today's planetary alignments strongly support your {display_name.lower()} life."
-        tone = "excellent"
+        closer = "Take action on important matters in this area."
     elif intensity >= 0.4:
         opener = f"Moderate cosmic energy flows through your {display_name.lower()} sector today."
-        tone = "good"
+        closer = "Steady progress is available through mindful attention."
     else:
         opener = f"A gentler day for {display_name.lower()} matters calls for patience and reflection."
-        tone = "gentle"
-
-    # Add driver-specific content
+        closer = "Focus on maintenance rather than major initiatives."
     driver_sentences = []
-    for driver in drivers[:2]:  # Use top 2 drivers
+    for driver in drivers[:2]:
         planet = driver["planet"]
         sign = driver.get("sign", "")
         aspect = driver.get("aspect")
-
         if aspect:
-            driver_sentences.append(f"{planet} {aspect} brings {'supportive' if 'trine' in (aspect or '').lower() or 'sextile' in (aspect or '').lower() else 'dynamic'} energy.")
+            driver_sentences.append(
+                f"{planet} {aspect} brings {'supportive' if 'trine' in (aspect or '').lower() or 'sextile' in (aspect or '').lower() else 'dynamic'} energy."
+            )
         elif sign:
             driver_sentences.append(f"{planet} in {sign} influences how you approach this area.")
-
     middle = " ".join(driver_sentences) if driver_sentences else ""
-
-    # Closing advice
-    if tone == "excellent":
-        closer = "Take action on important matters in this area."
-    elif tone == "good":
-        closer = "Steady progress is available through mindful attention."
-    else:
-        closer = "Focus on maintenance rather than major initiatives."
-
     return f"{opener} {middle} {closer}".strip()
 
 
