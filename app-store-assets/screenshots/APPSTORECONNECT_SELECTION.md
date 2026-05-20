@@ -2,7 +2,7 @@
 
 Generated 20260520. Final upload files are `01_hero.png` through `06_cta.png`, all `1320x2868` portrait PNGs for the iPhone 6.9-inch screenshot slot.
 
-Rejected square/generated assets were moved to `_rejected_square_20260520/` because 1024x1024 is not a valid iPhone screenshot master.
+Rejected square/generated assets were moved to `/Users/sankalp/Projects/iosapps/launch-artifacts/rejected-square-screenshots-20260520/` because 1024x1024 is not a valid iPhone screenshot master.
 
 1. `01_hero.png` <- `screenshot-1-discover-tab.png` — Read Today’s Cosmic Weather / Daily signals across love, work, health, and spirit.
 2. `02_valueprop.png` <- `screenshot-4-time-travel.png` — Travel Through Time / Explore planetary weather month by month.
