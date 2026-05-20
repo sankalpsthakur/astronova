@@ -2575,6 +2575,7 @@ struct TodayTab: View {
             HStack {
                 Text("🌟")
                     .font(.cosmicDisplay)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading) {
                     Text("Daily Insight")
                         .font(.cosmicHeadline)
@@ -2584,13 +2585,13 @@ struct TodayTab: View {
                 }
                 Spacer()
             }
-            
+
             Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
                 .font(.cosmicBody)
                 .lineSpacing(4)
-            
+
             Divider()
-            
+
             luckyElementsSection
         }
         .padding(16)
@@ -2599,6 +2600,8 @@ struct TodayTab: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(.blue.opacity(0.1), lineWidth: 1)
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Today's daily insight card")
     }
     
     @ViewBuilder
@@ -6832,16 +6835,18 @@ struct BentoInsightCard: View {
                         Image(systemName: insight.icon)
                             .font(iconSize)
                             .foregroundStyle(insight.color)
-                        
+                            .accessibilityHidden(true)
+
                         Spacer()
-                        
+
                         if isGenerated {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.cosmicCaption)
                                 .foregroundStyle(.green)
+                                .accessibilityHidden(true)
                         }
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(insight.title)
                             .font(size == .small ? .subheadline : .headline)
@@ -6849,7 +6854,7 @@ struct BentoInsightCard: View {
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.leading)
                             .lineLimit(size == .small ? 2 : nil)
-                        
+
                         if showDescription {
                             Text(insight.description)
                                 .font(.cosmicCaption)
@@ -6858,7 +6863,7 @@ struct BentoInsightCard: View {
                                 .lineLimit(2)
                         }
                     }
-                    
+
                     if size == .large {
                         Spacer()
 
@@ -6870,6 +6875,7 @@ struct BentoInsightCard: View {
                             Image(systemName: "arrow.right")
                                 .font(.cosmicMicro)
                                 .foregroundStyle(Color.cosmicTextSecondary)
+                                .accessibilityHidden(true)
                         }
                     }
                 }
@@ -6886,6 +6892,10 @@ struct BentoInsightCard: View {
             .cosmicElevation(.subtle)
         }
         .buttonStyle(ScaleButtonStyle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(insight.title). \(insight.description)\(isGenerated ? ". Generated" : "")")
+        .accessibilityHint("Opens \(insight.title) report")
+        .accessibilityAddTraits(.isButton)
     }
 }
 

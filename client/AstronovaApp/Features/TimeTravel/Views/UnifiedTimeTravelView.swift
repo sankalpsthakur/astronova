@@ -204,6 +204,8 @@ struct UnifiedTimeTravelView: View {
                     Button { showGuideSheet = true } label: {
                         Image(systemName: "book.fill")
                     }
+                    .accessibilityLabel("Time travel guide")
+                    .accessibilityHint("Opens an explainer for how time travel works")
                 }
             }
             .sheet(isPresented: $showGuideSheet) {
@@ -246,6 +248,7 @@ struct UnifiedTimeTravelView: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.cosmicTitle3)
                 .foregroundStyle(Color.cosmicWarning)
+                .accessibilityHidden(true)
 
             Text(birthTimeApproximationMessage)
                 .font(.cosmicCaption)
@@ -254,6 +257,8 @@ struct UnifiedTimeTravelView: View {
         }
         .padding()
         .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Birth time approximate. \(birthTimeApproximationMessage)")
     }
 
     // MARK: - Loading Overlay
@@ -340,6 +345,7 @@ struct UnifiedTimeTravelView: View {
                 Image(systemName: "chevron.right")
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextSecondary)
+                    .accessibilityHidden(true)
             }
             .padding()
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
@@ -347,6 +353,9 @@ struct UnifiedTimeTravelView: View {
             .cosmicElevation(.low)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(planet.name) in \(planet.sign)\(planet.isRetrograde ? ", retrograde" : "")")
+        .accessibilityHint("Opens planet details")
     }
 
     private func dashaTooltip(_ lord: String) -> some View {
@@ -379,6 +388,7 @@ struct UnifiedTimeTravelView: View {
                 Image(systemName: "chevron.right")
                     .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextSecondary)
+                    .accessibilityHidden(true)
             }
             .padding()
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Cosmic.Radius.soft))
@@ -386,6 +396,9 @@ struct UnifiedTimeTravelView: View {
             .cosmicElevation(.low)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(lord) Dasha")
+        .accessibilityHint("Opens dasha lord details")
     }
 
     private func aspectTooltip(_ aspect: ActiveAspect) -> some View {

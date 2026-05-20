@@ -222,6 +222,8 @@ struct PaywallVariant_TieredV1: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("proPlanOption_\(plan.productId)")
+        .accessibilityLabel("\(plan.title), most chosen. \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
+        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
     }
 
     private var monthlyDemotedRow: some View {
@@ -253,6 +255,8 @@ struct PaywallVariant_TieredV1: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("proPlanOption_\(plan.productId)")
+        .accessibilityLabel("\(plan.title), \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
+        .accessibilityHint(isSelected ? "Currently selected" : "Double tap to select")
     }
 
     private var featureList: some View {
