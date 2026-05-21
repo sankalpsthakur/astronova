@@ -913,6 +913,64 @@ paths:
                   endpoints:
                     type: object
                     
+  /api/v1/ephemeris/topo-substitutions:
+    get:
+      summary: Real-data values for Today-screen template tokens
+      description: |
+        Returns Swiss-Ephemeris-derived values used by the iOS Topo
+        TerrainComputer.substitute helper. Replaces the previous client-side
+        pseudo-random fallback for `{void_end_time}`, `{aspect_partner}`,
+        `{aspect_type}`, `{aspect_angle}`, and `{eclipse_distance_days}`.
+        Safe to call once per UTC day per client; the underlying ephemeris
+        positions are cached server-side.
+      tags:
+        - Ephemeris
+      responses:
+        '200':
+          description: Substitution values for today's terrain templates
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - void_end_time_iso
+                  - void_end_time
+                  - aspect_partner
+                  - aspect_type
+                  - aspect_angle
+                  - aspect_orb_degrees
+                  - eclipse_distance_days
+                  - computed_at_iso
+                properties:
+                  void_end_time_iso:
+                    type: string
+                    description: ISO 8601 UTC instant the Moon enters the next sign.
+                  void_end_time:
+                    type: string
+                    description: Pre-formatted 12-hour clock string in UTC.
+                  aspect_partner:
+                    type: string
+                    description: Title-cased planet name, empty if no aspect within orb.
+                  aspect_type:
+                    type: string
+                    enum: ["", conjunction, sextile, square, trine, opposition]
+                  aspect_angle:
+                    type: string
+                    description: Canonical aspect angle ("0°"/"60°"/"90°"/"120°"/"180°") or empty.
+                  aspect_orb_degrees:
+                    type: number
+                    format: float
+                    description: Tightness of the aspect; lower is tighter.
+                  eclipse_distance_days:
+                    type: integer
+                    description: Calendar days until the next global solar eclipse.
+                  computed_at_iso:
+                    type: string
+                    description: Server-side computation timestamp.
+        '503':
+          description: Swiss Ephemeris unavailable
+        '500':
+          description: Unexpected server error
   /api/v1/ephemeris/current:
     get:
       summary: Get current planetary positions

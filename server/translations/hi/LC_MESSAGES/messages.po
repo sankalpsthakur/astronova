@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: astronova 1.0\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-01-13 02:58+0530\n"
+"POT-Creation-Date: 2026-05-21 22:26+0200\n"
 "PO-Revision-Date: 2026-01-13 00:00+0000\n"
 "Last-Translator: \n"
 "Language: hi\n"
@@ -12,182 +12,304 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.17.0\n"
+"Generated-By: Babel 2.18.0\n"
 
-#: routes/auth.py:87
+#: routes/auth.py:86
 msgid "Token missing key ID (kid)"
 msgstr ""
 
-#: routes/auth.py:96
+#: routes/auth.py:95
 #, python-format
 msgid "Apple public key not found for kid: %(kid)s"
 msgstr ""
 
-#: routes/auth.py:115 routes/auth.py:185
+#: routes/auth.py:114 routes/auth.py:181
 msgid "Token has expired"
 msgstr ""
 
-#: routes/auth.py:117
+#: routes/auth.py:116
 #, python-format
 msgid "Invalid audience - expected %(bundle_id)s"
 msgstr ""
 
-#: routes/auth.py:119
+#: routes/auth.py:118
 #, python-format
 msgid "Invalid issuer - expected %(issuer)s"
 msgstr ""
 
-#: routes/auth.py:121 routes/auth.py:187
+#: routes/auth.py:120 routes/auth.py:183
 #, python-format
 msgid "Invalid token: %(error)s"
 msgstr ""
 
-#: routes/auth.py:133
-msgid "Invalid token format"
+#: routes/auth.py:123
+msgid "Apple token validation is unavailable"
 msgstr ""
 
-#: routes/auth.py:234 routes/horoscope.py:370
+#: routes/auth.py:230 routes/horoscope.py:632
 msgid "Request body must be valid JSON"
 msgstr ""
 
-#: routes/auth.py:245
+#: routes/auth.py:241
 msgid "Request body must be a JSON object"
 msgstr ""
 
-#: routes/auth.py:283 routes/auth.py:358
+#: routes/auth.py:252
+msgid "Apple identity token is required"
+msgstr ""
+
+#: routes/auth.py:265
+msgid "Apple identity token is missing subject"
+msgstr ""
+
+#: routes/auth.py:278 routes/auth.py:353
 msgid "User"
 msgstr ""
 
-#: routes/auth.py:312
+#: routes/auth.py:307
 msgid "No token provided"
 msgstr ""
 
-#: routes/auth.py:331
+#: routes/auth.py:326
 msgid "Authorization header with Bearer token required"
 msgstr ""
 
-#: routes/auth.py:336
+#: routes/auth.py:331
 msgid "Valid token required for refresh"
 msgstr ""
 
-#: routes/auth.py:347 routes/auth.py:411
+#: routes/auth.py:342 routes/auth.py:406
 msgid "Invalid token - no user ID"
 msgstr ""
 
-#: routes/auth.py:385
+#: routes/auth.py:380
 msgid "Authorization required"
 msgstr ""
 
-#: routes/auth.py:393
+#: routes/auth.py:388
 msgid "Valid authorization token required"
 msgstr ""
 
-#: routes/auth.py:425
+#: routes/auth.py:420
 msgid "Account and all associated data deleted"
 msgstr ""
 
-#: routes/auth.py:432
+#: routes/auth.py:427
 msgid "Deletion failed"
 msgstr ""
 
-#: routes/chat.py:105
+#: routes/chat.py:162
 msgid "birthData required"
 msgstr ""
 
-#: routes/chat.py:109
+#: routes/chat.py:166
 msgid "birth date required in birthData"
 msgstr ""
 
-#: routes/chat.py:125
+#: routes/chat.py:182
 msgid ""
 "Birth data saved successfully. Your chat responses will now be "
 "personalized!"
 msgstr ""
 
-#: routes/horoscope.py:297 routes/horoscope.py:415 routes/horoscope.py:445
+#: routes/horoscope.py:336
+msgid "bold action"
+msgstr ""
+
+#: routes/horoscope.py:337
+msgid "patient grounding"
+msgstr ""
+
+#: routes/horoscope.py:338
+msgid "clear thinking"
+msgstr ""
+
+#: routes/horoscope.py:339
+msgid "deep emotion and intuition"
+msgstr ""
+
+#: routes/horoscope.py:340
+msgid "presence"
+msgstr ""
+
+#: routes/horoscope.py:346
+#, python-format
+msgid "The Sun is in your sign — let it shine on your %(keyword)s."
+msgstr ""
+
+#: routes/horoscope.py:357
+#, python-format
+msgid "Today, lean into %(keyword)s with %(element_phrase)s."
+msgstr ""
+
+#: routes/horoscope.py:359
+#, python-format
+msgid ""
+"A small %(keyword)s-shaped move today does more than three big ones "
+"tomorrow."
+msgstr ""
+
+#: routes/horoscope.py:361
+#, python-format
+msgid "Let %(ruler)s steer one decision today through %(element_phrase)s."
+msgstr ""
+
+#: routes/horoscope.py:365
+#, python-format
+msgid ""
+"This week, build a quiet streak of %(keyword)s; by Sunday the pattern "
+"will hold its own weight."
+msgstr ""
+
+#: routes/horoscope.py:367
+#, python-format
+msgid ""
+"Weekly rhythm: pair %(keyword)s with %(element_phrase)s on the days "
+"%(ruler)s feels closest."
+msgstr ""
+
+#: routes/horoscope.py:369
+#, python-format
+msgid ""
+"Watch where %(keyword)s keeps showing up this week — that's the thread to"
+" pull, not the one you've been forcing."
+msgstr ""
+
+#: routes/horoscope.py:373
+#, python-format
+msgid ""
+"This month's arc rewards %(keyword)s over heroics. Keep returning to "
+"%(element_phrase)s."
+msgstr ""
+
+#: routes/horoscope.py:375
+#, python-format
+msgid ""
+"Plot the month around %(keyword)s: one focus per week, led by %(ruler)s's"
+" tempo."
+msgstr ""
+
+#: routes/horoscope.py:377
+#, python-format
+msgid ""
+"By month's end, you'll have either widened your %(keyword)s or "
+"renegotiated the rules around it — both are wins."
+msgstr ""
+
+#: routes/horoscope.py:559 routes/horoscope.py:677 routes/horoscope.py:707
 msgid "Invalid zodiac sign"
 msgstr ""
 
-#: routes/horoscope.py:307 routes/horoscope.py:378 routes/horoscope.py:454
+#: routes/horoscope.py:569 routes/horoscope.py:640 routes/horoscope.py:716
 msgid "Invalid date format, use YYYY-MM-DD"
 msgstr ""
 
-#: routes/horoscope.py:387
+#: routes/horoscope.py:649
 msgid "birthData is required for personalized horoscope"
 msgstr ""
 
-#: routes/horoscope.py:397
+#: routes/horoscope.py:659
 msgid "latitude and longitude required in birthData"
 msgstr ""
 
-#: routes/horoscope.py:418
+#: routes/horoscope.py:680
 #, python-format
 msgid "Missing required field in birthData: %(field)s"
 msgstr ""
 
-#: routes/horoscope.py:420
+#: routes/horoscope.py:682
 #, python-format
 msgid "Invalid birth data format: %(error)s"
 msgstr ""
 
-#: routes/temple.py:208
+#: routes/temple.py:210
 msgid "Pooja not found"
 msgstr ""
 
-#: routes/temple.py:315 routes/temple.py:697
+#: routes/temple.py:324 routes/temple.py:740
 msgid "Pandit not found"
 msgstr ""
 
-#: routes/temple.py:430 routes/temple.py:520 routes/temple.py:582
-#: routes/temple.py:638 routes/temple.py:772
-msgid "Authentication required"
-msgstr ""
-
-#: routes/temple.py:436
+#: routes/temple.py:452
 msgid "poojaTypeId is required"
 msgstr ""
 
-#: routes/temple.py:441
+#: routes/temple.py:457
 msgid "scheduledDate and scheduledTime are required"
 msgstr ""
 
-#: routes/temple.py:453
+#: routes/temple.py:470
 msgid "Invalid pooja type"
 msgstr ""
 
-#: routes/temple.py:601 routes/temple.py:652 routes/temple.py:709
-#: routes/temple.py:787
+#: routes/temple.py:633 routes/temple.py:684 routes/temple.py:752
+#: routes/temple.py:830 routes/temple.py:1801
 msgid "Booking not found"
 msgstr ""
 
-#: routes/temple.py:657
+#: routes/temple.py:689
 #, python-format
 msgid "Cannot cancel booking with status: %(status)s"
 msgstr ""
 
-#: routes/temple.py:687 routes/temple.py:902 routes/temple.py:958
+#: routes/temple.py:730 routes/temple.py:951 routes/temple.py:1008
 msgid "Pandit authentication required"
 msgstr ""
 
-#: routes/temple.py:713
+#: routes/temple.py:756
 msgid "Booking already assigned to another pandit"
 msgstr ""
 
-#: routes/temple.py:718
+#: routes/temple.py:761
 #, python-format
 msgid "Cannot accept booking with status: %(status)s"
 msgstr ""
 
-#: routes/temple.py:839
+#: routes/temple.py:887
 #, python-format
 msgid "%(field)s is required"
 msgstr ""
 
-#: routes/temple.py:848
+#: routes/temple.py:896
 msgid "Email already registered"
 msgstr ""
 
-#: routes/temple.py:974
+#: routes/temple.py:1024
 msgid "Session not found"
 msgstr ""
+
+#: routes/temple.py:1539 routes/temple.py:1654
+msgid "Shastriji not found"
+msgstr ""
+
+#: routes/temple.py:1604
+msgid "No active booking found"
+msgstr ""
+
+#: routes/temple.py:1669
+msgid "You already have an active booking in the queue"
+msgstr ""
+
+#: routes/temple.py:1688
+msgid "No pooja types available"
+msgstr ""
+
+#: routes/temple.py:1785
+msgid "callState is required"
+msgstr ""
+
+#: routes/temple.py:1808
+msgid "Not authorized for this booking"
+msgstr ""
+
+#: routes/temple.py:1816
+#, python-format
+msgid "Invalid state transition from '%(current)s' to '%(new)s'"
+msgstr ""
+
+#~ msgid "Invalid token format"
+#~ msgstr ""
+
+#~ msgid "Authentication required"
+#~ msgstr ""
 

@@ -1963,6 +1963,20 @@ struct SimpleTabBarView: View {
             // SUNSET 2026-05-18: legacy tab views (DiscoverView, SelfTabView, ConnectView,
             // TempleView, TimeTravelTab) replaced by Topo overlay tabs. Files retained
             // in repo for git-history reference and may be deleted in a follow-up.
+            //
+            // 2026-05-21 audit pass — still-live legacy references (do NOT delete):
+            //   * OracleView           — launched from SettingsSheet "Ask the Oracle"
+            //   * NPSView              — global sheet driven by NPSService
+            //   * ChatPackagesSheet    — used by all 3 paywall variants + Oracle
+            //   * EnhancedTimeTravelView — used by SelfTabView (itself unreachable)
+            //
+            // Truly dead from the active TabBar (Today/Map/Pulse/Decide/Journal):
+            //   * DiscoverView, SelfTabView, TempleView, HomeView, TimeTravelTab,
+            //     `switchToTimeTravelTab()` (posts to a notification with no
+            //     active listener now that the Topo tab IDs replaced 0–4).
+            //
+            // The dead set CAN be deleted in a follow-up PR; the live set must
+            // stay until those entry points are migrated.
             Group {
                 switch selectedTab {
                 case 0:
