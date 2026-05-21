@@ -78,7 +78,7 @@ struct TodayTerrainView: View {
     private var topBar: some View {
         HStack(spacing: 12) {
             Text(dateLabel)
-                .font(.system(size: 13, weight: .medium))
+                .font(.cosmicFootnoteEmphasis)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .tracking(0.5)
             Spacer()
@@ -87,17 +87,21 @@ struct TodayTerrainView: View {
                 showPauseLayer = true
             } label: {
                 Image(systemName: "pause.circle")
-                    .font(.system(size: 22, weight: .regular))
+                    .font(.cosmicTitle2)
                     .foregroundStyle(Color.cosmicTextPrimary)
             }
+            .accessibilityLabel("Pause")
+            .accessibilityHint("Opens the pause protocol")
             Button {
                 HapticFeedbackService.shared.lightImpact()
                 showSettings = true
             } label: {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 20, weight: .regular))
+                    .font(.cosmicTitle2)
                     .foregroundStyle(Color.cosmicTextPrimary)
             }
+            .accessibilityLabel("Settings")
+            .accessibilityHint("Opens settings, including subscription and reports")
         }
         .padding(.top, 4)
     }
@@ -105,11 +109,13 @@ struct TodayTerrainView: View {
     private var hero: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Today")
-                .font(.system(size: 44, weight: .bold))
+                .font(.cosmicHero)
                 .foregroundStyle(Color.cosmicTextPrimary)
+                .accessibilityAddTraits(.isHeader)
             Text(subtitle)
-                .font(.system(size: 15, weight: .regular))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -132,9 +138,9 @@ struct TodayTerrainView: View {
                 Image(systemName: speech.isSpeaking
                       ? "stop.circle.fill"
                       : "speaker.wave.2.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.cosmicBodyEmphasis)
                 Text(speech.isSpeaking ? "Stop reading" : "Read horoscope aloud")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.cosmicCalloutEmphasis)
                 Spacer()
             }
             .foregroundStyle(Color.cosmicGold)
@@ -195,19 +201,28 @@ struct TodayTerrainView: View {
     private func axisRow(caption: String, body: String, size: CGFloat, dotted: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(caption)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.cosmicMicro)
                 .tracking(1.4)
                 .foregroundStyle(Color.cosmicTextTertiary)
+                .accessibilityAddTraits(.isHeader)
             HStack(alignment: .top, spacing: 10) {
                 if dotted {
                     Circle().fill(tintColor).frame(width: 8, height: 8).padding(.top, 7)
+                        .accessibilityHidden(true)
                 }
+                // size argument (15/17) is preserved as a relative weighting
+                // hint — we map the *larger* legacy 17pt rows to cosmicBody and
+                // the smaller 15pt rows to cosmicCallout. Both scale with the
+                // user's Dynamic Type preference, unlike the prior
+                // Font.system(size:) calls which were fixed.
                 Text(body)
-                    .font(.system(size: size, weight: .regular))
+                    .font(size >= 17 ? .cosmicBody : .cosmicCallout)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(caption). \(body)")
     }
 
     private var divider: some View {
@@ -223,9 +238,9 @@ struct TodayTerrainView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.cosmicFootnoteEmphasis)
                 Text("Log a Moment")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.cosmicBodyEmphasis)
             }
             .foregroundStyle(Color.cosmicVoid)
             .frame(maxWidth: .infinity)
