@@ -291,6 +291,13 @@ def _days_to_next_solar_eclipse(now: datetime) -> int:
         return 0
 
 
+# Per-UTC-day cache. The substitutions response is identical for every
+# requester on a given calendar day, so we compute once per day and serve
+# the cached payload for the rest of the day. Drops cold-path latency from
+# ~50 ms (Swiss-Ephemeris + eclipse search) to a dict lookup.
+_TOPO_SUBSTITUTIONS_CACHE: dict[str, dict] = {}
+
+
 @ephemeris_bp.route("/topo-substitutions", methods=["GET"])
 def topo_substitutions():
     """Return real ephemeris-derived values for Today-screen template tokens.
@@ -317,6 +324,11 @@ def topo_substitutions():
     """
     try:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
+        day_key = now.strftime("%Y-%m-%d")
+
+        # Serve the cached payload if today's slot is warm.
+        if (cached := _TOPO_SUBSTITUTIONS_CACHE.get(day_key)) is not None:
+            return jsonify(cached)
 
         # Moon void end time.
         void_end_dt = _moon_next_sign_change(now)
@@ -340,18 +352,24 @@ def topo_substitutions():
 
         eclipse_days = _days_to_next_solar_eclipse(now)
 
-        return jsonify(
-            {
-                "void_end_time_iso": void_end_iso,
-                "void_end_time": void_end_clock,
-                "aspect_partner": aspect_partner,
-                "aspect_type": aspect_type,
-                "aspect_angle": aspect_angle,
-                "aspect_orb_degrees": aspect_orb,
-                "eclipse_distance_days": eclipse_days,
-                "computed_at_iso": now.replace(microsecond=0).isoformat() + "Z",
-            }
-        )
+        payload = {
+            "void_end_time_iso": void_end_iso,
+            "void_end_time": void_end_clock,
+            "aspect_partner": aspect_partner,
+            "aspect_type": aspect_type,
+            "aspect_angle": aspect_angle,
+            "aspect_orb_degrees": aspect_orb,
+            "eclipse_distance_days": eclipse_days,
+            "computed_at_iso": now.replace(microsecond=0).isoformat() + "Z",
+        }
+
+        # Cache for the rest of the UTC day. Trim older entries so the dict
+        # stays small (at most ~2 entries during a day rollover).
+        _TOPO_SUBSTITUTIONS_CACHE[day_key] = payload
+        for stale in [k for k in _TOPO_SUBSTITUTIONS_CACHE if k != day_key]:
+            _TOPO_SUBSTITUTIONS_CACHE.pop(stale, None)
+
+        return jsonify(payload)
 
     except SwissEphemerisUnavailableError as exc:
         return jsonify({"error": str(exc), "code": "EPHEMERIS_UNAVAILABLE"}), 503

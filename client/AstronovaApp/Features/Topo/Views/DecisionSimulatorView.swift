@@ -388,7 +388,7 @@ struct DecisionResultView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(decision.decisionClass.label.uppercased()).topoCaption(Color.cosmicTextTertiary)
             Text(decision.promptText)
-                .font(.system(size: 19, weight: .semibold))
+                .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -621,7 +621,7 @@ private struct RuleRow: View {
                         .foregroundStyle(rule.active ? Color.cosmicTextPrimary : Color.cosmicTextTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(captionText)
-                        .font(.system(size: 11))
+                        .font(.cosmicLabel)
                         .foregroundStyle(Color.cosmicTextTertiary)
                         .lineLimit(2)
                 }

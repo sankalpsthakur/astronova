@@ -145,7 +145,7 @@ struct SettingsSheet: View {
                         .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     Text("Read horoscope and confirmations aloud.")
-                        .font(.system(size: 11))
+                        .font(.cosmicLabel)
                         .foregroundStyle(Color.cosmicTextTertiary)
                         .lineLimit(2)
                 }
@@ -266,7 +266,7 @@ struct SettingsSheet: View {
                         .foregroundStyle(tint)
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
-                            .font(.system(size: 11))
+                            .font(.cosmicLabel)
                             .foregroundStyle(Color.cosmicTextTertiary)
                             .lineLimit(2)
                     }

@@ -138,7 +138,7 @@ private struct ActiveCard: View {
                 .multilineTextAlignment(.leading)
             ScoreBar(score: activation.score, tint: tint)
             Text(activation.reasons.first ?? "Default script available.")
-                .font(.system(size: 11, weight: .regular))
+                .font(.cosmicLabel)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .lineLimit(1)
         }

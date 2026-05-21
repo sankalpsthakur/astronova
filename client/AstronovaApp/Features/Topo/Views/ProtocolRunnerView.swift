@@ -396,7 +396,9 @@ struct ProtocolRunnerView: View {
 
             VStack(spacing: 18) {
                 Text("\(Int(moodAfter))")
-                    .font(.system(size: 56, weight: .bold, design: .monospaced))
+                    .font(.system(size: 56, weight: .bold, design: .monospaced)
+                            .leading(.tight))
+                    .dynamicTypeSize(.medium ... .xxLarge)
                     .foregroundStyle(tint)
 
                 Text(intensityWord(moodAfter))

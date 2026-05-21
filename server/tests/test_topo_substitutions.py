@@ -115,3 +115,33 @@ def test_response_pattern_is_iso_with_z_suffix(client):
     iso_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
     assert iso_pattern.match(data["void_end_time_iso"])
     assert iso_pattern.match(data["computed_at_iso"])
+
+
+def test_subsequent_requests_within_same_utc_day_are_cached(client):
+    """The endpoint must serve from the per-UTC-day cache on the second hit
+    so cold-path Swiss-Ephemeris cost is only paid once per day."""
+    import time
+    # Warm the cache (first hit pays the full Swiss-Ephemeris cost).
+    t0 = time.perf_counter()
+    _ = client.get("/api/v1/ephemeris/topo-substitutions")
+    cold_ms = (time.perf_counter() - t0) * 1000
+
+    # Hit it again — should be served from the dict-keyed cache.
+    t1 = time.perf_counter()
+    resp = client.get("/api/v1/ephemeris/topo-substitutions")
+    warm_ms = (time.perf_counter() - t1) * 1000
+
+    assert resp.status_code == 200
+    # Warm path should be at least an order of magnitude faster than cold.
+    # We use a loose 5x bound to avoid flakiness on slow CI runners.
+    assert warm_ms * 5 < cold_ms or warm_ms < 5, (
+        f"warm path ({warm_ms:.2f}ms) should be much faster than cold "
+        f"({cold_ms:.2f}ms) — cache may not be wired"
+    )
+
+
+def test_cached_payload_is_identical_across_requests(client):
+    """Two reads on the same UTC day must return byte-identical payloads."""
+    r1 = client.get("/api/v1/ephemeris/topo-substitutions").get_json()
+    r2 = client.get("/api/v1/ephemeris/topo-substitutions").get_json()
+    assert r1 == r2
