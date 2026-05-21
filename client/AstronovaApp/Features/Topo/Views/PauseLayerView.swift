@@ -76,7 +76,7 @@ struct PauseLayerView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .frame(width: 36, height: 36)
                     .background(Circle().fill(Color.cosmicSurface))
@@ -91,10 +91,10 @@ struct PauseLayerView: View {
     private var header: some View {
         VStack(spacing: 8) {
             Text("Pause.")
-                .font(.system(size: 44, weight: .bold))
+                .font(.cosmicHero)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text("Name what's here. Run the protocol. Use the energy.")
-                .font(.system(size: 15, weight: .regular))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
@@ -105,7 +105,7 @@ struct PauseLayerView: View {
 
     private var footer: some View {
         Text("PAUSE · NAME · ROUTE · USE")
-            .font(.system(size: 10, weight: .semibold))
+            .font(.cosmicMicro)
             .tracking(3)
             .foregroundStyle(Color.cosmicTextTertiary)
             .padding(.bottom, 24)
@@ -120,10 +120,10 @@ struct PauseLayerView: View {
         return AnyView(
             HStack(spacing: 10) {
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicAmethyst)
                 Text("Last run \(timeAgo(entry.timestamp)) · \(entry.emotion) \(entry.moodBefore) → \(entry.moodAfter ?? entry.moodBefore) (\(delta > 0 ? "−" : "+")\(abs(delta)))")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextSecondary)
                 Spacer(minLength: 0)
             }
@@ -139,10 +139,10 @@ struct PauseLayerView: View {
     private func errorView(_ message: String) -> some View {
         VStack(spacing: 6) {
             Text("Could not load protocols")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.cosmicBodyEmphasis)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text(message)
-                .font(.system(size: 13))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -188,16 +188,16 @@ private struct EmotionCard: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(proto.emotion)
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.cosmicTitle2)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     Text("\(proto.planet) Protocol · \(durationLabel)")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(tint)
                 }
                 Spacer()
                 if recentCount >= 3 {
                     Text("\(recentCount)× / 7d")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.cosmicMicro)
                         .tracking(0.5)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -207,7 +207,7 @@ private struct EmotionCard: View {
             }
 
             Text(proto.energyIsFor)
-                .font(.system(size: 13, weight: .regular))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -251,7 +251,7 @@ private struct IntensityChip: View {
             action(value)
         } label: {
             Text(label)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.cosmicFootnoteEmphasis)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)

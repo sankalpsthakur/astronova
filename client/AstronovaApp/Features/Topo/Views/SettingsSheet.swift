@@ -95,7 +95,7 @@ struct SettingsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.cosmicCalloutEmphasis)
                 }
             }
         }
@@ -121,7 +121,7 @@ struct SettingsSheet: View {
             NavigationStack {
                 ScrollView {
                     Text("Astronova does not sell your data. Birth details, journal entries, decisions, and navigation rules are stored locally on your device. See the in-app Privacy policy for details.")
-                        .font(.system(size: 14))
+                        .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .padding(20)
                 }
@@ -137,12 +137,12 @@ struct SettingsSheet: View {
         Toggle(isOn: $voiceReadingEnabled) {
             HStack(spacing: 14) {
                 Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.cosmicBodyEmphasis)
                     .foregroundStyle(Color.cosmicGold)
                     .frame(width: 28, height: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Voice reading")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     Text("Read horoscope and confirmations aloud.")
                         .font(.system(size: 11))
@@ -172,7 +172,7 @@ struct SettingsSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: hasPro ? "checkmark.seal.fill" : "sparkle")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.cosmicHeadline)
                     .foregroundStyle(hasPro ? Color.cosmicGold : Color.cosmicAmethyst)
                 Text(hasPro ? "Astronova Pro" : "Free plan")
                     .font(.system(size: 20, weight: .bold))
@@ -181,7 +181,7 @@ struct SettingsSheet: View {
             }
             if !hasPro {
                 Text("Quota:")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.cosmicMicro)
                     .tracking(2)
                     .foregroundStyle(Color.cosmicTextTertiary)
                 quotaLine("Decisions this month", used: quota.decisionsUsedThisMonth, limit: ProQuotaManager.decisionMonthlyLimit)
@@ -191,7 +191,7 @@ struct SettingsSheet: View {
                     showingPaywall = true
                 } label: {
                     Text("Get Pro")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.cosmicBodyEmphasis)
                         .foregroundStyle(Color.cosmicVoid)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 13)
@@ -203,7 +203,7 @@ struct SettingsSheet: View {
                 .buttonStyle(.plain)
             } else {
                 Text("Unlimited decisions, full pattern library, full insights.")
-                    .font(.system(size: 13))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
@@ -221,7 +221,7 @@ struct SettingsSheet: View {
     private func quotaLine(_ label: String, used: Int, limit: Int) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 13))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
             Spacer()
             Text("\(min(used, limit)) / \(limit)")
@@ -235,7 +235,7 @@ struct SettingsSheet: View {
     private func sectionHeader(_ text: String) -> some View {
         HStack {
             Text(text)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.cosmicMicro)
                 .tracking(2)
                 .foregroundStyle(Color.cosmicTextTertiary)
             Spacer()
@@ -257,12 +257,12 @@ struct SettingsSheet: View {
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.cosmicBodyEmphasis)
                     .foregroundStyle(tint)
                     .frame(width: 28, height: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(tint)
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
@@ -273,7 +273,7 @@ struct SettingsSheet: View {
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.cosmicLabel)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             .padding(.horizontal, 14)
@@ -290,7 +290,7 @@ struct SettingsSheet: View {
         let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "?"
         let build = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "?"
         return Text("Astronova \(version) (\(build))")
-            .font(.system(size: 10, weight: .medium))
+            .font(.cosmicMicro)
             .tracking(1)
             .foregroundStyle(Color.cosmicTextTertiary)
             .padding(.bottom, 24)

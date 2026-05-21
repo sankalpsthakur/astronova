@@ -260,14 +260,14 @@ struct TodayTerrainView: View {
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 Text("DOMINANT PATTERN")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.cosmicMicro)
                     .tracking(1.4)
                     .foregroundStyle(Color.cosmicTextTertiary)
                 Text(pattern.name)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.cosmicBodyEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Text(pattern.loop.optimalAction)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -290,7 +290,7 @@ struct TodayTerrainView: View {
                 .fill(planetTint(for: dasha.graha))
                 .frame(width: 5, height: 5)
             Text("in \(dasha.graha) dasha — \(ctx)")
-                .font(.system(size: 12, weight: .regular))
+                .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -300,7 +300,7 @@ struct TodayTerrainView: View {
 
     private var footer: some View {
         Text("PAUSE · NAME · ROUTE · USE")
-            .font(.system(size: 10, weight: .medium))
+            .font(.cosmicMicro)
             .tracking(2.5)
             .foregroundStyle(Color.cosmicTextTertiary.opacity(0.7))
             .frame(maxWidth: .infinity, alignment: .center)
@@ -380,7 +380,7 @@ private struct LogMomentSheet: View {
     private var header: some View {
         HStack {
             Text("Log a Moment")
-                .font(.system(size: 22, weight: .bold))
+                .font(.cosmicTitle1)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Spacer()
             Button {
@@ -388,7 +388,7 @@ private struct LogMomentSheet: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
         }
@@ -400,14 +400,14 @@ private struct LogMomentSheet: View {
                 .fill(Color.cosmicSurface)
             if text.isEmpty {
                 Text("What just happened?")
-                    .font(.system(size: 16, weight: .regular))
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .padding(.horizontal, 16)
                     .padding(.top, 18)
                     .allowsHitTesting(false)
             }
             TextEditor(text: $text)
-                .font(.system(size: 16, weight: .regular))
+                .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 12)
@@ -420,12 +420,12 @@ private struct LogMomentSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("MOOD")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.cosmicMicro)
                     .tracking(1.4)
                     .foregroundStyle(Color.cosmicTextTertiary)
                 Spacer()
                 Text("\(Int(mood))")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.cosmicFootnoteEmphasis)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .monospacedDigit()
             }
@@ -445,7 +445,7 @@ private struct LogMomentSheet: View {
             Task { @MainActor in save() }
         } label: {
             Text("Save")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.cosmicBodyEmphasis)
                 .foregroundStyle(Color.cosmicVoid)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)

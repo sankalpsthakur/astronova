@@ -36,7 +36,7 @@ struct JournalView: View {
                     } else {
                         if !hasPro {
                             Text("Pro · used \(quota.insightsViewsUsedThisMonth) / \(ProQuotaManager.insightsMonthlyLimit) this month")
-                                .font(.system(size: 11, weight: .semibold)).tracking(0.8)
+                                .font(.cosmicLabel).tracking(0.8)
                                 .foregroundStyle(Color.cosmicTextTertiary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 20).padding(.bottom, 6)
@@ -52,7 +52,7 @@ struct JournalView: View {
                         showCompose = true
                     } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.cosmicBodyEmphasis)
                             .foregroundStyle(Color.cosmicTextPrimary)
                     }
                 }
@@ -67,10 +67,10 @@ struct JournalView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Journal")
-                .font(.system(size: 32, weight: .bold))
+                .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text("What happened. What you noticed. What you'll do next.")
-                .font(.system(size: 13, weight: .regular))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -94,7 +94,7 @@ struct JournalView: View {
                     }
                 } label: {
                     Text(v.label)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.cosmicFootnoteEmphasis)
                         .foregroundStyle(tab == v ? Color.cosmicTextPrimary : Color.cosmicTextSecondary)
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         .background(Capsule().fill(tab == v ? Color.cosmicStardust : Color.clear))
@@ -141,7 +141,7 @@ struct JournalView: View {
 
     private func chipLabel(_ text: String, active: Bool) -> some View {
         Text(text)
-            .font(.system(size: 12, weight: .semibold))
+            .font(.cosmicCaptionEmphasis)
             .foregroundStyle(active ? Color.cosmicVoid : Color.cosmicTextSecondary)
             .padding(.horizontal, 12).padding(.vertical, 7)
             .background(Capsule().fill(active ? Color.cosmicAmethyst : Color.cosmicStardust))
@@ -194,7 +194,7 @@ struct JournalView: View {
                 .font(.system(size: 28, weight: .light))
                 .foregroundStyle(Color.cosmicTextTertiary)
             Text("Your timeline starts when you save the first entry. Tap +.")
-                .font(.system(size: 13, weight: .regular))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 40)
         }
@@ -237,26 +237,26 @@ private struct JournalRowView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "pencil.line")
-                .font(.system(size: 14, weight: .regular))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicAmethyst)
                 .frame(width: 28, height: 28)
                 .background(Circle().fill(Color.cosmicAmethyst.opacity(0.12)))
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.createdAt, format: .dateTime.month().day().hour().minute())
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextSecondary)
                 Text(entry.whatHappened.isEmpty ? "(no summary)" : entry.whatHappened)
-                    .font(.system(size: 17, weight: .regular))
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .lineLimit(1).truncationMode(.tail)
                 if patternName != nil || moodDelta != nil {
                     HStack(spacing: 8) {
                         if let n = patternName {
-                            Text(n).font(.system(size: 11, weight: .medium))
+                            Text(n).font(.cosmicLabel)
                                 .foregroundStyle(Color.cosmicTextSecondary)
                         }
                         if let d = moodDelta {
-                            Text(d).font(.system(size: 11, weight: .medium)).monospaced()
+                            Text(d).font(.cosmicLabel).monospaced()
                                 .foregroundStyle(Color.cosmicTextTertiary)
                         }
                     }
@@ -285,13 +285,13 @@ private struct PauseRowView: View {
                 .background(Circle().fill(tint.opacity(0.15)))
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.timestamp, format: .dateTime.month().day().hour().minute())
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextSecondary)
                 Text("Pause · \(entry.emotion)")
-                    .font(.system(size: 15, weight: .regular))
+                    .font(.cosmicCallout)
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Text(moodLine)
-                    .font(.system(size: 11, weight: .medium)).monospaced()
+                    .font(.cosmicLabel).monospaced()
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             Spacer(minLength: 0)
@@ -351,7 +351,7 @@ struct JournalComposeView: View {
                             TextEditor(text: $whatHappened)
                                 .scrollContentBackground(.hidden)
                                 .frame(minHeight: 78)
-                                .font(.system(size: 15))
+                                .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextPrimary)
                                 .composeFieldBackground()
                         }
@@ -403,7 +403,7 @@ struct JournalComposeView: View {
     private func composeSection<C: View>(_ caption: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(caption.uppercased())
-                .font(.system(size: 10, weight: .semibold)).tracking(1.2)
+                .font(.cosmicMicro).tracking(1.2)
                 .foregroundStyle(Color.cosmicTextTertiary)
             content()
         }
@@ -420,11 +420,11 @@ struct JournalComposeView: View {
             } label: {
                 HStack {
                     Text(selectedPatternName)
-                        .font(.system(size: 15, weight: .regular))
+                        .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 .padding(12)
@@ -433,10 +433,10 @@ struct JournalComposeView: View {
             if let pid = selectedPatternId, let p = TopoContentLoader.shared.pattern(id: pid) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(p.name)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.cosmicFootnoteEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     Text(p.summary)
-                        .font(.system(size: 12, weight: .regular))
+                        .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -465,11 +465,11 @@ struct JournalComposeView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(label.uppercased())
-                    .font(.system(size: 10, weight: .semibold)).tracking(1.0)
+                    .font(.cosmicMicro).tracking(1.0)
                     .foregroundStyle(Color.cosmicTextTertiary)
                 Spacer()
                 Text("\(Int(value.wrappedValue))")
-                    .font(.system(size: 12, weight: .semibold)).monospaced()
+                    .font(.cosmicCaptionEmphasis).monospaced()
                     .foregroundStyle(Color.cosmicTextSecondary)
             }
             Slider(value: value, in: 0...100, step: 1).tint(Color.cosmicAccent)
@@ -484,7 +484,7 @@ struct JournalComposeView: View {
                 HapticFeedbackService.shared.lightImpact(); dismiss()
             } label: {
                 Text("Cancel")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.cosmicSurface))
@@ -494,7 +494,7 @@ struct JournalComposeView: View {
                 Task { @MainActor in save() }
             } label: {
                 Text("Save")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicVoid)
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -553,7 +553,7 @@ private struct FlowChips: View {
                     else { selection.insert(option) }
                 } label: {
                     Text(option)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(selection.contains(option) ? Color.cosmicVoid : Color.cosmicTextSecondary)
                         .padding(.horizontal, 12).padding(.vertical, 7)
                         .background(Capsule().fill(selection.contains(option) ? Color.cosmicAmethyst : Color.cosmicStardust))
@@ -607,7 +607,7 @@ struct JournalEntryDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(entry.createdAt, format: .dateTime.weekday(.wide).month().day().hour().minute())
-                        .font(.system(size: 12, weight: .semibold)).tracking(1.0)
+                        .font(.cosmicCaptionEmphasis).tracking(1.0)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     detailCard("WHAT HAPPENED", body: entry.whatHappened)
                     bodyRegionsCard
@@ -634,7 +634,7 @@ struct JournalEntryDetailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 17, weight: .regular))
+                        .font(.cosmicBody)
                         .foregroundStyle(Color.cosmicTextPrimary)
                 }
             }
@@ -654,7 +654,7 @@ struct JournalEntryDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             tinyCaption(caption)
             Text(body.isEmpty ? "—" : body)
-                .font(.system(size: 15, weight: .regular))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -665,13 +665,13 @@ struct JournalEntryDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             tinyCaption("BODY RESPONSE")
             if entry.bodyRegions.isEmpty && entry.bodyNotes.isEmpty {
-                Text("—").font(.system(size: 15)).foregroundStyle(Color.cosmicTextPrimary)
+                Text("—").font(.cosmicCallout).foregroundStyle(Color.cosmicTextPrimary)
             } else {
                 if !entry.bodyRegions.isEmpty {
                     TopoFlowLayout(spacing: 6, runSpacing: 6) {
                         ForEach(entry.bodyRegions, id: \.self) { r in
                             Text(r)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.cosmicLabel)
                                 .foregroundStyle(Color.cosmicVoid)
                                 .padding(.horizontal, 10).padding(.vertical, 5)
                                 .background(Capsule().fill(Color.cosmicAmethyst))
@@ -680,7 +680,7 @@ struct JournalEntryDetailView: View {
                 }
                 if !entry.bodyNotes.isEmpty {
                     Text(entry.bodyNotes)
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .padding(.top, 4)
                 }
@@ -695,10 +695,10 @@ struct JournalEntryDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     tinyCaption("PATTERN")
                     Text(p.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     Text(p.summary)
-                        .font(.system(size: 13, weight: .regular))
+                        .font(.cosmicFootnote)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .lineLimit(2)
                 }
@@ -717,7 +717,7 @@ struct JournalEntryDetailView: View {
                 tinyCaption("MOOD")
                 Spacer()
                 Text("\(b) → \(a)")
-                    .font(.system(size: 14, weight: .semibold)).monospaced()
+                    .font(.cosmicCalloutEmphasis).monospaced()
                     .foregroundStyle(Color.cosmicTextPrimary)
             }
             .padding(14)
@@ -727,7 +727,7 @@ struct JournalEntryDetailView: View {
 
     private func tinyCaption(_ s: String) -> some View {
         Text(s)
-            .font(.system(size: 10, weight: .semibold)).tracking(1.2)
+            .font(.cosmicMicro).tracking(1.2)
             .foregroundStyle(Color.cosmicTextTertiary)
     }
 }
@@ -782,7 +782,7 @@ struct InsightsView: View {
                         .font(.system(size: 28, weight: .light))
                         .foregroundStyle(Color.cosmicTextTertiary)
                     Text("Your insights compound with every entry. Start journaling.")
-                        .font(.system(size: 13, weight: .regular))
+                        .font(.cosmicFootnote)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .multilineTextAlignment(.center).padding(.horizontal, 40)
                 }
@@ -810,7 +810,7 @@ struct InsightsView: View {
 
     private func emptyText(_ s: String) -> some View {
         Text(s)
-            .font(.system(size: 13, weight: .regular))
+            .font(.cosmicFootnote)
             .foregroundStyle(Color.cosmicTextSecondary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -824,7 +824,7 @@ struct InsightsView: View {
                 ForEach(Array(patternCounts.enumerated()), id: \.offset) { _, item in
                     HStack(spacing: 10) {
                         Text(item.name)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.cosmicCaptionEmphasis)
                             .foregroundStyle(Color.cosmicTextSecondary)
                             .frame(width: 110, alignment: .leading).lineLimit(1)
                         GeometryReader { geo in
@@ -838,7 +838,7 @@ struct InsightsView: View {
                         }
                         .frame(height: 24)
                         Text("\(item.count)")
-                            .font(.system(size: 12, weight: .semibold)).monospaced()
+                            .font(.cosmicCaptionEmphasis).monospaced()
                             .foregroundStyle(Color.cosmicTextPrimary)
                             .frame(width: 24, alignment: .trailing)
                     }
@@ -855,7 +855,7 @@ struct InsightsView: View {
             TopoFlowLayout(spacing: 6, runSpacing: 6) {
                 ForEach(Array(bodyRegionCounts.enumerated()), id: \.offset) { _, item in
                     Text("\(item.region) \(item.count)")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .background(Capsule().fill(Color.cosmicAmethyst
@@ -874,11 +874,11 @@ private struct InsightsCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.cosmicBodyEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Spacer()
                 Text(subtitle.uppercased())
-                    .font(.system(size: 9, weight: .semibold)).tracking(1.1)
+                    .font(.cosmicMicro).tracking(1.1)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             content()
@@ -945,7 +945,7 @@ private struct MoodSparkline: View {
     private func legendDot(_ color: Color, _ label: String) -> some View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 6, height: 6)
-            Text(label).font(.system(size: 10, weight: .medium))
+            Text(label).font(.cosmicMicro)
                 .foregroundStyle(Color.cosmicTextTertiary)
         }
     }

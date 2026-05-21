@@ -64,14 +64,14 @@ struct PatternLibraryView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Patterns")
-                .font(.system(size: 32, weight: .bold))
+                .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text("Loops your chart runs by default.")
-                .font(.system(size: 14, weight: .regular))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
             if !hasPro {
                 Text("Pro · 1 free pattern detail / week — \(quota.patternViewsUsedThisWeek)/\(ProQuotaManager.patternWeeklyLimit) used")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.cosmicLabel)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
         }
@@ -114,7 +114,7 @@ struct PatternLibraryView: View {
 
     private var footer: some View {
         Text("PATTERN = STIMULUS + SCRIPT + NEED → ROUTE")
-            .font(.system(size: 10, weight: .semibold))
+            .font(.cosmicMicro)
             .tracking(2.5)
             .foregroundStyle(Color.cosmicTextTertiary)
             .frame(maxWidth: .infinity, alignment: .center)
@@ -132,7 +132,7 @@ private struct ActiveCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(activation.pattern.name)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.cosmicCalloutEmphasis)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
@@ -173,18 +173,18 @@ private struct PatternRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(pattern.name)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.cosmicHeadline)
                     .foregroundStyle(Color.cosmicTextPrimary)
                 Spacer(minLength: 8)
                 ActivationBadge(level: pattern.activationLevel)
             }
             Text(pattern.summary)
-                .font(.system(size: 13, weight: .regular))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             if let firstCue = pattern.detectionCues.first {
                 Text("When fires: \(firstCue)")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.cosmicLabel)
                     .foregroundStyle(tint)
                     .lineLimit(1)
             }
@@ -263,11 +263,11 @@ struct PatternDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
             ActivationBadge(level: pattern.activationLevel)
             Text(driverCaption)
-                .font(.system(size: 12, weight: .medium))
+                .font(.cosmicCaptionEmphasis)
                 .tracking(0.4)
                 .foregroundStyle(tint)
             Text(pattern.summary)
-                .font(.system(size: 14, weight: .regular))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -360,7 +360,7 @@ struct PatternDetailView: View {
             SectionLabel("YOUR JOURNAL ENTRIES")
             if entries.isEmpty {
                 Text("No entries tagged with this pattern yet.")
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -388,7 +388,7 @@ private struct LoopRow: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text(caption)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.cosmicMicro)
                     .tracking(1.6)
                     .foregroundStyle(emphasis ? tint : Color.cosmicTextTertiary)
                 Text(text)
@@ -416,25 +416,25 @@ private struct LadderRow: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Text(level.name)
-                        .font(.system(size: 17, weight: .semibold))
+                        .font(.cosmicBodyEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                     if isCurrent {
                         Image(systemName: "pin.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.cosmicLabel)
                             .foregroundStyle(tint)
                     }
                     Spacer(minLength: 0)
                 }
                 if !level.keywords.isEmpty {
                     Text(level.keywords.joined(separator: " · "))
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.cosmicCaptionEmphasis)
                         .foregroundStyle(tint.opacity(0.85))
                 }
                 Text(level.bodyCue)
-                    .font(.system(size: 12, weight: .regular))
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
                 Text(level.behavior)
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -457,7 +457,7 @@ private struct JournalRow: View {
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .frame(width: 56, alignment: .leading)
             Text(entry.whatHappened.isEmpty ? "—" : truncate(entry.whatHappened, max: 100))
-                .font(.system(size: 13, weight: .regular))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -476,7 +476,7 @@ private struct ActivationBadge: View {
     let level: Pattern.ActivationLevel
     var body: some View {
         Text(label)
-            .font(.system(size: 10, weight: .semibold))
+            .font(.cosmicMicro)
             .tracking(1.6)
             .foregroundStyle(foreground)
             .padding(.horizontal, 10)
@@ -507,7 +507,7 @@ private struct SectionLabel: View {
     init(_ text: String) { self.text = text }
     var body: some View {
         Text(text)
-            .font(.system(size: 10, weight: .semibold))
+            .font(.cosmicMicro)
             .tracking(2.0)
             .foregroundStyle(Color.cosmicTextTertiary)
     }
@@ -518,10 +518,10 @@ private struct BulletLine: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text("·")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.cosmicFootnoteEmphasis)
                 .foregroundStyle(Color.cosmicTextTertiary)
             Text(text)
-                .font(.system(size: 13, weight: .regular))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)

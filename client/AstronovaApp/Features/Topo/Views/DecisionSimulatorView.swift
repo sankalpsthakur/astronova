@@ -10,7 +10,7 @@ private struct CaptionStyle: ViewModifier {
     var tint: Color = Color.cosmicTextSecondary
     func body(content: Content) -> some View {
         content
-            .font(.system(size: 11, weight: .semibold))
+            .font(.cosmicLabel)
             .tracking(1.2)
             .foregroundStyle(tint)
     }
@@ -39,7 +39,7 @@ private func topoField<Content: View>(_ label: String, @ViewBuilder _ content: (
 private func primaryButton(_ title: String, enabled: Bool = true, action: @escaping () -> Void) -> some View {
     Button(action: action) {
         Text(title)
-            .font(.system(size: 17, weight: .semibold))
+            .font(.cosmicBodyEmphasis)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .topoCardBackground(enabled ? Color.cosmicAccent : Color.cosmicSurface, radius: 14)
@@ -95,10 +95,10 @@ struct DecisionSimulatorView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Decide")
-                .font(.system(size: 32, weight: .bold))
+                .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text("Decisions under pressure, with the data.")
-                .font(.system(size: 15))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -115,8 +115,8 @@ struct DecisionSimulatorView: View {
                 }
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "plus.circle.fill").font(.system(size: 18, weight: .semibold))
-                    Text("New Decision").font(.system(size: 17, weight: .semibold))
+                    Image(systemName: "plus.circle.fill").font(.cosmicHeadline)
+                    Text("New Decision").font(.cosmicBodyEmphasis)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
@@ -127,7 +127,7 @@ struct DecisionSimulatorView: View {
 
             if !hasPro {
                 Text("\(quota.decisionsRemaining) free decisions left this month")
-                    .font(.system(size: 12))
+                    .font(.cosmicCaption)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -140,7 +140,7 @@ struct DecisionSimulatorView: View {
             let recent = decisionStore.recent()
             if recent.isEmpty {
                 Text("No decisions yet. Run your first simulation.")
-                    .font(.system(size: 13))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 16)
@@ -166,7 +166,7 @@ struct DecisionSimulatorView: View {
                     NavigationRulesView()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.cosmicFootnoteEmphasis)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .padding(8)
                         .background(Circle().fill(Color.cosmicSurface))
@@ -176,7 +176,7 @@ struct DecisionSimulatorView: View {
             let top = Array(ruleStore.activeRules.prefix(3))
             if top.isEmpty {
                 Text("Your rules will appear here. Add the first one in Navigation Algorithm.")
-                    .font(.system(size: 13))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 8)
@@ -210,20 +210,20 @@ private struct DecisionRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(dateLabel)
-                    .font(.system(size: 13))
+                    .font(.cosmicFootnote)
                     .foregroundStyle(Color.cosmicTextSecondary)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.cosmicLabel)
                     .foregroundStyle(Color.cosmicTextTertiary)
             }
             Text(decision.promptText)
-                .font(.system(size: 17))
+                .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text(decision.decisionClass.label.uppercased())
-                .font(.system(size: 11, weight: .semibold))
+                .font(.cosmicLabel)
                 .tracking(0.8)
                 .foregroundStyle(Color.cosmicTextTertiary)
         }
@@ -258,13 +258,13 @@ struct DecisionComposeView: View {
                         ZStack(alignment: .topLeading) {
                             if promptText.isEmpty {
                                 Text("Type the call you're facing.")
-                                    .font(.system(size: 15))
+                                    .font(.cosmicCallout)
                                     .foregroundStyle(Color.cosmicTextTertiary)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 14)
                             }
                             TextEditor(text: $promptText)
-                                .font(.system(size: 15))
+                                .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextPrimary)
                                 .scrollContentBackground(.hidden)
                                 .padding(.horizontal, 10)
@@ -366,7 +366,7 @@ struct DecisionResultView: View {
                     footer(output)
                 } else {
                     Text("Output missing — re-run.")
-                        .font(.system(size: 15))
+                        .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 40)
@@ -399,7 +399,7 @@ struct DecisionResultView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(caption.uppercased()).topoCaption(tint)
             Text(body)
-                .font(.system(size: 15))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -412,13 +412,13 @@ struct DecisionResultView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("YOUR DEFAULT PATTERN").topoCaption()
             Text(output.defaultPattern)
-                .font(.system(size: 15))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let pid = output.citedPatternIds.first,
                let pattern = TopoContentLoader.shared.pattern(id: pid) {
                 Text(pattern.name)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.cosmicFootnoteEmphasis)
                     .foregroundStyle(Color.cosmicAccent)
                     .underline()
             }
@@ -443,7 +443,7 @@ struct DecisionResultView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("BEST ROUTE").topoCaption()
                 Text(text)
-                    .font(.system(size: 17, weight: .medium))
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -473,8 +473,8 @@ struct DecisionResultView: View {
             showSaveRule = true
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "bookmark").font(.system(size: 14, weight: .semibold))
-                Text("Save as rule").font(.system(size: 15, weight: .semibold))
+                Image(systemName: "bookmark").font(.cosmicCalloutEmphasis)
+                Text("Save as rule").font(.cosmicCalloutEmphasis)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -493,7 +493,7 @@ struct DecisionResultView: View {
             ? "—"
             : output.citedTransitDrivers.joined(separator: ", ")
         return Text("DRIVERS: \(drivers)")
-            .font(.system(size: 10, weight: .medium))
+            .font(.cosmicMicro)
             .tracking(1.0)
             .foregroundStyle(Color.cosmicTextTertiary)
             .padding(.top, 8)
@@ -560,7 +560,7 @@ struct NavigationRulesView: View {
                     showAdd = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.cosmicBodyEmphasis)
                         .foregroundStyle(Color.cosmicAccent)
                 }
             }
@@ -579,10 +579,10 @@ struct NavigationRulesView: View {
                 .font(.system(size: 28))
                 .foregroundStyle(Color.cosmicTextTertiary)
             Text("No rules yet.")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.cosmicCalloutEmphasis)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text("Tap + to write your first.")
-                .font(.system(size: 13))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
         }
         .padding()
@@ -681,13 +681,13 @@ struct NavigationRuleEditView: View {
                         ZStack(alignment: .topLeading) {
                             if text.isEmpty {
                                 Text("When [trigger], I [action].")
-                                    .font(.system(size: 15))
+                                    .font(.cosmicCallout)
                                     .foregroundStyle(Color.cosmicTextTertiary)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 14)
                             }
                             TextEditor(text: $text)
-                                .font(.system(size: 15))
+                                .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextPrimary)
                                 .scrollContentBackground(.hidden)
                                 .padding(.horizontal, 10)
@@ -712,11 +712,11 @@ struct NavigationRuleEditView: View {
                         } label: {
                             HStack {
                                 Text(linkedPatternName)
-                                    .font(.system(size: 15))
+                                    .font(.cosmicCallout)
                                     .foregroundStyle(Color.cosmicTextPrimary)
                                 Spacer()
                                 Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.cosmicCaptionEmphasis)
                                     .foregroundStyle(Color.cosmicTextTertiary)
                             }
                             .padding(14)
@@ -732,7 +732,7 @@ struct NavigationRuleEditView: View {
                                     confidence = star
                                 } label: {
                                     Image(systemName: star <= confidence ? "star.fill" : "star")
-                                        .font(.system(size: 22))
+                                        .font(.cosmicTitle2)
                                         .foregroundStyle(star <= confidence ? Color.cosmicGold : Color.cosmicTextTertiary)
                                 }
                                 .buttonStyle(.plain)

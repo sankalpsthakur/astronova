@@ -46,10 +46,10 @@ struct MyMapView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Map")
-                .font(.system(size: 32, weight: .bold))
+                .font(.cosmicDisplay)
                 .foregroundColor(.cosmicTextPrimary)
             Text("Your inner terrain — tap a zone to explore.")
-                .font(.system(size: 15))
+                .font(.cosmicCallout)
                 .foregroundColor(.cosmicTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -79,7 +79,7 @@ struct MyMapView: View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(label)
-                .font(.system(size: 10, weight: .medium))
+                .font(.cosmicMicro)
                 .foregroundColor(.cosmicTextTertiary)
                 .textCase(.uppercase)
                 .tracking(0.6)
@@ -192,7 +192,7 @@ private struct RadarChart: View {
                 let comp = scoreFor(d.id)
                 let scoreText = String(format: "%.1f", comp * 10)
                 let block = Text("\(d.name)\n\(scoreText)")
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.cosmicMicro)
                     .foregroundColor(.cosmicTextSecondary)
                 let resolved = ctx.resolve(block)
                 ctx.draw(resolved, at: CGPoint(x: lx, y: ly), anchor: .center)
@@ -235,7 +235,7 @@ private struct DomainCard: View {
                 .font(.system(size: 24, weight: .light))
                 .foregroundColor(domainTint(domain.colorHint))
             Text(domain.name)
-                .font(.system(size: 17, weight: .semibold))
+                .font(.cosmicBodyEmphasis)
                 .foregroundColor(.cosmicTextPrimary)
             Text(String(format: "%.1f / 10", score.composite * 10))
                 .font(.system(size: 13, design: .monospaced))
@@ -287,7 +287,7 @@ struct TopoDomainDetailView: View {
 
     private var tagline: some View {
         Text(mapping.tagline)
-            .font(.system(size: 17))
+            .font(.cosmicBody)
             .foregroundColor(.cosmicTextSecondary)
             .padding(.top, 4)
     }
@@ -299,7 +299,7 @@ struct TopoDomainDetailView: View {
                 .foregroundColor(domainTint(mapping.colorHint))
                 .frame(width: 64)
             Text(mapping.terrainMetaphor)
-                .font(.system(size: 15))
+                .font(.cosmicCallout)
                 .foregroundColor(.cosmicTextPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -336,12 +336,12 @@ struct TopoDomainDetailView: View {
             HStack(spacing: 6) {
                 Circle().fill(tint).frame(width: 6, height: 6)
                 Text(caption)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.cosmicMicro)
                     .foregroundColor(.cosmicTextTertiary)
                     .tracking(0.8)
             }
             Text(body)
-                .font(.system(size: 15))
+                .font(.cosmicCallout)
                 .foregroundColor(.cosmicTextPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -351,7 +351,7 @@ struct TopoDomainDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Factors")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.cosmicFootnoteEmphasis)
                     .foregroundColor(.cosmicTextTertiary)
                     .tracking(0.8)
                     .textCase(.uppercase)
@@ -381,7 +381,7 @@ struct TopoDomainDetailView: View {
     private func factorRow(name: String, weight: Double) -> some View {
         HStack(spacing: 12) {
             Text(name)
-                .font(.system(size: 14))
+                .font(.cosmicCallout)
                 .foregroundColor(.cosmicTextPrimary)
             Spacer()
             ZStack(alignment: .leading) {
@@ -398,7 +398,7 @@ struct TopoDomainDetailView: View {
     private var patternsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Associated patterns")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.cosmicFootnoteEmphasis)
                 .foregroundColor(.cosmicTextTertiary)
                 .tracking(0.8)
                 .textCase(.uppercase)
@@ -424,10 +424,10 @@ struct TopoDomainDetailView: View {
     private func patternCard(pattern: Pattern) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(pattern.name)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.cosmicCalloutEmphasis)
                 .foregroundColor(.cosmicTextPrimary)
             Text(truncate(pattern.loop.optimalAction, to: 60))
-                .font(.system(size: 13))
+                .font(.cosmicFootnote)
                 .foregroundColor(.cosmicTextSecondary)
                 .lineLimit(2)
         }

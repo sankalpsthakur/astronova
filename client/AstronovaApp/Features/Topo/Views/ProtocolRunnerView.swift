@@ -69,7 +69,7 @@ struct ProtocolRunnerView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(Color.cosmicTextSecondary)
                     .frame(width: 36, height: 36)
                     .background(Circle().fill(Color.cosmicSurface.opacity(0.7)))
@@ -129,12 +129,12 @@ struct ProtocolRunnerView: View {
     private var stepHeader: some View {
         VStack(spacing: 6) {
             Text(verbForTitle(currentStep.title))
-                .font(.system(size: 12, weight: .semibold))
+                .font(.cosmicCaptionEmphasis)
                 .tracking(2.5)
                 .textCase(.uppercase)
                 .foregroundStyle(tint)
             Text("Step \(currentStep.index) of \(proto.steps.count)")
-                .font(.system(size: 10, weight: .medium))
+                .font(.cosmicMicro)
                 .foregroundStyle(Color.cosmicTextTertiary)
         }
         .padding(.top, 4)
@@ -145,7 +145,7 @@ struct ProtocolRunnerView: View {
             stepHeader
             Spacer()
             Text("Say it.")
-                .font(.system(size: 16, weight: .medium))
+                .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicTextSecondary)
             Text("\"I am feeling \(proto.emotion.lowercased()).\"")
                 .font(.system(size: 30, weight: .bold))
@@ -153,7 +153,7 @@ struct ProtocolRunnerView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Text("Out loud, or in your head. Don't justify it. Don't story it.")
-                .font(.system(size: 13))
+                .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
@@ -171,7 +171,7 @@ struct ProtocolRunnerView: View {
                 .font(.system(size: 28, weight: .bold))
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text("Put your hand there.")
-                .font(.system(size: 14))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
 
             VStack(spacing: 10) {
@@ -185,7 +185,7 @@ struct ProtocolRunnerView: View {
                                 .fill(bodyLocation == option ? tint : tint.opacity(0.2))
                                 .frame(width: 10, height: 10)
                             Text(option)
-                                .font(.system(size: 15, weight: .medium))
+                                .font(.cosmicCalloutEmphasis)
                                 .foregroundStyle(Color.cosmicTextPrimary)
                             Spacer()
                         }
@@ -207,7 +207,7 @@ struct ProtocolRunnerView: View {
                     HapticFeedbackService.shared.selection()
                 } label: {
                     Text("elsewhere")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.cosmicFootnoteEmphasis)
                         .foregroundStyle(Color.cosmicTextTertiary)
                         .padding(.vertical, 8)
                 }
@@ -237,7 +237,7 @@ struct ProtocolRunnerView: View {
                 })
                 .frame(maxHeight: .infinity)
                 Button("Skip") { advance() }
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.cosmicFootnoteEmphasis)
                     .foregroundStyle(Color.cosmicTextTertiary)
                     .padding(.bottom, 24)
             }
@@ -297,7 +297,7 @@ struct ProtocolRunnerView: View {
                     }
                     if routeOptions.isEmpty {
                         Text(currentStep.body)
-                            .font(.system(size: 14))
+                            .font(.cosmicCallout)
                             .foregroundStyle(Color.cosmicTextSecondary)
                             .padding(.horizontal, 16)
                     }
@@ -321,10 +321,10 @@ struct ProtocolRunnerView: View {
             stepHeader
             Spacer()
             Text("Discharge through the body.")
-                .font(.system(size: 22, weight: .bold))
+                .font(.cosmicTitle1)
                 .foregroundStyle(Color.cosmicTextPrimary)
             Text(currentStep.body)
-                .font(.system(size: 14))
+                .font(.cosmicCallout)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
@@ -336,7 +336,7 @@ struct ProtocolRunnerView: View {
                     advance()
                 } label: {
                     Text("Skip")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextSecondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -352,7 +352,7 @@ struct ProtocolRunnerView: View {
                     advance()
                 } label: {
                     Text("Did it")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicVoid)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
@@ -374,7 +374,7 @@ struct ProtocolRunnerView: View {
             Spacer()
             ScrollView {
                 Text(currentStep.body)
-                    .font(.system(size: 17, weight: .regular))
+                    .font(.cosmicBody)
                     .foregroundStyle(Color.cosmicTextPrimary)
                     .multilineTextAlignment(.leading)
                     .padding(.horizontal, 28)
@@ -391,7 +391,7 @@ struct ProtocolRunnerView: View {
         VStack(spacing: 28) {
             Spacer()
             Text("Where are you now?")
-                .font(.system(size: 26, weight: .bold))
+                .font(.cosmicTitle1)
                 .foregroundStyle(Color.cosmicTextPrimary)
 
             VStack(spacing: 18) {
@@ -400,7 +400,7 @@ struct ProtocolRunnerView: View {
                     .foregroundStyle(tint)
 
                 Text(intensityWord(moodAfter))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.cosmicFootnoteEmphasis)
                     .tracking(2)
                     .textCase(.uppercase)
                     .foregroundStyle(Color.cosmicTextSecondary)
@@ -416,7 +416,7 @@ struct ProtocolRunnerView: View {
                     Spacer()
                     Text("intense")
                 }
-                .font(.system(size: 10, weight: .medium))
+                .font(.cosmicMicro)
                 .tracking(1.5)
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .padding(.horizontal, 36)
@@ -442,7 +442,7 @@ struct ProtocolRunnerView: View {
                     .font(.system(size: 44, weight: .bold, design: .monospaced))
                     .foregroundStyle(tint)
                 Text(deltaLabel)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.cosmicFootnoteEmphasis)
                     .tracking(2)
                     .textCase(.uppercase)
                     .foregroundStyle(Color.cosmicTextSecondary)
@@ -451,11 +451,11 @@ struct ProtocolRunnerView: View {
             if !committedAction.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("YOUR MOVE")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.cosmicMicro)
                         .tracking(2)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     Text(committedAction)
-                        .font(.system(size: 17, weight: .medium))
+                        .font(.cosmicBody)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -475,17 +475,17 @@ struct ProtocolRunnerView: View {
             if !proto.doNot.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("DO NOT — NEXT \(proto.doNotWindowMinutes) MIN")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.cosmicMicro)
                         .tracking(2)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     ForEach(proto.doNot, id: \.self) { rule in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "circle.slash")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.cosmicCaptionEmphasis)
                                 .foregroundStyle(tint.opacity(0.7))
                                 .padding(.top, 2)
                             Text(rule)
-                                .font(.system(size: 14))
+                                .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextSecondary)
                         }
                     }
@@ -518,7 +518,7 @@ struct ProtocolRunnerView: View {
     private func primaryButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 17, weight: .semibold))
+                .font(.cosmicBodyEmphasis)
                 .foregroundStyle(Color.cosmicVoid)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
@@ -609,20 +609,20 @@ private struct RouteChoiceCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let condition = option.condition {
                     Text(condition)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.cosmicFootnoteEmphasis)
                         .tracking(0.5)
                         .textCase(.uppercase)
                         .foregroundStyle(tint)
                 }
                 if let action = option.action {
                     Text(action)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 } else if let label = option.label {
                     Text(label)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.cosmicCalloutEmphasis)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)

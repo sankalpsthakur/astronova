@@ -48,7 +48,7 @@ struct BreathingOrb: View {
                         .foregroundStyle(Color.cosmicTextPrimary.opacity(0.85))
                     if phase != .idle && phase != .done {
                         Text("round \(currentRound) of \(breath.rounds)")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.cosmicLabel)
                             .foregroundStyle(Color.cosmicTextSecondary.opacity(0.7))
                     }
                 }
@@ -59,7 +59,7 @@ struct BreathingOrb: View {
 
             if phase == .done {
                 Text("Done.")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.cosmicCalloutEmphasis)
                     .foregroundStyle(tint)
                     .transition(.opacity)
             }
