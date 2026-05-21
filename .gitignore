@@ -140,6 +140,13 @@ client/.derivedData/
 # UX journey screenshots (local testing artifacts)
 docs/ux-journey-e2e/screenshots/
 
+# Audit artifacts — keep the findings docs, drop the PNG bulk
+qa-results/**/*.png
+qa-results/**/*.jpg
+qa-results/**/*.jpeg
+qa-results/**/*.mp4
+qa-results/**/*.mov
+
 # Temporary files
 .scratch/
 server/data/
