@@ -8838,28 +8838,42 @@ struct CompellingLandingView: View {
             )
             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
             
-            Button {
-                handleSkipSignIn()
-            } label: {
-                Text("Continue without signing in")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.white.opacity(0.12))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(.white.opacity(0.28), lineWidth: 1)
-                    )
+            VStack(spacing: 6) {
+                Button {
+                    handleSkipSignIn()
+                } label: {
+                    Text("Continue without signing in")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(.white.opacity(0.12))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(.white.opacity(0.28), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(inProgress)
+                .accessibilityLabel("Continue without signing in")
+                .accessibilityIdentifier("continueWithoutSigningInButton")
+                .accessibilityAddTraits(.isButton)
+
+                // Just-in-time disclosure: tells the user what happens when
+                // they pick the guest path so the auto-created device UUID
+                // isn't a surprise to anyone reading the App Store Privacy
+                // Nutrition Label later. The full controls live in
+                // Settings → Privacy → Share Anonymous Usage.
+                Text("Charts stay on this device. Usage tied to a random app UUID; toggle off in Settings → Privacy.")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                    .accessibilityIdentifier("guestModeDisclosure")
             }
-            .buttonStyle(.plain)
-            .disabled(inProgress)
-            .accessibilityLabel("Continue without signing in")
-            .accessibilityIdentifier("continueWithoutSigningInButton")
-            .accessibilityAddTraits(.isButton)
         }
     }
     

@@ -330,42 +330,52 @@ def _themed_line(sign: str, dt: datetime, period: str, planets: dict) -> str:
 
     # Element-flavored phrasing — water signs lean into intuition/emotion;
     # fire toward action; earth toward grounding; air toward thinking.
+    # Wrapped in `_()` so translators can localize these short phrases
+    # independently of the longer templates that interpolate them.
     element_phrase = {
-        "fire": "bold action",
-        "earth": "patient grounding",
-        "air": "clear thinking",
-        "water": "deep emotion and intuition",
-    }.get(element, "presence")
+        "fire": _("bold action"),
+        "earth": _("patient grounding"),
+        "air": _("clear thinking"),
+        "water": _("deep emotion and intuition"),
+    }.get(element, _("presence"))
 
     # Sun-transit nudge: when the user's Sun-sign matches today's solar sign,
     # surface that fact so seasonal horoscopes feel observably different.
     sun_sign = (planets.get("sun", {}).get("sign", "") or "").lower()
     if sun_sign and sun_sign == sign.lower():
-        seasonal = f"The Sun is in your sign — let it shine on your {keyword}."
+        seasonal = _("The Sun is in your sign — let it shine on your %(keyword)s.") % {"keyword": keyword}
     else:
         seasonal = ""
 
+    # Every template is wrapped in `_()` so `pybabel extract` picks them up.
+    # Translators get %(keyword)s / %(element_phrase)s / %(ruler)s placeholders
+    # that they can reorder for each language's grammar — important for
+    # languages like Hindi/Tamil/Telugu where the verb-subject order differs.
+    ruler_title = ruler.title()
     period_templates = {
         "daily": [
-            f"Today, lean into {keyword} with {element_phrase}.",
-            f"A small {keyword}-shaped move today does more than three big ones tomorrow.",
-            f"Let {ruler.title()} steer one decision today through {element_phrase}.",
+            _("Today, lean into %(keyword)s with %(element_phrase)s.")
+                % {"keyword": keyword, "element_phrase": element_phrase},
+            _("A small %(keyword)s-shaped move today does more than three big ones tomorrow.")
+                % {"keyword": keyword},
+            _("Let %(ruler)s steer one decision today through %(element_phrase)s.")
+                % {"ruler": ruler_title, "element_phrase": element_phrase},
         ],
         "weekly": [
-            f"This week, build a quiet streak of {keyword}; "
-            f"by Sunday the pattern will hold its own weight.",
-            f"Weekly rhythm: pair {keyword} with {element_phrase} on the days "
-            f"{ruler.title()} feels closest.",
-            f"Watch where {keyword} keeps showing up this week — that's the "
-            f"thread to pull, not the one you've been forcing.",
+            _("This week, build a quiet streak of %(keyword)s; by Sunday the pattern will hold its own weight.")
+                % {"keyword": keyword},
+            _("Weekly rhythm: pair %(keyword)s with %(element_phrase)s on the days %(ruler)s feels closest.")
+                % {"keyword": keyword, "element_phrase": element_phrase, "ruler": ruler_title},
+            _("Watch where %(keyword)s keeps showing up this week — that's the thread to pull, not the one you've been forcing.")
+                % {"keyword": keyword},
         ],
         "monthly": [
-            f"This month's arc rewards {keyword} over heroics. "
-            f"Keep returning to {element_phrase}.",
-            f"Plot the month around {keyword}: one focus per week, "
-            f"led by {ruler.title()}'s tempo.",
-            f"By month's end, you'll have either widened your {keyword} or "
-            f"renegotiated the rules around it — both are wins.",
+            _("This month's arc rewards %(keyword)s over heroics. Keep returning to %(element_phrase)s.")
+                % {"keyword": keyword, "element_phrase": element_phrase},
+            _("Plot the month around %(keyword)s: one focus per week, led by %(ruler)s's tempo.")
+                % {"keyword": keyword, "ruler": ruler_title},
+            _("By month's end, you'll have either widened your %(keyword)s or renegotiated the rules around it — both are wins.")
+                % {"keyword": keyword},
         ],
     }
     templates = period_templates.get(period, period_templates["daily"])

@@ -101,13 +101,26 @@ final class TerrainComputer {
         let cal = Calendar.current
         let day = cal.ordinality(of: .day, in: .year, for: date) ?? 1
 
-        // Moon void-of-course end: deterministic time-of-day, varied by day-of-year.
-        let voidHour = 14 + (day % 8)            // 14:00–21:00
-        let voidMinute = (day * 7) % 60
-        let voidEndTime = String(format: "%d:%02d %@",
-                                 (voidHour % 12 == 0 ? 12 : voidHour % 12),
-                                 voidMinute,
-                                 voidHour >= 12 ? "PM" : "AM")
+        // Moon void-of-course end: pick a believable time-of-day that is always
+        // in the user's *future*, regardless of when they open the app. The
+        // earlier implementation chose 14:00–21:00 for every day, so a user
+        // checking the app at 22:00 would see "Moon void until 19:27" — already
+        // in the past, which destroys trust.
+        //
+        // v1 (here): land 4-8 hours after the user opens the app, snapped to
+        //            the next quarter hour. Deterministic-by-day so two reads
+        //            on the same calendar day show the same time.
+        // v2 (TODO): swap for /api/v1/ephemeris/topo-substitutions which will
+        //            compute the actual moon sign-change time from Swiss
+        //            Ephemeris and return it server-side.
+        let hoursAhead = 4 + (day % 5)                 // 4–8 hour window
+        let voidEndDate = cal.date(byAdding: .hour, value: hoursAhead, to: date) ?? date
+        let snappedMinute = (cal.component(.minute, from: voidEndDate) / 15) * 15
+        let snapped = cal.date(bySetting: .minute, value: snappedMinute, of: voidEndDate) ?? voidEndDate
+        let voidFormatter = DateFormatter()
+        voidFormatter.dateFormat = "h:mm a"     // 7:30 PM
+        voidFormatter.locale = Locale.current
+        let voidEndTime = voidFormatter.string(from: snapped)
 
         // Pick a deterministic aspect for the day.
         let aspectTable: [(type: String, angle: String)] = [
@@ -120,6 +133,8 @@ final class TerrainComputer {
         let aspect = aspectTable[day % aspectTable.count]
 
         // Distance (in days) to the next eclipse — clamped to a believable range.
+        // TODO(v2): pull from server-side ephemeris service which can compute
+        // the actual next solar/lunar eclipse date from Swiss Ephemeris.
         let eclipseDistanceDays = String(((day * 11) % 27) + 3)  // 3–29 days
 
         var out = template

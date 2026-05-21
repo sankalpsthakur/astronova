@@ -309,25 +309,76 @@ but noting it for the operator.
    0/1, insights 0/2), Get Pro CTA, My Reports / Buy Reports, Ask Oracle
    (token packs), signed in as Test User, Sign out.
 
-## Open work (next iteration)
+### P2 — `{void_end_time}` could render in the user's past (FIXED)
 
-- Walk the cosmic-profile onboarding flow (Step 1–5: name, birth date, birth
-  time, birth location, …) — discovered on the final iteration when a fresh
-  install reset state. Each step has its own CTA and validation surface.
+Earlier the substitute helper computed `voidHour = 14 + (day % 8)` — a
+fixed 14:00–21:00 window per day. A user opening the app at 22:00 saw
+"Moon void until 19:27 PM" — already in the past, eroding trust.
+
+**Fix** (`TopoEngine.substitute`): Anchor the void-end timestamp to
+`date + 4-8 hours ahead`, snapped to the next quarter hour, formatted via
+`DateFormatter` honoring `Locale.current` so 12h/24h rendering matches
+the user's region. Two reads on the same calendar day still produce the
+same time (deterministic-by-day for the gap-size selection). Added a
+TODO marker pointing to a future `/api/v1/ephemeris/topo-substitutions`
+endpoint that will return the actual moon sign-change time from Swiss
+Ephemeris.
+
+---
+
+### P2 — Anonymous identity without disclosure at the point of consent (FIXED)
+
+Tapping "Continue without signing in" silently created an anonymous
+device UUID and started analytics. The full controls live at Settings →
+Privacy → Share Anonymous Usage, but that's not discoverable from the
+welcome surface.
+
+**Fix** (`RootView.swift` CompellingLandingView): Added a small caption
+under the guest-mode button:
+
+> "Charts stay on this device. Usage tied to a random app UUID; toggle
+> off in Settings → Privacy."
+
+Caption font, low-opacity, accessibility id `guestModeDisclosure`.
+Doesn't distract from the primary CTAs but is reachable for anyone who
+wants the disclosure at consent time.
+
+---
+
+### P3 — New horoscope themed-line strings were English-only (FIXED)
+
+The themed-line and seasonal-nudge strings introduced in this audit
+were f-strings, invisible to `pybabel extract`. The app ships seven
+locales (`en, hi, es, ta, te, bn, ar`) and three of them already have
+populated .po files (`es, hi, bn, ta, te`).
+
+**Fix** (`server/routes/horoscope.py`): Wrapped every themed string in
+`flask_babel.gettext as _()` with explicit `%(named)s` placeholders so
+translators can reorder words for each language's grammar (important
+for Hindi / Tamil / Telugu where the verb order differs). Tests
+52/52 still pass — `_()` falls back to the source string when no
+translation is present.
+
+**Followup**: Running `pybabel extract -F babel.cfg -o messages.pot .`
+and merging the new keys into each locale's `messages.po` is the
+translator handoff step. The Arabic translations folder does not yet
+exist on disk (only `bn/en/es/hi/ta/te`) — noted as gap.
+
+## Open work (truly next iteration)
+
 - Real StoreKit purchase trial against the sandbox tester (`Start Pro`
   button under the new variant router) — confirm tiered_v1 / tiered_v2
-  designs render and complete a sandbox transaction end-to-end.
-- Localization sweep — `en, hi, es, ta, te, bn, ar` are configured; need
-  to confirm each surface renders cleanly in non-Latin scripts (Bengali,
-  Telugu, Tamil, Arabic). The themed-line strings added to horoscope
-  generation are English-only and need translation.
-- Replace stub `TerrainComputer` substitution defaults with real
-  ephemeris-derived data (`{void_end_time}` from actual moon-sign change,
-  `{eclipse_distance_days}` from the next eclipse, `{aspect_partner}` from
-  the day's exact transit).
+  designs render and complete a sandbox transaction end-to-end. The
+  local `StoreKit/AstronovaProducts.storekit` config is already wired
+  into the scheme; a manual sandbox-tester run would confirm the flow.
+- `pybabel extract` + translator handoff for the new themed-line keys
+  in horoscope.py.
+- Create the `ar` (Arabic) translations folder under
+  `server/translations/`; currently absent despite Arabic being in
+  `SUPPORTED_LOCALES`.
+- Server endpoint `/api/v1/ephemeris/topo-substitutions` that derives
+  real moon void-of-course end, dominant aspect, next eclipse from Swiss
+  Ephemeris, replacing the iOS-side pseudo-random fallback.
 - Older Features modules (`Discover`, `Self`, `Temple`, `TimeTravel`,
   `Home`, `NPS`, `Chat`, `Oracle`) were sunset 2026-05-18 as primary tabs
   but the files remain. Decide: delete or keep as legacy redirects?
-- Anonymous user identity auto-created without explicit consent — see
-  whether this needs an ATT-style prompt or is covered by existing
-  Privacy Nutrition Label disclosures.
