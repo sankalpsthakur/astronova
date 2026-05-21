@@ -52,6 +52,12 @@ struct AstronovaAppApp: App {
 
         _authState = StateObject(wrappedValue: AuthState())
 
+        // Warm the Today-screen ephemeris substitutions cache so the Today
+        // tab renders real moon void-of-course / aspect / eclipse values on
+        // first paint instead of falling back to the deterministic stub.
+        // No-op when the cache is already current for this UTC day.
+        TopoSubstitutionsService.shared.refreshIfStale()
+
         // NOTE: Smartlook initialization is deferred to RootView.onAppear so
         // the first screen is visible before analytics starts.
         #if DEBUG

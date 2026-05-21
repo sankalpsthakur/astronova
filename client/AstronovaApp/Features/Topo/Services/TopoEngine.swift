@@ -94,35 +94,40 @@ final class TerrainComputer {
         )
     }
 
-    /// Replace `{var}` placeholders in terrain templates with deterministic, plausible
-    /// values until the v2 chart-aware engine lands. Any token not handled explicitly
-    /// is stripped by the final regex pass so raw `{...}` never leaks to the UI.
+    /// Replace `{var}` placeholders in terrain templates with real ephemeris-
+    /// derived values when the server cache has them; fall back to plausible
+    /// deterministic stubs otherwise. Any token not handled explicitly is
+    /// stripped by the final regex pass so raw `{...}` never leaks to the UI.
+    ///
+    /// Substitution priority for each token:
+    ///   1. Server cache (`TopoSubstitutionsService.current`) — Swiss Ephemeris
+    ///   2. Deterministic stub computed here from `date` — always-future
+    ///      time, day-of-year jitter, etc.
+    /// On network failure the stubs keep the UI useful offline.
     private func substitute(_ template: String, dashaLord: String, date: Date = Date()) -> String {
         let cal = Calendar.current
         let day = cal.ordinality(of: .day, in: .year, for: date) ?? 1
 
+        // Prefer real ephemeris values when the per-UTC-day cache is warm.
+        let server = TopoSubstitutionsService.shared.current
+
         // Moon void-of-course end: pick a believable time-of-day that is always
         // in the user's *future*, regardless of when they open the app. The
-        // earlier implementation chose 14:00–21:00 for every day, so a user
-        // checking the app at 22:00 would see "Moon void until 19:27" — already
-        // in the past, which destroys trust.
-        //
-        // v1 (here): land 4-8 hours after the user opens the app, snapped to
-        //            the next quarter hour. Deterministic-by-day so two reads
-        //            on the same calendar day show the same time.
-        // v2 (TODO): swap for /api/v1/ephemeris/topo-substitutions which will
-        //            compute the actual moon sign-change time from Swiss
-        //            Ephemeris and return it server-side.
-        let hoursAhead = 4 + (day % 5)                 // 4–8 hour window
+        // pre-2026-05-21 implementation chose 14:00–21:00 for every day, so a
+        // user checking the app at 22:00 would see "Moon void until 19:27" —
+        // already in the past, which destroys trust.
+        let hoursAhead = 4 + (day % 5)                 // 4–8 hour stub window
         let voidEndDate = cal.date(byAdding: .hour, value: hoursAhead, to: date) ?? date
         let snappedMinute = (cal.component(.minute, from: voidEndDate) / 15) * 15
         let snapped = cal.date(bySetting: .minute, value: snappedMinute, of: voidEndDate) ?? voidEndDate
         let voidFormatter = DateFormatter()
         voidFormatter.dateFormat = "h:mm a"     // 7:30 PM
         voidFormatter.locale = Locale.current
-        let voidEndTime = voidFormatter.string(from: snapped)
+        let voidEndTime = (server?.voidEndTime).flatMap { $0.isEmpty ? nil : $0 }
+            ?? voidFormatter.string(from: snapped)
 
-        // Pick a deterministic aspect for the day.
+        // Pick a deterministic aspect for the day (stub used when server cache
+        // is cold or the moon has no major aspect within orb right now).
         let aspectTable: [(type: String, angle: String)] = [
             ("conjunction", "0°"),
             ("sextile", "60°"),
@@ -130,22 +135,31 @@ final class TerrainComputer {
             ("trine", "120°"),
             ("opposition", "180°")
         ]
-        let aspect = aspectTable[day % aspectTable.count]
+        let stubAspect = aspectTable[day % aspectTable.count]
+        let aspectPartner = (server?.aspectPartner).flatMap { $0.isEmpty ? nil : $0 } ?? "Saturn"
+        let aspectType = (server?.aspectType).flatMap { $0.isEmpty ? nil : $0 } ?? stubAspect.type
+        let aspectAngle = (server?.aspectAngle).flatMap { $0.isEmpty ? nil : $0 } ?? stubAspect.angle
 
-        // Distance (in days) to the next eclipse — clamped to a believable range.
-        // TODO(v2): pull from server-side ephemeris service which can compute
-        // the actual next solar/lunar eclipse date from Swiss Ephemeris.
-        let eclipseDistanceDays = String(((day * 11) % 27) + 3)  // 3–29 days
+        // Distance (in days) to the next eclipse — server-derived when warm,
+        // else clamped to a believable [3, 29] day stub range.
+        let eclipseDistanceDays = server.map { String($0.eclipseDistanceDays) }
+            ?? String(((day * 11) % 27) + 3)
+
+        // Side effect: ensure a refresh kicks off if the cache is cold so the
+        // next render benefits from real data. No-op when warm.
+        if server == nil {
+            TopoSubstitutionsService.shared.refreshIfStale()
+        }
 
         var out = template
             .replacingOccurrences(of: "{dasha_lord}", with: dashaLord)
             .replacingOccurrences(of: "{antardasha_lord}", with: dashaLord)
             .replacingOccurrences(of: "{house}", with: "10H")
-            .replacingOccurrences(of: "{aspect_partner}", with: "Saturn")
+            .replacingOccurrences(of: "{aspect_partner}", with: aspectPartner)
             .replacingOccurrences(of: "{retrograde_planet}", with: dashaLord)
             .replacingOccurrences(of: "{void_end_time}", with: voidEndTime)
-            .replacingOccurrences(of: "{aspect_type}", with: aspect.type)
-            .replacingOccurrences(of: "{aspect_angle}", with: aspect.angle)
+            .replacingOccurrences(of: "{aspect_type}", with: aspectType)
+            .replacingOccurrences(of: "{aspect_angle}", with: aspectAngle)
             .replacingOccurrences(of: "{eclipse_distance_days}", with: eclipseDistanceDays)
 
         // Defensive sweep: never let an unhandled `{token}` reach the UI.
