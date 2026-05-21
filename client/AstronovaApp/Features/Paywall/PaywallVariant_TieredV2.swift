@@ -464,7 +464,7 @@ struct PaywallVariant_TieredV2: View {
                     "context": context.rawValue,
                     "variant": "tiered_v2",
                     "experiment": "astronova_paywall_v1",
-                    "cosmic_trial_requested": true,
+                    "cosmic_trial_requested": "true",
                     "source": "paywall"
                 ]
             )

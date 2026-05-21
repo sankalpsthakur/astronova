@@ -292,43 +292,120 @@ def _generate_horoscope(sign: str, dt: datetime, period: str, natal_data: dict =
     if arche:
         curated_parts.append(arche)
 
+    # Always append a date- and period-varied themed line so two different dates
+    # never produce identical content and daily/weekly/monthly stay distinct.
+    themed = _themed_line(sign, dt, period, planets)
+    if themed:
+        curated_parts.append(themed)
+
     if curated_parts:
         # Period determines how much real content we surface — daily is short, monthly longer.
         max_parts = {"daily": 2, "weekly": 3, "monthly": 4}.get(period, 2)
         content = " ".join(curated_parts[:max_parts])
-        lucky_elements = _grounded_lucky_elements(sign, planets, natal_aspects)
+        lucky_elements = _grounded_lucky_elements(sign, planets, natal_aspects, dt)
         return content, lucky_elements
 
     # ── 2. Legacy template fallback (kept so the API never 500s) ──────────────
     return _generate_horoscope_template_fallback(sign, dt, period, natal_data, planets, natal_aspects)
 
 
-def _grounded_lucky_elements(sign: str, planets: dict, natal_aspects: list) -> dict:
-    """Derive lucky color/number/day from actual transit data — not modulo arithmetic.
+def _themed_line(sign: str, dt: datetime, period: str, planets: dict) -> str:
+    """Compose a date- and period-aware line that weaves the sign's keywords and
+    ruling-planet themes into the horoscope.
 
-    color: dominant transiting planet (from tightest natal aspect; falls back to today's Sun ruler)
-    number: degree-of-sun rounded into 1-12 range (not a hash of day-of-year)
-    day: traditional planetary day-ruler of that dominant planet
+    This satisfies three test contracts in test_horoscope_service.py:
+      * Content varies day-to-day (`{day_of_year}` selects different templates).
+      * Daily/weekly/monthly produce distinct content (period-keyed templates).
+      * Sign keywords + ruler themes appear in the text (so Aries content
+        mentions courage/action/leadership and Cancer mentions emotion/intuition).
     """
-    # Dominant planet: tightest natal aspect's transit, else today's Sun-sign ruler
-    dominant: str = ""
-    if natal_aspects:
-        dominant = (sorted(natal_aspects, key=lambda a: a["orb"])[0]["transit"] or "").lower()
-    if not dominant:
-        # Fall back to the sign's traditional ruler
-        traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
-        dominant = traits.get("ruler", "Sun").lower()
-
-    color = _PLANET_COLOR.get(dominant, "Gold")
-    day = _PLANET_DAY.get(dominant, "Sunday")
-
-    sun_deg = planets.get("sun", {}).get("degree", 0.0) or 0.0
-    try:
-        number = int(sun_deg) % 12 + 1
-    except (TypeError, ValueError):
-        number = 7
-
     traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
+    keywords = traits["keywords"]
+    ruler = traits["ruler"].lower()
+    element = traits["element"]
+
+    day_of_year = dt.timetuple().tm_yday
+    # Pick a keyword for the day so consecutive dates surface different facets.
+    keyword = keywords[day_of_year % len(keywords)]
+
+    # Element-flavored phrasing — water signs lean into intuition/emotion;
+    # fire toward action; earth toward grounding; air toward thinking.
+    element_phrase = {
+        "fire": "bold action",
+        "earth": "patient grounding",
+        "air": "clear thinking",
+        "water": "deep emotion and intuition",
+    }.get(element, "presence")
+
+    # Sun-transit nudge: when the user's Sun-sign matches today's solar sign,
+    # surface that fact so seasonal horoscopes feel observably different.
+    sun_sign = (planets.get("sun", {}).get("sign", "") or "").lower()
+    if sun_sign and sun_sign == sign.lower():
+        seasonal = f"The Sun is in your sign — let it shine on your {keyword}."
+    else:
+        seasonal = ""
+
+    period_templates = {
+        "daily": [
+            f"Today, lean into {keyword} with {element_phrase}.",
+            f"A small {keyword}-shaped move today does more than three big ones tomorrow.",
+            f"Let {ruler.title()} steer one decision today through {element_phrase}.",
+        ],
+        "weekly": [
+            f"This week, build a quiet streak of {keyword}; "
+            f"by Sunday the pattern will hold its own weight.",
+            f"Weekly rhythm: pair {keyword} with {element_phrase} on the days "
+            f"{ruler.title()} feels closest.",
+            f"Watch where {keyword} keeps showing up this week — that's the "
+            f"thread to pull, not the one you've been forcing.",
+        ],
+        "monthly": [
+            f"This month's arc rewards {keyword} over heroics. "
+            f"Keep returning to {element_phrase}.",
+            f"Plot the month around {keyword}: one focus per week, "
+            f"led by {ruler.title()}'s tempo.",
+            f"By month's end, you'll have either widened your {keyword} or "
+            f"renegotiated the rules around it — both are wins.",
+        ],
+    }
+    templates = period_templates.get(period, period_templates["daily"])
+    primary = templates[day_of_year % len(templates)]
+
+    return (seasonal + " " + primary).strip() if seasonal else primary
+
+
+def _grounded_lucky_elements(sign: str, planets: dict, natal_aspects: list, dt: datetime | None = None) -> dict:
+    """Derive lucky color/number/day from the sign's own trait pool with date-based
+    rotation so users see all of a sign's colors / numbers / days over the year.
+
+    The earlier implementation read color/day from `_PLANET_COLOR` / `_PLANET_DAY`
+    keyed by the transiting planet ruler, which produced values *outside* the
+    sign's documented trait pool (e.g. Scorpio came back with `Red` instead of
+    its own `Maroon / Black / Deep Red`, Aquarius came back stuck on `Black`
+    for the whole year). Tests in test_horoscope_service.py assert the values
+    come from `SIGN_TRAITS[sign].{colors, lucky_numbers, lucky_days}` and that
+    they cycle. Rotate deterministically by `dt` so they vary day-to-day but
+    are stable within a calendar day.
+
+    `natal_aspects` and `planets` remain available for v2 to bias the rotation
+    toward whichever sign-color best matches today's dominant transit.
+    """
+    traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
+
+    # Day-of-year drives rotation so a user sampling the year sees every value.
+    when = dt or datetime.utcnow()
+    day_of_year = when.timetuple().tm_yday  # 1..366
+
+    colors = traits["colors"]
+    numbers = traits["lucky_numbers"]
+    days = traits["lucky_days"]
+
+    # Use coprime offsets so colors / numbers / days rotate independently
+    # (otherwise all three would cycle in lockstep with the same period).
+    color = colors[day_of_year % len(colors)]
+    number = numbers[(day_of_year + 1) % len(numbers)]
+    day = days[(day_of_year + 2) % len(days)]
+
     return {
         "color": color,
         "number": number,

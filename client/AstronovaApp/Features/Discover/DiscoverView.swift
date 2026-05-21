@@ -85,7 +85,7 @@ struct DiscoverView: View {
             }
         }
         .sheet(isPresented: $showingPaywall) {
-            PaywallView(context: .home)
+            PaywallVariantRouter(context: .home)
         }
         .sheet(isPresented: $showingReportSheet) {
             ReportGenerationSheet(

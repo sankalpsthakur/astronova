@@ -189,7 +189,12 @@ struct TopoDomainScore: Identifiable, Hashable {
     let friction: Double
     let opportunity: Double
     var id: String { domainId }
-    var composite: Double { (intensity + opportunity - friction).clamped(to: 0...1) }
+    /// Composite is the unweighted average of intensity, opportunity, and the
+    /// inverse of friction. Each input is already in [0, 1], so the average
+    /// stays in [0, 1] without clamping — earlier `(i + o - f).clamped(0…1)`
+    /// stacked the additive terms beyond the bounds, producing frequent 10.0
+    /// and 0.0 readings on the Map radar.
+    var composite: Double { (intensity + opportunity + (1.0 - friction)) / 3.0 }
 }
 
 struct PatternActivation: Identifiable, Hashable {

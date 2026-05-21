@@ -219,7 +219,7 @@ struct SelfTabView: View {
                 MoreOptionsSheet(bookmarks: .constant([]))
                     .environmentObject(auth)
             case .paywall:
-                PaywallView()
+                PaywallVariantRouter()
             case .dashaDetail:
                 NavigationStack {
                     EnhancedTimeTravelView()

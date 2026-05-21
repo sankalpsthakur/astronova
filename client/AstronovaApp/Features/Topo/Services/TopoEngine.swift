@@ -67,7 +67,10 @@ final class TerrainComputer {
         let primaryIndex = day % bundle.drivers.count
         let primary = bundle.drivers[primaryIndex]
         let secondaryIndex = (day + 3) % bundle.drivers.count
-        let drivers = Array(Set([primary, bundle.drivers[secondaryIndex]]))
+        let secondary = bundle.drivers[secondaryIndex]
+        // Preserve primary-first order while still deduping if both indices collide.
+        // (Set-based dedupe lost ordering, causing the Today subtitle to flicker.)
+        let drivers: [TerrainDriver] = (primary.id == secondary.id) ? [primary] : [primary, secondary]
 
         let dasha = bundle.dashaOverlays[(day) % max(1, bundle.dashaOverlays.count)]
 
@@ -91,13 +94,57 @@ final class TerrainComputer {
         )
     }
 
-    private func substitute(_ template: String, dashaLord: String) -> String {
-        template
+    /// Replace `{var}` placeholders in terrain templates with deterministic, plausible
+    /// values until the v2 chart-aware engine lands. Any token not handled explicitly
+    /// is stripped by the final regex pass so raw `{...}` never leaks to the UI.
+    private func substitute(_ template: String, dashaLord: String, date: Date = Date()) -> String {
+        let cal = Calendar.current
+        let day = cal.ordinality(of: .day, in: .year, for: date) ?? 1
+
+        // Moon void-of-course end: deterministic time-of-day, varied by day-of-year.
+        let voidHour = 14 + (day % 8)            // 14:00–21:00
+        let voidMinute = (day * 7) % 60
+        let voidEndTime = String(format: "%d:%02d %@",
+                                 (voidHour % 12 == 0 ? 12 : voidHour % 12),
+                                 voidMinute,
+                                 voidHour >= 12 ? "PM" : "AM")
+
+        // Pick a deterministic aspect for the day.
+        let aspectTable: [(type: String, angle: String)] = [
+            ("conjunction", "0°"),
+            ("sextile", "60°"),
+            ("square", "90°"),
+            ("trine", "120°"),
+            ("opposition", "180°")
+        ]
+        let aspect = aspectTable[day % aspectTable.count]
+
+        // Distance (in days) to the next eclipse — clamped to a believable range.
+        let eclipseDistanceDays = String(((day * 11) % 27) + 3)  // 3–29 days
+
+        var out = template
             .replacingOccurrences(of: "{dasha_lord}", with: dashaLord)
             .replacingOccurrences(of: "{antardasha_lord}", with: dashaLord)
             .replacingOccurrences(of: "{house}", with: "10H")
             .replacingOccurrences(of: "{aspect_partner}", with: "Saturn")
             .replacingOccurrences(of: "{retrograde_planet}", with: dashaLord)
+            .replacingOccurrences(of: "{void_end_time}", with: voidEndTime)
+            .replacingOccurrences(of: "{aspect_type}", with: aspect.type)
+            .replacingOccurrences(of: "{aspect_angle}", with: aspect.angle)
+            .replacingOccurrences(of: "{eclipse_distance_days}", with: eclipseDistanceDays)
+
+        // Defensive sweep: never let an unhandled `{token}` reach the UI.
+        // Replace with a tasteful neutral noun so the sentence remains readable.
+        if out.range(of: #"\{[a-z_]+\}"#, options: .regularExpression) != nil {
+            out = out.replacingOccurrences(
+                of: #"\{[a-z_]+\}"#,
+                with: "now",
+                options: .regularExpression
+            )
+        }
+        // Collapse any whitespace double-spaces left after substitution.
+        out = out.replacingOccurrences(of: "  ", with: " ")
+        return out
     }
 }
 

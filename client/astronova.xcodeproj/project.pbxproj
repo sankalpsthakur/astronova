@@ -52,6 +52,9 @@
 		AA0002000000000000000004 /* BirthTimePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000004 /* BirthTimePicker.swift */; };
 		AA0002000000000000000006 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000006 /* HomeView.swift */; };
 		AA0002000000000000000007 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000007 /* PaywallView.swift */; };
+		AA0011000000000000000007 /* PaywallVariantRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0010000000000000000007 /* PaywallVariantRouter.swift */; };
+		AA0021000000000000000007 /* PaywallVariant_TieredV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0020000000000000000007 /* PaywallVariant_TieredV1.swift */; };
+		AA0031000000000000000007 /* PaywallVariant_TieredV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0030000000000000000007 /* PaywallVariant_TieredV2.swift */; };
 		AA0002000000000000000008 /* remote_config.json in Resources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000008 /* remote_config.json */; };
 		AA0002000000000000000009 /* HomeGuidanceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000009 /* HomeGuidanceService.swift */; };
 		AA000200000000000000000A /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000100000000000000000A /* HomeViewModel.swift */; };
@@ -216,6 +219,9 @@
 		AA0001000000000000000004 /* BirthTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthTimePicker.swift; sourceTree = "<group>"; };
 		AA0001000000000000000006 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AA0001000000000000000007 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		AA0010000000000000000007 /* PaywallVariantRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallVariantRouter.swift; sourceTree = "<group>"; };
+		AA0020000000000000000007 /* PaywallVariant_TieredV1.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallVariant_TieredV1.swift; sourceTree = "<group>"; };
+		AA0030000000000000000007 /* PaywallVariant_TieredV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallVariant_TieredV2.swift; sourceTree = "<group>"; };
 		AA0001000000000000000008 /* remote_config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = remote_config.json; sourceTree = "<group>"; };
 		AA0001000000000000000009 /* HomeGuidanceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeGuidanceService.swift; sourceTree = "<group>"; };
 		AA000100000000000000000A /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
@@ -608,6 +614,9 @@
 			isa = PBXGroup;
 			children = (
 				AA0001000000000000000007 /* PaywallView.swift */,
+				AA0010000000000000000007 /* PaywallVariantRouter.swift */,
+				AA0020000000000000000007 /* PaywallVariant_TieredV1.swift */,
+				AA0030000000000000000007 /* PaywallVariant_TieredV2.swift */,
 			);
 			path = Paywall;
 			sourceTree = "<group>";
@@ -967,6 +976,9 @@
 				AA0002000000000000000014 /* CosmicColors.swift in Sources */,
 				AA0002000000000000000006 /* HomeView.swift in Sources */,
 				AA0002000000000000000007 /* PaywallView.swift in Sources */,
+				AA0011000000000000000007 /* PaywallVariantRouter.swift in Sources */,
+				AA0021000000000000000007 /* PaywallVariant_TieredV1.swift in Sources */,
+				AA0031000000000000000007 /* PaywallVariant_TieredV2.swift in Sources */,
 				E2E001000000000000000007 /* ChatPackagesSheet.swift in Sources */,
 				AA0002000000000000000009 /* HomeGuidanceService.swift in Sources */,
 				AA000200000000000000000A /* HomeViewModel.swift in Sources */,

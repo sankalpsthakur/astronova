@@ -58,7 +58,7 @@ struct JournalView: View {
                 }
             }
             .sheet(isPresented: $showCompose) { JournalComposeView() }
-            .sheet(isPresented: $showingPaywall) { PaywallView(context: .general) }
+            .sheet(isPresented: $showingPaywall) { PaywallVariantRouter(context: .general) }
             .navigationDestination(for: JournalEntry.self) { JournalEntryDetailView(entry: $0) }
             .navigationBarTitleDisplayMode(.inline)
         }

@@ -488,7 +488,7 @@ struct SimpleProfileSetupView: View {
             isPresented: $showingPostOnboardingPaywall,
             onDismiss: completeProfileSetupAfterPostOnboardingPaywall
         ) {
-            PaywallView(context: .general)
+            PaywallVariantRouter(context: .general)
         }
     }
     
@@ -557,10 +557,21 @@ struct SimpleProfileSetupView: View {
     
     private func isValidName(_ name: String) -> Bool {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedName.count >= 2 && 
-               trimmedName.count <= 50 && 
-               !trimmedName.contains("  ") &&
-               trimmedName.range(of: "^[a-zA-Z\\s\\-']+$", options: .regularExpression) != nil
+        guard trimmedName.count >= 2,
+              trimmedName.count <= 50,
+              !trimmedName.contains("  ") else {
+            return false
+        }
+        // Unicode-aware: accept any letter (José, Müller, María, أحمد, राज,
+        // கார்த்திக், 한국, 田中) plus spaces, hyphens, apostrophes, and periods
+        // (M.K. Gandhi). The earlier `[a-zA-Z\s\-']` regex rejected every
+        // non-ASCII script even though the app ships en, hi, es, ta, te,
+        // bn, ar locales — anyone with an accent in their name could not
+        // pass the gate. Use NSCharacterSet so the rule honors Unicode.
+        let allowed = CharacterSet.letters
+            .union(.whitespaces)
+            .union(CharacterSet(charactersIn: "-'."))
+        return trimmedName.unicodeScalars.allSatisfy { allowed.contains($0) }
     }
     
     private func isValidBirthDate(_ date: Date) -> Bool {
@@ -1039,10 +1050,21 @@ struct EnhancedNameStepView: View {
     
     private func isValidName(_ name: String) -> Bool {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedName.count >= 2 && 
-               trimmedName.count <= 50 && 
-               !trimmedName.contains("  ") &&
-               trimmedName.range(of: "^[a-zA-Z\\s\\-']+$", options: .regularExpression) != nil
+        guard trimmedName.count >= 2,
+              trimmedName.count <= 50,
+              !trimmedName.contains("  ") else {
+            return false
+        }
+        // Unicode-aware: accept any letter (José, Müller, María, أحمد, राज,
+        // கார்த்திக், 한국, 田中) plus spaces, hyphens, apostrophes, and periods
+        // (M.K. Gandhi). The earlier `[a-zA-Z\s\-']` regex rejected every
+        // non-ASCII script even though the app ships en, hi, es, ta, te,
+        // bn, ar locales — anyone with an accent in their name could not
+        // pass the gate. Use NSCharacterSet so the rule honors Unicode.
+        let allowed = CharacterSet.letters
+            .union(.whitespaces)
+            .union(CharacterSet(charactersIn: "-'."))
+        return trimmedName.unicodeScalars.allSatisfy { allowed.contains($0) }
     }
 }
 
@@ -2009,7 +2031,9 @@ struct SimpleTabBarView: View {
             }
         )
         .sheet(isPresented: $showingUITestPaywall) {
-            PaywallView(context: uiTestPaywallContext)
+            // UI test harness — route via PaywallVariantRouter so tests cover
+            // all variants when RemoteConfig is overridden in the test env.
+            PaywallVariantRouter(context: uiTestPaywallContext)
         }
         .onAppear {
             trackAppLaunch()
@@ -3920,7 +3944,7 @@ struct OracleView: View {
         .sheet(item: $activeSheet) { sheet in
             switch sheet {
             case .paywall:
-                PaywallView(context: .chatLimit)
+                PaywallVariantRouter(context: .chatLimit)
             case .creditPacks:
                 ChatPackagesSheet()
             }
@@ -5188,7 +5212,7 @@ struct ManageDashboardView: View {
             EnhancedSettingsView(auth: auth)
         }
         .sheet(isPresented: $showingPaywall) {
-            PaywallView()
+            PaywallVariantRouter()
         }
         .sheet(isPresented: $showingQuickBirthEdit) {
             QuickBirthEditView()
@@ -7217,7 +7241,7 @@ struct ReportGenerationSheet: View {
             hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
         }
         .sheet(isPresented: $showingSubscription) {
-            PaywallView(context: .report)
+            PaywallVariantRouter(context: .report)
         }
         .sheet(isPresented: $showPaymentOptions) {
             PaymentOptionsSheet(

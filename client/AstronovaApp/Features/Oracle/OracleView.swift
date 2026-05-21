@@ -134,7 +134,9 @@ struct OracleView: View {
             }
         }
         .sheet(isPresented: $viewModel.showingPaywall) {
-            PaywallView(context: .chatLimit)
+            // Route through PaywallVariantRouter to honor the astronova_paywall_v1
+            // RemoteConfig experiment (tiered_v1 / tiered_v2 vs control).
+            PaywallVariantRouter(context: .chatLimit)
         }
         .sheet(isPresented: $viewModel.showingCreditPacks) {
             ChatPackagesSheet()

@@ -79,7 +79,7 @@ struct DecisionSimulatorView: View {
                 DecisionComposeView { pendingResult = $0 }
             }
             .sheet(isPresented: $showingPaywall) {
-                PaywallView(context: .general)
+                PaywallVariantRouter(context: .general)
             }
             .navigationDestination(for: Decision.self) { DecisionResultView(decision: $0) }
             .navigationDestination(isPresented: Binding(

@@ -100,7 +100,11 @@ struct SettingsSheet: View {
             }
         }
         .sheet(isPresented: $showingPaywall) {
-            PaywallView(context: .general)
+            // Route through PaywallVariantRouter so RemoteConfig
+            // (astronova_paywall_v1) can serve tiered_v1 / tiered_v2 designs.
+            // Previously called PaywallView directly, which silently bypassed
+            // the variant experiment and pinned everyone to control.
+            PaywallVariantRouter(context: .general)
         }
         .sheet(isPresented: $showingReportsLibrary) {
             ReportsLibraryView(reports: [])

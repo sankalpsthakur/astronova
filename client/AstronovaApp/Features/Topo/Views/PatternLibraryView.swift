@@ -35,7 +35,7 @@ struct PatternLibraryView: View {
                 PatternDetailView(pattern: pattern)
             }
             .sheet(isPresented: $showingPaywall) {
-                PaywallView(context: .general)
+                PaywallVariantRouter(context: .general)
             }
         }
     }

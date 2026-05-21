@@ -211,7 +211,7 @@ struct HomeView: View {
             .padding(.bottom, 120) // keep content above floating tab bar
         }
         .background(Color.cosmicBackground)
-        .sheet(isPresented: $vm.showPaywall) { PaywallView(context: .home) }
+        .sheet(isPresented: $vm.showPaywall) { PaywallVariantRouter(context: .home) }
         .sheet(item: $selectedTopic) { topic in
             if let g = vm.guidance {
                 DailyDeepDiveSheet(
