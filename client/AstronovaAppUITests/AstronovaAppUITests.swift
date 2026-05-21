@@ -69,6 +69,69 @@ final class AstronovaAppUITests: XCTestCase {
         XCTAssertTrue(app.datePickers["birthDatePicker"].waitForExistence(timeout: 8), "Continue should advance to birth-date step after a valid name")
     }
 
+    /// Regression test for the 2026-05-21 audit P1 fix: the onboarding
+    /// name regex used to be `[a-zA-Z\s\-']` which rejected every non-ASCII
+    /// script (José, Müller, María, أحمد, राज, கார்த்திக், 田中). The fix
+    /// switches to `CharacterSet.letters` (Unicode general category L*).
+    /// This test pins the contract so a regression won't slip back in.
+    @MainActor
+    func testOnboardingAcceptsUnicodeName() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["UITEST_RESET", "UITEST_ENABLE_LOGGING"]
+        app.launch()
+
+        // Guest path → profile setup
+        let guestButton = app.buttons["continueWithoutSigningInButton"]
+        XCTAssertTrue(guestButton.waitForExistence(timeout: 12), "Guest CTA missing")
+        guestButton.tap()
+
+        let primaryButton = app.descendants(matching: .any)["saveProfileButton"]
+        XCTAssertTrue(primaryButton.waitForExistence(timeout: 8), "Begin Journey CTA missing")
+        primaryButton.tap()
+
+        let nameField = app.descendants(matching: .any)["profileNameField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "Name field missing")
+        nameField.tap()
+        // A name with a Latin extended grapheme — should validate as a letter
+        // under the Unicode-aware regex but fail under the legacy ASCII regex.
+        nameField.typeText("José")
+
+        // Continue must enable + advance to birth-date step. The regression
+        // shape would be: Continue stays disabled (button never advances) and
+        // the date picker is never reached.
+        let continueButton = app.descendants(matching: .any)["saveProfileButton"]
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 4))
+        continueButton.tap()
+
+        XCTAssertTrue(
+            app.datePickers["birthDatePicker"].waitForExistence(timeout: 8),
+            "Continue should advance to birth-date step for a Unicode name"
+        )
+    }
+
+    /// Regression test for the 2026-05-21 audit P2 fix: tapping
+    /// "Continue without signing in" silently created an anonymous UUID and
+    /// started analytics with no disclosure. The fix adds a caption under
+    /// the button explaining what happens and pointing to the privacy
+    /// toggle. This test pins that the caption is on-screen before the
+    /// user makes a consent-shaped decision.
+    @MainActor
+    func testGuestModeDisclosureIsVisibleBeforeTap() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["UITEST_RESET", "UITEST_ENABLE_LOGGING"]
+        app.launch()
+
+        let guestButton = app.buttons["continueWithoutSigningInButton"]
+        XCTAssertTrue(guestButton.waitForExistence(timeout: 12), "Guest CTA missing")
+
+        // Caption ID guards against accidental removal of the disclosure.
+        let disclosure = app.staticTexts["guestModeDisclosure"]
+        XCTAssertTrue(
+            disclosure.waitForExistence(timeout: 4),
+            "Just-in-time disclosure caption must be visible on the auth gate"
+        )
+    }
+
     @MainActor
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
