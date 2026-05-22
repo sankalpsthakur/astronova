@@ -362,8 +362,8 @@ final class JourneyAcceptanceTests: XCTestCase {
             print("[QA J3] No purchase success affordance observed in 20s — see screenshot.")
         }
 
-        XCTAssertTrue(startPro.exists || successEvidence != nil,
-                      "Start-Pro button must remain reachable OR the success path must fire after tap")
+        XCTAssertNotNil(successEvidence,
+                        "Mock purchase must produce a visible or measurable success affordance after tapping Start Pro")
     }
 
     // MARK: - Journey 4 — Privacy reachable in-app via Settings

@@ -40,7 +40,7 @@ struct ShopCatalog {
             id: "twelve_month_commitment",
             productId: pro12MonthCommitmentProductID,
             title: "12-month plan",
-            badge: "Best first year",
+            badge: "12 payments",
             fallbackBillingDisplayPrice: "$9.99",
             fallbackCommitmentDisplayPrice: "$119.88",
             billingCaption: "per month for 12 months",

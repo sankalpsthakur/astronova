@@ -68,26 +68,26 @@ struct PaywallView: View {
     private var heroTitle: String {
         switch context {
         case .chatLimit:
-            return "Continue Your Journey"
+            return "Keep asking without limits"
         case .report:
-            return "Deeper Journeys"
+            return "Unlock the full map"
         case .home:
-            return "Deeper Journeys"
+            return "Make today easier"
         case .general:
-            return "Deeper Journeys"
+            return "Unlock unlimited guidance"
         }
     }
 
     private var heroSubtitle: String {
         switch (context, paywallVariant) {
         case (.chatLimit, _):
-            return "You've hit today's free limit. Unlock deeper journeys for unlimited AI chat and insights."
+            return "You hit today's free limit. Start Pro to keep the conversation moving now."
         case (.report, _):
-            return "Unlock deeper journeys: complete bundles, saved progress, and unlimited AI chat."
+            return "Start with Pro for unlimited chat, saved progress, and every journey path."
         case (.home, "B"):
-            return "Your next chapter: premium insights and unlimited chat."
+            return "Turn today's insight into the next clear action with premium guidance and unlimited chat."
         default:
-            return "Unlimited chat, complete journeys, and deeper insights."
+            return "Unlimited chat, complete journeys, and the next clear step when you need it."
         }
     }
 
@@ -143,8 +143,15 @@ struct PaywallView: View {
     }
     
     private var purchaseButtonTitle: String {
-        isPurchasing ? "Starting trial..." : "Start \(selectedPlan.title)"
+        isPurchasing ? "Starting trial..." : "Start 14-day free trial"
     }
+
+    #if DEBUG
+    private var mockPurchasesEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+        TestEnvironment.shared.hasArgument(.mockPurchases)
+    }
+    #endif
 
     // MARK: - App Store Compliance URLs
 
@@ -365,7 +372,7 @@ struct PaywallView: View {
             }
             .buttonStyle(.cosmicPrimary)
             .accessibilityIdentifier(AccessibilityID.startProButton)
-            .accessibilityHint("Starts your Pro subscription")
+            .accessibilityHint("Starts your Pro free trial for the selected billing plan")
 
             Button {
                 CosmicHaptics.light()
@@ -409,7 +416,7 @@ struct PaywallView: View {
 
     private var proPlanPicker: some View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-            Text("Choose Pro")
+            Text("Pick billing after trial")
                 .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
 
@@ -482,7 +489,7 @@ struct PaywallView: View {
 
         #if DEBUG
         // UI tests only: bypass StoreKit dialogs using mock store
-        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+        if mockPurchasesEnabled {
             let success = await BasicStoreManager.shared.purchaseProduct(productId: plan.productId)
             if success {
                 Analytics.shared.track(
@@ -553,7 +560,7 @@ struct PaywallView: View {
         }
 
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+        if mockPurchasesEnabled {
             let restored = await BasicStoreManager.shared.restorePurchases()
             await MainActor.run {
                 OracleQuotaManager.shared.checkSubscription()
