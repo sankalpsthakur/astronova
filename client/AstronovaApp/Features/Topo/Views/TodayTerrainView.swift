@@ -40,9 +40,10 @@ struct TodayTerrainView: View {
                 topBar
                 hero
                 if let snapshot {
+                    agencyMoveCard(snapshot)
+                    logMomentButton
                     readHoroscopeAloudButton(for: snapshot)
                     axesCard(snapshot)
-                    logMomentButton
                     if let pattern = dominantPattern {
                         patternStrip(pattern)
                     }
@@ -223,6 +224,41 @@ struct TodayTerrainView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(caption). \(body)")
+    }
+
+    private func agencyMoveCard(_ snap: TerrainSnapshot) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "bolt.fill")
+                .font(.cosmicBodyEmphasis)
+                .foregroundStyle(Color.cosmicVoid)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(tintColor))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("DO THIS NOW")
+                    .font(.cosmicMicro)
+                    .tracking(1.4)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                Text(snap.axes.highestAgencyMove)
+                    .font(.cosmicBodyEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(tintColor.opacity(0.13))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(tintColor.opacity(0.35), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Do this now. \(snap.axes.highestAgencyMove)")
     }
 
     private var divider: some View {

@@ -185,10 +185,12 @@ final class TestEnvironment {
 
         // Wave 3b QA — reset the speech-call counter so J5/J6 start clean.
         // The key matches `SpeechService.debugSpeakCallCounterKey` (DEBUG only).
-        UserDefaults.standard.removeObject(forKey: "astronova.qa.speech_speak_counter")
-        // Reset the voice reading flag to its default (ON) for deterministic
-        // toggle-flip tests.
-        UserDefaults.standard.removeObject(forKey: "astronova.voice_reading_enabled")
+        UserDefaults.standard.set(0, forKey: "astronova.qa.speech_speak_counter")
+        // Reset the voice reading flag explicitly to ON. Removing the key is
+        // usually equivalent, but a prior app process can leave SpeechService
+        // initialized before reset; writing the intended value makes recovery
+        // deterministic across back-to-back UI journeys.
+        UserDefaults.standard.set(true, forKey: "astronova.voice_reading_enabled")
 
         UserDefaults.standard.synchronize()
         log("State reset complete")
