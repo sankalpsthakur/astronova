@@ -58,7 +58,7 @@ struct TodayTerrainView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 32)
+            .padding(.bottom, 156)
         }
         .refreshable { loadTerrain() }
     }
