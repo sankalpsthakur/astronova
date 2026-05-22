@@ -90,6 +90,26 @@ final class JourneyAcceptanceTests: XCTestCase {
         return app
     }
 
+    @discardableResult
+    private func relaunchSignedInPreservingState(extraArguments: [String] = [],
+                                                environment: [String: String] = [:]) -> XCUIApplication {
+        app.terminate()
+        app.launchArguments = [
+            "UITEST_SEED_PROFILE_FULL",
+            "UITEST_SKIP_ONBOARDING",
+            "UITEST_ENABLE_LOGGING"
+        ] + extraArguments
+        var merged = environment
+        merged["UITEST_TIME_TRAVEL_SAMPLE"] = merged["UITEST_TIME_TRAVEL_SAMPLE"] ?? "1"
+        merged["UITEST_DISCOVER_SAMPLE"] = merged["UITEST_DISCOVER_SAMPLE"] ?? "1"
+        if let qaDir = ProcessInfo.processInfo.environment["QA_EVIDENCE_DIR"] {
+            merged["QA_EVIDENCE_DIR"] = qaDir
+        }
+        app.launchEnvironment = merged
+        app.launch()
+        return app
+    }
+
     private func tapTab(_ identifier: String,
                         file: StaticString = #filePath,
                         line: UInt = #line) {
@@ -592,5 +612,61 @@ final class JourneyAcceptanceTests: XCTestCase {
         XCTAssertTrue(result.waitForExistence(timeout: 10) || bestRoute.waitForExistence(timeout: 4),
                       "Quick-start decision should reach the result/value screen")
         captureEvidence(named: "08-decision-result")
+    }
+
+    // MARK: - Journey 9 — Journal draft survives interruption
+
+    @MainActor
+    func test_J9_journalDraftSurvivesRelaunch() throws {
+        let draftText = "Interrupted draft survives relaunch"
+        launchSignedIn(extraArguments: ["UITEST_START_TAB_INDEX=4"])
+
+        let journal = anyElement("journalView")
+        XCTAssertTrue(journal.waitForExistence(timeout: 15),
+                      "Journal tab should render")
+
+        let add = app.buttons["journalAddButton"]
+        XCTAssertTrue(add.waitForExistence(timeout: 8),
+                      "Journal should expose one primary add CTA")
+        XCTAssertTrue(add.isHittable,
+                      "Journal add CTA should be immediately hittable")
+        add.tap()
+
+        let compose = anyElement("journalComposeView")
+        XCTAssertTrue(compose.waitForExistence(timeout: 8),
+                      "Journal add should open compose")
+
+        let editor = anyElement("journalWhatHappenedEditor")
+        XCTAssertTrue(editor.waitForExistence(timeout: 8),
+                      "Journal compose should expose the main reflection editor")
+        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        app.typeText(draftText)
+
+        XCTAssertTrue(anyElement("journalDraftRestoredBanner").waitForExistence(timeout: 3),
+                      "Typing a draft should show the local save affordance")
+        captureEvidence(named: "09-journal-compose-draft")
+
+        relaunchSignedInPreservingState(extraArguments: ["UITEST_START_TAB_INDEX=4"])
+
+        XCTAssertTrue(anyElement("journalView").waitForExistence(timeout: 15),
+                      "Journal should reopen after interruption")
+        let restoredAdd = app.buttons["journalAddButton"]
+        XCTAssertTrue(restoredAdd.waitForExistence(timeout: 8),
+                      "Restored Journal add CTA should still be available")
+        restoredAdd.tap()
+
+        let restoredCompose = anyElement("journalComposeView")
+        XCTAssertTrue(restoredCompose.waitForExistence(timeout: 8),
+                      "Journal compose should reopen in one tap after relaunch")
+        XCTAssertTrue(anyElement("journalDraftRestoredBanner").waitForExistence(timeout: 5),
+                      "Compose should tell the user the interrupted draft was restored")
+
+        let restoredText = app.staticTexts[draftText]
+        let restoredEditor = anyElement("journalWhatHappenedEditor")
+        let editorValue = restoredEditor.value as? String
+        XCTAssertTrue(restoredText.waitForExistence(timeout: 3) ||
+                      editorValue?.contains(draftText) == true,
+                      "Interrupted draft text should be present after relaunch")
+        captureEvidence(named: "09-journal-draft-restored")
     }
 }

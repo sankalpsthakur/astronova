@@ -428,6 +428,14 @@ enum AccessibilityID {
         "decisionQuickPromptButton_\(index)"
     }
 
+    // Journal
+    static let journalView = "journalView"
+    static let journalAddButton = "journalAddButton"
+    static let journalComposeView = "journalComposeView"
+    static let journalWhatHappenedEditor = "journalWhatHappenedEditor"
+    static let journalDraftRestoredBanner = "journalDraftRestoredBanner"
+    static let journalSaveButton = "journalSaveButton"
+
     // Suggested Prompts
     static func suggestedPromptButton(_ index: Int) -> String {
         "suggestedPromptButton_\(index)"

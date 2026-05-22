@@ -55,6 +55,7 @@ struct JournalView: View {
                             .font(.cosmicBodyEmphasis)
                             .foregroundStyle(Color.cosmicTextPrimary)
                     }
+                    .accessibilityIdentifier(AccessibilityID.journalAddButton)
                 }
             }
             .sheet(isPresented: $showCompose) { JournalComposeView() }
@@ -62,6 +63,7 @@ struct JournalView: View {
             .navigationDestination(for: JournalEntry.self) { JournalEntryDetailView(entry: $0) }
             .navigationBarTitleDisplayMode(.inline)
         }
+        .accessibilityIdentifier(AccessibilityID.journalView)
     }
 
     private var header: some View {
@@ -306,6 +308,7 @@ private struct PauseRowView: View {
 struct JournalComposeView: View {
     @Environment(\.dismiss) private var dismiss
     private let editingEntry: JournalEntry?
+    private let restoredDraft: JournalComposeDraft?
 
     @State private var whatHappened: String
     @State private var bodyRegions: Set<String>
@@ -317,6 +320,7 @@ struct JournalComposeView: View {
     @State private var learning: String
     @State private var moodBefore: Double
     @State private var moodAfter: Double
+    @State private var draftStatusVisible: Bool
 
     static let regionOptions: [String] = [
         "head", "face", "throat", "chest", "heart", "stomach",
@@ -325,16 +329,19 @@ struct JournalComposeView: View {
 
     init(entry: JournalEntry? = nil) {
         self.editingEntry = entry
-        _whatHappened = State(initialValue: entry?.whatHappened ?? "")
-        _bodyRegions = State(initialValue: Set(entry?.bodyRegions ?? []))
-        _bodyNotes = State(initialValue: entry?.bodyNotes ?? "")
-        _storyCreated = State(initialValue: entry?.storyCreated ?? "")
-        _selectedPatternId = State(initialValue: entry?.patternId)
-        _whatIDid = State(initialValue: entry?.whatIDid ?? "")
-        _higherRoute = State(initialValue: entry?.higherRoute ?? "")
-        _learning = State(initialValue: entry?.learning ?? "")
-        _moodBefore = State(initialValue: Double(entry?.moodBefore ?? 50))
-        _moodAfter = State(initialValue: Double(entry?.moodAfter ?? 50))
+        let draft = entry == nil ? JournalComposeDraft.load() : nil
+        self.restoredDraft = draft
+        _whatHappened = State(initialValue: entry?.whatHappened ?? draft?.whatHappened ?? "")
+        _bodyRegions = State(initialValue: Set(entry?.bodyRegions ?? draft?.bodyRegions ?? []))
+        _bodyNotes = State(initialValue: entry?.bodyNotes ?? draft?.bodyNotes ?? "")
+        _storyCreated = State(initialValue: entry?.storyCreated ?? draft?.storyCreated ?? "")
+        _selectedPatternId = State(initialValue: entry?.patternId ?? draft?.selectedPatternId)
+        _whatIDid = State(initialValue: entry?.whatIDid ?? draft?.whatIDid ?? "")
+        _higherRoute = State(initialValue: entry?.higherRoute ?? draft?.higherRoute ?? "")
+        _learning = State(initialValue: entry?.learning ?? draft?.learning ?? "")
+        _moodBefore = State(initialValue: Double(entry?.moodBefore ?? draft?.moodBefore ?? 50))
+        _moodAfter = State(initialValue: Double(entry?.moodAfter ?? draft?.moodAfter ?? 50))
+        _draftStatusVisible = State(initialValue: draft != nil)
     }
 
     private var isValid: Bool {
@@ -347,6 +354,21 @@ struct JournalComposeView: View {
                 Color.cosmicCosmos.ignoresSafeArea()
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 22) {
+                        if draftStatusVisible {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.cosmicFootnote)
+                                    .foregroundStyle(Color.cosmicAccent)
+                                Text(restoredDraft == nil ? "Draft saved on this device" : "Draft restored from your last session")
+                                    .font(.cosmicFootnote)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.cosmicSurface))
+                            .accessibilityIdentifier(AccessibilityID.journalDraftRestoredBanner)
+                        }
                         composeSection("01 · What happened?") {
                             TextEditor(text: $whatHappened)
                                 .scrollContentBackground(.hidden)
@@ -354,6 +376,7 @@ struct JournalComposeView: View {
                                 .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextPrimary)
                                 .composeFieldBackground()
+                                .accessibilityIdentifier(AccessibilityID.journalWhatHappenedEditor)
                         }
                         composeSection("02 · Body response") {
                             FlowChips(options: Self.regionOptions, selection: $bodyRegions)
@@ -381,6 +404,7 @@ struct JournalComposeView: View {
                     .padding(20).padding(.bottom, 40)
                 }
             }
+            .accessibilityIdentifier(AccessibilityID.journalComposeView)
             .navigationTitle(editingEntry == nil ? "New entry" : "Edit entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -391,6 +415,16 @@ struct JournalComposeView: View {
                     .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
+            .onChange(of: whatHappened) { persistDraft() }
+            .onChange(of: bodyRegions) { persistDraft() }
+            .onChange(of: bodyNotes) { persistDraft() }
+            .onChange(of: storyCreated) { persistDraft() }
+            .onChange(of: selectedPatternId) { persistDraft() }
+            .onChange(of: whatIDid) { persistDraft() }
+            .onChange(of: higherRoute) { persistDraft() }
+            .onChange(of: learning) { persistDraft() }
+            .onChange(of: moodBefore) { persistDraft() }
+            .onChange(of: moodAfter) { persistDraft() }
         }
     }
 
@@ -502,8 +536,26 @@ struct JournalComposeView: View {
             }
             .buttonStyle(.plain)
             .disabled(!isValid)
+            .accessibilityIdentifier(AccessibilityID.journalSaveButton)
         }
         .padding(.top, 6)
+    }
+
+    private func persistDraft() {
+        guard editingEntry == nil else { return }
+        JournalComposeDraft(
+            whatHappened: whatHappened,
+            bodyRegions: Array(bodyRegions).sorted(),
+            bodyNotes: bodyNotes,
+            storyCreated: storyCreated,
+            selectedPatternId: selectedPatternId,
+            whatIDid: whatIDid,
+            higherRoute: higherRoute,
+            learning: learning,
+            moodBefore: Int(moodBefore),
+            moodAfter: Int(moodAfter)
+        ).save()
+        draftStatusVisible = true
     }
 
     @MainActor
@@ -527,8 +579,57 @@ struct JournalComposeView: View {
         )
         if editingEntry == nil { JournalStore.shared.add(entry) }
         else { JournalStore.shared.update(entry) }
+        if editingEntry == nil {
+            JournalComposeDraft.clear()
+        }
         HapticFeedbackService.shared.success()
         dismiss()
+    }
+}
+
+private struct JournalComposeDraft: Codable {
+    private static let storageKey = "topo.journal.compose.draft.v1"
+
+    var whatHappened: String
+    var bodyRegions: [String]
+    var bodyNotes: String
+    var storyCreated: String
+    var selectedPatternId: String?
+    var whatIDid: String
+    var higherRoute: String
+    var learning: String
+    var moodBefore: Int
+    var moodAfter: Int
+
+    static func load() -> JournalComposeDraft? {
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return nil }
+        return try? JSONDecoder().decode(JournalComposeDraft.self, from: data)
+    }
+
+    func save() {
+        guard hasContent else {
+            Self.clear()
+            return
+        }
+        guard let data = try? JSONEncoder().encode(self) else { return }
+        UserDefaults.standard.set(data, forKey: Self.storageKey)
+    }
+
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: storageKey)
+    }
+
+    private var hasContent: Bool {
+        !whatHappened.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !bodyRegions.isEmpty ||
+        !bodyNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !storyCreated.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        selectedPatternId != nil ||
+        !whatIDid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !higherRoute.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !learning.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        moodBefore != 50 ||
+        moodAfter != 50
     }
 }
 
