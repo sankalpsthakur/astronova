@@ -1984,7 +1984,7 @@ struct SimpleTabBarView: View {
                 case 1:
                     MyMapView()
                 case 2:
-                    PauseLayerView()
+                    PauseLayerView(showsCloseButton: false)
                 case 3:
                     DecisionSimulatorView()
                 case 4:

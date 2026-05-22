@@ -407,6 +407,16 @@ enum AccessibilityID {
     static let mapAccuracyUpgradeBanner = "mapAccuracyUpgradeBanner"
     static let quickBirthEditView = "quickBirthEditView"
 
+    // Pulse / Pause
+    static let pulseView = "pulseView"
+    static let pulseCloseButton = "pulseCloseButton"
+    static let protocolRunnerView = "protocolRunnerView"
+    static func pulseIntensityButton(emotion: String, label: String) -> String {
+        let emotionKey = emotion.lowercased().replacingOccurrences(of: " ", with: "-")
+        let labelKey = label.lowercased().replacingOccurrences(of: " ", with: "-")
+        return "pulseIntensityButton_\(emotionKey)_\(labelKey)"
+    }
+
     // Suggested Prompts
     static func suggestedPromptButton(_ index: Int) -> String {
         "suggestedPromptButton_\(index)"

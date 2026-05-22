@@ -44,6 +44,7 @@ struct ProtocolRunnerView: View {
             HapticFeedbackService.shared.mediumImpact()
             moodAfter = Double(max(0, moodBefore - 15))
         }
+        .accessibilityIdentifier(AccessibilityID.protocolRunnerView)
     }
 
     // MARK: - Layers

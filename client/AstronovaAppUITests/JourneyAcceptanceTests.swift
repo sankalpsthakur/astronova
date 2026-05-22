@@ -514,4 +514,37 @@ final class JourneyAcceptanceTests: XCTestCase {
         XCTAssertEqual(after, before,
                        "Counter must NOT increment when voice reading is OFF; before=\(before) after=\(after)")
     }
+
+    // MARK: - Journey 7 — Pulse tab has one clear recovery action
+
+    @MainActor
+    func test_J7_pulseTabStartsProtocolWithoutModalClose() throws {
+        launchSignedIn(extraArguments: ["UITEST_START_TAB_INDEX=2"])
+
+        let pulse = anyElement("pulseView")
+        XCTAssertTrue(pulse.waitForExistence(timeout: 15),
+                      "Pulse tab should render the pause protocol picker")
+
+        XCTAssertFalse(anyElement("pulseCloseButton").exists,
+                       "Pulse opened as a tab must not show a modal close button")
+
+        let angerRising = app.buttons["pulseIntensityButton_anger_rising"]
+        XCTAssertTrue(angerRising.waitForExistence(timeout: 8),
+                      "Pulse should expose a direct emotion/intensity CTA")
+        XCTAssertTrue(angerRising.isHittable,
+                      "The first recovery CTA should be immediately hittable")
+        captureEvidence(named: "07-pulse-tab")
+
+        angerRising.tap()
+
+        let runner = anyElement("protocolRunnerView")
+        XCTAssertTrue(runner.waitForExistence(timeout: 8),
+                      "Tapping a Pulse CTA should start the protocol runner")
+        XCTAssertTrue(app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Step 1"))
+            .firstMatch
+            .waitForExistence(timeout: 4),
+            "Protocol runner should land at the first guided step")
+        captureEvidence(named: "07-pulse-runner")
+    }
 }

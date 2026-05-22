@@ -1,11 +1,17 @@
 import SwiftUI
 
 struct PauseLayerView: View {
+    let showsCloseButton: Bool
+
     @Environment(\.dismiss) private var dismiss
     @StateObject private var log = PauseLogStore.shared
     @State private var protocols: [PauseProtocol] = []
     @State private var loadError: String?
     @State private var sessionStarter: PauseSessionStarter?
+
+    init(showsCloseButton: Bool = true) {
+        self.showsCloseButton = showsCloseButton
+    }
 
     var body: some View {
         ZStack {
@@ -47,6 +53,7 @@ struct PauseLayerView: View {
             }
         }
         .task { load() }
+        .accessibilityIdentifier(AccessibilityID.pulseView)
         .fullScreenCover(item: $sessionStarter) { starter in
             ProtocolRunnerView(proto: starter.proto, moodBefore: starter.moodBefore)
         }
@@ -71,15 +78,21 @@ struct PauseLayerView: View {
 
     private var topBar: some View {
         HStack {
-            Button {
-                HapticFeedbackService.shared.lightImpact()
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.cosmicCalloutEmphasis)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(Color.cosmicSurface))
+            if showsCloseButton {
+                Button {
+                    HapticFeedbackService.shared.lightImpact()
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(Color.cosmicSurface))
+                }
+                .accessibilityLabel("Close pulse")
+                .accessibilityIdentifier(AccessibilityID.pulseCloseButton)
+            } else {
+                Color.clear.frame(width: 36, height: 36)
             }
             Spacer()
             Color.clear.frame(width: 36, height: 36)
@@ -212,9 +225,9 @@ private struct EmotionCard: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 8) {
-                IntensityChip(label: "rising", value: 35, tint: tint, action: onPick)
-                IntensityChip(label: "overflowing", value: 65, tint: tint, action: onPick)
-                IntensityChip(label: "drowning", value: 90, tint: tint, action: onPick)
+                IntensityChip(emotion: proto.emotion, label: "rising", value: 35, tint: tint, action: onPick)
+                IntensityChip(emotion: proto.emotion, label: "overflowing", value: 65, tint: tint, action: onPick)
+                IntensityChip(emotion: proto.emotion, label: "drowning", value: 90, tint: tint, action: onPick)
             }
         }
         .padding(18)
@@ -240,6 +253,7 @@ private struct EmotionCard: View {
 }
 
 private struct IntensityChip: View {
+    let emotion: String
     let label: String
     let value: Int
     let tint: Color
@@ -265,6 +279,8 @@ private struct IntensityChip: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(emotion), \(label)")
+        .accessibilityIdentifier(AccessibilityID.pulseIntensityButton(emotion: emotion, label: label))
     }
 
     private var intensity: Double {
