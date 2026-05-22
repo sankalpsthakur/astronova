@@ -1958,8 +1958,8 @@ struct SimpleTabBarView: View {
     @State private var showingUITestPaywall = false
     
     var body: some View {
-        ZStack {
-            // Content area - extends full screen behind floating tab bar
+        VStack(spacing: 0) {
+            // Content area
             // SUNSET 2026-05-18: legacy tab views (DiscoverView, SelfTabView, ConnectView,
             // TempleView, TimeTravelTab) replaced by Topo overlay tabs. Files retained
             // in repo for git-history reference and may be deleted in a follow-up.
@@ -1994,21 +1994,18 @@ struct SimpleTabBarView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .ignoresSafeArea(.container, edges: .bottom) // Allow content to extend behind tab bar
             
-            // Floating Glassy Tab Bar - overlaid on top of content
-            VStack {
-                Spacer()
-                if keyboardHeight == 0 {
-                    FloatingTabBar(selectedTab: $selectedTab)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                            removal: .move(edge: .bottom).combined(with: .opacity)
-                        ))
-                        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: keyboardHeight)
-                }
+            if keyboardHeight == 0 {
+                FloatingTabBar(selectedTab: $selectedTab)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .bottom).combined(with: .opacity)
+                    ))
+                    .animation(.spring(response: 0.25, dampingFraction: 0.8), value: keyboardHeight)
+                    .background(Color.cosmicVoid.ignoresSafeArea(edges: .bottom))
             }
         }
+        .background(Color.cosmicVoid.ignoresSafeArea())
         .ignoresSafeArea(.keyboard)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
             if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
