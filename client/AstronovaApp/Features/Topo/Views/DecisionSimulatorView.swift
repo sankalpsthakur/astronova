@@ -24,6 +24,15 @@ private extension View {
     func topoCardBackground(_ fill: Color = Color.cosmicSurface, radius: CGFloat = 12) -> some View {
         background(RoundedRectangle(cornerRadius: radius, style: .continuous).fill(fill))
     }
+
+    @ViewBuilder
+    func optionalAccessibilityIdentifier(_ identifier: String?) -> some View {
+        if let identifier {
+            accessibilityIdentifier(identifier)
+        } else {
+            self
+        }
+    }
 }
 
 @ViewBuilder
@@ -36,7 +45,12 @@ private func topoField<Content: View>(_ label: String, @ViewBuilder _ content: (
 }
 
 @ViewBuilder
-private func primaryButton(_ title: String, enabled: Bool = true, action: @escaping () -> Void) -> some View {
+private func primaryButton(
+    _ title: String,
+    enabled: Bool = true,
+    accessibilityIdentifier: String? = nil,
+    action: @escaping () -> Void
+) -> some View {
     Button(action: action) {
         Text(title)
             .font(.cosmicBodyEmphasis)
@@ -47,6 +61,7 @@ private func primaryButton(_ title: String, enabled: Bool = true, action: @escap
     }
     .disabled(!enabled)
     .buttonStyle(.plain)
+    .optionalAccessibilityIdentifier(accessibilityIdentifier)
 }
 
 // MARK: - Decision Simulator Hub
@@ -90,6 +105,7 @@ struct DecisionSimulatorView: View {
             }
         }
         .tint(Color.cosmicAccent)
+        .accessibilityIdentifier(AccessibilityID.decisionView)
     }
 
     private var header: some View {
@@ -124,6 +140,7 @@ struct DecisionSimulatorView: View {
                 .foregroundStyle(Color.cosmicVoid)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityID.decisionNewButton)
 
             if !hasPro {
                 Text("\(quota.decisionsRemaining) free decisions left this month")
@@ -246,6 +263,12 @@ struct DecisionComposeView: View {
 
     var onCommit: (Decision) -> Void
 
+    private let quickPrompts = [
+        "Should I send this message today?",
+        "Should I accept this offer?",
+        "Should I have the hard conversation?"
+    ]
+
     private var canRun: Bool {
         !promptText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -270,9 +293,12 @@ struct DecisionComposeView: View {
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 8)
                                 .frame(minHeight: 96)
+                                .accessibilityIdentifier(AccessibilityID.decisionPromptEditor)
                         }
                         .topoCardBackground()
                     }
+
+                    quickPromptStrip
 
                     topoField("Class") {
                         Picker("", selection: $decisionClass) {
@@ -302,12 +328,11 @@ struct DecisionComposeView: View {
                         Slider(value: $mood, in: 0...100, step: 1).tint(Color.cosmicAccent)
                     }
 
-                    primaryButton("Run simulation", enabled: canRun, action: run)
-
                     Spacer(minLength: 12)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
+                .padding(.bottom, 96)
             }
             .background(Color.cosmicVoid.ignoresSafeArea())
             .navigationTitle("New Decision")
@@ -318,8 +343,47 @@ struct DecisionComposeView: View {
                         .foregroundStyle(Color.cosmicTextSecondary)
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 8) {
+                    primaryButton(
+                        canRun ? "Run simulation" : "Enter a decision to run",
+                        enabled: canRun,
+                        accessibilityIdentifier: AccessibilityID.decisionRunButton,
+                        action: run
+                    )
+                }
+                .padding(.top, 10)
+                .padding(.bottom, 12)
+                .background(
+                    Color.cosmicVoid
+                        .overlay(alignment: .top) {
+                            Rectangle()
+                                .fill(Color.cosmicTextPrimary.opacity(0.08))
+                                .frame(height: 1)
+                        }
+                        .ignoresSafeArea()
+                )
+            }
         }
         .tint(Color.cosmicAccent)
+        .accessibilityIdentifier(AccessibilityID.decisionComposeView)
+    }
+
+    private var quickPromptStrip: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("FAST START").topoCaption(Color.cosmicTextTertiary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(Array(quickPrompts.enumerated()), id: \.offset) { index, prompt in
+                        DecisionQuickPromptButton(index: index, prompt: prompt) {
+                            HapticFeedbackService.shared.selection()
+                            promptText = prompt
+                        }
+                    }
+                }
+                .padding(.trailing, 20)
+            }
+        }
     }
 
     @MainActor
@@ -342,6 +406,40 @@ struct DecisionComposeView: View {
         HapticFeedbackService.shared.success()
         onCommit(decision)
         dismiss()
+    }
+}
+
+private struct DecisionQuickPromptButton: View {
+    let index: Int
+    let prompt: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(prompt)
+                .font(.cosmicFootnoteEmphasis)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(width: 158, alignment: .leading)
+                .frame(minHeight: 52, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(background)
+                .overlay(border)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Use quick decision: \(prompt)")
+        .accessibilityIdentifier(AccessibilityID.decisionQuickPromptButton(index))
+    }
+
+    private var background: some ShapeStyle {
+        Color.cosmicSurfaceSecondary
+    }
+
+    private var border: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(Color.cosmicAccent.opacity(0.18), lineWidth: 1)
     }
 }
 
@@ -382,6 +480,7 @@ struct DecisionResultView: View {
         .sheet(isPresented: $showSaveRule) {
             NavigationRuleEditView(prefilledText: decision.output?.bestRoute ?? "")
         }
+        .accessibilityIdentifier(AccessibilityID.decisionResultView)
     }
 
     private var promptHeader: some View {

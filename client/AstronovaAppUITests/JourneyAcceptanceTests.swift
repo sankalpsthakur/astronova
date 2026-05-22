@@ -547,4 +547,50 @@ final class JourneyAcceptanceTests: XCTestCase {
             "Protocol runner should land at the first guided step")
         captureEvidence(named: "07-pulse-runner")
     }
+
+    // MARK: - Journey 8 — Decide quick start reaches value without scrolling
+
+    @MainActor
+    func test_J8_decideQuickStartRunsSimulation() throws {
+        launchSignedIn(extraArguments: ["UITEST_START_TAB_INDEX=3"])
+
+        let decide = anyElement("decisionView")
+        XCTAssertTrue(decide.waitForExistence(timeout: 15),
+                      "Decide tab should render")
+
+        let newDecision = app.buttons["decisionNewButton"]
+        XCTAssertTrue(newDecision.waitForExistence(timeout: 8),
+                      "Decide should expose one primary New Decision CTA")
+        XCTAssertTrue(newDecision.isHittable,
+                      "New Decision CTA should be immediately hittable")
+        captureEvidence(named: "08-decide-hub")
+
+        newDecision.tap()
+
+        let compose = anyElement("decisionComposeView")
+        XCTAssertTrue(compose.waitForExistence(timeout: 8),
+                      "New Decision should open the compose sheet")
+
+        let quickPrompt = app.buttons["decisionQuickPromptButton_0"]
+        XCTAssertTrue(quickPrompt.waitForExistence(timeout: 8),
+                      "Compose should offer a one-tap prompt for blank-page recovery")
+        captureEvidence(named: "08-decision-compose")
+
+        quickPrompt.tap()
+
+        let run = app.buttons["decisionRunButton"]
+        XCTAssertTrue(run.waitForExistence(timeout: 5),
+                      "Run simulation CTA should stay visible without scrolling")
+        XCTAssertTrue(run.isHittable,
+                      "Run simulation should become hittable after a quick prompt")
+        run.tap()
+
+        let result = anyElement("decisionResultView")
+        let bestRoute = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "BEST ROUTE"))
+            .firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10) || bestRoute.waitForExistence(timeout: 4),
+                      "Quick-start decision should reach the result/value screen")
+        captureEvidence(named: "08-decision-result")
+    }
 }

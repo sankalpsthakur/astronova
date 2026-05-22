@@ -417,6 +417,17 @@ enum AccessibilityID {
         return "pulseIntensityButton_\(emotionKey)_\(labelKey)"
     }
 
+    // Decide
+    static let decisionView = "decisionView"
+    static let decisionNewButton = "decisionNewButton"
+    static let decisionComposeView = "decisionComposeView"
+    static let decisionPromptEditor = "decisionPromptEditor"
+    static let decisionRunButton = "decisionRunButton"
+    static let decisionResultView = "decisionResultView"
+    static func decisionQuickPromptButton(_ index: Int) -> String {
+        "decisionQuickPromptButton_\(index)"
+    }
+
     // Suggested Prompts
     static func suggestedPromptButton(_ index: Int) -> String {
         "suggestedPromptButton_\(index)"
