@@ -8663,12 +8663,12 @@ struct CompellingLandingView: View {
                     
                     // Main headline
                     VStack(spacing: 12) {
-                        Text("Your Cosmic Journey Starts Here")
+                        Text("Get today's move in under a minute")
                             .font(.title.weight(.bold))
                             .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
                         
-                        Text("Discover your astrological blueprint and unlock the wisdom of the stars")
+                        Text("Start with one clear action for right now, then build the full map when you're ready.")
                             .font(.cosmicBody)
                             .foregroundStyle(.white.opacity(0.8))
                             .multilineTextAlignment(.center)
@@ -8706,7 +8706,7 @@ struct CompellingLandingView: View {
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
                     
                     // Call to action
-                    Text("Begin Your Cosmic Profile")
+                    Text("Fastest path to value")
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
@@ -8853,7 +8853,7 @@ struct CompellingLandingView: View {
                 Button {
                     handleSkipSignIn()
                 } label: {
-                    Text("Continue without signing in")
+                    Text("Preview today without signing in")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -8869,7 +8869,7 @@ struct CompellingLandingView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(inProgress)
-                .accessibilityLabel("Continue without signing in")
+                .accessibilityLabel("Preview today without signing in")
                 .accessibilityIdentifier("continueWithoutSigningInButton")
                 .accessibilityAddTraits(.isButton)
 
@@ -8878,7 +8878,7 @@ struct CompellingLandingView: View {
                 // isn't a surprise to anyone reading the App Store Privacy
                 // Nutrition Label later. The full controls live in
                 // Settings → Privacy → Share Anonymous Usage.
-                Text("Charts stay on this device. Usage tied to a random app UUID; toggle off in Settings → Privacy.")
+                Text("Fast preview stays on this device. Usage is tied to a random app UUID; toggle off in Settings → Privacy.")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.55))
                     .multilineTextAlignment(.center)

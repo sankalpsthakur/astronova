@@ -61,10 +61,10 @@ enum L10n {
         }
 
         enum Welcome {
-            static let title = tr("onboarding.welcome.title", "Welcome to", "Onboarding welcome title")
+            static let title = tr("onboarding.welcome.title", "Build your map", "Onboarding welcome title")
             static let subtitle = tr(
                 "onboarding.welcome.subtitle",
-                "Discover what the stars reveal about your personality, relationships, and destiny through personalized cosmic insights.",
+                "Add just enough birth context to keep today's advice personal and recoverable.",
                 "Onboarding welcome subtitle"
             )
         }
