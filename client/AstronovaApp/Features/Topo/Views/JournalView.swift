@@ -11,6 +11,7 @@ struct JournalView: View {
     @State private var filter: TimelineFilter = .all
     @State private var showCompose = false
     @State private var showingPaywall = false
+    @State private var showInsightsLimitBanner = false
 
     enum Tab: String, CaseIterable, Identifiable {
         case timeline, insights
@@ -30,6 +31,9 @@ struct JournalView: View {
                 VStack(spacing: 0) {
                     header
                     tabBar
+                    if showInsightsLimitBanner && tab == .timeline {
+                        insightsLimitBanner
+                    }
                     if tab == .timeline {
                         filterBar
                         timeline
@@ -59,7 +63,7 @@ struct JournalView: View {
                 }
             }
             .sheet(isPresented: $showCompose) { JournalComposeView() }
-            .sheet(isPresented: $showingPaywall) { PaywallVariantRouter(context: .general) }
+            .sheet(isPresented: $showingPaywall) { PaywallVariantRouter(context: .journalInsights) }
             .navigationDestination(for: JournalEntry.self) { JournalEntryDetailView(entry: $0) }
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -86,9 +90,11 @@ struct JournalView: View {
                     HapticFeedbackService.shared.selection()
                     if v == .insights {
                         if quota.canViewInsights {
+                            showInsightsLimitBanner = false
                             tab = v
                             quota.recordInsightsView()
                         } else {
+                            showInsightsLimitBanner = true
                             showingPaywall = true
                         }
                     } else {
@@ -102,10 +108,56 @@ struct JournalView: View {
                         .background(Capsule().fill(tab == v ? Color.cosmicStardust : Color.clear))
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier(v == .timeline ? AccessibilityID.journalTimelineTabButton : AccessibilityID.journalInsightsTabButton)
             }
             Spacer()
         }
         .padding(.horizontal, 20).padding(.bottom, 12)
+    }
+
+    private var insightsLimitBanner: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.cosmicCallout)
+                    .foregroundStyle(Color.cosmicAccent)
+                    .frame(width: 24, height: 24)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Free Journal Insights used")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                    Text("You used \(quota.insightsViewsUsedThisMonth) / \(ProQuotaManager.insightsMonthlyLimit) sessions this month. Pro keeps pattern, body, and mood trends open.")
+                        .font(.cosmicFootnote)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Button {
+                HapticFeedbackService.shared.lightImpact()
+                showingPaywall = true
+            } label: {
+                HStack {
+                    Text("Unlock Journal Insights")
+                        .font(.cosmicFootnoteEmphasis)
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                        .font(.cosmicCaptionEmphasis)
+                }
+                .foregroundStyle(Color.cosmicVoid)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.cosmicAccent))
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier(AccessibilityID.journalInsightsUpgradeButton)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityID.journalInsightsUpgradeButton)
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.cosmicSurface))
+        .padding(.horizontal, 20)
+        .padding(.bottom, 12)
+        .accessibilityIdentifier(AccessibilityID.journalInsightsGateBanner)
     }
 
     private var filterBar: some View {

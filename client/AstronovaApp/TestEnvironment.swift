@@ -15,6 +15,7 @@ enum TestLaunchArgument: String {
     case seedProfileFull = "UITEST_SEED_PROFILE_FULL"
     case seedProfileMinimal = "UITEST_SEED_PROFILE_MINIMAL"
     case setFreeLimitReached = "UITEST_SET_FREE_LIMIT_REACHED"
+    case setInsightsLimitReached = "UITEST_SET_INSIGHTS_LIMIT_REACHED"
     case setChatCredits = "UITEST_SET_CHAT_CREDITS"
     case setProSubscribed = "UITEST_SET_PRO_SUBSCRIBED"
     case skipOnboarding = "UITEST_SKIP_ONBOARDING"
@@ -48,6 +49,7 @@ final class TestEnvironment {
         hasArgument(.seedProfileFull) ||
         hasArgument(.seedProfileMinimal) ||
         hasArgument(.setFreeLimitReached) ||
+        hasArgument(.setInsightsLimitReached) ||
         hasArgument(.setChatCredits) ||
         hasArgument(.setProSubscribed) ||
         hasArgument(.skipOnboarding) ||
@@ -110,6 +112,10 @@ final class TestEnvironment {
         // Set free limit reached state
         if hasArgument(.setFreeLimitReached) {
             setFreeLimitReached()
+        }
+
+        if hasArgument(.setInsightsLimitReached) {
+            setInsightsLimitReached()
         }
 
         // Set chat credits
@@ -287,6 +293,15 @@ final class TestEnvironment {
         UserDefaults.standard.synchronize()
     }
 
+    private func setInsightsLimitReached() {
+        log("Setting Journal Insights limit reached...")
+        let components = Calendar.current.dateComponents([.year, .month], from: Date())
+        let monthKey = "\(components.year ?? 0)-\(components.month ?? 0)"
+        UserDefaults.standard.set(monthKey, forKey: "topo.quota.insights.month")
+        UserDefaults.standard.set(2, forKey: "topo.quota.insights.count")
+        UserDefaults.standard.synchronize()
+    }
+
     private func setChatCredits(_ credits: Int) {
         log("Setting chat credits to \(credits)...")
         UserDefaults.standard.set(credits, forKey: "chat_credits")
@@ -435,6 +450,10 @@ enum AccessibilityID {
     static let journalWhatHappenedEditor = "journalWhatHappenedEditor"
     static let journalDraftRestoredBanner = "journalDraftRestoredBanner"
     static let journalSaveButton = "journalSaveButton"
+    static let journalTimelineTabButton = "journalTimelineTabButton"
+    static let journalInsightsTabButton = "journalInsightsTabButton"
+    static let journalInsightsGateBanner = "journalInsightsGateBanner"
+    static let journalInsightsUpgradeButton = "journalInsightsUpgradeButton"
 
     // Suggested Prompts
     static func suggestedPromptButton(_ index: Int) -> String {

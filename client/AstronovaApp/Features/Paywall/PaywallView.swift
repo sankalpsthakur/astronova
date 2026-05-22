@@ -7,6 +7,7 @@ enum PaywallContext: String {
     case chatLimit
     case report
     case home
+    case journalInsights
 }
 
 struct PaywallView: View {
@@ -60,6 +61,8 @@ struct PaywallView: View {
             return "doc.text.fill"
         case .home:
             return "sparkles"
+        case .journalInsights:
+            return "chart.bar.xaxis"
         case .general:
             return "sparkles"
         }
@@ -73,6 +76,8 @@ struct PaywallView: View {
             return "Unlock the full map"
         case .home:
             return "Make today easier"
+        case .journalInsights:
+            return "Unlock Journal Insights"
         case .general:
             return "Unlock unlimited guidance"
         }
@@ -84,6 +89,8 @@ struct PaywallView: View {
             return "You hit today's free limit. Start Pro to keep the conversation moving now."
         case (.report, _):
             return "Start with Pro for unlimited chat, saved progress, and every journey path."
+        case (.journalInsights, _):
+            return "You used this month's free insight sessions. Start Pro to keep pattern, body, and mood trends available."
         case (.home, "B"):
             return "Turn today's insight into the next clear action with premium guidance and unlimited chat."
         default:
@@ -112,6 +119,13 @@ struct PaywallView: View {
                 ("doc.text.fill", "All journey paths included"),
                 ("tray.full.fill", "Saved to your library"),
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
+                ("clock.fill", "Cancel anytime"),
+            ]
+        case (.journalInsights, _):
+            return [
+                ("chart.bar.xaxis", "Unlimited Journal Insights"),
+                ("waveform.path.ecg", "Body and mood trends"),
+                ("sparkles", "Pattern frequency over time"),
                 ("clock.fill", "Cancel anytime"),
             ]
         default:

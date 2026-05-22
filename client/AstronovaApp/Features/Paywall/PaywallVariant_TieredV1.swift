@@ -60,6 +60,17 @@ struct PaywallVariant_TieredV1: View {
         return "Start \(selectedPlan.title)"
     }
 
+    private var heroTitle: String {
+        context == .journalInsights ? "Unlock Journal Insights" : "Deeper Journeys"
+    }
+
+    private var heroSubtitle: String {
+        if context == .journalInsights {
+            return "You used this month's free insight sessions. Pro keeps pattern, body, and mood trends available."
+        }
+        return "Unlimited chat, complete journeys, deeper insights."
+    }
+
     private func billingDisplayPrice(for plan: ShopCatalog.ProPlan) -> String {
         storeKitManager.monthlyBillingPlanPrices[plan.productId] ??
         plan.fallbackBillingDisplayPrice
@@ -198,10 +209,10 @@ struct PaywallVariant_TieredV1: View {
                 .foregroundStyle(LinearGradient.cosmicAntiqueGold)
                 .padding(.bottom, Cosmic.Spacing.xs)
                 .accessibilityHidden(true)
-            Text("Deeper Journeys")
+            Text(heroTitle)
                 .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicTextPrimary)
-            Text("Unlimited chat, complete journeys, deeper insights.")
+            Text(heroSubtitle)
                 .font(.cosmicBody)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.cosmicTextSecondary)
@@ -326,9 +337,15 @@ struct PaywallVariant_TieredV1: View {
 
     private var featureList: some View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
-            featureRow("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)")
-            featureRow("doc.text.fill", "All journey paths included")
-            featureRow("heart.fill", "Love, Career, Resources, Energy + more")
+            if context == .journalInsights {
+                featureRow("chart.bar.xaxis", "Unlimited Journal Insights")
+                featureRow("waveform.path.ecg", "Body and mood trends")
+                featureRow("sparkles", "Pattern frequency over time")
+            } else {
+                featureRow("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)")
+                featureRow("doc.text.fill", "All journey paths included")
+                featureRow("heart.fill", "Love, Career, Resources, Energy + more")
+            }
             featureRow("clock.fill", "Cancel anytime")
         }
         .padding(Cosmic.Spacing.screen)

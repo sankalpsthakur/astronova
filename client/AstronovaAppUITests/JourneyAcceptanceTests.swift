@@ -669,4 +669,55 @@ final class JourneyAcceptanceTests: XCTestCase {
                       "Interrupted draft text should be present after relaunch")
         captureEvidence(named: "09-journal-draft-restored")
     }
+
+    // MARK: - Journey 10 — Journal Insights quota explains the paywall gate
+
+    @MainActor
+    func test_J10_journalInsightsQuotaGateIsContextual() throws {
+        launchSignedIn(extraArguments: [
+            "UITEST_START_TAB_INDEX=4",
+            "UITEST_SET_INSIGHTS_LIMIT_REACHED"
+        ])
+
+        XCTAssertTrue(anyElement("journalView").waitForExistence(timeout: 15),
+                      "Journal tab should render")
+
+        let insights = app.buttons["journalInsightsTabButton"]
+        XCTAssertTrue(insights.waitForExistence(timeout: 8),
+                      "Journal should expose the Insights tab")
+        XCTAssertTrue(insights.isHittable,
+                      "Insights tab should be reachable from the Journal landing")
+        captureEvidence(named: "10-journal-quota-before-tap")
+
+        insights.tap()
+
+        let paywall = anyElement("paywallView")
+        XCTAssertTrue(paywall.waitForExistence(timeout: 12),
+                      "Exhausted Journal Insights quota should open the Pro gate")
+        XCTAssertTrue(app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Unlock Journal Insights"))
+            .firstMatch
+            .waitForExistence(timeout: 5),
+            "Paywall should explain the Journal Insights-specific value")
+        captureEvidence(named: "10-journal-insights-paywall")
+
+        let closeCandidates = [
+            app.buttons["paywall.close"],
+            app.buttons["paywallCloseButton"],
+            app.buttons.matching(NSPredicate(format: "label == %@", "Close")).firstMatch
+        ]
+        let close = closeCandidates.first { $0.exists || $0.waitForExistence(timeout: 2) }
+        XCTAssertNotNil(close, "Paywall should have a close affordance")
+        close?.tap()
+
+        let gateBanner = anyElement("journalInsightsGateBanner")
+        XCTAssertTrue(gateBanner.waitForExistence(timeout: 8),
+                      "After dismissing paywall, Journal should keep a contextual recovery banner")
+        captureEvidence(named: "10-journal-insights-gate-banner")
+        XCTAssertTrue(app.staticTexts
+            .matching(NSPredicate(format: "label == %@", "Unlock Journal Insights"))
+            .firstMatch
+            .waitForExistence(timeout: 4),
+            "Quota banner should expose one clear upgrade CTA")
+    }
 }

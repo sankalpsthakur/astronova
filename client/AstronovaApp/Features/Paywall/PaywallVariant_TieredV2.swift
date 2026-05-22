@@ -57,6 +57,28 @@ struct PaywallVariant_TieredV2: View {
         return "Start 7-day Cosmic trial"
     }
 
+    private var heroTitle: String {
+        context == .journalInsights ? "Unlock Journal Insights" : "Try Cosmic. Keep Pro."
+    }
+
+    private var heroSubtitle: String {
+        if context == .journalInsights {
+            return "You used this month's free insight sessions. Pro keeps pattern, body, and mood trends available."
+        }
+        return "7 days of Cosmic, then your Pro plan keeps running."
+    }
+
+    private var trialHeadline: String {
+        context == .journalInsights ? "Keep every trend visible" : "Highest-tier insights for a week"
+    }
+
+    private var trialBody: String {
+        if context == .journalInsights {
+            return "Use Journal Insights whenever you need a read on your patterns, body signals, and mood movement."
+        }
+        return "After 7 days you're billed for the 12-month Pro plan you selected below. Cancel any time in Settings."
+    }
+
     private func billingDisplayPrice(for plan: ShopCatalog.ProPlan) -> String {
         storeKitManager.monthlyBillingPlanPrices[plan.productId] ??
         plan.fallbackBillingDisplayPrice
@@ -181,10 +203,10 @@ struct PaywallVariant_TieredV2: View {
                 .font(.system(size: 48))
                 .foregroundStyle(LinearGradient.cosmicAntiqueGold)
                 .accessibilityHidden(true)
-            Text("Try Cosmic. Keep Pro.")
+            Text(heroTitle)
                 .font(.cosmicDisplay)
                 .foregroundStyle(Color.cosmicTextPrimary)
-            Text("7 days of Cosmic, then your Pro plan keeps running.")
+            Text(heroSubtitle)
                 .font(.cosmicBody)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.cosmicTextSecondary)
@@ -203,10 +225,10 @@ struct PaywallVariant_TieredV2: View {
                     .background(Color.cosmicAmethyst, in: Capsule())
                 Spacer()
             }
-            Text("Highest-tier insights for a week")
+            Text(trialHeadline)
                 .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
-            Text("After 7 days you're billed for the 12-month Pro plan you selected below. Cancel any time in Settings.")
+            Text(trialBody)
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -333,9 +355,15 @@ struct PaywallVariant_TieredV2: View {
 
     private var featureList: some View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
-            featureRow("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)")
-            featureRow("doc.text.fill", "All journey paths included")
-            featureRow("heart.fill", "Love, Career, Resources, Energy + more")
+            if context == .journalInsights {
+                featureRow("chart.bar.xaxis", "Unlimited Journal Insights")
+                featureRow("waveform.path.ecg", "Body and mood trends")
+                featureRow("sparkles", "Pattern frequency over time")
+            } else {
+                featureRow("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)")
+                featureRow("doc.text.fill", "All journey paths included")
+                featureRow("heart.fill", "Love, Career, Resources, Energy + more")
+            }
             featureRow("clock.fill", "Cancel anytime")
         }
         .padding(Cosmic.Spacing.screen)
