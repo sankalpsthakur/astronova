@@ -71,6 +71,7 @@ struct QuickBirthEditView: View {
             }
             .onAppear { loadCurrentProfile() }
         }
+        .accessibilityIdentifier(AccessibilityID.quickBirthEditView)
     }
 
     // MARK: - Header Section
@@ -208,6 +209,7 @@ struct QuickBirthEditView: View {
             TextField("Search city...", text: $birthPlace)
                 .font(.cosmicBody)
                 .foregroundStyle(Color.cosmicTextPrimary)
+                .accessibilityIdentifier(AccessibilityID.locationSearchField)
                 .padding(Cosmic.Spacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: Cosmic.Radius.soft, style: .continuous)

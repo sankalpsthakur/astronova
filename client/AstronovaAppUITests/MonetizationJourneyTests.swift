@@ -435,11 +435,15 @@ final class MonetizationJourneyTests: XCTestCase {
         XCTAssertTrue(anyReport.waitForExistence(timeout: 10), "At least one report should appear in the library")
     }
 
-    // MARK: - Journey D: Time Travel Blocked → Complete Profile → Dashas Load
+    // MARK: - Journey D: Minimal profile → Map value → Accuracy recovery
 
     @MainActor
     func testJourneyD_TimeTravelIncompleteProfile() throws {
-        // Launch with minimal profile (missing birth time/location)
+        // Launch with minimal profile (missing birth time/location).
+        // The active Topo tab formerly exposed old Time Travel gating here.
+        // Current product should not block the user's first map value: it
+        // renders the map immediately, then offers a one-tap recovery path
+        // for sharper birth-data accuracy.
         launchSignedIn(arguments: [
             "UITEST_RESET",
             "UITEST_SEED_PROFILE_MINIMAL",
@@ -447,25 +451,27 @@ final class MonetizationJourneyTests: XCTestCase {
             "UITEST_ENABLE_LOGGING"
         ])
 
-        // Navigate to Time Travel tab
+        // Navigate to the active Map tab (legacy identifier remains
+        // timeTravelTab for UI compatibility).
         tapTab("timeTravelTab")
 
-        // Verify incomplete profile prompt is shown
-        let incompletePrompt = anyElement("incompleteProfilePrompt")
-        XCTAssertTrue(incompletePrompt.waitForExistence(timeout: 10), "Incomplete profile prompt should appear for users missing birth data")
+        XCTAssertTrue(visibleText(containing: "Your inner terrain").waitForExistence(timeout: 10), "Map should render useful value for minimal-profile users")
 
-        // Verify the CTA button exists
+        let accuracyBanner = anyElement("mapAccuracyUpgradeBanner")
+        XCTAssertTrue(accuracyBanner.waitForExistence(timeout: 8), "Map should explain how to improve accuracy without blocking value")
+
         let completeBirthDataButton = anyElement("completeBirthDataButton")
-        XCTAssertTrue(completeBirthDataButton.waitForExistence(timeout: 5), "Complete Birth Data button should be visible")
+        XCTAssertTrue(completeBirthDataButton.waitForExistence(timeout: 5), "Improve accuracy CTA should be visible")
 
-        // Tap the CTA to go to profile editing
         completeBirthDataButton.tap()
 
-        // Wait for profile edit view to appear (should have birth time picker)
-        let birthTimePicker = anyElement("birthTimePicker")
-        let profileEditAppeared = birthTimePicker.waitForExistence(timeout: 10) ||
-            app.navigationBars["Edit Profile"].waitForExistence(timeout: 5)
-        XCTAssertTrue(profileEditAppeared, "Profile edit view should open with birth time picker")
+        let quickEdit = anyElement("quickBirthEditView")
+        let placeField = anyElement("locationSearchField")
+        XCTAssertTrue(
+            quickEdit.waitForExistence(timeout: 8) || visibleText(containing: "Tune Your Resonance").waitForExistence(timeout: 4),
+            "Improve accuracy should open the focused birth-data editor in one tap"
+        )
+        XCTAssertTrue(placeField.waitForExistence(timeout: 5), "Focused editor should expose the birth-place field without requiring a second Edit tap")
     }
 
     // MARK: - Journey E: Pro Users Should See Reports Included

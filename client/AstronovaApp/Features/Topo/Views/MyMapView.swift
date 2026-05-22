@@ -17,7 +17,9 @@ private func domainTint(_ hint: String) -> Color {
 // MARK: - MyMapView
 
 struct MyMapView: View {
+    @EnvironmentObject private var auth: AuthState
     @State private var snapshot: DomainSnapshot?
+    @State private var showingBirthEditor = false
     private let domains: [DomainMapping] = TopoContentLoader.shared.domains
 
     private let gridColumns: [GridItem] = [
@@ -25,11 +27,16 @@ struct MyMapView: View {
         GridItem(.flexible(), spacing: 12)
     ]
 
+    private var completeness: ProfileCompleteness {
+        ProfileCompleteness(profile: auth.profileManager.profile)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     header
+                    accuracyUpgradeBanner
                     radarBlock
                     legendStrip
                     domainGrid
@@ -41,6 +48,10 @@ struct MyMapView: View {
             .navigationBarHidden(true)
         }
         .onAppear { load() }
+        .sheet(isPresented: $showingBirthEditor) {
+            QuickBirthEditView()
+                .environmentObject(auth)
+        }
     }
 
     private var header: some View {
@@ -54,6 +65,55 @@ struct MyMapView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 12)
+    }
+
+    @ViewBuilder
+    private var accuracyUpgradeBanner: some View {
+        if completeness.level != .full, let nextUnlock = completeness.nextUnlock {
+            HStack(alignment: .center, spacing: Cosmic.Spacing.md) {
+                Image(systemName: nextUnlock.icon)
+                    .font(.cosmicTitle3)
+                    .foregroundStyle(Color.cosmicGold)
+                    .frame(width: 28)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: Cosmic.Spacing.xxs) {
+                    Text("Map is ready now")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+
+                    Text("Add \(nextUnlock.title.lowercased()) for sharper scores and timing.")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: Cosmic.Spacing.sm)
+
+                Button {
+                    showingBirthEditor = true
+                } label: {
+                    Text("Improve")
+                        .font(.cosmicCaptionEmphasis)
+                        .padding(.horizontal, Cosmic.Spacing.md)
+                        .padding(.vertical, Cosmic.Spacing.sm)
+                        .background(LinearGradient.cosmicAntiqueGold, in: Capsule())
+                        .foregroundStyle(Color.cosmicVoid)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Improve chart accuracy")
+                .accessibilityHint(nextUnlock.benefit)
+                .accessibilityIdentifier(AccessibilityID.completeBirthDataButton)
+            }
+            .padding(Cosmic.Spacing.md)
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                    .stroke(Color.cosmicGold.opacity(0.18), lineWidth: Cosmic.Border.thin)
+            )
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier(AccessibilityID.mapAccuracyUpgradeBanner)
+        }
     }
 
     private var radarBlock: some View {

@@ -404,6 +404,8 @@ enum AccessibilityID {
     static let timeTravelView = "timeTravelView"
     static let incompleteProfilePrompt = "incompleteProfilePrompt"
     static let completeBirthDataButton = "completeBirthDataButton"
+    static let mapAccuracyUpgradeBanner = "mapAccuracyUpgradeBanner"
+    static let quickBirthEditView = "quickBirthEditView"
 
     // Suggested Prompts
     static func suggestedPromptButton(_ index: Int) -> String {
