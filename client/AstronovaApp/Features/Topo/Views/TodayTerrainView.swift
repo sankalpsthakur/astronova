@@ -345,6 +345,20 @@ struct TodayTerrainView: View {
         } else {
             dominantPattern = nil
         }
+
+        guard TopoSubstitutionsService.shared.current == nil else { return }
+        Task.detached(priority: .utility) {
+            _ = TopoSubstitutionsService.shared.awaitCurrent(timeout: 1.5)
+            await MainActor.run {
+                let refreshed = TerrainComputer.shared.todaysTerrain()
+                snapshot = refreshed
+                if let id = refreshed.dominantPatternId {
+                    dominantPattern = TopoContentLoader.shared.pattern(id: id)
+                } else {
+                    dominantPattern = nil
+                }
+            }
+        }
     }
 
     private func truncated(_ text: String, max: Int) -> String {

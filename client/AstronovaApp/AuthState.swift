@@ -170,7 +170,7 @@ class AuthState: ObservableObject {
         do {
             let health = try await apiServices.healthCheck()
             await MainActor.run {
-                self.isAPIConnected = health.status == "ok"
+                self.isAPIConnected = health.status == "ok" || health.status == "healthy"
                 self.connectionError = nil
                 self.isRetryingConnection = false
             }

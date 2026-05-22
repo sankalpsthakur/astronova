@@ -730,10 +730,10 @@ class APIServices: ObservableObject, APIServicesProtocol {
                 endpoint: "/api/v1/auth/validate",
                 method: HTTPMethod.GET,
                 body: nil,
-                responseType: [String: Bool].self
+                responseType: AuthValidationResponse.self
             )
             
-            return response["valid"] ?? false
+            return response.valid
         } catch {
             // If validation fails, assume token is invalid
             return false

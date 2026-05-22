@@ -169,7 +169,9 @@ final class TestEnvironment {
             "user_profile",
             "mock_reports",
             "trigger_show_report_shop",
-            "trigger_show_chat_packages"
+            "trigger_show_chat_packages",
+            "topo.substitutions.cache.v1",
+            "topo.substitutions.dateKey.v1"
         ]
 
         for key in keysToReset {

@@ -577,6 +577,14 @@ struct AuthResponse: Codable {
     let expiresAt: String
 }
 
+/// Response from `/api/v1/auth/validate`.
+struct AuthValidationResponse: Codable {
+    let valid: Bool
+    let userId: String?
+    let email: String?
+    let error: String?
+}
+
 /// Subscription status response
 struct SubscriptionStatusResponse: Codable {
     let isActive: Bool
