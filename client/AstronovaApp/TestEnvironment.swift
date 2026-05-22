@@ -408,6 +408,13 @@ enum AccessibilityID {
     }
 
     // Profile
+    static let authLandingView = "authLandingView"
+    static let authRequiredView = "authRequiredView"
+    static let continueWithoutSigningInButton = "continueWithoutSigningInButton"
+    static let authContinueAsGuestButton = "authContinueAsGuestButton"
+    static let authSignInWithAppleButton = "authSignInWithAppleButton"
+    static let settingsSignOutButton = "settings.signOut.button"
+    static let settingsSignInButton = "settings.signIn.button"
     static let profileSetupView = "profileSetupView"
     static let birthDatePicker = "birthDatePicker"
     static let birthTimePicker = "birthTimePicker"

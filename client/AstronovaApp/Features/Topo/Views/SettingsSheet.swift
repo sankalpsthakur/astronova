@@ -56,7 +56,8 @@ struct SettingsSheet: View {
                                 icon: "rectangle.portrait.and.arrow.right",
                                 title: "Sign out",
                                 subtitle: nil,
-                                tint: .cosmicError
+                                tint: .cosmicError,
+                                accessibilityIdentifier: AccessibilityID.settingsSignOutButton
                             ) {
                                 auth.signOut()
                                 dismiss()
@@ -65,7 +66,8 @@ struct SettingsSheet: View {
                             actionRow(
                                 icon: "person.crop.circle.badge.plus",
                                 title: "Sign in",
-                                subtitle: "Return to onboarding to sign in with Apple"
+                                subtitle: "Return to onboarding to sign in with Apple",
+                                accessibilityIdentifier: AccessibilityID.settingsSignInButton
                             ) {
                                 dismiss()
                             }
@@ -254,6 +256,7 @@ struct SettingsSheet: View {
         subtitle: String?,
         tint: Color = .cosmicTextPrimary,
         showsChevron: Bool = true,
+        accessibilityIdentifier: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button {
@@ -291,6 +294,7 @@ struct SettingsSheet: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityIdentifier ?? title)
     }
 
     private var appVersionFooter: some View {

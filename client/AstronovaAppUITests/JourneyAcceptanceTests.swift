@@ -130,6 +130,11 @@ final class JourneyAcceptanceTests: XCTestCase {
         return app.otherElements["homeTab"].waitForExistence(timeout: 4)
     }
 
+    @discardableResult
+    private func waitForProfileSetup(timeout: TimeInterval = 15) -> Bool {
+        anyElement("profileSetupView").waitForExistence(timeout: timeout)
+    }
+
     // MARK: - Evidence helpers
 
     private func captureEvidence(named name: String) {
@@ -719,5 +724,42 @@ final class JourneyAcceptanceTests: XCTestCase {
             .firstMatch
             .waitForExistence(timeout: 4),
             "Quota banner should expose one clear upgrade CTA")
+    }
+
+    // MARK: - Journey 11 — Authentication recovery after sign-out
+
+    @MainActor
+    func test_J11_signOutRecoversThroughGuestPreview() throws {
+        launchSignedIn()
+        XCTAssertTrue(waitForHomeTab(), "Need signed-in home before testing account recovery")
+        tapTab("homeTab")
+
+        openSettingsFromToday()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8),
+                      "SettingsSheet must present from Today")
+        let signOut = app.buttons["settings.signOut.button"]
+        XCTAssertTrue(signOut.waitForExistence(timeout: 8),
+                      "Signed-in Settings should expose Sign out")
+        captureEvidence(named: "11-settings-sign-out")
+        signOut.tap()
+
+        let landingHeadline = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "today's move"))
+            .firstMatch
+        XCTAssertTrue(landingHeadline.waitForExistence(timeout: 12),
+                      "After sign-out the app should return to the signed-out landing")
+        let preview = app.buttons["continueWithoutSigningInButton"]
+        XCTAssertTrue(preview.waitForExistence(timeout: 8),
+                      "Signed-out landing should offer a guest preview recovery CTA")
+        XCTAssertTrue(preview.isHittable,
+                      "Guest preview CTA should be immediately tappable")
+        captureEvidence(named: "11-auth-landing-after-sign-out")
+
+        preview.tap()
+        let reachedProfileSetup = waitForProfileSetup(timeout: 6)
+        let reachedHome = waitForHomeTab(timeout: 10)
+        XCTAssertTrue(reachedProfileSetup || reachedHome,
+                      "Guest recovery should move the user to profile setup or restored Today value without Apple Sign In")
+        captureEvidence(named: reachedProfileSetup ? "11-guest-profile-setup" : "11-guest-restored-today")
     }
 }

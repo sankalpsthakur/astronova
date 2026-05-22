@@ -359,6 +359,7 @@ struct AuthRequiredView: View {
             .frame(height: 50)
             .frame(maxWidth: .infinity)
             .disabled(isSigningIn)
+            .accessibilityIdentifier(AccessibilityID.authSignInWithAppleButton)
             .overlay {
                 if isSigningIn {
                     ProgressView()
@@ -366,6 +367,27 @@ struct AuthRequiredView: View {
                 }
             }
             .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+
+            Button {
+                auth.continueAsGuest()
+            } label: {
+                Text("Continue as guest")
+                    .font(.cosmicCalloutEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                            .fill(Color.cosmicSurfaceSecondary)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Cosmic.Radius.soft)
+                            .stroke(Color.cosmicGold.opacity(0.28), lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(isSigningIn)
+            .accessibilityIdentifier(AccessibilityID.authContinueAsGuestButton)
         }
         .padding(Cosmic.Spacing.lg)
         .background(
@@ -8870,7 +8892,7 @@ struct CompellingLandingView: View {
                 .buttonStyle(.plain)
                 .disabled(inProgress)
                 .accessibilityLabel("Preview today without signing in")
-                .accessibilityIdentifier("continueWithoutSigningInButton")
+                .accessibilityIdentifier(AccessibilityID.continueWithoutSigningInButton)
                 .accessibilityAddTraits(.isButton)
 
                 // Just-in-time disclosure: tells the user what happens when
