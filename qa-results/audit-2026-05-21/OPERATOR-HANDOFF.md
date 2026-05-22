@@ -170,7 +170,25 @@ Keep:
 
 Run iOS tests after each deletion to catch cross-file references.
 
-## 7. Push notification timing
+## 7. Implement a Today's Horoscope home/lock-screen widget
+
+The `client/TodaysHoroscopeWidget/` directory was orphan scaffolding
+when the audit started — Info.plist + asset catalog only, no Swift
+code, no Xcode target, no references anywhere in the codebase
+(scaffolded 2025-09-26, never implemented). The audit removed the
+dead files. A real widget would be a strong competitive lever:
+
+- Co-Star, The Pattern, and Sanctuary all ship working iOS widgets
+- Astronova's `/api/v1/horoscope` is already shippable
+- Small / medium / large sizes covered by one TimelineProvider
+- App Group entitlement enables shared UserDefaults between main app
+  and widget (sun sign, last-fetched timestamp)
+
+Effort estimate: ~200 lines of Swift + Xcode target setup +
+entitlement + background refresh. Plan for ~1 dev-day with simulator
+test coverage.
+
+## 8. Push notification timing
 
 Co-Star's competitive moat is *when* it pushes ("you'll feel anxious
 today at 3pm"). Astronova's push timing is currently `daily at 9am
