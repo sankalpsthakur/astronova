@@ -49,7 +49,8 @@ struct SettingsSheet: View {
                             actionRow(
                                 icon: "person.crop.circle.fill",
                                 title: "Signed in",
-                                subtitle: auth.profileManager.profile.fullName.isEmpty ? "Apple ID" : auth.profileManager.profile.fullName
+                                subtitle: auth.profileManager.profile.fullName.isEmpty ? "Apple ID" : auth.profileManager.profile.fullName,
+                                showsChevron: false
                             ) {}
                             actionRow(
                                 icon: "rectangle.portrait.and.arrow.right",
@@ -58,13 +59,16 @@ struct SettingsSheet: View {
                                 tint: .cosmicError
                             ) {
                                 auth.signOut()
+                                dismiss()
                             }
                         } else {
                             actionRow(
                                 icon: "person.crop.circle.badge.plus",
                                 title: "Sign in",
-                                subtitle: "Open onboarding to sign in with Apple"
-                            ) {}
+                                subtitle: "Return to onboarding to sign in with Apple"
+                            ) {
+                                dismiss()
+                            }
                         }
 
                         sectionHeader("VOICE")
@@ -249,6 +253,7 @@ struct SettingsSheet: View {
         title: String,
         subtitle: String?,
         tint: Color = .cosmicTextPrimary,
+        showsChevron: Bool = true,
         action: @escaping () -> Void
     ) -> some View {
         Button {
@@ -272,9 +277,11 @@ struct SettingsSheet: View {
                     }
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.cosmicLabel)
-                    .foregroundStyle(Color.cosmicTextTertiary)
+                if showsChevron {
+                    Image(systemName: "chevron.right")
+                        .font(.cosmicLabel)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
