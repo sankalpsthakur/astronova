@@ -279,11 +279,8 @@ struct PaywallView: View {
             ChatPackagesSheet()
         }
         .overlay(alignment: .topTrailing) {
-            // Per spec — `paywall.close` is the canonical UI test ID. The
-            // legacy `paywallCloseButton` is kept as an alias for backward
-            // compat with earlier acceptance tests. `.accessibilityElement`
-            // ensures the inner identifier is reachable even though the
-            // parent container also carries `paywallView` ID below.
+            // Keep the close affordance addressable even though the parent
+            // container also carries the `paywallView` identifier.
             Button {
                 dismiss()
             } label: {
@@ -402,7 +399,7 @@ struct PaywallView: View {
             .accessibilityIdentifier(AccessibilityID.restorePurchasesButton)
             .accessibilityHint("Restores previous purchases")
 
-            Text("\(ShopCatalog.proIntroOfferDescription), \(selectedPlan.renewalCadenceDescription) at \(billingDisplayPrice(for: selectedPlan)) per month until canceled. Cancel at least 24 hours before renewal in Settings → Apple ID → Subscriptions.")
+            Text("\(ShopCatalog.proIntroOfferDescription), \(selectedPlan.renewalCadenceDescription) at \(billingDisplayPrice(for: selectedPlan)) \(selectedPlan.billingCaption) until canceled. Cancel at least 24 hours before renewal in Settings → Apple ID → Subscriptions.")
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .multilineTextAlignment(.center)

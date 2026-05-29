@@ -104,7 +104,7 @@ final class MonetizationJourneyTests: XCTestCase {
     private func tabCandidates(for identifier: String) -> [String] {
         switch identifier {
         case "askTab":
-            return ["askTab", "templeTab"]
+            return ["askTab", "timelineTab"]
         case "manageTab":
             return ["manageTab", "selfTab"]
         default:
@@ -251,7 +251,7 @@ final class MonetizationJourneyTests: XCTestCase {
 
         XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 12), "Paywall should be presented by the UI-test launch hook")
         XCTAssertTrue(visibleText(containing: "12-month plan").waitForExistence(timeout: 8), "12-month plan should be visible on the first paywall surface")
-        XCTAssertTrue(visibleText(containing: "12 monthly payments").waitForExistence(timeout: 8), "Paywall safe-area footer should show the selected 12-month monthly plan before navigating")
+        XCTAssertTrue(visibleText(containing: "per year").waitForExistence(timeout: 8), "Paywall safe-area footer should show the selected 12-month annual plan price before navigating")
 
         let reportsShop = anyElement("buyDetailedReportButton")
         XCTAssertTrue(reportsShop.waitForExistence(timeout: 8), "Reports Shop CTA should be visible on the paywall")
@@ -279,7 +279,7 @@ final class MonetizationJourneyTests: XCTestCase {
 
         XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 12), "Paywall should be presented by the UI-test launch hook")
         XCTAssertTrue(visibleText(containing: "12-month plan").waitForExistence(timeout: 8), "12-month plan should be visible on the first paywall surface")
-        XCTAssertTrue(visibleText(containing: "12 monthly payments").waitForExistence(timeout: 8), "Paywall safe-area footer should show the selected 12-month monthly plan before navigating")
+        XCTAssertTrue(visibleText(containing: "per year").waitForExistence(timeout: 8), "Paywall safe-area footer should show the selected 12-month annual plan price before navigating")
 
         let chatPackages = anyElement("buyChatPackagesButton")
         XCTAssertTrue(chatPackages.waitForExistence(timeout: 8), "Chat Packages CTA should be visible on the paywall")
@@ -440,10 +440,8 @@ final class MonetizationJourneyTests: XCTestCase {
     @MainActor
     func testJourneyD_TimeTravelIncompleteProfile() throws {
         // Launch with minimal profile (missing birth time/location).
-        // The active Topo tab formerly exposed old Time Travel gating here.
-        // Current product should not block the user's first map value: it
-        // renders the map immediately, then offers a one-tap recovery path
-        // for sharper birth-data accuracy.
+        // The Map tab should still lead with the live astrocartography globe,
+        // then offer a one-tap recovery path for sharper birth-data accuracy.
         launchSignedIn(arguments: [
             "UITEST_RESET",
             "UITEST_SEED_PROFILE_MINIMAL",
@@ -455,10 +453,12 @@ final class MonetizationJourneyTests: XCTestCase {
         // timeTravelTab for UI compatibility).
         tapTab("timeTravelTab")
 
-        XCTAssertTrue(visibleText(containing: "Your inner terrain").waitForExistence(timeout: 10), "Map should render useful value for minimal-profile users")
+        XCTAssertTrue(anyElement("mapTabView").waitForExistence(timeout: 12), "Map tab should render for minimal-profile users")
+        XCTAssertTrue(anyElement("astrocartographyMapView").waitForExistence(timeout: 12), "Minimal-profile users should see the astrocartography map immediately")
+        XCTAssertTrue(anyElement("appleMapsGlobeView").waitForExistence(timeout: 12), "Map should render the Apple Maps globe as primary value")
 
         let accuracyBanner = anyElement("mapAccuracyUpgradeBanner")
-        XCTAssertTrue(accuracyBanner.waitForExistence(timeout: 8), "Map should explain how to improve accuracy without blocking value")
+        XCTAssertTrue(accuracyBanner.waitForExistence(timeout: 8), "Map should explain how to improve accuracy without blocking globe value")
 
         let completeBirthDataButton = anyElement("completeBirthDataButton")
         XCTAssertTrue(completeBirthDataButton.waitForExistence(timeout: 5), "Improve accuracy CTA should be visible")
@@ -519,9 +519,9 @@ final class MonetizationJourneyTests: XCTestCase {
         ])
 
         tapTab("homeTab")
-        tapTab("connectTab")
+        tapTab("matrixTab")
         tapTab("timeTravelTab")
-        tapTab("askTab")
+        tapTab("timelineTab")
         tapTab("manageTab")
     }
 }
