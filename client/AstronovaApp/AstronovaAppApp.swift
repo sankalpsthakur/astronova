@@ -231,8 +231,8 @@ struct OpenTodaysGuidanceIntent: AppIntent {
 }
 
 struct OpenTimeTravelIntent: AppIntent {
-    static let title: LocalizedStringResource = "Open Time Travel"
-    static let description = IntentDescription("Open Astronova's timeline view.")
+    static let title: LocalizedStringResource = "Open Timeline"
+    static let description = IntentDescription("Open Astronova's current timeline view.")
     static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
@@ -267,7 +267,7 @@ struct AstronovaShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: OpenTimeTravelIntent(),
             phrases: [
-                "Open time travel in \(.applicationName)",
+                "Open timeline in \(.applicationName)",
                 "Show my timeline in \(.applicationName)"
             ],
             shortTitle: "Timeline",
