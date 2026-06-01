@@ -6,15 +6,30 @@ import hmac
 import logging
 import os
 import sys
-from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
+from werkzeug.exceptions import BadRequest
 
-from db import get_subscription, init_db
+from db import get_subscription, init_db, set_subscription, sync_report_purchase_entitlement
 from middleware import require_auth
+from services.storekit_verifier import StoreKitVerificationError, verify_storekit_transaction
+from utils.time_utils import utc_now_iso
 
 misc_bp = Blueprint("misc", __name__)
 logger = logging.getLogger(__name__)
+_PRO_PRODUCT_IDS = {
+    "astronova_pro_monthly",
+    "astronova_pro_12_month_commitment",
+}
+_REPORT_PRODUCT_TYPES = {
+    "report_general": "birth_chart",
+    "report_love": "love_forecast",
+    "report_career": "career_forecast",
+    "report_money": "money_forecast",
+    "report_health": "health_forecast",
+    "report_family": "family_forecast",
+    "report_spiritual": "spiritual_forecast",
+}
 
 
 def _is_production_environment() -> bool:
@@ -44,7 +59,7 @@ def _require_admin_token_if_production():
 @misc_bp.route("/health", methods=["GET"])
 def health_check():
     return jsonify(
-        {"status": "healthy", "service": "astronova-api", "version": "minimal", "timestamp": datetime.utcnow().isoformat()}
+        {"status": "healthy", "service": "astronova-api", "version": "minimal", "timestamp": utc_now_iso()}
     )
 
 
@@ -55,7 +70,7 @@ def system_status():
             "status": "operational",
             "system": {
                 "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": utc_now_iso(),
             },
             "endpoints": {
                 "health": "/api/v1/health",
@@ -74,14 +89,166 @@ def system_status():
 @misc_bp.route("/subscription/status", methods=["GET"])
 @require_auth
 def subscription_status():
-    # Native clients may still send userId/X-User-Id, but the JWT subject is
+    # A query userId is tolerated as a consistency check, but the JWT subject is
     # authoritative so callers cannot inspect another user's subscription.
     init_db()
-    requested_user_id = request.args.get("userId") or request.headers.get("X-User-Id")
+    requested_user_id = request.args.get("userId")
     user_id = g.user_id
     if requested_user_id and requested_user_id != user_id:
         return jsonify({"error": "Access denied - cannot access other user's subscription", "code": "FORBIDDEN"}), 403
     return jsonify(get_subscription(user_id))
+
+
+@misc_bp.route("/subscription/sync", methods=["POST"])
+@require_auth
+def subscription_sync():
+    """
+    Sync a StoreKit-verified Pro entitlement from the native client.
+
+    The JWT subject is authoritative for the user. The client may include a
+    transaction/original transaction identifier for audit and idempotent retry,
+    but only known Pro product IDs can activate server-side premium gates.
+    """
+    try:
+        payload = request.get_json(force=False, silent=False)
+    except BadRequest:
+        return jsonify({"error": "Request body must be valid JSON", "code": "INVALID_JSON"}), 400
+
+    data = payload or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be a JSON object", "code": "INVALID_PAYLOAD"}), 400
+
+    product_id = data.get("productId") or data.get("product_id")
+    transaction_id = data.get("transactionId") or data.get("transaction_id")
+    original_transaction_id = data.get("originalTransactionId") or data.get("original_transaction_id")
+    signed_transaction_jws = data.get("signedTransactionJWS") or data.get("signed_transaction_jws")
+
+    if not isinstance(product_id, str) or not product_id.strip():
+        return jsonify({"error": "productId is required", "code": "INVALID_PAYLOAD"}), 400
+
+    product_id = product_id.strip()
+    if product_id not in _PRO_PRODUCT_IDS:
+        return jsonify({
+            "error": "Only Astronova Pro products can activate subscription status",
+            "code": "UNSUPPORTED_PRODUCT",
+        }), 400
+
+    if not any(isinstance(value, str) and value.strip() for value in (transaction_id, original_transaction_id)):
+        return jsonify({
+            "error": "A transactionId or originalTransactionId is required",
+            "code": "INVALID_PAYLOAD",
+        }), 400
+
+    try:
+        verified_transaction = verify_storekit_transaction(
+            signed_transaction_jws,
+            expected_product_id=product_id,
+            expected_transaction_id=transaction_id.strip() if isinstance(transaction_id, str) and transaction_id.strip() else None,
+        )
+    except StoreKitVerificationError as exc:
+        logger.warning("Rejected StoreKit subscription sync for user=%s product=%s: %s", g.user_id, product_id, exc)
+        status = 503 if "root certificates" in str(exc) else 400
+        return jsonify({"error": str(exc), "code": "STOREKIT_TRANSACTION_UNVERIFIED"}), status
+
+    set_subscription(g.user_id, True, verified_transaction.product_id)
+    subscription = get_subscription(g.user_id)
+    logger.info(
+        "Synced StoreKit subscription for user=%s product=%s transaction=%s original=%s",
+        g.user_id,
+        verified_transaction.product_id,
+        verified_transaction.transaction_id,
+        verified_transaction.original_transaction_id or original_transaction_id,
+    )
+
+    return jsonify({
+        "isActive": bool(subscription.get("isActive")),
+        "productId": subscription.get("productId"),
+        "updatedAt": subscription.get("updatedAt"),
+        "entitlement": {
+            "hasPremium": bool(subscription.get("isActive")),
+            "source": "subscription_sync",
+        },
+    })
+
+
+@misc_bp.route("/report-entitlements/sync", methods=["POST"])
+@require_auth
+def report_entitlement_sync():
+    """
+    Sync a StoreKit-verified individual report purchase.
+
+    Individual reports are non-consumable in the client catalog, but the
+    server still needs an auditable entitlement before allowing one matching
+    report generation for non-Pro users.
+    """
+    try:
+        payload = request.get_json(force=False, silent=False)
+    except BadRequest:
+        return jsonify({"error": "Request body must be valid JSON", "code": "INVALID_JSON"}), 400
+
+    data = payload or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be a JSON object", "code": "INVALID_PAYLOAD"}), 400
+
+    product_id = data.get("productId") or data.get("product_id")
+    transaction_id = data.get("transactionId") or data.get("transaction_id")
+    original_transaction_id = data.get("originalTransactionId") or data.get("original_transaction_id")
+    environment = data.get("environment")
+    signed_transaction_jws = data.get("signedTransactionJWS") or data.get("signed_transaction_jws")
+
+    if not isinstance(product_id, str) or not product_id.strip():
+        return jsonify({"error": "productId is required", "code": "INVALID_PAYLOAD"}), 400
+    product_id = product_id.strip()
+
+    report_type = _REPORT_PRODUCT_TYPES.get(product_id)
+    if not report_type:
+        return jsonify({
+            "error": "Only Astronova report products can activate report generation",
+            "code": "UNSUPPORTED_PRODUCT",
+        }), 400
+
+    if not isinstance(transaction_id, str) or not transaction_id.strip():
+        return jsonify({
+            "error": "transactionId is required",
+            "code": "INVALID_PAYLOAD",
+        }), 400
+
+    try:
+        verified_transaction = verify_storekit_transaction(
+            signed_transaction_jws,
+            expected_product_id=product_id,
+            expected_transaction_id=transaction_id.strip(),
+        )
+    except StoreKitVerificationError as exc:
+        logger.warning("Rejected StoreKit report sync for user=%s product=%s: %s", g.user_id, product_id, exc)
+        status = 503 if "root certificates" in str(exc) else 400
+        return jsonify({"error": str(exc), "code": "STOREKIT_TRANSACTION_UNVERIFIED"}), status
+
+    entitlement = sync_report_purchase_entitlement(
+        user_id=g.user_id,
+        product_id=verified_transaction.product_id,
+        report_type=report_type,
+        transaction_id=verified_transaction.transaction_id,
+        original_transaction_id=verified_transaction.original_transaction_id
+        or (original_transaction_id.strip() if isinstance(original_transaction_id, str) else None),
+        environment=verified_transaction.environment or (environment.strip() if isinstance(environment, str) else None),
+    )
+    logger.info(
+        "Synced report purchase entitlement for user=%s product=%s report_type=%s transaction=%s",
+        g.user_id,
+        product_id,
+        report_type,
+        transaction_id,
+    )
+
+    return jsonify({
+        "isAvailable": bool(entitlement.get("isAvailable")),
+        "productId": entitlement.get("productId"),
+        "reportType": entitlement.get("reportType"),
+        "transactionId": entitlement.get("transactionId"),
+        "consumedReportId": entitlement.get("consumedReportId"),
+        "createdAt": entitlement.get("createdAt"),
+    })
 
 
 @misc_bp.route("/config", methods=["GET"])
@@ -92,7 +259,7 @@ def remote_config():
     """
     return jsonify(
         {
-            "paywall_variant": "A",
+            "paywall_variant": "control",
             "widget_prompt_enabled": True,
             "daily_notification_default_hour": 9,
             "home_quick_tiles_enabled": True,
@@ -132,7 +299,7 @@ def seed_test_user():
             }), 200
 
         # Create test user
-        now = datetime.utcnow().isoformat()
+        now = utc_now_iso()
         cur.execute("""
             INSERT INTO users (id, email, first_name, last_name, full_name, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -175,7 +342,7 @@ def seed_test_user():
                 "location": "New York, NY, USA"
             },
             "subscription": "active (Pro)",
-            "instructions": "Use X-User-Id header with this user_id for API testing"
+            "instructions": "Authenticate with /api/v1/auth/apple and use the returned Bearer JWT for API testing"
         }), 201
 
     except Exception as e:

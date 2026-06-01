@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Astronova — iOS</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    /* design canvas tweaks */
+    html, body { background: #0B0A08; }
+    body { font-family: 'Geist', system-ui, sans-serif; color: #f4ede0; }
+    .dc-labeltext, .dc-section-title, .dc-section-subtitle {
+      color: rgba(244,237,224,0.78) !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Frame + canvas starters -->
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <!-- App primitives + screens -->
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="screens/onboarding.jsx"></script>
+  <script type="text/babel" src="screens/dashboard.jsx"></script>
+  <script type="text/babel" src="screens/modules1.jsx"></script>
+  <script type="text/babel" src="screens/modules2.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const DEVICE_W = 402;
+    const DEVICE_H = 874;
+
+    // Wrap any screen in an iPhone device frame.
+    function Frame({ component: C }) {
+      return (
+        <IOSDevice dark={true} width={DEVICE_W} height={DEVICE_H}>
+          <C />
+        </IOSDevice>
+      );
+    }
+
+    function App() {
+      // Live free-will demo at top: a callout that the prototype is interactive.
+      return (
+        <DesignCanvas>
+          <DCSection
+            id="onboarding"
+            title="Onboarding · 4 screens"
+            subtitle="From cold open to chart compute. Engineering tone, calm pacing."
+          >
+            <DCArtboard id="splash"  label="01 · Splash"        width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={SplashScreen}/>
+            </DCArtboard>
+            <DCArtboard id="birth"   label="02 · Birth data"     width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={BirthScreen}/>
+            </DCArtboard>
+            <DCArtboard id="phone"   label="03 · Loshu vector"   width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={PhoneScreen}/>
+            </DCArtboard>
+            <DCArtboard id="context" label="04 · Real-world priors" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={ContextScreen}/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection
+            id="signed-in"
+            title="Today · the hero dashboard"
+            subtitle="Persona synthesis, today's hypothesis, action queue with time-stamped CTAs, constraint-first guardrail."
+          >
+            <DCArtboard id="dash" label="05 · Today" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={DashboardScreen}/>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection
+            id="analysis"
+            title="Analysis modules"
+            subtitle="Drill-downs. Rotatable chart, server-room metaphor, Loshu, timeline, astrocartography, dasha transition, Bayesian slider."
+          >
+            <DCArtboard id="chart" label="06 · Chart wheel (drag to rotate)" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={ChartScreen}/>
+            </DCArtboard>
+            <DCArtboard id="system" label="07 · System overview · server-room" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={SystemScreen}/>
+            </DCArtboard>
+            <DCArtboard id="loshu" label="08 · Loshu lattice" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={LoshuScreen}/>
+            </DCArtboard>
+            <DCArtboard id="time" label="09 · Month-by-month timeline" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={TimelineScreen}/>
+            </DCArtboard>
+            <DCArtboard id="map" label="10 · Astrocartography" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={MapScreen}/>
+            </DCArtboard>
+            <DCArtboard id="trans" label="11 · Dasha transition · now ▸ next" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={TransitionScreen}/>
+            </DCArtboard>
+            <DCArtboard id="fw" label="12 · Free-will Bayesian slider" width={DEVICE_W} height={DEVICE_H}>
+              <Frame component={FreeWillScreen}/>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

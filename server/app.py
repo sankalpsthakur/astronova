@@ -27,7 +27,11 @@ from routes import (
     horoscope_bp,
     locations_bp,
     misc_bp,
+    numerology_bp,
+    predictions_bp,
+    rajayoga_bp,
     reports_bp,
+    synthesis_bp,
     temple_bp,
 )
 
@@ -35,6 +39,13 @@ setup_logging()
 logger = logging.getLogger(__name__)
 SUPPORTED_LOCALES = ["en", "hi", "es", "ta", "te", "bn", "ar"]
 babel = Babel()
+
+
+def _is_production_environment() -> bool:
+    return any(
+        os.environ.get(name, "").lower() == "production"
+        for name in ("FLASK_ENV", "APP_ENV", "ENV")
+    )
 
 
 def create_app():
@@ -45,7 +56,7 @@ def create_app():
     install_portfolio_analytics(app, app_id="astronova")
 
     def select_locale() -> str:
-        user_id = request.headers.get("X-User-Id")
+        user_id = getattr(g, "user_id", None)
         if user_id:
             preferred_language = get_user_preferred_language(user_id)
             if preferred_language in SUPPORTED_LOCALES:
@@ -67,23 +78,21 @@ def create_app():
         if origin.strip()
     ]
     allowed_origins = configured_origins or [
-        "https://astronova.onrender.com",
+        "https://astronova-ghcr.onrender.com",
         "https://astronova.app",
     ]
-    if os.environ.get("FLASK_ENV") != "production":
+    if not _is_production_environment():
         allowed_origins.extend([
             "http://localhost:8080",
             "http://127.0.0.1:8080",
         ])
     CORS(app, origins=allowed_origins, supports_credentials=True)
 
-    # Rate limiting to prevent abuse
-    # Uses IP address as key; applies sensible defaults per endpoint type
+    # Rate limiting to prevent abuse.
+    # Use the network address at this pre-auth boundary. X-User-Id is a
+    # compatibility header, not an authenticated identity, and must not be a
+    # throttle key.
     def get_key():
-        # Prefer X-User-Id for authenticated requests, fall back to IP
-        user_id = request.headers.get("X-User-Id")
-        if user_id:
-            return f"user:{user_id}"
         return get_remote_address()
 
     limiter = Limiter(
@@ -96,10 +105,11 @@ def create_app():
             or os.environ.get("ASTRONOVA_DISABLE_RATE_LIMITS") == "1"
         ),
     )
+    app.extensions["astronova_limiter"] = limiter
 
     # Apply stricter limits to expensive endpoints
-    @limiter.limit("20 per minute")
     @app.before_request
+    @limiter.limit("20 per minute")
     def limit_expensive_endpoints():
         # Stricter rate limits for computationally expensive endpoints
         expensive_prefixes = [
@@ -107,6 +117,8 @@ def create_app():
             "/api/v1/chart/generate",
             "/api/v1/compatibility",
             "/api/v1/astrology/dashas",
+            "/api/v1/predictions",
+            "/api/v1/synthesis",
         ]
         for prefix in expensive_prefixes:
             if request.path.startswith(prefix) and request.method == "POST":
@@ -180,6 +192,10 @@ def create_app():
     app.register_blueprint(content_bp, url_prefix="/api/v1/content")
     app.register_blueprint(discover_bp, url_prefix="/api/v1/discover")
     app.register_blueprint(temple_bp, url_prefix="/api/v1/temple")
+    app.register_blueprint(numerology_bp, url_prefix="/api/v1/numerology")
+    app.register_blueprint(rajayoga_bp, url_prefix="/api/v1/rajayoga")
+    app.register_blueprint(predictions_bp, url_prefix="/api/v1/predictions")
+    app.register_blueprint(synthesis_bp, url_prefix="/api/v1/synthesis")
 
     # OpenAPI + Swagger UI (no extra dependencies).
     @app.route("/api/v1/openapi.yaml", methods=["GET"])
@@ -281,7 +297,7 @@ def create_app():
 </head>
 <body>
     <h1>Terms of Service</h1>
-    <p class="updated">Last updated: December 2024</p>
+    <p class="updated">Last updated: May 2026</p>
 
     <h2>1. Acceptance of Terms</h2>
     <p>By downloading, installing, or using Astronova ("the App"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the App.</p>
@@ -290,7 +306,7 @@ def create_app():
     <p><strong>Astronova is an entertainment application.</strong> All astrological content, including horoscopes, birth charts, compatibility analyses, forecasts, and insights, is provided solely for entertainment and informational purposes. The App does not provide medical, financial, legal, or professional advice of any kind.</p>
 
     <h2>3. Subscription Terms</h2>
-    <p>Astronova Pro is a monthly auto-renewing subscription. Payment will be charged to your Apple ID account at confirmation of purchase. Your subscription automatically renews unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscription in your Apple ID account settings.</p>
+    <p>Astronova Pro is available as monthly and annual auto-renewing subscription options. Payment will be charged to your Apple ID account at confirmation of purchase. Your subscription automatically renews unless canceled at least 24 hours before the end of the current period. You can manage and cancel your subscription in your Apple ID account settings.</p>
 
     <h2>4. No Refunds</h2>
     <p>All purchases are final. Refund requests must be directed to Apple through their standard refund process.</p>
@@ -333,7 +349,7 @@ def create_app():
 </head>
 <body>
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: December 2024</p>
+    <p class="updated">Last updated: May 2026</p>
 
     <h2>1. Information We Collect</h2>
     <p>Astronova collects the following information to provide our services:</p>
@@ -430,7 +446,7 @@ def create_app():
 
     <div class="faq-item">
         <div class="faq-question">How do I update my birth information?</div>
-        <p>Go to the <strong>Manage</strong> tab (bottom right), tap <strong>Edit Profile</strong>, and update your birth date, time, location, or timezone. Changes will be reflected immediately in your chart and daily insights.</p>
+        <p>Open <strong>Settings</strong> from the top-right gear in the app to manage account and profile options. Birth details are used to personalize your Today, Map, Timeline, Matrix, and Journal surfaces.</p>
     </div>
 
     <div class="faq-item">
@@ -455,22 +471,23 @@ def create_app():
             <li>Birth location (city/town)</li>
             <li>Timezone</li>
         </ul>
-        <p>Update your profile in the <strong>Manage</strong> tab if any information is missing.</p>
+        <p>Use the in-app <strong>Settings</strong> gear if any account or profile information is missing.</p>
     </div>
 
     <div class="faq-item">
-        <div class="faq-question">How do I book a pooja or consult an astrologer?</div>
-        <p>Go to the <strong>Temple</strong> tab to browse:</p>
+        <div class="faq-question">How do reports and Oracle chat work?</div>
+        <p>Open <strong>Settings</strong> to access:</p>
         <ul>
-            <li><strong>Expert Astrologers:</strong> Book video consultations with verified astrologers</li>
-            <li><strong>Sacred Rituals:</strong> Schedule authentic poojas performed on your behalf</li>
+            <li><strong>My Reports:</strong> Review reports already available on your account</li>
+            <li><strong>Buy Reports:</strong> Purchase one-time detailed reports after signing in with Apple</li>
+            <li><strong>Ask the Oracle:</strong> Use AI-assisted astrological guidance after signing in</li>
         </ul>
-        <p>Select a service, choose a time slot, and complete the booking. You'll receive a confirmation with session details.</p>
+        <p>Sign in is required before Oracle chat, report purchases, and chat credit packs so entitlements can be saved to your account.</p>
     </div>
 
     <div class="faq-item">
         <div class="faq-question">What is Vimshottari Dasha?</div>
-        <p>Vimshottari Dasha is the primary timing system in Vedic astrology. It divides your life into planetary periods (Mahadasha, Antardasha, Pratyantardasha) that influence different life areas. Explore your timeline in the <strong>Time Travel</strong> tab.</p>
+        <p>Vimshottari Dasha is the primary timing system in Vedic astrology. It divides your life into planetary periods (Mahadasha, Antardasha, Pratyantardasha) that influence different life areas. Explore timing windows and prediction states in the <strong>Timeline</strong> tab.</p>
     </div>
 
     <div class="faq-item">
@@ -480,13 +497,13 @@ def create_app():
 
     <div class="faq-item">
         <div class="faq-question">Can I delete my account?</div>
-        <p>Yes, if you're signed in. Go to <strong>Manage</strong> tab → <strong>Settings</strong> → <strong>Delete Account</strong>. This will permanently remove your account and all associated data.</p>
+        <p>Yes, if you're signed in. Open the in-app <strong>Settings</strong> gear and use the account/privacy controls to request deletion. This will permanently remove your account and associated data.</p>
     </div>
 
     <h2>Technical Issues</h2>
     <p>If you're experiencing technical problems:</p>
     <ul>
-        <li>Make sure you're running the latest version of Astronova from the App Store</li>
+        <li>Make sure you're running the latest available Astronova build</li>
         <li>Check your internet connection (required for most features)</li>
         <li>Try force-quitting and restarting the app</li>
         <li>Restart your device if issues persist</li>
@@ -498,8 +515,8 @@ def create_app():
         <li>Screenshots if applicable</li>
     </ul>
 
-    <h2>App Store Reviews</h2>
-    <p>Love Astronova? Please leave us a review on the App Store! Your feedback helps us improve and helps others discover the app.</p>
+    <h2>Feedback</h2>
+    <p>Love Astronova? Email your feedback to support. Your notes help us improve the app and prepare future releases.</p>
 
     <h2>Legal</h2>
     <ul>

@@ -1,0 +1,53 @@
+{
+  "submissionId": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+  "itemStatus": 409,
+  "itemBody": {
+    "errors": [
+      {
+        "id": "b1ef78b1-e2a9-4c74-920e-872c8857c828",
+        "status": "409",
+        "code": "ENTITY_ERROR.ATTRIBUTE.UNKNOWN",
+        "title": "The provided entity includes an unknown attribute",
+        "detail": "'appStoreVersionId' is not an attribute on the resource 'reviewSubmissionItems'",
+        "source": {
+          "pointer": "/data/attributes/appStoreVersionId"
+        }
+      },
+      {
+        "id": "2e5a8573-08f2-4388-b3dc-0dff7e1d05fb",
+        "status": "409",
+        "code": "ENTITY_ERROR.RELATIONSHIP.UNKNOWN",
+        "title": "The provided entity includes an unknown relationship",
+        "detail": "'submission' is not a relationship on the resource 'reviewSubmissionItems'",
+        "source": {
+          "pointer": "/data/relationships/submission"
+        }
+      },
+      {
+        "id": "866144c2-bc59-47fa-8324-014cbaaf6807",
+        "status": "409",
+        "code": "ENTITY_ERROR.RELATIONSHIP.REQUIRED",
+        "title": "The provided entity is missing a required relationship",
+        "detail": "You must provide a value for the relationship 'reviewSubmission' with this request",
+        "source": {
+          "pointer": "/data/relationships/reviewSubmission"
+        }
+      }
+    ]
+  },
+  "submitStatus": 409,
+  "submitBody": {
+    "errors": [
+      {
+        "id": "390b7add-2343-4c54-a425-01ce73e56b04",
+        "status": "409",
+        "code": "ENTITY_ERROR.RELATIONSHIP.REQUIRED",
+        "title": "Relationship is required",
+        "detail": "App 6746982743 must have an approved appStoreVersions for platform IOS, or an appStoreVersions must be included in this review submission.",
+        "source": {
+          "pointer": "/data/relationships/appStoreVersionForReview"
+        }
+      }
+    ]
+  }
+}

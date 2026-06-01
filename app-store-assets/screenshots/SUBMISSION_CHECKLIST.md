@@ -1,48 +1,56 @@
 # App Store Submission Checklist
 
-## Screenshots - Prepared, Upload Pending
+## Screenshots - Local Assets Ready for App Store Connect Verification
 
-All screenshots captured and resized to **1284 × 2778px** (iPhone 6.7" display requirement):
+All canonical screenshots were recaptured on 2026-05-23 from the current
+Astronova iPhone 16 Pro Max simulator and verified at **1320 x 2868px** for the
+iPhone 6.9-inch App Store screenshot slot. Treat the App Store Connect upload
+state as a live gate until it is rechecked in App Store Connect:
 
-- ✅ Screenshot 1: Discover tab (Daily insights) - 1.5MB
-- ✅ Screenshot 2: Temple Muhurat timings - 893KB
-- ✅ Screenshot 3: Temple Expert Astrologers - 895KB
-- ✅ Screenshot 4: Time Travel dasha wheel - 1.8MB
-- ✅ Screenshot 5: Oracle AI chat interface - 238KB
-- ✅ Screenshot 6: Self tab cosmic pulse - 2.3MB
+- [x] Screenshot 1: Today dashboard - `01_hero.png`
+- [x] Screenshot 2: Map Apple Maps globe - `02_valueprop.png`
+- [x] Screenshot 3: Timeline live server overview - `03_painpoint.png`
+- [x] Screenshot 4: Matrix Loshu/eigenvalues - `04_benefit.png`
+- [x] Screenshot 5: Journal Free Will + decisions - `05_trust.png`
+- [x] Screenshot 6: Pro paywall - `06_cta.png`
 
-**Total:** 6 screenshot files prepared for upload. App Store Connect upload
-status must be verified separately.
+**Local total:** 6 canonical screenshots ready for `APP_IPHONE_67`, plus the
+`iphone65-current/` derivatives for `APP_IPHONE_65`. Historical ASC evidence
+exists at `qa-results/20260523-launch/asc-screenshot-sets-after.json`, but it
+must be rechecked live before claiming current App Store Connect upload status.
 
-## Text Content - Drafted, Public URL Verification Pending
+## Text Content - Drafted
 
 All text content prepared in `COPY_PASTE_READY.txt`:
 
-- ✅ Promotional Text: 143 characters (limit: 170)
-- ✅ Description: 2,847 characters (limit: 4,000)
-- ✅ Keywords: 99 characters (limit: 100)
-- [ ] Support URL: https://astronova.onrender.com/support (verify live before submission)
-- ✅ Marketing URL: https://astronova.onrender.com
-- [ ] Privacy Policy URL: https://astronova.onrender.com/privacy (verify live before submission)
-- [ ] Terms of Service URL: https://astronova.onrender.com/terms (verify live before submission)
+- [x] Promotional Text: 120 characters (limit: 170)
+- [x] Description: under 4,000 characters
+- [x] Keywords: 89 characters (limit: 100)
+- [ ] Support URL verified live and submitted in App Store Connect
+- [ ] Marketing URL verified live: https://astronova-ghcr.onrender.com
+- [ ] Privacy Policy URL verified live and submitted in App Store Connect
+- [ ] Terms of Service URL verified live and submitted in App Store Connect
 
-## Test Account - External Gate
+## Test Account / Reviewer Access
 
 Planned reviewer account:
 - [ ] User ID: `appstore-test-user-2026`
 - [ ] Email: `appstore-test@astronova.app`
 - [ ] Complete birth data: Jan 15, 1990, 2:30 PM, New York, NY
 - [ ] Pro entitlement or sandbox subscription verified for premium testing
-- [ ] Skip-sign-in path verified in the uploaded build
+- [x] Guest preview path documented in App Review notes
 
-## Backend Infrastructure - Verify Before Submission
+## Backend Infrastructure
 
-- [ ] Support URL endpoint deployed: `/support`
-- [ ] Terms endpoint deployed: `/terms`
-- [ ] Privacy endpoint deployed: `/privacy`
-- [ ] All endpoints use correct email: admin@100xai.engineering
+- [x] Local source defines Support URL endpoint: `/support`
+- [x] Local source defines Terms endpoint: `/terms`
+- [x] Local source defines Privacy endpoint: `/privacy`
+- [x] Local compliance pages use support email: admin@100xai.engineering
+- [ ] Deployed support URL verified live: `/support`
+- [ ] Deployed terms URL verified live: `/terms`
+- [ ] Deployed privacy URL verified live: `/privacy`
 - [ ] Test user seeded in database, if reviewer credentials are used
-- [ ] Backend API live at: https://astronova.onrender.com
+- [ ] Backend API verified live at: https://astronova-ghcr.onrender.com
 
 ## App Review Information - Drafted
 
@@ -53,39 +61,43 @@ Thank you for reviewing Astronova!
 
 TESTING INSTRUCTIONS:
 
-1. You can skip Apple Sign-In by tapping "Continue without signing in"
-2. Complete the onboarding flow to create a sample birth profile
-3. Explore the 5 main tabs:
-   - Discover: Daily cosmic insights and domain cards
-   - Time Travel: Dasha timeline visualization
-   - Temple: Astrologer listings and Pooja bookings
-   - Connect: Relationship compatibility (requires auth)
-   - Self: Profile and settings
+1. You can preview without Apple Sign-In by tapping "Preview calibration without signing in".
+2. Complete calibration with sample data such as name "App Reviewer" and birth place "Delhi, India". You may leave the default date/time for review.
+3. After "Profile Created", tap "Start Your Journey", skip the optional Identity Quiz if desired, and close the optional paywall using the Close button.
+4. Explore the 5 main tabs:
+   - Today: daily terrain, current dasha, actions, and horoscope reading
+   - Map: personal astrocartography and life-domain map
+   - Timeline: timing windows and prediction timeline
+   - Matrix: numerology/Loshu and pattern deep dives
+   - Journal: daily signal, reflections, and free-will log
 
 FEATURES TO TEST:
 
-✓ Daily Insights: See personalized planetary influences
-✓ Domain Cards: Tap any domain to see detailed explanations
-✓ Time Travel: Navigate through months/years on the Dasha wheel
-✓ Temple: Browse astrologers and pooja offerings
-✓ Muhurat Timings: View auspicious times for the day
-✓ Oracle Chat: Ask questions about life, career, relationships
+✓ Today: See personalized timing and daily guidance
+✓ Map: Explore the personal map and life-domain surfaces
+✓ Timeline: Review timing windows and prediction states
+✓ Matrix: Review numerology/Loshu pattern analysis
+✓ Journal: Log or inspect daily signal/reflection states
+✓ Settings: Open My Reports, Buy Reports, Ask the Oracle, Privacy, and Restore Purchases
 
 SUBSCRIPTIONS:
-- Free tier includes basic daily insights and limited features
-- Pro subscription unlocks full timeline, reports, and unlimited chat
+- Free/guest preview includes the core app surfaces above on this device
+- Sign in with Apple is required for Oracle chat, report purchases, and chat credit packs so entitlements attach to an account
+- Pro subscription unlocks unlimited Ask/Oracle and complete journey paths
+- One-time reports use these products: report_general, report_love, report_career, report_money, report_health, report_family, report_spiritual
+- Chat credit packs use these products: chat_credits_5, chat_credits_15, chat_credits_50
+- Pro subscriptions use these products: astronova_pro_monthly, astronova_pro_12_month_commitment
 - Subscription testing works with sandbox accounts
 
 THIRD-PARTY SERVICES:
-- Backend API: Hosted on Render (https://astronova.onrender.com)
-- Video consultations: WebRTC video service (for pandit consultations)
+- Backend API: Hosted on Render (https://astronova-ghcr.onrender.com)
 - Ephemeris calculations: Swiss Ephemeris library
 - AI guidance: OpenAI API (optional, degrades gracefully)
 - Analytics: portfolio/local analytics. Smartlook package reference exists, but SmartlookAnalytics is not linked in the current Xcode project unless a source worker changes and verifies it before upload.
 
 PERMISSIONS:
 - No location access required (birth location stored manually)
-- No camera/microphone access unless booking video consultation
+- No camera or microphone access required
 - Notifications for daily insights (optional, user consent)
 
 Please contact us if you have any questions during review.
@@ -94,14 +106,14 @@ Please contact us if you have any questions during review.
 ## 🎯 App Store Connect Settings
 
 ### App Information
-- ✅ Category: Lifestyle (primary)
-- ✅ Age Rating: 4+
-- ✅ Release: Manual release (recommended)
+- [ ] Category: Lifestyle (primary) verified in App Store Connect
+- [ ] Age Rating: 4+ verified in App Store Connect
+- [ ] Release: Manual release verified in App Store Connect
 
 ### Version Information
-- ✅ Version: 1.0
-- [ ] Build uploaded and selected in App Store Connect
-- ✅ Copyright: 2026 Astronova
+- [x] Local version copy: 1.0
+- [ ] Uploaded build selected in App Store Connect
+- [x] Local copyright copy: 2026 Astronova
 
 ### IAP Products
 - [ ] Configure 12 products in App Store Connect.
@@ -109,31 +121,19 @@ Please contact us if you have any questions during review.
 - [ ] Include 7 report non-consumables and 3 chat-credit consumables.
 - [ ] Sandbox-test products before review.
 
-## 🚀 Next Steps
+## Historical ASC Submission Evidence
 
-1. **Build & Archive in Xcode:**
-   ```bash
-   open client/astronova.xcodeproj
-   # Product → Archive
-   # Upload to App Store Connect
-   ```
+The following local artifacts record an App Store Connect submission event from
+2026-05-23. They are historical evidence only; recheck App Store Connect before
+claiming the current Apple review state:
 
-2. **Upload Screenshots to App Store Connect:**
-   - Navigate to app version → iPhone 6.7" Display
-   - Upload all 6 screenshots in order
-   - Add optional captions (see SCREENSHOTS_SUMMARY.md)
+- App Privacy answers artifact: `qa-results/20260523-launch/asc-app-privacy-publish.json`
+- App Review submission artifact: `qa-results/20260523-launch/asc-review-submit-latest.json`
+- Historical ASC read-back artifact: version `1.0` and submission `821c7af6-6834-4242-a0e1-1f685b89c4b9`
+- Historical submitted date: `2026-05-23T18:07:16.38Z`
 
-3. **Fill in App Store Connect Form:**
-   - Copy-paste text from `COPY_PASTE_READY.txt`
-   - Paste reviewer notes
-   - Verify all URLs work
-
-4. **Submit for Review only after external gates are green:**
-   - Select manual release
-   - Confirm an uploaded build is selected
-   - Confirm IAP products and reviewer access work
-   - Submit for review
-   - Monitor status in App Store Connect
+Next live task is to verify App Store Connect/email for the current Apple review
+state and any reviewer questions.
 
 ## 📊 Estimated Review Time
 
@@ -148,6 +148,6 @@ Please contact us if you have any questions during review.
 
 ---
 
-**Status:** Draft materials prepared; App Store Connect upload, live URL checks,
-IAP records, and reviewer account gates remain pending.
-**Date Prepared:** January 9, 2026
+**Status:** Local submission packet with historical ASC evidence; current Apple
+review state is not verified in this document.
+**Date Prepared:** May 23, 2026

@@ -31,6 +31,7 @@ enum TestEnvironmentKey: String {
     case dailyMessageCount = "UITEST_DAILY_MESSAGE_COUNT"
     case startTabIndex = "UITEST_START_TAB_INDEX"
     case presentPaywallContext = "UITEST_PRESENT_PAYWALL_CONTEXT"
+    case paywallVariant = "UITEST_PAYWALL_VARIANT"
 }
 
 /// Handles UI test launch arguments for deterministic test state
@@ -58,6 +59,10 @@ final class TestEnvironment {
         hasArgument(.presentPaywall) ||
         hasArgument(.offlineBackend) ||
         getRawValue(for: .startTabIndex) != nil
+    }
+
+    var shouldTrustSeededAuthSession: Bool {
+        isUITest && (hasArgument(.seedProfileFull) || hasArgument(.seedProfileMinimal))
     }
 
     /// Check if a launch argument is present
@@ -139,6 +144,10 @@ final class TestEnvironment {
             enableMockPurchases()
         }
 
+        if let paywallVariant = getRawValue(for: .paywallVariant) {
+            setPaywallVariant(paywallVariant)
+        }
+
         log("UI test configuration applied")
     }
 
@@ -171,13 +180,24 @@ final class TestEnvironment {
             "profile_setup_name",
             "profile_setup_birth_date",
             "profile_setup_birth_time",
+            "profile_setup_birth_time_unknown",
             "profile_setup_birth_place",
+            "profile_setup_phone_digits",
+            "profile_setup_context_tags",
+            "profile_setup_context_text",
+            "profile_phone_digits",
+            "profile_context_tags",
+            "profile_context_text",
             "user_profile",
             "mock_reports",
+            "synthesis_mirror_cache",
+            "synthesis_mirror_timestamp",
             "trigger_show_report_shop",
             "trigger_show_chat_packages",
             "topo.substitutions.cache.v1",
-            "topo.substitutions.dateKey.v1"
+            "topo.substitutions.dateKey.v1",
+            "rc_paywall_variant",
+            "rc_astronova_paywall_v1"
         ]
 
         for key in keysToReset {
@@ -335,6 +355,18 @@ final class TestEnvironment {
         UserDefaults.standard.synchronize()
     }
 
+    private func setPaywallVariant(_ variant: String) {
+        guard ["control", "tiered_v1", "tiered_v2"].contains(variant) else {
+            log("Ignoring unsupported paywall variant override: \(variant)")
+            return
+        }
+
+        log("Setting paywall variant to \(variant)...")
+        UserDefaults.standard.set(variant, forKey: "rc_paywall_variant")
+        UserDefaults.standard.set(variant, forKey: "rc_astronova_paywall_v1")
+        UserDefaults.standard.synchronize()
+    }
+
     // MARK: - Logging
 
     private func log(_ message: String) {
@@ -353,6 +385,8 @@ enum AccessibilityID {
     // Navigation
     static let tabBar = "tabBar"
     static let homeTab = "homeTab"
+    static let timelineTab = "timelineTab"
+    static let matrixTab = "matrixTab"
     static let templeTab = "templeTab"
     static let connectTab = "connectTab"
     static let askTab = "askTab"  // Legacy
@@ -373,7 +407,7 @@ enum AccessibilityID {
 
     // Paywall
     static let paywallView = "paywallView"
-    static let paywallClose = "paywall.close" // Wave 3b — replaces legacy `paywallCloseButton`
+    static let paywallClose = "paywall.close"
     static let startProButton = "startProButton"
     static let restorePurchasesButton = "restorePurchasesButton"
     static let buyDetailedReportButton = "buyDetailedReportButton"
@@ -422,7 +456,7 @@ enum AccessibilityID {
     static let profileNameField = "profileNameField"
     static let saveProfileButton = "saveProfileButton"
 
-    // Time Travel
+    // Timeline
     static let timeTravelView = "timeTravelView"
     static let incompleteProfilePrompt = "incompleteProfilePrompt"
     static let completeBirthDataButton = "completeBirthDataButton"

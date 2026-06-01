@@ -1,5 +1,5 @@
 """
-Planet-in-House interpretation data for the Time Travel feature.
+Planet-in-House interpretation data for the Timeline feature.
 
 Provides rich Vedic astrology (Jyotish) interpretations for each of the
 9 Vedic planets placed in each of the 12 houses (108 combinations),

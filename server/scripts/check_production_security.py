@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from urllib.parse import urljoin
 
 
-BASE_URL = os.environ.get("ASTRONOVA_BASE_URL", "https://astronova.onrender.com").rstrip("/") + "/"
+BASE_URL = os.environ.get("ASTRONOVA_BASE_URL", "https://astronova-ghcr.onrender.com").rstrip("/") + "/"
 TIMEOUT = float(os.environ.get("ASTRONOVA_PROD_TIMEOUT", "12"))
 
 

@@ -47,15 +47,19 @@ def _resolve_salt() -> str:
     reversible via a rainbow table built from the public IPv4 space. So:
 
     - If ``IP_HASH_SALT`` is set (>= 8 chars), use it.
-    - In production (``ENV=production`` or ``FLASK_ENV=production``)
+    - In production (``FLASK_ENV=production``, ``APP_ENV=production``,
+      or ``ENV=production``)
       raise loudly if unset.
     - Otherwise generate a per-process fallback and warn once.
     """
     supplied = os.environ.get("IP_HASH_SALT", "")
     if supplied and len(supplied) >= 8:
         return supplied
-    env = os.environ.get("ENV") or os.environ.get("FLASK_ENV", "")
-    if env == "production":
+    is_production = any(
+        os.environ.get(name, "").lower() == "production"
+        for name in ("FLASK_ENV", "APP_ENV", "ENV")
+    )
+    if is_production:
         raise RuntimeError(
             "IP_HASH_SALT must be set (>= 8 chars) in production. "
             "See ANALYTICS_INTEGRATION.md (Privacy posture)."

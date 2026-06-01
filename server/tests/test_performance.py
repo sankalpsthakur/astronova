@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from memory_profiler import memory_usage
+from utils.time_utils import utc_now_naive
 
 try:  # pragma: no cover - optional dependency in some environments
     import swisseph as _swe  # noqa: F401
@@ -42,8 +43,8 @@ def _make_auth_client(client):
     payload = {
         "sub": "perf-test-user",
         "email": "perf@test.com",
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(days=1),
+        "iat": utc_now_naive(),
+        "exp": utc_now_naive() + timedelta(days=1),
     }
     token = pyjwt.encode(payload, secret, algorithm="HS256")
     client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {token}"

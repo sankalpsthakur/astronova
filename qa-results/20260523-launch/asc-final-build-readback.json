@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-05-23T15:05:08Z",
+  "build": {
+    "id": "c15fffeb-22d0-4e48-b4e5-ac539f1ead8e",
+    "version": "2026052301",
+    "uploadedDate": "2026-05-23T07:58:51-07:00",
+    "processingState": "VALID",
+    "expired": false,
+    "usesNonExemptEncryption": false,
+    "betaReviewState": null
+  },
+  "buildRelationships": {
+    "preReleaseVersion": {
+      "type": "preReleaseVersions",
+      "id": "91ccb72f-af72-4f0b-8f47-8b74e9ffb665"
+    },
+    "betaGroups": [
+      {
+        "type": "betaGroups",
+        "id": "847e32b0-c682-4e34-8248-aeb6d5e39ac6"
+      },
+      {
+        "type": "betaGroups",
+        "id": "ebd6d84d-2794-42fd-9cb5-345cdab3f3a1"
+      }
+    ],
+    "betaBuildLocalizations": [
+      {
+        "type": "betaBuildLocalizations",
+        "id": "afe2a5f9-ea0b-47bd-8293-08ddac379411"
+      }
+    ]
+  },
+  "selectedAppStoreVersionBuild": {
+    "type": "builds",
+    "id": "c15fffeb-22d0-4e48-b4e5-ac539f1ead8e"
+  }
+}

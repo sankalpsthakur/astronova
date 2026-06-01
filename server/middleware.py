@@ -71,15 +71,12 @@ def get_authenticated_user_id() -> Tuple[Optional[str], Optional[dict]]:
 
     except ValueError as e:
         return None, {"error": str(e), "code": "INVALID_TOKEN"}
+    except RuntimeError:
+        logger.error("JWT validation unavailable because auth configuration is unsafe")
+        return None, {"error": "Authentication is not configured", "code": "AUTH_CONFIG_UNAVAILABLE"}
     except ImportError:
-        # Fallback for tests or when auth module not available
-        # In this case, fall back to header-based auth (less secure)
-        logger.warning("JWT validation unavailable - falling back to header auth")
-        data = request.get_json(silent=True) or {}
-        user_id = data.get("userId") or request.headers.get("X-User-Id") or request.args.get("userId")
-        if not user_id:
-            return None, {"error": "User ID required", "code": "USER_ID_REQUIRED"}
-        return user_id, None
+        logger.error("JWT validation unavailable because auth module could not be imported")
+        return None, {"error": "Authentication is not configured", "code": "AUTH_CONFIG_UNAVAILABLE"}
 
 
 def require_auth(f):
@@ -92,7 +89,8 @@ def require_auth(f):
     def decorated_function(*args, **kwargs):
         user_id, error = get_authenticated_user_id()
         if error:
-            return jsonify(error), 401
+            status = 503 if error.get("code") == "AUTH_CONFIG_UNAVAILABLE" else 401
+            return jsonify(error), status
         g.user_id = user_id
         return f(*args, **kwargs)
     return decorated_function
@@ -151,4 +149,3 @@ def log_request_response(response):
         logger.error(f"Error in logging middleware: {e}")
 
     return response
-

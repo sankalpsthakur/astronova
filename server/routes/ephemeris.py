@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request
 
 from errors import SwissEphemerisUnavailableError
 from services.ephemeris_service import EphemerisService
+from utils.time_utils import utc_now_naive
 
 try:  # Swiss Ephemeris is required at runtime but the import can be deferred.
     import swisseph as _swe  # type: ignore
@@ -64,7 +65,7 @@ def current_positions():
         lat = request.args.get("lat", type=float)
         lon = request.args.get("lon", type=float)
         system = (request.args.get("system") or "western").lower()
-        positions = _compute_positions(datetime.utcnow(), lat, lon, system)
+        positions = _compute_positions(utc_now_naive(), lat, lon, system)
 
         # Transform data for iOS app format
         planets = []

@@ -7,9 +7,9 @@ import logging
 import os
 import hmac
 from functools import wraps
-from datetime import datetime
 from flask import Blueprint, jsonify, request
 from db import get_connection
+from utils.time_utils import utc_now_iso
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ def grant_pro():
     full_name = user["full_name"] or "User"
 
     # Update or insert subscription
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
 
     cur.execute("SELECT user_id FROM subscription_status WHERE user_id = ?", (user_id,))
     existing = cur.fetchone()

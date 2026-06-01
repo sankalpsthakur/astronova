@@ -14,6 +14,7 @@ Tests cover:
 10. Rate limiting status (if implemented)
 """
 
+import gc
 import sys
 from pathlib import Path
 
@@ -25,7 +26,8 @@ if str(SERVER_ROOT) not in sys.path:
 
 from app import create_app
 from db import get_connection
-from routes.auth import generate_jwt, validate_jwt
+from routes.auth import generate_jwt, get_jwt_secret, reset_auth_rate_limits_for_tests, validate_jwt
+from utils.time_utils import utc_now_iso, utc_now_naive
 
 
 VALID_APPLE_ID_TOKEN = "valid-apple-id-token"
@@ -149,10 +151,11 @@ class TestAppleSignIn:
         import jwt as pyjwt
 
         monkeypatch.delenv("JWT_SECRET", raising=False)
-        monkeypatch.setenv("JWT_SECRET_KEY", "render-compatible-secret")
+        render_secret = "render-compatible-secret-at-least-32-bytes"
+        monkeypatch.setenv("JWT_SECRET_KEY", render_secret)
 
         token = generate_jwt("render-user", "render@example.com")
-        payload = pyjwt.decode(token, "render-compatible-secret", algorithms=["HS256"])
+        payload = pyjwt.decode(token, render_secret, algorithms=["HS256"])
 
         assert payload["sub"] == "render-user"
         assert validate_jwt(token)["user_id"] == "render-user"
@@ -571,6 +574,91 @@ class TestDeleteAccount:
         data = response.get_json()
         assert data["status"] == "ok"
 
+    def test_delete_account_removes_purchase_and_temple_data(self, client, auth_token):
+        """Delete account removes all user-linked monetization and Temple rows."""
+        user_id = "test-user-123"
+        now = utc_now_iso()
+
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO users (id, email, first_name, last_name, full_name, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (user_id, "test@astronova.com", "Test", "User", "Test User", now, now),
+        )
+        cur.execute(
+            """
+            INSERT INTO report_purchase_entitlements
+            (id, user_id, product_id, report_type, transaction_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            ("report-entitlement-1", user_id, "report_general", "birth_chart", "tx-delete-account-1", now),
+        )
+        cur.execute("SELECT id FROM pooja_types LIMIT 1")
+        pooja_type_id = cur.fetchone()["id"]
+        cur.execute(
+            """
+            INSERT INTO pooja_bookings
+            (id, user_id, pooja_type_id, scheduled_date, scheduled_time, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("booking-delete-account-1", user_id, pooja_type_id, "2026-06-01", "09:00", now, now),
+        )
+        cur.execute(
+            "INSERT INTO pooja_sessions (id, booking_id, created_at) VALUES (?, ?, ?)",
+            ("session-delete-account-1", "booking-delete-account-1", now),
+        )
+        cur.execute(
+            "INSERT INTO user_temple_activity (id, user_id, activity_type, created_at) VALUES (?, ?, ?, ?)",
+            ("activity-delete-account-1", user_id, "bell_ring", now),
+        )
+        cur.execute(
+            """
+            INSERT INTO contact_filter_logs
+            (id, context_type, context_id, sender_type, sender_id, original_message, filtered_message, patterns_matched, action_taken, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "contact-log-delete-account-1",
+                "pooja_session",
+                "session-delete-account-1",
+                "user",
+                user_id,
+                "call me at 5555555555",
+                "call me at [contact removed]",
+                '["5555555555"]',
+                "filtered",
+                now,
+            ),
+        )
+        conn.commit()
+        conn.close()
+
+        response = client.delete("/api/v1/auth/delete-account", headers={"Authorization": f"Bearer {auth_token}"})
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["status"] == "ok"
+        assert data["deletedRecords"]["report_purchase_entitlements"] == 1
+        assert data["deletedRecords"]["pooja_sessions"] == 1
+        assert data["deletedRecords"]["user_temple_activity"] == 1
+        assert data["deletedRecords"]["contact_filter_logs"] == 1
+
+        conn = get_connection()
+        cur = conn.cursor()
+        for table, column, value in [
+            ("report_purchase_entitlements", "user_id", user_id),
+            ("user_temple_activity", "user_id", user_id),
+            ("pooja_bookings", "user_id", user_id),
+            ("contact_filter_logs", "sender_id", user_id),
+            ("pooja_sessions", "booking_id", "booking-delete-account-1"),
+        ]:
+            cur.execute(f"SELECT COUNT(*) AS count FROM {table} WHERE {column}=?", (value,))
+            assert cur.fetchone()["count"] == 0
+        conn.close()
+
     def test_delete_account_with_invalid_token(self, client):
         """Test delete account with invalid authentication token."""
         response = client.delete("/api/v1/auth/delete-account", headers={"Authorization": "Bearer wrong-token"})
@@ -678,6 +766,63 @@ class TestCrossUserAccess:
         """Test that X-User-Id header alone is insufficient without valid JWT."""
         response = client.post("/api/v1/chat", json={"message": "test"}, headers={"X-User-Id": "spoofed-user-id"})
         assert response.status_code == 401
+
+    def test_locale_selection_ignores_user_id_header_before_auth(self, monkeypatch, test_db_path):
+        """Pre-auth locale resolution must not trust X-User-Id."""
+        from flask_babel import get_locale
+
+        import db as db_module
+
+        calls = []
+
+        def fake_get_user_preferred_language(user_id):
+            calls.append(user_id)
+            return "hi"
+
+        original_db_path = db_module.DB_PATH
+        db_module.DB_PATH = test_db_path
+        monkeypatch.setattr("app.get_user_preferred_language", fake_get_user_preferred_language)
+        try:
+            app = create_app()
+            app.config.update({"TESTING": True})
+            with app.test_request_context(
+                "/api/v1/health",
+                headers={"X-User-Id": "spoofed-user-id", "Accept-Language": "es"},
+            ):
+                assert str(get_locale()) == "es"
+        finally:
+            db_module.DB_PATH = original_db_path
+
+        assert calls == []
+
+    def test_request_log_context_ignores_user_id_header_without_auth(self):
+        """Unauthenticated headers must not be written as trusted user IDs in logs."""
+        from utils.logging_utils import get_user_id
+
+        app = create_app()
+        app.config.update({"TESTING": True})
+        with app.test_request_context("/api/v1/health", headers={"X-User-Id": "spoofed-user-id"}):
+            assert get_user_id() == "-"
+
+    def test_app_env_production_does_not_allow_localhost_cors(self, monkeypatch, test_db_path):
+        """Any production env marker must keep localhost out of default CORS."""
+        import db as db_module
+
+        original_db_path = db_module.DB_PATH
+        db_module.DB_PATH = test_db_path
+        monkeypatch.delenv("FLASK_ENV", raising=False)
+        monkeypatch.setenv("APP_ENV", "production")
+        monkeypatch.delenv("ENV", raising=False)
+        monkeypatch.delenv("ASTRONOVA_CORS_ORIGINS", raising=False)
+        try:
+            app = create_app()
+            app.config.update({"TESTING": True})
+            with app.test_client() as client:
+                response = client.get("/api/v1/health", headers={"Origin": "http://localhost:8080"})
+        finally:
+            db_module.DB_PATH = original_db_path
+
+        assert response.headers.get("Access-Control-Allow-Origin") is None
 
 
 class TestSQLInjection:
@@ -828,7 +973,7 @@ class TestJWTExpiration:
         from datetime import datetime
 
         expires_at = datetime.fromisoformat(data["expiresAt"])
-        now = datetime.utcnow()
+        now = utc_now_naive()
 
         # Should be ~30 days in future
         delta = (expires_at - now).days
@@ -836,36 +981,113 @@ class TestJWTExpiration:
 
 
 class TestRateLimiting:
-    """Test rate limiting (if implemented)."""
+    """Test auth rate limiting."""
 
-    def test_rate_limiting_not_implemented(self, client, monkeypatch):
-        """Test that rate limiting is not currently implemented."""
+    def test_apple_auth_rate_limiting_when_enabled(self, client, monkeypatch):
+        """Repeated Apple auth attempts are blocked when rate limiting is enabled."""
+        reset_auth_rate_limits_for_tests()
+        monkeypatch.setenv("AUTH_RATE_LIMIT_ENABLED", "true")
+        monkeypatch.setenv("AUTH_RATE_LIMIT_MAX_REQUESTS", "3")
+        monkeypatch.setenv("AUTH_RATE_LIMIT_WINDOW_SECONDS", "60")
         mock_apple_validation(monkeypatch, sub="rate-limit-user")
 
-        # Send many requests rapidly
         responses = []
-        for i in range(100):
+        for i in range(4):
             response = client.post(
                 "/api/v1/auth/apple",
                 json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": f"user-{i}"},
             )
             responses.append(response.status_code)
 
-        # All should succeed (no rate limiting)
-        assert all(status == 200 for status in responses)
-        # This is a security vulnerability - needs rate limiting
+        assert responses[:3] == [200, 200, 200]
+        assert responses[3] == 429
 
-    def test_brute_force_protection_not_implemented(self, client):
-        """Test that brute force protection is not implemented."""
-        # Try many failed auth attempts (empty tokens which are rejected)
+    def test_refresh_brute_force_rate_limiting_when_enabled(self, client, monkeypatch):
+        """Repeated failed refresh attempts are blocked when rate limiting is enabled."""
+        reset_auth_rate_limits_for_tests()
+        monkeypatch.setenv("AUTH_RATE_LIMIT_ENABLED", "true")
+        monkeypatch.setenv("AUTH_RATE_LIMIT_MAX_REQUESTS", "3")
+        monkeypatch.setenv("AUTH_RATE_LIMIT_WINDOW_SECONDS", "60")
+
         responses = []
-        for i in range(50):
+        for _ in range(4):
             response = client.post("/api/v1/auth/refresh", headers={"Authorization": "Bearer "})
             responses.append(response.status_code)
 
-        # All should fail with 401 but not be blocked (no rate limiting)
-        assert all(status == 401 for status in responses)
-        # No rate limiting or IP blocking implemented - this is a security gap
+        assert responses[:3] == [401, 401, 401]
+        assert responses[3] == 429
+
+    def test_expensive_endpoint_rate_limit_ignores_spoofable_user_header(self, authenticated_client, sample_birth_data):
+        """Rotating X-User-Id must not bypass expensive endpoint throttles."""
+        statuses = []
+        for i in range(21):
+            response = authenticated_client.post(
+                "/api/v1/reports/generate",
+                json={"reportType": "birth_chart", "birthData": sample_birth_data},
+                headers={"X-User-Id": f"spoofed-rate-key-{i}"},
+            )
+            statuses.append(response.status_code)
+
+        assert 429 not in statuses[:20]
+        assert statuses[20] == 429
+
+    def test_disabled_expensive_endpoint_limiter_survives_app_factory_lifecycle(self, test_db_path, monkeypatch):
+        """Expensive endpoint limiter wrapper must not outlive its Limiter instance."""
+        import db as db_module
+
+        original_db_path = db_module.DB_PATH
+        db_module.DB_PATH = test_db_path
+        monkeypatch.setenv("ASTRONOVA_DISABLE_RATE_LIMITS", "1")
+        try:
+            app = create_app()
+            app.config["TESTING"] = True
+            gc.collect()
+            with app.test_client() as client:
+                response = client.post("/api/v1/chart/generate", json={})
+        finally:
+            db_module.DB_PATH = original_db_path
+
+        assert response.status_code == 400
+        assert response.get_json()["code"] == "INVALID_JSON"
+
+    def test_production_requires_jwt_secret(self, monkeypatch):
+        """Production auth refuses the development fallback secret."""
+        monkeypatch.delenv("JWT_SECRET", raising=False)
+        monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
+        monkeypatch.setenv("FLASK_ENV", "production")
+
+        with pytest.raises(RuntimeError):
+            get_jwt_secret()
+
+
+class TestProductionConfiguration:
+    """Test production configuration invariants."""
+
+    def test_app_env_production_requires_ip_hash_salt(self, monkeypatch):
+        """APP_ENV=production must not fall back to ephemeral IP hash salts."""
+        import portfolio_analytics
+
+        monkeypatch.delenv("FLASK_ENV", raising=False)
+        monkeypatch.setenv("APP_ENV", "production")
+        monkeypatch.delenv("ENV", raising=False)
+        monkeypatch.delenv("IP_HASH_SALT", raising=False)
+        portfolio_analytics._SALT = None
+        try:
+            with pytest.raises(RuntimeError, match="IP_HASH_SALT"):
+                portfolio_analytics.internals["hash_ip"]("127.0.0.1")
+        finally:
+            portfolio_analytics._SALT = None
+
+    def test_render_blueprint_provisions_ip_hash_salt(self):
+        """Render production blueprint must provision the analytics IP hash salt."""
+        import yaml
+
+        render_config = yaml.safe_load((SERVER_ROOT / "render.yaml").read_text())
+        env_vars = render_config["services"][0]["envVars"]
+        ip_hash_salt = next((env for env in env_vars if env.get("key") == "IP_HASH_SALT"), None)
+
+        assert ip_hash_salt is not None
+        assert ip_hash_salt.get("generateValue") is True
 
 
 class TestSecurityHeaders:

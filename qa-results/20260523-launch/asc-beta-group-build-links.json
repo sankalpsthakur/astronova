@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-05-23T15:04:35Z",
+  "targetBuildId": "c15fffeb-22d0-4e48-b4e5-ac539f1ead8e",
+  "groups": [
+    {
+      "id": "847e32b0-c682-4e34-8248-aeb6d5e39ac6",
+      "name": "core",
+      "isInternalGroup": true,
+      "hadBuildBefore": true,
+      "added": false,
+      "addError": null,
+      "hasBuildAfter": true,
+      "buildCountAfter": 30
+    },
+    {
+      "id": "ebd6d84d-2794-42fd-9cb5-345cdab3f3a1",
+      "name": "Public TestFlight",
+      "isInternalGroup": false,
+      "hadBuildBefore": false,
+      "added": true,
+      "addError": null,
+      "hasBuildAfter": true,
+      "buildCountAfter": 4
+    }
+  ]
+}

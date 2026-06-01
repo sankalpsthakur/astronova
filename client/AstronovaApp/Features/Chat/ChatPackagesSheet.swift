@@ -2,11 +2,13 @@ import SwiftUI
 
 struct ChatPackagesSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var auth: AuthState
     @ObservedObject private var storeKitManager = StoreKitManager.shared
     @AppStorage("chat_credits") private var chatCredits: Int = 0
     @State private var isPurchasing: String? = nil
     @State private var showPurchaseSuccess = false
     @State private var showPurchaseError = false
+    @State private var purchaseErrorMessage = "This package is unavailable right now. You were not charged."
     @State private var purchasedCredits: Int = 0
 
     private let packs: [ShopCatalog.ChatPack] = ShopCatalog.chatPacks
@@ -14,6 +16,15 @@ struct ChatPackagesSheet: View {
     // App Store compliance URLs
     private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
     private let privacyURL = URL(string: "https://astronova-ghcr.onrender.com/privacy")!
+
+    private var mockPurchasesEnabled: Bool {
+        #if DEBUG
+        return UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+        TestEnvironment.shared.hasArgument(.mockPurchases)
+        #else
+        return false
+        #endif
+    }
 
     var body: some View {
         NavigationStack {
@@ -59,12 +70,14 @@ struct ChatPackagesSheet: View {
                     // Package list
                     VStack(spacing: Cosmic.Spacing.sm) {
                         ForEach(packs) { pack in
+                            let unavailable = isPackUnavailable(pack)
                             ChatPackRow(
                                 pack: pack,
                                 isPurchasing: isPurchasing == pack.productId,
+                                isUnavailable: unavailable,
                                 onPurchase: { Task { await buy(pack) } }
                             )
-                            .disabled(isPurchasing != nil)
+                            .disabled(isPurchasing != nil || unavailable)
                         }
                     }
 
@@ -101,10 +114,13 @@ struct ChatPackagesSheet: View {
             }
         }
         .accessibilityIdentifier(AccessibilityID.chatPackagesSheet)
+        .task {
+            await storeKitManager.loadProducts()
+        }
         .alert("Purchase Failed", isPresented: $showPurchaseError) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("The purchase could not be completed. You were not charged.")
+            Text(purchaseErrorMessage)
         }
     }
 
@@ -143,13 +159,20 @@ struct ChatPackagesSheet: View {
 
     private func buy(_ pack: ShopCatalog.ChatPack) async {
         guard isPurchasing == nil else { return }
+        guard mockPurchasesEnabled || auth.isAuthenticated else {
+            await MainActor.run {
+                purchaseErrorMessage = "Sign in with Apple before buying chat credits so purchases can be restored to your account."
+                showPurchaseError = true
+            }
+            return
+        }
         CosmicHaptics.medium()
         isPurchasing = pack.productId
         defer { isPurchasing = nil }
 
         #if DEBUG
         // UI tests only: use mock store
-        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+        if mockPurchasesEnabled {
             let ok = await BasicStoreManager.shared.purchaseProduct(productId: pack.productId)
             if ok {
                 handlePurchaseSuccess(credits: pack.credits)
@@ -161,12 +184,23 @@ struct ChatPackagesSheet: View {
         #endif
 
         // Production: Use StoreKit
+        guard storeKitManager.isProductAvailableForPurchase(pack.productId) else {
+            await MainActor.run {
+                purchaseErrorMessage = "This package is unavailable right now. You were not charged."
+                showPurchaseError = true
+            }
+            return
+        }
+
         let ok = await storeKitManager.purchaseProduct(productId: pack.productId)
         if ok {
             // Credits are updated by StoreKitManager.handleSuccessfulPurchase via AppStorage.
             handlePurchaseSuccess(credits: pack.credits)
         } else {
-            await MainActor.run { showPurchaseError = true }
+            await MainActor.run {
+                purchaseErrorMessage = "Purchase could not be completed. You were not charged."
+                showPurchaseError = true
+            }
         }
     }
 
@@ -182,6 +216,12 @@ struct ChatPackagesSheet: View {
                 showPurchaseSuccess = false
             }
         }
+    }
+
+    private func isPackUnavailable(_ pack: ShopCatalog.ChatPack) -> Bool {
+        if mockPurchasesEnabled { return false }
+        return storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(pack.productId)
     }
 }
 
@@ -220,6 +260,7 @@ private struct PurchaseSuccessOverlay: View {
 private struct ChatPackRow: View {
     let pack: ShopCatalog.ChatPack
     let isPurchasing: Bool
+    let isUnavailable: Bool
     let onPurchase: () -> Void
 
     var body: some View {
@@ -254,18 +295,19 @@ private struct ChatPackRow: View {
                             .tint(Color.cosmicVoid)
                             .scaleEffect(0.8)
                     }
-                    Text(isPurchasing ? "..." : ShopCatalog.price(for: pack.productId))
+                    Text(isPurchasing ? "..." : (isUnavailable ? "Unavailable" : ShopCatalog.price(for: pack.productId)))
                         .font(.cosmicCalloutEmphasis)
                 }
                 .padding(.horizontal, Cosmic.Spacing.md)
                 .padding(.vertical, Cosmic.Spacing.sm)
                 .background(
-                    LinearGradient.cosmicAntiqueGold
+                    isUnavailable ? LinearGradient(colors: [Color.gray.opacity(0.45), Color.gray.opacity(0.25)], startPoint: .topLeading, endPoint: .bottomTrailing) : LinearGradient.cosmicAntiqueGold
                 )
                 .foregroundStyle(Color.cosmicVoid)
                 .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.soft, style: .continuous))
             }
             .accessibilityIdentifier(AccessibilityID.chatPackBuyButton(pack.productId))
+            .accessibilityHint(isUnavailable ? "This package is unavailable right now. You will not be charged." : "")
         }
         .padding(Cosmic.Spacing.md)
         .background(Color.cosmicSurface)

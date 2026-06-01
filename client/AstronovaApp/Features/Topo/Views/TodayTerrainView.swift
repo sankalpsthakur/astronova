@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct TodayTerrainView: View {
+    @EnvironmentObject private var auth: AuthState
+    @EnvironmentObject private var gamification: GamificationManager
     @State private var snapshot: TerrainSnapshot?
     @State private var dominantPattern: Pattern?
+    @State private var dailySignalCard: ArcanaCard?
+    @State private var dailySignalIsNew = false
     @State private var showPauseLayer = false
     @State private var showLogMoment = false
     @State private var showPatternDetail = false
@@ -40,6 +44,20 @@ struct TodayTerrainView: View {
                 topBar
                 hero
                 if let snapshot {
+                    dashboardSynthesisLead(snapshot)
+                    if let dailySignalCard {
+                        DailySignalCardView(
+                            card: dailySignalCard,
+                            isNewCheckIn: dailySignalIsNew,
+                            streak: gamification.streak,
+                            level: gamification.level.rawValue,
+                            xp: gamification.xp
+                        ) {
+                            HapticFeedbackService.shared.mediumImpact()
+                            showLogMoment = true
+                        }
+                    }
+                    dashboardSynthesisFollowUp(snapshot)
                     agencyMoveCard(snapshot)
                     logMomentButton
                     readHoroscopeAloudButton(for: snapshot)
@@ -62,6 +80,7 @@ struct TodayTerrainView: View {
             .padding(.bottom, 32)
         }
         .refreshable { loadTerrain() }
+        .accessibilityIdentifier("todayTerrainView")
     }
 
     private var backdrop: some View {
@@ -118,6 +137,240 @@ struct TodayTerrainView: View {
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private func dashboardSynthesisLead(_ snap: TerrainSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            dashboardGreeting
+            archetypeCard
+            systemStatusCard(snap)
+            todayHypothesisCard(snap)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.dashboard.refreshed")
+    }
+
+    private func dashboardSynthesisFollowUp(_ snap: TerrainSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            guardrailCard(snap)
+            actionQueueCard(snap)
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var dashboardGreeting: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(dateLabel.uppercased())
+                    .font(.cosmicCaptionEmphasis)
+                    .tracking(2.2)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                Text("Good evening, \(firstName).")
+                    .font(.cosmicTitle3)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+            }
+            Spacer()
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.cosmicGold, tintColor, Color.cosmicAmethyst],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 38, height: 38)
+                .overlay(Circle().stroke(Color.cosmicTextPrimary.opacity(0.14), lineWidth: 1))
+        }
+        .accessibilityIdentifier("today.dashboard.header")
+    }
+
+    private var firstName: String {
+        let name = auth.profileManager.profile.fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.split(separator: " ").first.map(String.init) ?? "Seeker"
+    }
+
+    private var archetypeCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("ARCHETYPE · SYNTHESIS v3")
+                .font(.cosmicCaptionEmphasis)
+                .tracking(2.2)
+                .foregroundStyle(Color.cosmicGold)
+
+            (Text("Sovereign-Creator\n")
+                + Text("+ Capital Engine").italic().foregroundColor(Color.cosmicGold))
+                .font(.cosmicTitle)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("You build systems, then turn attention into durable leverage. Today is about one clean signal, one useful response, and one logged loop.")
+                .font(.cosmicCallout)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                synthesisPill("Sun · Leo")
+                synthesisPill("Moon · Taurus")
+                synthesisPill("Asc · Scorpio")
+            }
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color.cosmicGold.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.cosmicGold.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.archetype.card")
+    }
+
+    private func synthesisPill(_ text: String) -> some View {
+        Text(text)
+            .font(.cosmicCaptionEmphasis)
+            .foregroundStyle(Color.cosmicTextSecondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(Color.cosmicSurface))
+            .overlay(Capsule().stroke(Color.cosmicTextPrimary.opacity(0.10), lineWidth: 1))
+    }
+
+    private func systemStatusCard(_ snap: TerrainSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("SYSTEM STATUS · LIVE")
+                .font(.cosmicCaptionEmphasis)
+                .tracking(2.2)
+                .foregroundStyle(Color.cosmicTextTertiary)
+            HStack(spacing: 10) {
+                metricBlock(label: "CURRENT DASHA", value: snap.dasha.map { "\($0.graha) / live" } ?? "Live sky", detail: "active window")
+                metricBlock(label: "STRENGTH", value: "0.82", detail: "7 of 9 processes healthy", tint: Color.cosmicSuccess)
+            }
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.cosmicSurface))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.cosmicTextPrimary.opacity(0.10), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.systemStatus.live")
+    }
+
+    private func metricBlock(label: String, value: String, detail: String, tint: Color = Color.cosmicGold) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.cosmicCaption)
+                .tracking(1.4)
+                .foregroundStyle(Color.cosmicTextTertiary)
+            Text(value)
+                .font(.cosmicCalloutEmphasis)
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(detail)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextTertiary)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func todayHypothesisCard(_ snap: TerrainSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("TODAY · HYPOTHESIS")
+                .font(.cosmicCaptionEmphasis)
+                .tracking(2.2)
+                .foregroundStyle(Color.cosmicTextTertiary)
+            Text("One useful reply unlocks the next room.")
+                .font(.cosmicTitle3)
+                .foregroundStyle(Color.cosmicTextPrimary)
+            Text(snap.axes.highestAgencyMove)
+                .font(.cosmicCallout)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            timelineStrip
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.cosmicSurface))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.cosmicGold.opacity(0.16), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.hypothesis.card")
+    }
+
+    private var timelineStrip: some View {
+        HStack {
+            ForEach(["FRI", "SAT", "SUN", "MON", "TUE"], id: \.self) { day in
+                Text(day == "SUN" ? "\(day) *" : day)
+                    .font(.cosmicCaption)
+                    .foregroundStyle(day == "SUN" ? Color.cosmicGold : Color.cosmicTextTertiary)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.cosmicVoid.opacity(0.45)))
+    }
+
+    private func guardrailCard(_ snap: TerrainSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("GUARDRAIL · FAILURE MODE")
+                .font(.cosmicCaptionEmphasis)
+                .tracking(1.8)
+                .foregroundStyle(Color.cosmicError)
+            Text(snap.axes.avoid)
+                .font(.cosmicCallout)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.cosmicError.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.cosmicError.opacity(0.24), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.guardrail.card")
+    }
+
+    private func actionQueueCard(_ snap: TerrainSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("ACTION QUEUE")
+                    .font(.cosmicCaptionEmphasis)
+                    .tracking(2.2)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                Spacer()
+                Text("3 OPEN")
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicGold)
+            }
+            actionRow(date: "NOW", title: snap.axes.highestAgencyMove, priority: "P1", tint: Color.cosmicGold)
+            actionRow(date: "NEXT", title: snap.axes.bestUse, priority: "P1", tint: Color.cosmicSuccess)
+            actionRow(date: "AVOID", title: snap.axes.avoid, priority: "P2", tint: Color.cosmicError)
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.cosmicSurface))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Color.cosmicTextPrimary.opacity(0.10), lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.actionQueue.card")
+    }
+
+    private func actionRow(date: String, title: String, priority: String, tint: Color) -> some View {
+        HStack(spacing: 10) {
+            Text(date)
+                .font(.cosmicCaption)
+                .foregroundStyle(tint)
+                .frame(width: 44, alignment: .leading)
+            Text(title)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .lineLimit(2)
+            Spacer()
+            Text(priority)
+                .font(.cosmicCaption)
+                .foregroundStyle(tint)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(tint.opacity(0.75), lineWidth: 1))
+        }
+        .padding(.vertical, 6)
     }
 
     /// Wave 3b A4 — "Read horoscope aloud" button.
@@ -287,6 +540,7 @@ struct TodayTerrainView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("today.logMoment.button")
     }
 
     private func patternStrip(_ pattern: Pattern) -> some View {
@@ -376,6 +630,7 @@ struct TodayTerrainView: View {
     private func loadTerrain() {
         let next = TerrainComputer.shared.todaysTerrain()
         snapshot = next
+        loadDailySignal()
         if let id = next.dominantPatternId {
             dominantPattern = TopoContentLoader.shared.pattern(id: id)
         } else {
@@ -395,6 +650,12 @@ struct TodayTerrainView: View {
                 }
             }
         }
+    }
+
+    private func loadDailySignal() {
+        let dailySignal = gamification.drawTodaysSignal()
+        dailySignalCard = dailySignal.card
+        dailySignalIsNew = dailySignal.isNewCheckIn
     }
 
     private func truncated(_ text: String, max: Int) -> String {
@@ -424,6 +685,7 @@ private struct LogMomentSheet: View {
             .padding(.horizontal, 16)
             .padding(.top, 18)
             .padding(.bottom, 24)
+            .accessibilityIdentifier("today.logMoment.sheet")
         }
     }
 
@@ -462,6 +724,7 @@ private struct LogMomentSheet: View {
                 .scrollContentBackground(.hidden)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
+                .accessibilityIdentifier("today.logMoment.editor")
         }
         .frame(minHeight: 180)
     }
@@ -506,6 +769,7 @@ private struct LogMomentSheet: View {
         }
         .buttonStyle(.plain)
         .disabled(!canSave)
+        .accessibilityIdentifier("today.logMoment.save")
     }
 
     private var canSave: Bool {
@@ -526,4 +790,5 @@ private struct LogMomentSheet: View {
 
 #Preview {
     TodayTerrainView()
+        .environmentObject(GamificationManager())
 }

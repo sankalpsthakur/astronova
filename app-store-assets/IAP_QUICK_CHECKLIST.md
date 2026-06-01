@@ -12,7 +12,7 @@ Current source/storekit truth: 12 total SKUs are expected by `Info.plist`,
 
 | # | Product ID | Price | Duration |
 |---|------------|-------|----------|
-| 1 | `astronova_pro_12_month_commitment` | $119.88 | 12 Months / 1 Year |
+| 1 | `astronova_pro_12_month_commitment` | $49.99 | 12 Months / 1 Year |
 | 2 | `astronova_pro_monthly` | $9.99 | 1 Month |
 
 The 12-month product is the current default Pro plan in `ShopCatalog`. Keep
@@ -66,7 +66,7 @@ StoreKit file before upload.
 ## 🧪 Testing Checklist
 
 - [ ] Sandbox tester account created
-- [ ] Subscribe to Pro 12-Month Plan ($119.88)
+- [ ] Subscribe to Pro 12-Month Plan ($49.99)
 - [ ] Subscribe to Pro Monthly ($9.99)
 - [ ] Purchase at least one report ($12.99)
 - [ ] Purchase chat credits ($14.99)
@@ -95,7 +95,7 @@ StoreKit file before upload.
 **Total Revenue Model:**
 
 - **Subscription:** $9.99/month recurring → **Primary revenue**
-- **12-month plan:** $119.88/year / 12-month commitment → **Default Pro plan**
+- **12-month plan:** $49.99/year / 12-month commitment → **Default Pro plan**
 - **Reports:** $12.99 each × 7 = $90.93 total → One-time sales
 - **Chat Credits:** $14.99 - $89.99 → A la carte option
 

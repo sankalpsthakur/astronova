@@ -31,11 +31,12 @@ Unlock the full power of Astronova with a 12-month Pro plan:
 • Ad-free experience
 • 14-day free trial, then 12-month Pro access
 
-Current local StoreKit price: $119.88. Confirm App Store Connect duration,
-price, and renewal copy match the final approved product setup before upload.
+Current local StoreKit/App Store Connect price target: $49.99 per year. Confirm
+duration, price, and renewal copy match the final approved product setup before
+upload.
 
-Terms: https://astronova.onrender.com/terms
-Privacy: https://astronova.onrender.com/privacy
+Terms: https://astronova-ghcr.onrender.com/terms
+Privacy: https://astronova-ghcr.onrender.com/privacy
 
 =================================================================
 SUBSCRIPTION: astronova_pro_monthly
@@ -56,8 +57,8 @@ Unlock the full power of Astronova with unlimited access to all premium features
 
 Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage your subscription and turn off auto-renewal in your Account Settings after purchase.
 
-Terms: https://astronova.onrender.com/terms
-Privacy: https://astronova.onrender.com/privacy
+Terms: https://astronova-ghcr.onrender.com/terms
+Privacy: https://astronova-ghcr.onrender.com/privacy
 
 =================================================================
 REPORT: report_general

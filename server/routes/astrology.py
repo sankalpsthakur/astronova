@@ -9,6 +9,7 @@ from services.dasha_interpretation_service import DashaInterpretationService
 from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
 from services.planetary_strength_service import PlanetaryStrengthService
+from utils.time_utils import utc_now_naive
 
 try:
     # Access Swiss Ephemeris if available for sidereal Moon (nakshatra) calculations
@@ -42,7 +43,7 @@ _interp_svc = DashaInterpretationService()
 
 @astrology_bp.route("/positions", methods=["GET"])
 def positions():
-    positions = _svc.get_positions_for_date(datetime.utcnow())
+    positions = _svc.get_positions_for_date(utc_now_naive())
     result = {}
     for name, info in positions.get("planets", {}).items():
         key = name.title()
@@ -290,7 +291,7 @@ def dashas_complete():
         error_msg = dasha_info.get("message", "Failed to calculate dasha") if dasha_info else "Failed to calculate dasha"
         return jsonify({"error": error_msg}), 400
 
-    # Get planet positions for strength analysis (default to sidereal/Vedic for Time Travel consistency)
+    # Get planet positions for strength analysis (default to sidereal/Vedic for Timeline consistency)
     zodiac_system = (payload.get("system") or payload.get("zodiacSystem") or "vedic")
     zodiac_system = str(zodiac_system).lower()
     if zodiac_system in ("tropical", "western"):

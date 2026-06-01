@@ -1,0 +1,109 @@
+{
+  "startedAt": "2026-05-23T15:44:12Z",
+  "deleted": [],
+  "failed": [
+    {
+      "id": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+      "status": 403,
+      "body": {
+        "errors": [
+          {
+            "id": "b0038450-a7ce-4279-a118-16a7be45a729",
+            "status": "403",
+            "code": "FORBIDDEN_ERROR",
+            "title": "The given operation is not allowed",
+            "detail": "The resource 'reviewSubmissions' does not allow 'DELETE'. Allowed operations are: CREATE, GET_COLLECTION, GET_INSTANCE, UPDATE"
+          }
+        ]
+      }
+    },
+    {
+      "id": "baf472e0-1891-4014-960f-c8cf4cbeb62b",
+      "status": 403,
+      "body": {
+        "errors": [
+          {
+            "id": "3f63fcff-c12e-4b64-ab9e-a90146f03d3c",
+            "status": "403",
+            "code": "FORBIDDEN_ERROR",
+            "title": "The given operation is not allowed",
+            "detail": "The resource 'reviewSubmissions' does not allow 'DELETE'. Allowed operations are: CREATE, GET_COLLECTION, GET_INSTANCE, UPDATE"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4829f0a3-5492-436b-ac3c-b01147155e91",
+      "status": 403,
+      "body": {
+        "errors": [
+          {
+            "id": "6b75ca29-9ee1-46b6-a69c-1f9c3f2049f5",
+            "status": "403",
+            "code": "FORBIDDEN_ERROR",
+            "title": "The given operation is not allowed",
+            "detail": "The resource 'reviewSubmissions' does not allow 'DELETE'. Allowed operations are: CREATE, GET_COLLECTION, GET_INSTANCE, UPDATE"
+          }
+        ]
+      }
+    },
+    {
+      "id": "b4a24de4-09ec-41d5-b977-b02b83f9f7d6",
+      "status": 403,
+      "body": {
+        "errors": [
+          {
+            "id": "cd899ed0-8930-4be7-87a4-da3cea712a7b",
+            "status": "403",
+            "code": "FORBIDDEN_ERROR",
+            "title": "The given operation is not allowed",
+            "detail": "The resource 'reviewSubmissions' does not allow 'DELETE'. Allowed operations are: CREATE, GET_COLLECTION, GET_INSTANCE, UPDATE"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cfdc0ae3-48fa-45ec-a8f5-c4f503144b50",
+      "status": 403,
+      "body": {
+        "errors": [
+          {
+            "id": "b6bd649c-3b92-4061-9ff5-1bbbafa9fc7e",
+            "status": "403",
+            "code": "FORBIDDEN_ERROR",
+            "title": "The given operation is not allowed",
+            "detail": "The resource 'reviewSubmissions' does not allow 'DELETE'. Allowed operations are: CREATE, GET_COLLECTION, GET_INSTANCE, UPDATE"
+          }
+        ]
+      }
+    }
+  ],
+  "postDeleteCount": 5,
+  "createDraft": {
+    "status": 409,
+    "body": {
+      "errors": [
+        {
+          "id": "81a0f698-959c-4130-acee-73447affc7ff",
+          "status": "409",
+          "code": "STATE_ERROR.ENTITY_STATE_INVALID",
+          "title": "apps with id '6746982743' is not in valid state.",
+          "detail": "This resource cannot be reviewed, please check associated errors to see why.",
+          "meta": {
+            "associatedErrors": {
+              "/apps/6746982743": [
+                {
+                  "id": "74d2085b-100c-4ae3-aeb7-4ab4e1b4fd8f",
+                  "status": "409",
+                  "code": "STATE_ERROR.CONCURRENT_REVIEW_SUBMISSION_LIMIT_EXCEEDED",
+                  "title": "ReviewSubmission creation concurrency limit is reached",
+                  "detail": "Unable to create reviewSubmission for appId=6746982743 reviewSubmissionType=DEFAULT platform=ANY as maximum limit=5 of concurrency has reached"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

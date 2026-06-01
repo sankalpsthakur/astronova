@@ -170,7 +170,6 @@ struct AstronovaAppApp: App {
 extension Notification.Name {
     static let switchToTab = Notification.Name("switchToTab")
     static let switchToProfileSection = Notification.Name("switchToProfileSection")
-    static let openVideoSession = Notification.Name("openVideoSession")
 }
 
 enum AstronovaIntentRouteStore {
@@ -179,7 +178,6 @@ enum AstronovaIntentRouteStore {
     enum Route: String {
         case today
         case timeTravel
-        case temple
         case connect
         case profile
     }
@@ -204,10 +202,8 @@ enum AstronovaIntentRouteStore {
         switch url.host {
         case "today", "guidance", "daily", "cosmic-weather":
             request(.today)
-        case "time", "timeline", "time-travel", "muhurat":
+        case "time", "timeline", "time-travel":
             request(.timeTravel)
-        case "temple", "ritual":
-            request(.temple)
         case "connect", "oracle", "chat":
             request(.connect)
         case "profile", "blueprint", "pro", "paywall":
@@ -241,17 +237,6 @@ struct OpenTimeTravelIntent: AppIntent {
     }
 }
 
-struct OpenTempleIntent: AppIntent {
-    static let title: LocalizedStringResource = "Open Temple"
-    static let description = IntentDescription("Open Astronova's temple and pooja flows.")
-    static let openAppWhenRun = true
-
-    func perform() async throws -> some IntentResult {
-        AstronovaIntentRouteStore.request(.temple)
-        return .result()
-    }
-}
-
 struct AstronovaShortcutsProvider: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -272,16 +257,6 @@ struct AstronovaShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Timeline",
             systemImageName: "clock.arrow.circlepath"
-        )
-
-        AppShortcut(
-            intent: OpenTempleIntent(),
-            phrases: [
-                "Open temple in \(.applicationName)",
-                "Open pooja in \(.applicationName)"
-            ],
-            shortTitle: "Temple",
-            systemImageName: "flame"
         )
     }
 }

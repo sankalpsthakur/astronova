@@ -17,14 +17,20 @@ services:
         generateValue: true
       - key: ADMIN_API_TOKEN
         generateValue: true
+      - key: IP_HASH_SALT
+        generateValue: true
       - key: APPLE_BUNDLE_ID
         value: com.astronova.app
       - key: GEMINI_API_KEY
         sync: false  # Set via Render dashboard
+      - key: APPLE_STOREKIT_ROOT_CERTS_PEM
+        sync: false  # Optional Apple root cert override; defaults to Apple roots from certifi
       - key: DB_PATH
         value: /data/astronova.db
       - key: ASTRONOVA_CORS_ORIGINS
-        value: https://astronova.onrender.com,https://astronova.app
+        value: https://astronova-ghcr.onrender.com,https://astronova.app
+      - key: PUBLIC_BASE_URL
+        value: https://astronova-ghcr.onrender.com
       - key: FLASK_ENV
         value: production
       - key: FLASK_DEBUG

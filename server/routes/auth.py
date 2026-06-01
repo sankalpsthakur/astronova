@@ -3,13 +3,15 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime, timedelta
+import time
+from datetime import timedelta
 from typing import Optional
 
 from flask import Blueprint, jsonify, request
 from flask_babel import gettext as _
 
 from db import upsert_user, delete_user_data
+from utils.time_utils import utc_now_iso, utc_now_naive
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,11 @@ APPLE_BUNDLE_ID = os.environ.get("APPLE_BUNDLE_ID", "com.astronova.app")
 
 # Cache for Apple's public keys (refreshed every hour)
 _apple_keys_cache: dict = {"keys": None, "expires": None}
+_auth_rate_limit_buckets: dict[tuple[str, str], list[float]] = {}
+
+
+class AuthConfigurationError(RuntimeError):
+    """Raised when production auth cannot be configured safely."""
 
 
 def _get_apple_public_keys() -> list:
@@ -32,7 +39,7 @@ def _get_apple_public_keys() -> list:
     """
     import requests
 
-    now = datetime.utcnow()
+    now = utc_now_naive()
 
     # Return cached keys if still valid
     if _apple_keys_cache["keys"] and _apple_keys_cache["expires"] and now < _apple_keys_cache["expires"]:
@@ -123,12 +130,76 @@ def validate_apple_id_token(id_token: str) -> dict:
         raise ValueError(_("Apple token validation is unavailable"))
 
 
+def _is_production_environment() -> bool:
+    return any(
+        os.environ.get(name, "").lower() == "production"
+        for name in ("FLASK_ENV", "APP_ENV", "ENV")
+    )
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _auth_rate_limit_settings() -> tuple[bool, int, int]:
+    enabled = _env_bool("AUTH_RATE_LIMIT_ENABLED", _is_production_environment())
+    max_requests = int(os.environ.get("AUTH_RATE_LIMIT_MAX_REQUESTS", "30"))
+    window_seconds = int(os.environ.get("AUTH_RATE_LIMIT_WINDOW_SECONDS", "60"))
+    return enabled, max_requests, window_seconds
+
+
+def _client_ip() -> str:
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",", 1)[0].strip()
+    return request.remote_addr or "unknown"
+
+
+def _reject_if_rate_limited(action: str):
+    enabled, max_requests, window_seconds = _auth_rate_limit_settings()
+    if not enabled:
+        return None
+
+    now = time.monotonic()
+    key = (action, _client_ip())
+    recent = [
+        timestamp
+        for timestamp in _auth_rate_limit_buckets.get(key, [])
+        if now - timestamp < window_seconds
+    ]
+
+    if len(recent) >= max_requests:
+        retry_after = max(1, int(window_seconds - (now - recent[0])))
+        response = jsonify({
+            "error": _("Too many authentication attempts. Please try again later."),
+            "code": "RATE_LIMITED",
+        })
+        response.headers["Retry-After"] = str(retry_after)
+        return response, 429
+
+    recent.append(now)
+    _auth_rate_limit_buckets[key] = recent
+    return None
+
+
+def reset_auth_rate_limits_for_tests() -> None:
+    _auth_rate_limit_buckets.clear()
+
+
 # JWT secret key - in production, use a strong random secret from environment.
 # Render's blueprint historically generated JWT_SECRET_KEY, while local docs use
 # JWT_SECRET. Accept both so existing deployments do not silently fall back to
 # the development secret.
 def get_jwt_secret() -> str:
-    return os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY") or "astronova-dev-secret-change-in-production"
+    secret = os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY")
+    if secret:
+        return secret
+    if _is_production_environment():
+        raise AuthConfigurationError("JWT_SECRET or JWT_SECRET_KEY must be configured in production")
+    return "astronova-dev-secret-change-in-production"
 
 
 JWT_ALGORITHM = "HS256"
@@ -147,7 +218,7 @@ def generate_jwt(user_id: str, email: Optional[str] = None) -> str:
     """
     import jwt
 
-    now = datetime.utcnow()
+    now = utc_now_naive()
     payload = {
         "sub": user_id,
         "iat": now,
@@ -219,6 +290,9 @@ def apple_auth():
     - The token is for our app (bundle ID)
     - The token has not expired
     """
+    if limited := _reject_if_rate_limited("auth.apple"):
+        return limited
+
     raw_body = request.get_data(cache=False, as_text=True)
     if raw_body.strip():
         try:
@@ -280,7 +354,11 @@ def apple_auth():
     upsert_user(user_identifier, email, first_name, last_name, full_name)
 
     # Generate a real signed JWT containing the user ID
-    jwt_token = generate_jwt(user_identifier, email)
+    try:
+        jwt_token = generate_jwt(user_identifier, email)
+    except AuthConfigurationError:
+        logger.error("JWT secret is not configured; refusing auth token issuance")
+        return jsonify({"error": _("Authentication is not configured"), "code": "AUTH_CONFIG_UNAVAILABLE"}), 503
 
     resp = {
         "jwtToken": jwt_token,
@@ -290,10 +368,10 @@ def apple_auth():
             "firstName": first_name,
             "lastName": last_name,
             "fullName": full_name,
-            "createdAt": datetime.utcnow().isoformat(),
-            "updatedAt": datetime.utcnow().isoformat(),
+            "createdAt": utc_now_iso(),
+            "updatedAt": utc_now_iso(),
         },
-        "expiresAt": (datetime.utcnow() + timedelta(days=JWT_EXPIRY_DAYS)).isoformat(),
+        "expiresAt": (utc_now_naive() + timedelta(days=JWT_EXPIRY_DAYS)).isoformat(),
     }
     return jsonify(resp)
 
@@ -313,6 +391,9 @@ def validate():
             "userId": decoded.get("user_id"),
             "email": decoded.get("email"),
         })
+    except AuthConfigurationError:
+        logger.error("JWT secret is not configured; refusing token validation")
+        return jsonify({"valid": False, "error": _("Authentication is not configured"), "code": "AUTH_CONFIG_UNAVAILABLE"}), 503
     except ValueError as e:
         return jsonify({"valid": False, "error": str(e)})
 
@@ -320,6 +401,9 @@ def validate():
 @auth_bp.route("/refresh", methods=["POST"])
 def refresh():
     """Token refresh - validates current token and issues a new one."""
+    if limited := _reject_if_rate_limited("auth.refresh"):
+        return limited
+
     auth_header = request.headers.get("Authorization", "")
 
     if not auth_header or not auth_header.startswith("Bearer "):
@@ -335,6 +419,9 @@ def refresh():
         decoded = validate_jwt(token)
         user_id = decoded.get("user_id")
         email = decoded.get("email")
+    except AuthConfigurationError:
+        logger.error("JWT secret is not configured; refusing token refresh")
+        return jsonify({"error": _("Authentication is not configured"), "code": "AUTH_CONFIG_UNAVAILABLE"}), 503
     except ValueError as e:
         return jsonify({"error": str(e), "code": "INVALID_TOKEN"}), 401
 
@@ -342,7 +429,11 @@ def refresh():
         return jsonify({"error": _("Invalid token - no user ID"), "code": "INVALID_TOKEN"}), 401
 
     # Issue new token with same user info
-    new_token = generate_jwt(user_id, email)
+    try:
+        new_token = generate_jwt(user_id, email)
+    except AuthConfigurationError:
+        logger.error("JWT secret is not configured; refusing token refresh")
+        return jsonify({"error": _("Authentication is not configured"), "code": "AUTH_CONFIG_UNAVAILABLE"}), 503
     resp = {
         "jwtToken": new_token,
         "user": {
@@ -351,10 +442,10 @@ def refresh():
             "firstName": None,
             "lastName": None,
             "fullName": email or _("User"),
-            "createdAt": datetime.utcnow().isoformat(),
-            "updatedAt": datetime.utcnow().isoformat(),
+            "createdAt": utc_now_iso(),
+            "updatedAt": utc_now_iso(),
         },
-        "expiresAt": (datetime.utcnow() + timedelta(days=JWT_EXPIRY_DAYS)).isoformat(),
+        "expiresAt": (utc_now_naive() + timedelta(days=JWT_EXPIRY_DAYS)).isoformat(),
     }
     return jsonify(resp)
 
@@ -393,6 +484,13 @@ def delete_account():
     # Derive user ID from the verified token only.
     try:
         decoded = validate_jwt(token)
+    except AuthConfigurationError:
+        logger.error("JWT secret is not configured; refusing account deletion")
+        return jsonify({
+            "error": _("Authentication is not configured"),
+            "code": "AUTH_CONFIG_UNAVAILABLE",
+            "deleted": False,
+        }), 503
     except ValueError as e:
         return jsonify({
             "error": str(e),

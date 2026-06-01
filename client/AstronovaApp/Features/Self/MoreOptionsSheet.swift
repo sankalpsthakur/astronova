@@ -203,7 +203,7 @@ struct MoreOptionsSheet: View {
                             )
                         }
 
-                        Link(destination: URL(string: "https://astronova.app/help")!) {
+                        Link(destination: URL(string: "https://astronova-ghcr.onrender.com/support")!) {
                             OptionRowContent(
                                 icon: "questionmark.circle.fill",
                                 iconColor: .cosmicInfo,

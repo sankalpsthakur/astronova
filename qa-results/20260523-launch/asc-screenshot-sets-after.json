@@ -1,0 +1,108 @@
+{
+  "checkedAt": "2026-05-23T15:03:13Z",
+  "versionId": "1577f289-33ba-4b51-9143-d488d8020ed9",
+  "localizations": [
+    {
+      "id": "7130bc80-841c-48ca-b73c-dc2efc2437df",
+      "locale": "en-US",
+      "screenshotSets": [
+        {
+          "id": "a85f2e38-3d6d-4368-8e10-81d2490828c8",
+          "screenshotDisplayType": "APP_IPHONE_67",
+          "count": 6,
+          "screenshots": [
+            {
+              "id": "35f17107-dad6-4575-be80-6e7e96b7f067",
+              "fileName": "01_hero.png",
+              "state": "COMPLETE",
+              "fileSize": 2203339
+            },
+            {
+              "id": "93bfe1bb-57ec-4131-9b33-d08e0042ef49",
+              "fileName": "02_valueprop.png",
+              "state": "COMPLETE",
+              "fileSize": 3011988
+            },
+            {
+              "id": "9df83fcf-9ef1-4558-8cc5-3c76312aa236",
+              "fileName": "03_painpoint.png",
+              "state": "COMPLETE",
+              "fileSize": 534075
+            },
+            {
+              "id": "ed3c1edf-e171-4696-a2d6-03d2aa7026c5",
+              "fileName": "04_benefit.png",
+              "state": "COMPLETE",
+              "fileSize": 389457
+            },
+            {
+              "id": "2bcb05db-2e36-4a12-a04a-32106961cdf9",
+              "fileName": "05_trust.png",
+              "state": "COMPLETE",
+              "fileSize": 412607
+            },
+            {
+              "id": "3f40def4-6a05-4b21-b974-8ac119c17cab",
+              "fileName": "06_cta.png",
+              "state": "COMPLETE",
+              "fileSize": 694915
+            }
+          ]
+        },
+        {
+          "id": "c6443cf5-bf29-4dac-9c57-83c2899a6983",
+          "screenshotDisplayType": "APP_IPHONE_65",
+          "count": 6,
+          "screenshots": [
+            {
+              "id": "b4a38236-b4c9-4f76-b997-2af3535f360e",
+              "fileName": "01_hero.png",
+              "state": "COMPLETE",
+              "fileSize": 1599668
+            },
+            {
+              "id": "3faf5f46-4341-4e63-8f62-bd6a33307ff0",
+              "fileName": "02_valueprop.png",
+              "state": "COMPLETE",
+              "fileSize": 2146475
+            },
+            {
+              "id": "8a7165ac-9308-4b6b-ae2f-6dae92c0bf00",
+              "fileName": "03_painpoint.png",
+              "state": "COMPLETE",
+              "fileSize": 916916
+            },
+            {
+              "id": "d97b7a35-0771-448a-b52b-7078b03766da",
+              "fileName": "04_benefit.png",
+              "state": "COMPLETE",
+              "fileSize": 431233
+            },
+            {
+              "id": "d2a7a9f5-49b6-410b-b407-e1298d52c99e",
+              "fileName": "05_trust.png",
+              "state": "COMPLETE",
+              "fileSize": 515858
+            },
+            {
+              "id": "9b8aea64-c3b3-48ed-b787-38859bcc1c72",
+              "fileName": "06_cta.png",
+              "state": "COMPLETE",
+              "fileSize": 687924
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cc6cea07-ba03-4aee-b974-4557217176f7",
+      "locale": "es-MX",
+      "screenshotSets": []
+    },
+    {
+      "id": "86c57bb9-0c65-4865-b75e-dbe47fbb134f",
+      "locale": "fr-FR",
+      "screenshotSets": []
+    }
+  ]
+}

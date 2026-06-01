@@ -20,6 +20,7 @@ if str(SERVER_ROOT) not in sys.path:
 
 import db as db_module
 from app import create_app
+from utils.time_utils import utc_now_iso, utc_now_naive
 
 # ============================================================================
 # Pytest Configuration
@@ -221,8 +222,8 @@ def authenticated_client(client, sample_user):
     payload = {
         "sub": sample_user["id"],
         "email": sample_user["email"],
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(days=30),
+        "iat": utc_now_naive(),
+        "exp": utc_now_naive() + timedelta(days=30),
     }
     token = pyjwt.encode(payload, secret, algorithm="HS256")
     client.environ_base["HTTP_AUTHORIZATION"] = f"Bearer {token}"
@@ -232,10 +233,9 @@ def authenticated_client(client, sample_user):
 @pytest.fixture()
 def sample_subscription(sample_user, clean_db):
     """Pre-created subscription for test user."""
-    from datetime import datetime
     conn = db_module.get_connection()
     cur = conn.cursor()
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     cur.execute(
         "INSERT INTO subscription_status (user_id, is_active, product_id, updated_at) VALUES (?,?,?,?)",
         (sample_user["id"], 1, "astronova_pro_monthly", now),

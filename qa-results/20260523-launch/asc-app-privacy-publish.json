@@ -1,0 +1,835 @@
+{
+  "startedAt": "2026-05-23T18:06:47Z",
+  "profile": "Default",
+  "appId": "6746982743",
+  "steps": [
+    {
+      "name": "create-data-usage",
+      "category": "NAME",
+      "purpose": "APP_FUNCTIONALITY",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "9122d81a-0321-4082-b6e1-5f5c5feb4306"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "EMAIL_ADDRESS",
+      "purpose": "APP_FUNCTIONALITY",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "759e8375-26b8-4a48-a048-1b73a25887de"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "PRECISE_LOCATION",
+      "purpose": "APP_FUNCTIONALITY",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "3e280e8a-8769-4073-ae8a-a1637c288033"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "CONTACTS",
+      "purpose": "APP_FUNCTIONALITY",
+      "dataProtection": "DATA_NOT_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "f130392e-bfcc-4e91-a959-14b73c152db6"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "USER_ID",
+      "purpose": "APP_FUNCTIONALITY",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "c53a5e1a-a985-409a-a615-edb8675845a6"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "PURCHASE_HISTORY",
+      "purpose": "APP_FUNCTIONALITY",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "72b335c1-77f6-40ad-a624-23e0e3163056"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "PRODUCT_INTERACTION",
+      "purpose": "ANALYTICS",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "7633468e-3e78-41a6-9d63-1f9c2d3676f6"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "OTHER_DIAGNOSTIC_DATA",
+      "purpose": "ANALYTICS",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "0819235c-83ba-4e6d-9ae6-980e303341fc"
+      }
+    },
+    {
+      "name": "create-data-usage",
+      "category": "OTHER_DATA",
+      "purpose": "APP_FUNCTIONALITY",
+      "dataProtection": "DATA_LINKED_TO_YOU",
+      "status": 201,
+      "body": {
+        "id": "856ea5f1-66a5-4bdc-b7f4-2a2ce6cb372f"
+      }
+    }
+  ],
+  "before": {
+    "status": 200,
+    "body": {
+      "data": [],
+      "included": [],
+      "links": {
+        "self": "https://appstoreconnect.apple.com/iris/v1/apps/6746982743/dataUsages?include=dataProtection%2Cpurpose%2Ccategory%2Cgrouping&limit=500"
+      },
+      "meta": {
+        "paging": {
+          "total": 0,
+          "limit": 500
+        }
+      }
+    }
+  },
+  "publishStateBefore": {
+    "status": 200,
+    "body": {
+      "data": {
+        "type": "appDataUsagesPublishState",
+        "id": "6746982743",
+        "attributes": {
+          "published": false,
+          "lastPublished": null,
+          "lastPublishedBy": null
+        },
+        "links": {
+          "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsagesPublishState/6746982743"
+        }
+      },
+      "links": {
+        "self": "https://appstoreconnect.apple.com/iris/v1/apps/6746982743/dataUsagePublishState"
+      }
+    }
+  },
+  "publish": {
+    "status": 200,
+    "body": {
+      "data": {
+        "type": "appDataUsagesPublishState",
+        "id": "6746982743",
+        "attributes": {
+          "published": true,
+          "lastPublished": "2026-05-23T11:06:56.257-07:00",
+          "lastPublishedBy": "Sankalp Thakur"
+        },
+        "links": {
+          "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsagesPublishState/6746982743"
+        }
+      },
+      "links": {
+        "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsagesPublishState/6746982743"
+      }
+    }
+  },
+  "publishStateAfter": {
+    "status": 200,
+    "body": {
+      "data": {
+        "type": "appDataUsagesPublishState",
+        "id": "6746982743",
+        "attributes": {
+          "published": true,
+          "lastPublished": "2026-05-23T11:06:56-07:00",
+          "lastPublishedBy": "Sankalp Thakur"
+        },
+        "links": {
+          "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsagesPublishState/6746982743"
+        }
+      },
+      "links": {
+        "self": "https://appstoreconnect.apple.com/iris/v1/apps/6746982743/dataUsagePublishState"
+      }
+    }
+  },
+  "after": {
+    "status": 200,
+    "body": {
+      "data": [
+        {
+          "type": "appDataUsages",
+          "id": "f130392e-bfcc-4e91-a959-14b73c152db6",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "CONTACTS"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "CONTACTS"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "APP_FUNCTIONALITY"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_NOT_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/f130392e-bfcc-4e91-a959-14b73c152db6"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "856ea5f1-66a5-4bdc-b7f4-2a2ce6cb372f",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "OTHER_DATA"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "OTHER"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "APP_FUNCTIONALITY"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/856ea5f1-66a5-4bdc-b7f4-2a2ce6cb372f"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "759e8375-26b8-4a48-a048-1b73a25887de",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "EMAIL_ADDRESS"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "CONTACT_INFO"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "APP_FUNCTIONALITY"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/759e8375-26b8-4a48-a048-1b73a25887de"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "0819235c-83ba-4e6d-9ae6-980e303341fc",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "OTHER_DIAGNOSTIC_DATA"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "DIAGNOSTICS"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "ANALYTICS"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/0819235c-83ba-4e6d-9ae6-980e303341fc"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "3e280e8a-8769-4073-ae8a-a1637c288033",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "PRECISE_LOCATION"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "LOCATION"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "APP_FUNCTIONALITY"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/3e280e8a-8769-4073-ae8a-a1637c288033"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "72b335c1-77f6-40ad-a624-23e0e3163056",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "PURCHASE_HISTORY"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "PURCHASES"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "APP_FUNCTIONALITY"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/72b335c1-77f6-40ad-a624-23e0e3163056"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "c53a5e1a-a985-409a-a615-edb8675845a6",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "USER_ID"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "IDENTIFIERS"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "APP_FUNCTIONALITY"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/c53a5e1a-a985-409a-a615-edb8675845a6"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "9122d81a-0321-4082-b6e1-5f5c5feb4306",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "NAME"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "CONTACT_INFO"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "APP_FUNCTIONALITY"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/9122d81a-0321-4082-b6e1-5f5c5feb4306"
+          }
+        },
+        {
+          "type": "appDataUsages",
+          "id": "7633468e-3e78-41a6-9d63-1f9c2d3676f6",
+          "relationships": {
+            "category": {
+              "data": {
+                "type": "appDataUsageCategories",
+                "id": "PRODUCT_INTERACTION"
+              }
+            },
+            "grouping": {
+              "data": {
+                "type": "appDataUsageGroupings",
+                "id": "USAGE_DATA"
+              }
+            },
+            "purpose": {
+              "data": {
+                "type": "appDataUsagePurposes",
+                "id": "ANALYTICS"
+              }
+            },
+            "dataProtection": {
+              "data": {
+                "type": "appDataUsageDataProtections",
+                "id": "DATA_LINKED_TO_YOU"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsages/7633468e-3e78-41a6-9d63-1f9c2d3676f6"
+          }
+        }
+      ],
+      "included": [
+        {
+          "type": "appDataUsageCategories",
+          "id": "CONTACTS",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/CONTACTS/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/CONTACTS/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/CONTACTS"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "CONTACTS",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/CONTACTS/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/CONTACTS/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/CONTACTS"
+          }
+        },
+        {
+          "type": "appDataUsagePurposes",
+          "id": "APP_FUNCTIONALITY",
+          "attributes": {
+            "deleted": false
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsagePurposes/APP_FUNCTIONALITY"
+          }
+        },
+        {
+          "type": "appDataUsageDataProtections",
+          "id": "DATA_NOT_LINKED_TO_YOU",
+          "attributes": {
+            "deleted": false
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageDataProtections/DATA_NOT_LINKED_TO_YOU"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "OTHER_DATA",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/OTHER_DATA/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/OTHER_DATA/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/OTHER_DATA"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "OTHER",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/OTHER/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/OTHER/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/OTHER"
+          }
+        },
+        {
+          "type": "appDataUsageDataProtections",
+          "id": "DATA_LINKED_TO_YOU",
+          "attributes": {
+            "deleted": false
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageDataProtections/DATA_LINKED_TO_YOU"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "EMAIL_ADDRESS",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/EMAIL_ADDRESS/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/EMAIL_ADDRESS/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/EMAIL_ADDRESS"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "CONTACT_INFO",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/CONTACT_INFO/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/CONTACT_INFO/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/CONTACT_INFO"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "OTHER_DIAGNOSTIC_DATA",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/OTHER_DIAGNOSTIC_DATA/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/OTHER_DIAGNOSTIC_DATA/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/OTHER_DIAGNOSTIC_DATA"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "DIAGNOSTICS",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/DIAGNOSTICS/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/DIAGNOSTICS/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/DIAGNOSTICS"
+          }
+        },
+        {
+          "type": "appDataUsagePurposes",
+          "id": "ANALYTICS",
+          "attributes": {
+            "deleted": false
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsagePurposes/ANALYTICS"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "PRECISE_LOCATION",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PRECISE_LOCATION/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PRECISE_LOCATION/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PRECISE_LOCATION"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "LOCATION",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/LOCATION/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/LOCATION/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/LOCATION"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "PURCHASE_HISTORY",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PURCHASE_HISTORY/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PURCHASE_HISTORY/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PURCHASE_HISTORY"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "PURCHASES",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/PURCHASES/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/PURCHASES/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/PURCHASES"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "USER_ID",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/USER_ID/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/USER_ID/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/USER_ID"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "IDENTIFIERS",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/IDENTIFIERS/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/IDENTIFIERS/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/IDENTIFIERS"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "NAME",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/NAME/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/NAME/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/NAME"
+          }
+        },
+        {
+          "type": "appDataUsageCategories",
+          "id": "PRODUCT_INTERACTION",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "grouping": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PRODUCT_INTERACTION/relationships/grouping",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PRODUCT_INTERACTION/grouping"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageCategories/PRODUCT_INTERACTION"
+          }
+        },
+        {
+          "type": "appDataUsageGroupings",
+          "id": "USAGE_DATA",
+          "attributes": {
+            "deleted": false
+          },
+          "relationships": {
+            "categories": {
+              "links": {
+                "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/USAGE_DATA/relationships/categories",
+                "related": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/USAGE_DATA/categories"
+              }
+            }
+          },
+          "links": {
+            "self": "https://appstoreconnect.apple.com/iris/v1/appDataUsageGroupings/USAGE_DATA"
+          }
+        }
+      ],
+      "links": {
+        "self": "https://appstoreconnect.apple.com/iris/v1/apps/6746982743/dataUsages?include=dataProtection%2Cpurpose%2Ccategory%2Cgrouping&limit=500"
+      },
+      "meta": {
+        "paging": {
+          "total": 9,
+          "limit": 500
+        }
+      }
+    }
+  },
+  "finishedAt": "2026-05-23T18:06:57Z"
+}

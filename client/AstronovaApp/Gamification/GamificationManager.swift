@@ -34,7 +34,7 @@ final class GamificationManager: ObservableObject {
         var weeklyChapterKey: String?
         var weeklyChapterCheckIns: Int
         var unlockedCardIds: [String]
-        var milestones: [JourneyMilestone]
+        var milestones: [String]
         var archetype: String?
         var completedWeeklyChallengeWeeks: [String] = []
         var firstLaunchDay: String?
@@ -50,7 +50,7 @@ final class GamificationManager: ObservableObject {
             weeklyChapterKey = loaded.weeklyChapterKey
             weeklyChapterCheckIns = loaded.weeklyChapterCheckIns
             unlockedCardIds = Set(loaded.unlockedCardIds)
-            milestones = Set(loaded.milestones)
+            milestones = Set(loaded.milestones.compactMap(JourneyMilestone.init(rawValue:)))
             archetype = loaded.archetype
             completedWeeklyChallengeWeeks = Set(loaded.completedWeeklyChallengeWeeks)
             firstLaunchDay = loaded.firstLaunchDay
@@ -196,59 +196,6 @@ final class GamificationManager: ObservableObject {
         persist()
     }
 
-    func markTempleBookingStarted() {
-        awardXP(25, event: .templeEngagementCompleted, properties: ["stage": "started"])
-        unlockMilestone(.firstTempleBooking)
-        persist()
-    }
-
-    func markTempleBookingCompleted() {
-        awardXP(40, event: .templeEngagementCompleted, properties: ["stage": "completed"])
-        persist()
-    }
-
-    func markTempleBellRung(streak: Int) {
-        awardXP(10, event: .templeBellRung, properties: ["streak": "\(streak)"])
-        unlockMilestone(.firstTempleBellRing)
-        if streak == 7 {
-            awardXP(50, event: .templeBellStreakBonus, properties: ["streak": "7"])
-            unlockMilestone(.templeBellStreak7)
-        }
-        if streak == 30 {
-            awardXP(200, event: .templeBellStreakBonus, properties: ["streak": "30"])
-            unlockMilestone(.templeBellStreak30)
-        }
-        unlockActionCard(for: .calm)
-        markWeeklyChallengeIfNeeded(for: .calm)
-        markTempleEngagementSessionCompleted(stage: "temple_bell", properties: ["streak": "\(streak)"])
-        persist()
-    }
-
-    func markDIYPoojaCompleted(poojaName: String) {
-        awardXP(25, event: .diyPoojaCompleted, properties: ["pooja_name": poojaName])
-        unlockMilestone(.firstDIYPooja)
-        markTempleEngagementSessionCompleted(
-            stage: "diy_pooja",
-            properties: ["pooja_name": poojaName]
-        )
-        persist()
-    }
-
-    func markMuhuratChecked() {
-        awardXP(5, event: .muhuratChecked, properties: nil)
-        markTempleEngagementSessionCompleted(stage: "muhurat_check", properties: nil)
-        persist()
-    }
-
-    func markVedicEntryRead(entryId: String) {
-        awardXP(5, event: .vedicEntryRead, properties: ["entry_id": entryId])
-        markTempleEngagementSessionCompleted(
-            stage: "vedic_entry_read",
-            properties: ["entry_id": entryId]
-        )
-        persist()
-    }
-
     // MARK: - Internals
 
     private func ensureRetentionTracking(now: Date = Date()) {
@@ -278,15 +225,6 @@ final class GamificationManager: ObservableObject {
         let key = "\(Self.dayKey(Date()))-\(theme.rawValue)"
         let idx = abs(key.hashValue) % Self.arcanaDeck.count
         unlockCardIfNeeded(Self.arcanaDeck[idx])
-    }
-
-    private func markTempleEngagementSessionCompleted(
-        stage: String,
-        properties: [String: String]? = nil
-    ) {
-        var payload: [String: String] = ["stage": stage]
-        properties?.forEach { payload[$0.key] = $0.value }
-        awardXP(0, event: .templeEngagementCompleted, properties: payload)
     }
 
     private func markWeeklyChallengeIfNeeded(for theme: WeeklyTheme, date: Date = Date()) {
@@ -358,7 +296,7 @@ final class GamificationManager: ObservableObject {
             weeklyChapterKey: weeklyChapterKey,
             weeklyChapterCheckIns: weeklyChapterCheckIns,
             unlockedCardIds: Array(unlockedCardIds),
-            milestones: Array(milestones),
+            milestones: milestones.map(\.rawValue),
             archetype: archetype,
             completedWeeklyChallengeWeeks: Array(completedWeeklyChallengeWeeks),
             firstLaunchDay: firstLaunchDay,

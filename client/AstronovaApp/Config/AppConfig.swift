@@ -15,16 +15,11 @@ final class AppConfig {
         secureEnvelopeVersion = Bundle.main.object(forInfoDictionaryKey: "SECURE_ENVELOPE_VERSION") as? Int
             ?? SecureEnvelope.currentVersion
 
-        if let fromPlist = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
-           !fromPlist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            apiBaseURL = fromPlist
-            return
-        }
-
         #if DEBUG
         // Debug + Simulator: opt in to local backend by setting
         // ASTRONOVA_LOCAL_BACKEND=1 (or =http://host:port) in the scheme env.
-        // Defaults to production so TestFlight-style audits Just Work.
+        // This must win over Info.plist so UI tests can verify client/server
+        // integration against a live local process.
         #if targetEnvironment(simulator)
         let env = ProcessInfo.processInfo.environment["ASTRONOVA_LOCAL_BACKEND"]
         if let env, !env.isEmpty {
@@ -36,15 +31,30 @@ final class AppConfig {
                 apiBaseURL = "http://127.0.0.1:8081"
             }
         } else {
-            apiBaseURL = "https://astronova-ghcr.onrender.com"
+            if let fromPlist = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
+               !fromPlist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                apiBaseURL = fromPlist
+            } else {
+                apiBaseURL = "https://astronova-ghcr.onrender.com"
+            }
         }
         #else
         // Debug + Real device: use production (for testing)
-        apiBaseURL = "https://astronova-ghcr.onrender.com"
+        if let fromPlist = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
+           !fromPlist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            apiBaseURL = fromPlist
+        } else {
+            apiBaseURL = "https://astronova-ghcr.onrender.com"
+        }
         #endif
         #else
         // Release: always use production
-        apiBaseURL = "https://astronova-ghcr.onrender.com"
+        if let fromPlist = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
+           !fromPlist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            apiBaseURL = fromPlist
+        } else {
+            apiBaseURL = "https://astronova-ghcr.onrender.com"
+        }
         #endif
     }
 }

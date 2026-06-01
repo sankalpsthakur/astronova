@@ -1,7 +1,7 @@
 # Astronova - App Store Submission Materials
 
 **Version:** 1.0
-**Date:** January 9, 2026
+**Date:** May 27, 2026
 **Bundle ID:** com.astronova.app
 
 **Release status:** Draft materials only. No TestFlight upload, App Store build
@@ -20,21 +20,17 @@ and public URL verification must be completed outside this docs-only pass.
 
 ### Recommended Screenshots (in order):
 
-1. **Screenshot 1: Daily Cosmic Insights** (Hero Shot)
-   - Shows Discover tab with "Today's Cosmic Weather"
-   - 7 domain cards visible: Personal, Love, Career, Wealth, Health, Family, Spiritual
-   - Energy keywords: Initiative, Courage, Leadership, Action
+1. **Screenshot 1: Today Dashboard** (Hero Shot)
+   - Shows the Today tab with daily terrain, timing, and practical guidance
    - Demonstrates the core value proposition
 
-2. **Screenshot 2: Temple & Pooja Services**
-   - Shows Today's Muhurat timings (Abhijit, Brahma Muhurat)
-   - Sacred Rituals section with Ganesh Puja, Lakshmi Puja
-   - Highlights unique spiritual services feature
+2. **Screenshot 2: Map**
+   - Shows the personal map / astrocartography-inspired view
+   - Demonstrates spatial chart exploration
 
-3. **Screenshot 3: Expert Astrologers**
-   - Shows verified Vedic astrology experts
-   - Ratings, specializations, and availability
-   - Demonstrates professional consultation services
+3. **Screenshot 3: Timeline**
+   - Shows timing windows and prediction states
+   - Demonstrates long-range timing and dasha context
 
 **Note:** Screenshot files are present under `app-store-assets/screenshots/`.
 Upload status must be verified in App Store Connect; this document does not
@@ -45,147 +41,100 @@ claim screenshots are already uploaded.
 ## 📝 App Store Text Content
 
 ### Promotional Text (170 characters max)
-**Current:** 143 characters
+**Current:** 120 characters
 
 ```
-Unlock your cosmic blueprint with personalized Vedic astrology insights, expert consultations, and sacred rituals—all in one beautiful app.
+Personalized Vedic astrology, timing maps, numerology patterns, journaling, and AI guidance in one calm cosmic companion.
 ```
 
-**Alternative (170 characters):**
+**Alternative (161 characters):**
 ```
-Discover your astrological blueprint with daily insights, Vimshottari dasha timelines, expert consultations, and sacred pooja bookings—all guided by Vedic wisdom.
+Explore your birth chart with daily timing, astro maps, numerology, journaling, and optional Oracle guidance grounded in Vedic astrology.
 ```
 
 ---
 
 ### Description (4000 characters max)
-**Current:** 2,847 characters (well within limit)
+**Current:** under 4,000 characters
 
 ```
-🌟 DISCOVER YOUR COSMIC BLUEPRINT
+DISCOVER YOUR COSMIC TIMING COMPANION
 
-Astronova brings the ancient wisdom of Vedic astrology into the modern age. Get personalized daily insights, explore your life's timeline through Vimshottari dasha, connect with expert astrologers, and book authentic sacred rituals—all in one beautifully designed app.
+Astronova brings Vedic astrology, numerology, personal timing, and reflective journaling into one focused iPhone experience. Start with a guest preview, create a birth profile, then explore the patterns shaping your day, direction, and decisions.
 
-✨ DAILY COSMIC INSIGHTS
-Start each day with personalized astrological guidance tailored to your birth chart. Discover how planetary transits influence seven key life domains:
+TODAY
 
-• Personal Growth & Identity
-• Love & Relationships
-• Career & Ambitions
-• Wealth & Prosperity
-• Health & Well-being
-• Family & Home Life
-• Spiritual Development
+See your daily terrain, current dasha context, signal strength, and practical actions built around your birth details.
 
-Get actionable daily recommendations based on real-time planetary positions and your unique astrological blueprint.
+MAP
 
-🔮 TIME TRAVEL THROUGH YOUR LIFE
+Explore a personal astrocartography-inspired map and life-domain surfaces for a visual way to understand your chart.
 
-Explore your past, present, and future with the revolutionary Dasha Chakra Wheel—a visual timeline of your Vimshottari dasha periods. Understand:
+TIMELINE
 
-• Which planetary period you're currently in
-• When major life shifts will occur
-• The energies influencing each phase of your life
-• Personalized guidance for navigating transitions
+Review timing windows, prediction states, and longer-range shifts so you can see how different periods unfold.
 
-Navigate through months and years to see how cosmic energies evolve and prepare for upcoming opportunities and challenges.
+MATRIX
 
-🕉️ TEMPLE: SPIRITUAL SERVICES
+Study numerology, Loshu patterns, archetype signals, and deeper pattern analysis in a dedicated matrix view.
 
-Connect with the divine through authentic Vedic traditions:
+JOURNAL
 
-**Expert Astrologers**
-• Consult with verified Vedic astrology specialists
-• Multiple traditions: Vedic, Nadi, Lal Kitab, KP Astrology
-• Video consultations with experienced astrologers
-• Ratings and reviews from real users
+Capture reflections, inspect your daily signal, and keep a free-will log alongside the app's guidance.
 
-**Sacred Pooja Bookings**
-• Book authentic poojas performed by experienced temple priests
-• Ganesh Puja, Lakshmi Puja, Navagraha Shanti, and more
-• Complete with ingredients, mantras, and proper rituals
-• Live streaming of your pooja ceremony
-• Muhurat timings for auspicious actions
+REPORTS AND ORACLE
 
-🌙 BIRTH CHART & COMPATIBILITY
+Ask the Oracle for AI-assisted astrological guidance and unlock detailed one-time reports. Sign in with Apple is required for Oracle chat, report purchases, and chat credit packs so entitlements can be saved to your account.
 
-• Generate your complete Vedic birth chart
-• Understand your nakshatra (lunar mansion) and its influence
-• Explore compatibility with partners and loved ones
-• Synastry analysis and relationship insights
-• Track your cosmic pulse with real-time transits
+PRIVACY AND CONTROL
 
-💬 ASK THE ORACLE
+• Birth data is used to personalize your experience
+• Sign in with Apple keeps account access simple
+• Purchases are handled through Apple In-App Purchase
+• You can preview core surfaces before signing in
 
-Get personalized cosmic guidance powered by AI and astrological wisdom. Ask questions about:
-
-• Career decisions and timing
-• Relationship dynamics
-• Health and wellness
-• Spiritual growth
-• Life purpose and direction
-
-🎨 BEAUTIFUL, INTUITIVE DESIGN
-
-Experience astrology through a stunning cosmic interface:
-
-• Gorgeous gradients and celestial aesthetics
-• Smooth animations and haptic feedback
-• Dark mode optimized for night sky gazing
-• Intuitive navigation across all features
-• Accessible design for all users
-
-🔒 PRIVACY & SECURITY
-
-• Your birth data is securely stored
-• Apple Sign-In for seamless authentication
-• No personal information sold to third parties
-• Complete control over your astrological profile
-
-📚 ROOTED IN ANCIENT WISDOM
+ROOTED IN ASTROLOGICAL SYSTEMS
 
 Astronova uses authentic Vedic astrology calculations:
 
 • Swiss Ephemeris for planetary positions
 • Lahiri ayanamsha for sidereal zodiac
 • Traditional Vimshottari dasha system
-• Classical yogas and planetary strengths
-• Tested and validated by expert astrologers
+• Classical chart, dasha, and numerology-inspired interpretation layers
 
-Whether you're new to Vedic astrology or a seasoned practitioner, Astronova offers deep insights, practical guidance, and authentic spiritual services—all in your pocket.
+Whether you are new to astrology or already follow your chart closely, Astronova gives you a calmer way to inspect timing, patterns, and personal decisions.
 
-Download now and begin your cosmic journey. ✨
+Download now and begin your cosmic journey.
 
 ---
 
 SUBSCRIPTION INFORMATION
 
 Astronova Pro unlocks:
-• Unlimited daily insights
-• Full dasha timeline access
-• Relationship compatibility reports
-• Priority chat with the Oracle
-• Ad-free experience
+• Unlimited Ask/Oracle guidance
+• Complete journey paths and deeper pattern views
+• Premium report and insight access
+• Priority cosmic guidance
 
 Subscriptions auto-renew unless cancelled 24 hours before the period ends. Manage subscriptions in your App Store account settings.
 
-Terms: https://astronova.onrender.com/terms
-Privacy: https://astronova.onrender.com/privacy
+Terms: https://astronova-ghcr.onrender.com/terms
+Privacy: https://astronova-ghcr.onrender.com/privacy
 ```
 
 ---
 
 ### Keywords (100 characters max)
-**Current:** 99 characters
+**Current:** 89 characters
 
 ```
-astrology,vedic,horoscope,birth chart,dasha,pooja,kundli,jyotish,transit,compatibility,natal
+astrology,vedic,horoscope,birth chart,dasha,kundli,jyotish,transit,numerology,oracle
 
 ```
 
-**Alternative Focus (Spiritual Services):**
+**Alternative Focus (Journaling):**
 ```
-astrology,vedic,pooja,horoscope,jyotish,temple,puja,kundli,birth chart,spiritual,muhurat
+astrology,vedic,horoscope,birth chart,dasha,kundli,jyotish,journal,timing,map,oracle
 ```
 
 ---
@@ -194,14 +143,14 @@ astrology,vedic,pooja,horoscope,jyotish,temple,puja,kundli,birth chart,spiritual
 
 ### Support URL (Required)
 ```
-https://astronova.onrender.com/support
+https://astronova-ghcr.onrender.com/support
 ```
 *Note: Create this endpoint or use existing help/contact page*
 *Gate: verify this URL live before pasting into App Store Connect.*
 
 ### Marketing URL (Optional)
 ```
-https://astronova.onrender.com
+https://astronova-ghcr.onrender.com
 ```
 
 ---
@@ -222,8 +171,8 @@ review credentials complete from this document alone.*
 ### Contact Information
 - **First Name:** Sankalp
 - **Last Name:** Thakur
-- **Phone:** [Your phone number]
-- **Email:** [Your email]
+- **Phone:** +91 91110 35899
+- **Email:** shaurya@climitra.com
 
 ### Notes for Reviewer
 
@@ -232,32 +181,36 @@ Thank you for reviewing Astronova!
 
 TESTING INSTRUCTIONS:
 
-1. You can skip Apple Sign-In by tapping "Continue without signing in"
-2. Complete the onboarding flow to create a sample birth profile
-3. Explore the 5 main tabs:
-   - Discover: Daily cosmic insights and domain cards
-   - Time Travel: Dasha timeline visualization
-   - Temple: Astrologer listings and Pooja bookings
-   - Connect: Relationship compatibility (requires auth)
-   - Self: Profile and settings
+1. You can preview without Apple Sign-In by tapping "Preview calibration without signing in".
+2. Complete calibration with sample data such as name "App Reviewer" and birth place "Delhi, India". You may leave the default date/time for review.
+3. After "Profile Created", tap "Start Your Journey", skip the optional Identity Quiz if desired, and close the optional paywall using the Close button.
+4. Explore the 5 main tabs:
+   - Today: daily terrain, current dasha, actions, and horoscope reading
+   - Map: personal astrocartography and life-domain map
+   - Timeline: timing windows and prediction timeline
+   - Matrix: numerology/Loshu and pattern deep dives
+   - Journal: daily signal, reflections, and free-will log
 
 FEATURES TO TEST:
 
-✓ Daily Insights: See personalized planetary influences
-✓ Domain Cards: Tap any domain to see detailed explanations
-✓ Time Travel: Navigate through months/years on the Dasha wheel
-✓ Temple: Browse astrologers and pooja offerings
-✓ Muhurat Timings: View auspicious times for the day
-✓ Oracle Chat: Ask questions about life, career, relationships
+✓ Today: See personalized timing and daily guidance
+✓ Map: Explore the personal map and life-domain surfaces
+✓ Timeline: Review timing windows and prediction states
+✓ Matrix: Review numerology/Loshu pattern analysis
+✓ Journal: Log or inspect daily signal/reflection states
+✓ Settings: Open My Reports, Buy Reports, Ask the Oracle, Privacy, and Restore Purchases
 
 SUBSCRIPTIONS:
-- Free tier includes basic daily insights and limited features
-- Pro subscription unlocks full timeline, reports, and unlimited chat
+- Free/guest preview includes the core app surfaces above on this device
+- Sign in with Apple is required for Oracle chat, report purchases, and chat credit packs so entitlements attach to an account
+- Pro subscription unlocks unlimited Ask/Oracle and complete journey paths
+- One-time reports use these products: report_general, report_love, report_career, report_money, report_health, report_family, report_spiritual
+- Chat credit packs use these products: chat_credits_5, chat_credits_15, chat_credits_50
+- Pro subscriptions use these products: astronova_pro_monthly, astronova_pro_12_month_commitment
 - Subscription testing works with sandbox accounts
 
 THIRD-PARTY SERVICES:
-- Backend API: Hosted on Render (https://astronova.onrender.com)
-- Video consultations: WebRTC video service (for astrologer consultations)
+- Backend API: Hosted on Render (https://astronova-ghcr.onrender.com)
 - Ephemeris calculations: Swiss Ephemeris library
 - AI guidance: OpenAI API (optional, degrades gracefully)
 - Analytics: portfolio/local analytics. Smartlook package reference exists, but
@@ -266,7 +219,7 @@ THIRD-PARTY SERVICES:
 
 PERMISSIONS:
 - No location access required (birth location stored manually)
-- No camera/microphone access unless booking video consultation
+- No camera or microphone access required
 - Notifications for daily insights (optional, user consent)
 
 Please contact us if you have any questions during review.
@@ -301,7 +254,7 @@ Before submitting, ensure:
 - [ ] Keywords optimized (100 char limit)
 - [ ] Support URL is live and functional
 - [ ] Test account created with valid credentials
-- [ ] Backend API (https://astronova.onrender.com) is running
+- [ ] Backend API (https://astronova-ghcr.onrender.com) is running
 - [ ] Privacy Policy URL is live
 - [ ] Terms of Service URL is live
 - [ ] 12 App Store products configured: `astronova_pro_12_month_commitment`, `astronova_pro_monthly`, 7 report products, and 3 chat-credit products
@@ -317,9 +270,9 @@ Before submitting, ensure:
 
 ## 🚀 Submission Tips
 
-1. **Screenshots Matter:** Your first screenshot is the most important—it appears in search results. Use the Discover tab hero shot.
+1. **Screenshots Matter:** Your first screenshot is the most important-it appears in search results. Use the Today dashboard hero shot.
 
-2. **Keywords Strategy:** Focus on core terms: "astrology", "vedic", "horoscope", "pooja". These have high search volume.
+2. **Keywords Strategy:** Focus on core terms: "astrology", "vedic", "horoscope", "birth chart", and "dasha".
 
 3. **Description First 170 Characters:** This appears in search results without "more" click. Front-load your value proposition.
 

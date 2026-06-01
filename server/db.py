@@ -1,8 +1,10 @@
 import logging
 import os
 import sqlite3
-from datetime import datetime
+import uuid
 from typing import Optional
+
+from utils.time_utils import utc_now_iso
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +117,7 @@ def _seed_content(conn: sqlite3.Connection) -> None:
 
 
 def upsert_user(user_id: str, email: Optional[str], first_name: Optional[str], last_name: Optional[str], full_name: str):
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT id FROM users WHERE id=?", (user_id,))
@@ -145,7 +147,7 @@ def get_user_preferred_language(user_id: str) -> Optional[str]:
 
 
 def insert_report(report_id: str, user_id: Optional[str], type_: str, title: str, content: str, status: str = "completed"):
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -265,7 +267,7 @@ def get_content_management() -> dict:
 def ensure_conversation(conversation_id: Optional[str], user_id: Optional[str]) -> str:
     conn = get_connection()
     cur = conn.cursor()
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     if conversation_id:
         cur.execute("SELECT id FROM chat_conversations WHERE id=?", (conversation_id,))
         row = cur.fetchone()
@@ -291,7 +293,7 @@ def add_chat_message(conversation_id: str, role: str, content: str, user_id: Opt
     import uuid
 
     message_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -400,7 +402,7 @@ def has_premium_entitlement(user_id: Optional[str]) -> bool:
 
 def set_subscription(user_id: str, is_active: bool, product_id: Optional[str] = None) -> None:
     """Create or update a user's subscription status."""
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -414,6 +416,101 @@ def set_subscription(user_id: str, is_active: bool, product_id: Optional[str] = 
     )
     conn.commit()
     conn.close()
+
+
+# Individual report purchase helpers
+def sync_report_purchase_entitlement(
+    user_id: str,
+    product_id: str,
+    report_type: str,
+    transaction_id: str,
+    original_transaction_id: Optional[str] = None,
+    environment: Optional[str] = None,
+) -> dict:
+    """Create or return a StoreKit-backed individual report entitlement."""
+    now = utc_now_iso()
+    entitlement_id = str(uuid.uuid4())
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO report_purchase_entitlements
+           (id, user_id, product_id, report_type, transaction_id, original_transaction_id, environment, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(transaction_id) DO UPDATE SET
+             original_transaction_id = COALESCE(excluded.original_transaction_id, original_transaction_id),
+             environment = COALESCE(excluded.environment, environment)""",
+        (
+            entitlement_id,
+            user_id,
+            product_id,
+            report_type,
+            transaction_id,
+            original_transaction_id,
+            environment,
+            now,
+        ),
+    )
+    cur.execute(
+        """SELECT id, user_id, product_id, report_type, transaction_id,
+                  original_transaction_id, environment, consumed_report_id, created_at, consumed_at
+           FROM report_purchase_entitlements
+           WHERE transaction_id=?""",
+        (transaction_id,),
+    )
+    row = cur.fetchone()
+    conn.commit()
+    conn.close()
+    return _report_purchase_row_to_dict(row)
+
+
+def get_available_report_purchase(user_id: str, report_type: str) -> Optional[dict]:
+    """Return one unconsumed individual report entitlement for the report type."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """SELECT id, user_id, product_id, report_type, transaction_id,
+                  original_transaction_id, environment, consumed_report_id, created_at, consumed_at
+           FROM report_purchase_entitlements
+           WHERE user_id=? AND report_type=? AND consumed_at IS NULL
+           ORDER BY created_at ASC
+           LIMIT 1""",
+        (user_id, report_type),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return _report_purchase_row_to_dict(row) if row else None
+
+
+def consume_report_purchase(entitlement_id: str, report_id: str) -> None:
+    now = utc_now_iso()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE report_purchase_entitlements
+           SET consumed_report_id=?, consumed_at=?
+           WHERE id=? AND consumed_at IS NULL""",
+        (report_id, now, entitlement_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _report_purchase_row_to_dict(row) -> dict:
+    if not row:
+        return {}
+    return {
+        "id": row["id"],
+        "userId": row["user_id"],
+        "productId": row["product_id"],
+        "reportType": row["report_type"],
+        "transactionId": row["transaction_id"],
+        "originalTransactionId": row["original_transaction_id"],
+        "environment": row["environment"],
+        "consumedReportId": row["consumed_report_id"],
+        "createdAt": row["created_at"],
+        "consumedAt": row["consumed_at"],
+        "isAvailable": row["consumed_at"] is None,
+    }
 
 
 # Birth data helpers
@@ -451,7 +548,7 @@ def upsert_user_birth_data(
     location_name: Optional[str] = None,
 ):
     """Store or update user's birth data."""
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT user_id FROM user_birth_data WHERE user_id=?", (user_id,))
@@ -485,7 +582,7 @@ def create_relationship(
     import uuid
 
     relationship_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -602,7 +699,7 @@ def delete_relationship(relationship_id: str, user_id: str) -> bool:
 
 def update_relationship_last_viewed(relationship_id: str) -> None:
     """Update the last_viewed_at timestamp for a relationship."""
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -626,8 +723,34 @@ def delete_user_data(user_id: str) -> dict:
     cur = conn.cursor()
     deleted_counts = {}
 
-    # Delete from all tables that reference user_id
+    cur.execute("SELECT id FROM pooja_bookings WHERE user_id=?", (user_id,))
+    pooja_booking_ids = [row["id"] for row in cur.fetchall()]
+
+    pooja_session_ids = []
+    if pooja_booking_ids:
+        placeholders = ",".join("?" for _ in pooja_booking_ids)
+        cur.execute(f"SELECT id FROM pooja_sessions WHERE booking_id IN ({placeholders})", pooja_booking_ids)
+        pooja_session_ids = [row["id"] for row in cur.fetchall()]
+
+        context_ids = pooja_booking_ids + pooja_session_ids
+        context_placeholders = ",".join("?" for _ in context_ids)
+        cur.execute(
+            f"DELETE FROM contact_filter_logs WHERE sender_id=? OR context_id IN ({context_placeholders})",
+            [user_id, *context_ids],
+        )
+        deleted_counts["contact_filter_logs"] = cur.rowcount
+
+        cur.execute(f"DELETE FROM pooja_sessions WHERE booking_id IN ({placeholders})", pooja_booking_ids)
+        deleted_counts["pooja_sessions"] = cur.rowcount
+    else:
+        cur.execute("DELETE FROM contact_filter_logs WHERE sender_id=?", (user_id,))
+        deleted_counts["contact_filter_logs"] = cur.rowcount
+        deleted_counts["pooja_sessions"] = 0
+
+    # Delete from all remaining tables that reference user_id.
     tables_to_clean = [
+        ("report_purchase_entitlements", "user_id"),
+        ("user_temple_activity", "user_id"),
         ("pooja_bookings", "user_id"),  # Temple/Pooja bookings
         ("relationships", "user_id"),
         ("chat_messages", "user_id"),

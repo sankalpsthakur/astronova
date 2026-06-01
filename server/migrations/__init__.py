@@ -19,9 +19,10 @@ import logging
 import os
 import re
 import sqlite3
-from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
+
+from utils.time_utils import utc_now_iso
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ def _get_applied_versions(conn: sqlite3.Connection) -> set[int]:
 
 def _record_migration(conn: sqlite3.Connection, version: int, name: str) -> None:
     """Record a successfully applied migration."""
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn.execute(
         "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
         (version, name, now),

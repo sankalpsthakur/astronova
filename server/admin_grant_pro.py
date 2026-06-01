@@ -7,7 +7,8 @@ Example: python admin_grant_pro.py sankalphimself@gmail.com
 
 import sys
 import sqlite3
-from datetime import datetime
+
+from utils.time_utils import utc_now_iso
 
 ASTRONOVA_PRO_PRODUCT_ID = "astronova_pro_monthly"
 
@@ -32,7 +33,7 @@ def grant_pro_access(email: str, db_path: str = "astronova.db"):
     print(f"✅ Found user: {full_name} (ID: {user_id})")
 
     # Update or insert subscription status
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
 
     cur.execute("SELECT user_id FROM subscription_status WHERE user_id = ?", (user_id,))
     existing = cur.fetchone()

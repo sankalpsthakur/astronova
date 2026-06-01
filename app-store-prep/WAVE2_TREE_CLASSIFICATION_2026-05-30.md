@@ -165,3 +165,95 @@ files also carrying the big refactor:
    overclaim string hunks onto the committed tree, or (b) defer RootView
    overclaim edits until the refactor lands, to avoid a merge-hostile partial
    commit of a 1700-line-churn file.
+
+---
+
+## OUTCOME — A-W1-05 (Temple/Pooja gating) — DONE
+
+Committed: `fix: gate Temple/Pooja offerings (A-W1-05)`.
+
+Reachability evidence (committed baseline HEAD + working tree both scanned):
+
+- No Temple/Pooja/Shastriji/DIYPooja/Vedic/Muhurat **view is presented or
+  constructed** anywhere outside `Features/Temple/` — verified with
+  `rg` for `.sheet`/`NavigationLink`/`.fullScreenCover` and for direct struct
+  construction (`TempleView(`, `ShastrijiConsultView(`, `DIYPoojaListView(`,
+  `VedicLibraryView(`, `MuhuratCalculatorView(`, `TempleBellView(`). `TempleView`
+  itself is orphaned (only its own `struct` definition exists; never
+  instantiated).
+- The in-app Temple **tab was already sunset** (RootView comment "SUNSET
+  2026-05-18 … TempleView … replaced by Topo overlay tabs") and the legacy
+  `.temple` deep-link route is remapped to the Timeline tab
+  (`case .temple: targetTab = 2`).
+- The **only** remaining reviewer-reachable surface was the Siri/Shortcuts
+  `OpenTempleIntent` `AppShortcut` ("Open temple"/"Open pooja", shortTitle
+  "Temple", flame icon) in `AstronovaAppApp.swift`.
+
+Fix: `OpenTempleIntent` and its `AppShortcut` entry are wrapped in `#if DEBUG`,
+so they compile out of Release (kept for internal/dev builds). Two shortcuts
+(Today, Timeline) remain, so `AstronovaShortcutsProvider` still returns a
+non-empty builder in Release. Staged ONLY `AstronovaAppApp.swift`, and only the
+two `#if DEBUG` hunks — the pre-existing unrelated "Open Time Travel" →
+"Open Timeline" rename hunk was temporarily reverted during staging and then
+restored to the working tree, so it remains uncommitted with the refactor.
+
+Intentionally retained (NOT overclaims): the `astronova://temple` URL route and
+the `.temple` enum case resolve to the Timeline tab for deep-link back-compat;
+they do not open a Temple surface. The orphaned `Features/Temple/` source is
+left in the repo for an owner decision (delete vs. revive behind a real flag).
+
+## OUTCOME — A-W1-02 (review-facing overclaims) — NO SAFE SWIFT CHANGE; DOCUMENTED
+
+Investigated the task's keyword set in LIVE user-facing copy: `unlimited`,
+`ad-free`, `iCloud sync`, `lifetime`, `export your full`, `forever`.
+
+Findings:
+
+1. `ad-free`, `iCloud sync`/`iCloud`, `lifetime` (user-facing), `export your full`,
+   and `forever` (non-animation): **ZERO hits** anywhere in `client/AstronovaApp`
+   `*.swift`. (`forever` only appears as SwiftUI `.repeatForever(...)` animation
+   API; `lifetime` only appeared as "across your lifetime" descriptive prose in
+   the **untracked** `Features/Self/LoshuGridView.swift`, which is benign and
+   part of the feature WIP, not committed.)
+2. `unlimited` is the only keyword present in live copy — and it is **factually
+   accurate paid-tier copy, not an overclaim**:
+   - `OracleQuotaManager` (RootView.swift): free users get
+     `freeQuestionsPerDay = 3`; `canAskQuestion()` returns `isPro || remaining > 0`
+     and `recordQuestion()` early-returns for Pro (`guard !isPro else { return }`),
+     i.e. **Pro chat is genuinely uncapped**. So "Unlimited Ask (AI chat)" /
+     "Unlimited Messages … without daily limits" is true.
+   - JournalView.swift insight gate returns `isPro ? .max : maxFreeInsightsPerWeek`,
+     i.e. **Pro Journal Insights are uncapped** (`Int.max`). So "Unlimited Journal
+     Insights" is true. Free-tier copy already honestly says "Journal Insights are
+     a Pro feature. Free users get %d per week."
+   Deleting "unlimited" here would be a regression (removing accurate Pro
+   value-prop), not a rejection fix.
+3. The vaguer "unlimited" marketing flourishes ("Unlock unlimited cosmic wisdom",
+   "Unlock all journeys + unlimited features", "Enjoy unlimited access to all
+   features") are standard subscription marketing, not false-promise claims, and
+   every one of them lives inside a file that is **entangled or untracked**:
+   - `RootView.swift` (` M` — 1700-line refactor), lines ~4130/4137/6843/7150.
+   - `Features/Paywall/PaywallView.swift`, `PaywallVariant_TieredV1.swift`,
+     `PaywallVariant_TieredV2.swift` (all ` M`, entangled with paywall refactor).
+   - `Features/Topo/Views/SettingsSheet.swift`, `Features/Self/PremiumGateView.swift`
+     (both `??` untracked feature-WIP files — cannot be partially committed
+     without dragging in the whole new file).
+4. App Store metadata + legal surfaces named in the A-W1-02 ticket are **already
+   clean**: `app-store-assets/*` (.md/.txt) and the server `support_page()` /
+   terms / privacy content return **ZERO** hits for any overclaim keyword
+   (including `pooja`/`temple`/`verified astrologer`).
+
+Decision: **A-W1-02 requires no Swift copy edit.** The accurate "unlimited"
+claims must stay; the flourish strings are non-false and are not safely
+separable from the big refactor (entangled `M` files or whole untracked files).
+The metadata/legal surfaces are already clean. Forcing an edit would either be a
+regression (#2) or require committing entangled refactor hunks (#3), both
+disallowed by the task guardrails. This determination is the A-W1-02 deliverable;
+if the owner later wants the marketing flourishes softened, do it as part of the
+refactor PR that owns those files.
+
+## Build / Test status (final)
+
+See the commit `git log main..HEAD` and the worker's report for the monetization
+pytest result and the Release simulator build result captured after these
+commits.

@@ -50,7 +50,7 @@ struct PaywallView: View {
         if flag != AstronovaPaywallVariant.default.rawValue {
             return flag
         }
-        return RemoteConfigService.shared.string(forKey: "paywall_variant", default: "A")
+        return PaywallVariantAssignment.resolvedVariant()
     }
 
     private var heroIcon: String {
@@ -91,7 +91,7 @@ struct PaywallView: View {
             return "Start with Pro for unlimited chat, saved progress, and every journey path."
         case (.journalInsights, _):
             return "You used this month's free insight sessions. Start Pro to keep pattern, body, and mood trends available."
-        case (.home, "B"):
+        case (.home, "tiered_v1"):
             return "Turn today's insight into the next clear action with premium guidance and unlimited chat."
         default:
             return "Unlimited chat, complete journeys, and the next clear step when you need it."
@@ -100,7 +100,7 @@ struct PaywallView: View {
 
     private var featureRows: [(icon: String, text: String)] {
         switch (context, paywallVariant) {
-        case (.chatLimit, "C"):
+        case (.chatLimit, "tiered_v2"):
             return [
                 ("bubble.left.and.bubble.right.fill", "Unlimited Ask (AI chat)"),
                 ("sparkles", "Priority cosmic insights"),
@@ -157,7 +157,15 @@ struct PaywallView: View {
     }
     
     private var purchaseButtonTitle: String {
-        isPurchasing ? "Starting trial..." : "Start 14-day free trial"
+        if isPurchasing { return "Starting trial..." }
+        if selectedPlanUnavailable { return "Plan unavailable" }
+        return "Start 14-day free trial"
+    }
+
+    private var selectedPlanUnavailable: Bool {
+        if bypassesProductAvailability { return false }
+        return storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(selectedPlan.productId)
     }
 
     #if DEBUG
@@ -166,6 +174,33 @@ struct PaywallView: View {
         TestEnvironment.shared.hasArgument(.mockPurchases)
     }
     #endif
+
+    private var bypassesProductAvailability: Bool {
+        #if DEBUG
+        return mockPurchasesEnabled
+        #else
+        return false
+        #endif
+    }
+
+    private func isPlanUnavailable(_ plan: ShopCatalog.ProPlan) -> Bool {
+        if bypassesProductAvailability { return false }
+        return storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(plan.productId)
+    }
+
+    @MainActor
+    private func selectAvailablePlanIfNeeded() {
+        guard !bypassesProductAvailability else { return }
+        guard storeKitManager.productLoadCompleted else { return }
+        guard !storeKitManager.isProductAvailableForPurchase(selectedPlan.productId) else { return }
+        guard let availablePlan = ShopCatalog.proPlans.first(where: { plan in
+            storeKitManager.isProductAvailableForPurchase(plan.productId)
+        }) else {
+            return
+        }
+        selectedPlanProductId = availablePlan.productId
+    }
 
     // MARK: - App Store Compliance URLs
 
@@ -198,6 +233,9 @@ struct PaywallView: View {
                 .padding(.top, Cosmic.Spacing.xl)
 
                 proPlanPicker
+                if selectedPlanUnavailable {
+                    productUnavailableBanner
+                }
 
                 // Features list
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.md) {
@@ -329,6 +367,7 @@ struct PaywallView: View {
         }
         .task {
             await storeKitManager.loadProducts()
+            selectAvailablePlanIfNeeded()
         }
         .alert(item: $purchaseResult) { result in
             switch result {
@@ -382,8 +421,9 @@ struct PaywallView: View {
                 }
             }
             .buttonStyle(.cosmicPrimary)
+            .disabled(selectedPlanUnavailable || isPurchasing)
             .accessibilityIdentifier(AccessibilityID.startProButton)
-            .accessibilityHint("Starts your Pro free trial for the selected billing plan")
+            .accessibilityHint(selectedPlanUnavailable ? "This plan is unavailable right now. You will not be charged." : "Starts your Pro free trial for the selected billing plan")
 
             Button {
                 CosmicHaptics.light()
@@ -433,6 +473,7 @@ struct PaywallView: View {
 
             ForEach(ShopCatalog.proPlans) { plan in
                 let isSelected = selectedPlanProductId == plan.productId
+                let unavailable = isPlanUnavailable(plan)
                 Button {
                     CosmicHaptics.light()
                     selectedPlanProductId = plan.productId
@@ -461,7 +502,11 @@ struct PaywallView: View {
                                 .font(.cosmicCallout)
                                 .foregroundStyle(Color.cosmicTextPrimary)
 
-                            if plan.billingPlan == .monthlyCommitment, let commitmentPrice = commitmentDisplayPrice(for: plan) {
+                            if unavailable {
+                                Text("Unavailable right now")
+                                    .font(.cosmicCaption)
+                                    .foregroundStyle(Color.cosmicTextSecondary)
+                            } else if plan.billingPlan == .monthlyCommitment, let commitmentPrice = commitmentDisplayPrice(for: plan) {
                                 Text("\(commitmentPrice) first-year commitment")
                                     .font(.cosmicCaption)
                                     .foregroundStyle(Color.cosmicTextSecondary)
@@ -481,12 +526,38 @@ struct PaywallView: View {
                         RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
                             .stroke(isSelected ? Color.cosmicGold : Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.thin)
                     )
+                    .opacity(unavailable ? 0.5 : 1.0)
                 }
                 .buttonStyle(.plain)
+                .disabled(unavailable)
                 .accessibilityIdentifier("proPlanOption_\(plan.productId)")
                 .accessibilityLabel("\(plan.title), \(billingDisplayPrice(for: plan)) \(plan.billingCaption)")
+                .accessibilityHint(unavailable ? "Unavailable right now" : "")
             }
         }
+    }
+
+    private var productUnavailableBanner: some View {
+        HStack(spacing: Cosmic.Spacing.sm) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(Color.cosmicGold)
+                .accessibilityHidden(true)
+            Text("This plan is unavailable right now. Try again in a moment. You will not be charged.")
+                .font(.cosmicCallout)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+        }
+        .padding(Cosmic.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.cosmicGold.opacity(0.12), in: RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .stroke(Color.cosmicGold.opacity(0.35), lineWidth: Cosmic.Border.thin)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("paywallProductUnavailableBanner")
     }
     
     private func purchasePro() async {
@@ -523,6 +594,15 @@ struct PaywallView: View {
         #endif
 
         // Production: Use only StoreKit for purchases
+        guard await MainActor.run(body: {
+            storeKitManager.isProductAvailableForPurchase(plan.productId)
+        }) else {
+            await MainActor.run {
+                purchaseResult = .error("This plan is unavailable right now. You were not charged.")
+            }
+            return
+        }
+
         let success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
         if success {
             Analytics.shared.track(

@@ -45,7 +45,7 @@ struct SettingsSheet: View {
                         ) { showingOracle = true }
 
                         sectionHeader("ACCOUNT")
-                        if auth.isAuthenticated {
+                        if auth.isAuthenticated || auth.state == .signedIn {
                             actionRow(
                                 icon: "person.crop.circle.fill",
                                 title: "Signed in",
@@ -126,7 +126,7 @@ struct SettingsSheet: View {
         .sheet(isPresented: $showingPrivacy) {
             NavigationStack {
                 ScrollView {
-                    Text("Astronova does not sell your data. Birth details, journal entries, decisions, and navigation rules are stored locally on your device. See the in-app Privacy policy for details.")
+                    Text("Astronova does not sell your data. Birth details sync to Astronova's backend when you sign in so charts, reports, and Ask can work across sessions. Journal entries, decisions, and navigation rules stay on this device unless you choose to share them. See the in-app Privacy policy for details.")
                         .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .padding(20)

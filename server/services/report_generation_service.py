@@ -11,6 +11,7 @@ from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
 from services.vedic import VedicAnalysisService
 from utils.birth_data import parse_birth_data
+from utils.time_utils import utc_now_iso, utc_now_naive
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class ReportGenerationService:
             payload = {
                 "reportType": report_type,
                 "title": title,
-                "generatedAt": datetime.utcnow().isoformat() + "Z",
+                "generatedAt": utc_now_iso() + "Z",
                 "summary": summary,
                 "keyInsights": key_insights,
                 "zodiac": None,
@@ -123,7 +124,7 @@ class ReportGenerationService:
             dasha_info = self._dasha.calculate_complete_dasha(
                 birth_date=dt,
                 moon_longitude=moon_lon,
-                target_date=datetime.utcnow(),
+                target_date=utc_now_naive(),
                 include_future=True,
                 num_future_periods=3,
             )
@@ -199,7 +200,7 @@ class ReportGenerationService:
         payload = {
             "reportType": report_type,
             "title": title,
-            "generatedAt": datetime.utcnow().isoformat() + "Z",
+            "generatedAt": utc_now_iso() + "Z",
             "summary": summary,
             "keyInsights": key_insights,
             "birth": birth_info if birth_info else None,

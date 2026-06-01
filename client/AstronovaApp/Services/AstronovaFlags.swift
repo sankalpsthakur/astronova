@@ -108,8 +108,9 @@ public final class AstronovaFlags: ObservableObject {
     // MARK: - Internal
 
     private func apply(_ dict: [String: Any]) {
-        if let raw = dict["paywall_variant"] as? String,
-           let v = AstronovaPaywallVariant(rawValue: raw) {
+        if let raw = (dict["paywall_variant"] ?? dict["astronova_paywall_v1"]) as? String,
+           let normalized = Self.normalizedPaywallVariant(raw),
+           let v = AstronovaPaywallVariant(rawValue: normalized) {
             paywallVariant = v
         }
         if let raw = dict["oracle_model"] as? String,
@@ -131,5 +132,18 @@ public final class AstronovaFlags: ObservableObject {
     private func loadCachedFlags() {
         guard let dict = UserDefaults.standard.dictionary(forKey: cacheKey) else { return }
         apply(dict)
+    }
+
+    private static func normalizedPaywallVariant(_ rawValue: String) -> String? {
+        switch rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "default", "control", "a":
+            return AstronovaPaywallVariant.default.rawValue
+        case "tiered_v1", "b":
+            return AstronovaPaywallVariant.tieredV1.rawValue
+        case "tiered_v2", "c":
+            return AstronovaPaywallVariant.tieredV2.rawValue
+        default:
+            return nil
+        }
     }
 }

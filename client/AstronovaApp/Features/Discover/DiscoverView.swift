@@ -222,8 +222,8 @@ struct DiscoverView: View {
                             #endif
                         },
                         onTimeTravelTap: {
-                            // Navigate to Time Travel tab (index 1)
-                            NotificationCenter.default.post(name: .switchToTab, object: 1)
+                            // Navigate legacy timeline affordance to the current Timeline tab.
+                            NotificationCenter.default.post(name: .switchToTab, object: 2)
                         }
                     )
                     .padding(.horizontal, Cosmic.Spacing.m)

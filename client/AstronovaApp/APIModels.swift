@@ -592,6 +592,43 @@ struct SubscriptionStatusResponse: Codable {
     let updatedAt: String?
 }
 
+struct SubscriptionSyncRequest: Codable {
+    let productId: String
+    let transactionId: String
+    let originalTransactionId: String?
+    let environment: String?
+    let signedTransactionJWS: String
+}
+
+struct SubscriptionSyncResponse: Codable {
+    struct Entitlement: Codable {
+        let hasPremium: Bool
+        let source: String?
+    }
+
+    let isActive: Bool
+    let productId: String?
+    let updatedAt: String?
+    let entitlement: Entitlement?
+}
+
+struct ReportEntitlementSyncRequest: Codable {
+    let productId: String
+    let transactionId: String
+    let originalTransactionId: String?
+    let environment: String?
+    let signedTransactionJWS: String
+}
+
+struct ReportEntitlementSyncResponse: Codable {
+    let isAvailable: Bool
+    let productId: String?
+    let reportType: String?
+    let transactionId: String?
+    let consumedReportId: String?
+    let createdAt: String?
+}
+
 // MARK: - Discover Snapshot Models
 
 /// Unified Discover snapshot for daily check-in

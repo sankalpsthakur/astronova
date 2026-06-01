@@ -14,11 +14,10 @@ import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
-# Try to import Gemini first, then fall back to OpenAI
-try:
-    import google.generativeai as genai  # type: ignore
-except Exception:  # pragma: no cover
-    genai = None  # type: ignore
+# Gemini is imported lazily so app startup and tests without GEMINI_API_KEY do
+# not load optional provider code or provider-owned warnings.
+genai = None  # type: ignore
+genai_types = None  # type: ignore
 
 try:
     from openai import OpenAI  # type: ignore
@@ -26,8 +25,25 @@ except Exception:  # pragma: no cover
     OpenAI = None  # type: ignore
 
 from services.ephemeris_service import EphemerisService
+from utils.time_utils import utc_now_naive
 
 logger = logging.getLogger(__name__)
+
+
+def _load_gemini_provider():
+    global genai, genai_types
+    if genai is not None and genai_types is not None:
+        return genai, genai_types
+
+    try:
+        from google import genai as google_genai  # type: ignore
+        from google.genai import types as google_genai_types  # type: ignore
+    except Exception:  # pragma: no cover
+        return None, None
+
+    genai = google_genai  # type: ignore
+    genai_types = google_genai_types  # type: ignore
+    return genai, genai_types
 
 
 class ChatServiceError(RuntimeError):
@@ -41,19 +57,22 @@ class ChatResponseService:
         # Prefer Gemini, fall back to OpenAI
         gemini_key = os.getenv("GEMINI_API_KEY")
         openai_key = os.getenv("OPENAI_API_KEY")
+        gemini_module, gemini_config_types = _load_gemini_provider() if gemini_key else (None, None)
 
-        if gemini_key and genai:
-            genai.configure(api_key=gemini_key)
+        if gemini_key and gemini_module and gemini_config_types:
             self.client_type = "gemini"
-            self.client = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-1.5-flash"))
+            self.client = gemini_module.Client(api_key=gemini_key)
+            self._gemini_types = gemini_config_types
             self.model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
         elif openai_key and OpenAI:
             self.client_type = "openai"
             self.client = OpenAI(api_key=openai_key)
+            self._gemini_types = None
             self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         else:
             self.client_type = None
             self.client = None
+            self._gemini_types = None
             self.model = None
 
         if self.client_type:
@@ -65,7 +84,7 @@ class ChatResponseService:
 
     def _get_current_transits(self) -> Dict[str, Any]:
         """Get current planetary positions."""
-        now = datetime.utcnow()
+        now = utc_now_naive()
         if self._transit_cache and self._transit_cache[1] > now:
             logger.debug("Transit cache hit")
             return self._transit_cache[0]
@@ -276,9 +295,10 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
             if self.client_type == "gemini":
                 # Call Gemini API
                 full_prompt = f"{system_prompt}\n\nUser Question: {message}\n\nOracle Response:"
-                response = self.client.generate_content(
-                    full_prompt,
-                    generation_config=genai.GenerationConfig(
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=full_prompt,
+                    config=self._gemini_types.GenerateContentConfig(
                         max_output_tokens=300,
                         temperature=0.8,
                     )

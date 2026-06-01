@@ -6,6 +6,7 @@ Tests services independently of API layer.
 from __future__ import annotations
 
 from datetime import datetime
+from types import SimpleNamespace
 
 import pytest
 from unittest.mock import patch
@@ -327,6 +328,44 @@ class TestChatResponseService:
         with patch.object(service, "_get_current_transits", return_value={"sun": {"sign": "Aries", "longitude": 10.0}}):
             with pytest.raises(ChatServiceError, match="AI client not configured"):
                 service.generate_response(message="Will I find love?", user_id="u1", birth_data=None)
+
+    def test_gemini_provider_uses_supported_genai_client(self, monkeypatch):
+        """Gemini should use the supported google.genai client API."""
+        import services.chat_response_service as chat_module
+
+        calls = {}
+
+        class FakeConfig:
+            def __init__(self, **kwargs):
+                calls["config"] = kwargs
+
+        class FakeModels:
+            def generate_content(self, **kwargs):
+                calls["generate_content"] = kwargs
+                return SimpleNamespace(text="Cosmic weather is clear.")
+
+        class FakeClient:
+            def __init__(self, api_key):
+                calls["api_key"] = api_key
+                self.models = FakeModels()
+
+        monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setattr(chat_module, "genai", SimpleNamespace(Client=FakeClient))
+        monkeypatch.setattr(chat_module, "genai_types", SimpleNamespace(GenerateContentConfig=FakeConfig), raising=False)
+
+        service = chat_module.ChatResponseService()
+
+        with patch.object(service, "_get_current_transits", return_value={"sun": {"sign": "Aries", "longitude": 10.0}}):
+            reply, follow_ups = service.generate_response(message="What is the sky saying?", user_id="u1", birth_data=None)
+
+        assert service.client_type == "gemini"
+        assert calls["api_key"] == "test-gemini-key"
+        assert reply == "Cosmic weather is clear."
+        assert follow_ups
+        assert calls["generate_content"]["model"] == "gemini-1.5-flash"
+        assert "Oracle Response" in calls["generate_content"]["contents"]
+        assert calls["config"] == {"max_output_tokens": 300, "temperature": 0.8}
 
 
 class TestDashaInterpretationService:

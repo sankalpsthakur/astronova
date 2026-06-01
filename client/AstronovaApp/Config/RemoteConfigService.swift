@@ -35,6 +35,10 @@ final class RemoteConfigService: ObservableObject {
         return (values[key] as? String) ?? defaultValue
     }
 
+    func hasValue(forKey key: String) -> Bool {
+        UserDefaults.standard.object(forKey: "rc_\(key)") != nil || values[key] != nil
+    }
+
     func number(forKey key: String, default defaultValue: Double = 0) -> Double {
         if let override = UserDefaults.standard.object(forKey: "rc_\(key)") as? Double { return override }
         if let n = values[key] as? NSNumber { return n.doubleValue }

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
 
 from flask import Blueprint, g, jsonify, request
 
@@ -11,18 +10,13 @@ from middleware import require_auth
 from services.ephemeris_service import EphemerisService
 from services.transit_service import TransitService
 from utils.birth_data import parse_birth_data, BirthDataError
+from utils.time_utils import utc_now_naive
 
 compat_bp = Blueprint("compatibility", __name__)
 logger = logging.getLogger(__name__)
 
 _ephem = EphemerisService()
 _transit = TransitService(_ephem)
-
-
-def _get_user_id() -> Optional[str]:
-    """Get user_id from request headers or body."""
-    data = request.get_json(silent=True) or {}
-    return data.get("userId") or request.headers.get("X-User-Id")
 
 # Sign compatibility matrix (0-100)
 SIGN_COMPATIBILITY = {
@@ -684,7 +678,7 @@ def get_compatibility_snapshot(relationship_id: str):
 
     # Optional date parameter for journey
     date_str = request.args.get("date")
-    target_date = datetime.utcnow()
+    target_date = utc_now_naive()
     if date_str:
         try:
             target_date = datetime.fromisoformat(date_str.replace("Z", "+00:00"))

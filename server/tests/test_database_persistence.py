@@ -36,6 +36,7 @@ from db import (
     upsert_user,
     upsert_user_birth_data,
 )
+from utils.time_utils import utc_now_iso
 
 VALID_APPLE_ID_TOKEN = "valid-apple-id-token"
 
@@ -726,10 +727,11 @@ class TestDataIntegrity:
 
         # Try to insert with same ID using raw SQL (should fail)
         cur = test_db_connection.cursor()
+        now = utc_now_iso()
         with pytest.raises(sqlite3.IntegrityError):
             cur.execute(
                 "INSERT INTO users (id, email, full_name, created_at, updated_at) VALUES (?,?,?,?,?)",
-                (user_id, "test2@example.com", "Another User", datetime.utcnow().isoformat(), datetime.utcnow().isoformat()),
+                (user_id, "test2@example.com", "Another User", now, now),
             )
 
     def test_database_file_exists(self):

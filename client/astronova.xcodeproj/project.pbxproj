@@ -47,7 +47,6 @@
 		86A1C86F6338E74FB4860646 /* DecisionSimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D72AFCBB03BC651BADE3F6 /* DecisionSimulatorView.swift */; };
 		NAVRBF000000000000001 /* TimelineTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NAVRFR000000000000001 /* TimelineTabView.swift */; };
 		NAVRBF000000000000002 /* MatrixDeepDiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NAVRFR000000000000002 /* MatrixDeepDiveView.swift */; };
-		975D40439C2F2C5BDEA2AAC9 /* TempleModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1949EBB93135391AC11D9D /* TempleModels.swift */; };
 		97D16B326E0B4539C96E5E55 /* TopoContentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19DBD80877DFCC5B8A8AF43F /* TopoContentModels.swift */; };
 		A046B0B2D251008FB6DC3C02 /* protocols.json in Resources */ = {isa = PBXBuildFile; fileRef = 98EA35B69051AA4F0AF06544 /* protocols.json */; };
 		A6373EA93EE1DABD29D7DD31 /* PatternLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1672DC0F7BAF5FF4CB460B32 /* PatternLibraryView.swift */; };
@@ -72,6 +71,7 @@
 		AA0002000000000000000013 /* CosmicDesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000013 /* CosmicDesignTokens.swift */; };
 		AA0002000000000000000014 /* CosmicColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000014 /* CosmicColors.swift */; };
 		AA0002000000000000000015 /* SecureEnvelopeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0001000000000000000015 /* SecureEnvelopeService.swift */; };
+		PRIVACY00000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRIVACY00000000000000000 /* PrivacyInfo.xcprivacy */; };
 		AE2256B100C634141962C024 /* JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2515EC804CCF9BD790B0B15 /* JournalView.swift */; };
 		CMP001000000000000000001 /* CompatibilityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000001 /* CompatibilityModels.swift */; };
 		CMP001000000000000000002 /* SynastryCompassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000002 /* SynastryCompassView.swift */; };
@@ -83,7 +83,6 @@
 		CMP001000000000000000008 /* ContactsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000008 /* ContactsService.swift */; };
 		CMP001000000000000000009 /* ContactPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMP000000000000000000009 /* ContactPickerView.swift */; };
 		ASTRO001000000000000COPY1 /* AstronovaCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASTRO000000000000000COPY1 /* AstronovaCopy.swift */; };
-		D71E47F8936E2830D8E3DFB2 /* TempleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E3043F1B1EB12D1759F3C0C /* TempleView.swift */; };
 		DBC9488459AA8B0BCEDDC4CD /* terrain-templates.json in Resources */ = {isa = PBXBuildFile; fileRef = E841928B88D58E633DA2F145 /* terrain-templates.json */; };
 		DIS001000000000000000001 /* CosmicLensView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000001 /* CosmicLensView.swift */; };
 		DIS001000000000000000002 /* NowNextActBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIS000000000000000000002 /* NowNextActBar.swift */; };
@@ -125,23 +124,7 @@
 		SELFNEW01000000000009 /* ProfileCompleteness.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW02000000000009 /* ProfileCompleteness.swift */; };
 		SELFNEW0100000000000A /* QuickBirthEditSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW0200000000000A /* QuickBirthEditSheet.swift */; };
 		SELFNEW0100000000000B /* ReportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFNEW0200000000000B /* ReportDetailView.swift */; };
-		TMPLBF000000000000000001 /* TempleBellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000001 /* TempleBellView.swift */; };
-		TMPLBF000000000000000002 /* TempleBellAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000002 /* TempleBellAnimationView.swift */; };
-		TMPLBF000000000000000003 /* DIYPoojaListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000003 /* DIYPoojaListView.swift */; };
-		TMPLBF000000000000000004 /* DIYPoojaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000004 /* DIYPoojaDetailView.swift */; };
-		TMPLBF000000000000000005 /* DIYPoojaStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000005 /* DIYPoojaStepView.swift */; };
-		TMPLBF000000000000000006 /* DIYPoojaIngredientsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000006 /* DIYPoojaIngredientsView.swift */; };
-		TMPLBF000000000000000007 /* DIYPoojaCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000007 /* DIYPoojaCompletionView.swift */; };
-		TMPLBF000000000000000008 /* MuhuratCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000008 /* MuhuratCardView.swift */; };
-		TMPLBF000000000000000009 /* PanchangDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000009 /* PanchangDisplayView.swift */; };
-		TMPLBF00000000000000000A /* MuhuratCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR00000000000000000A /* MuhuratCalculatorView.swift */; };
-		TMPLBF00000000000000000B /* VedicLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR00000000000000000B /* VedicLibraryView.swift */; };
-		TMPLBF00000000000000000C /* VedicEntryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR00000000000000000C /* VedicEntryDetailView.swift */; };
-		TMPLBF00000000000000000D /* VedicSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR00000000000000000D /* VedicSearchView.swift */; };
-		TMPLBF00000000000000000E /* ShastrijiConsultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR00000000000000000E /* ShastrijiConsultView.swift */; };
-		TMPLBF00000000000000000F /* ShastrijiCallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR00000000000000000F /* ShastrijiCallView.swift */; };
 		TMPLBF000000000000000010 /* HouseInsightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLFR000000000000000010 /* HouseInsightCard.swift */; };
-		TMPLBF0000000000000000FF /* bell.wav in Resources */ = {isa = PBXBuildFile; fileRef = TMPLFR0000000000000000FF /* bell.wav */; };
 		TT001000000000000000001 /* TimeTravelSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000001 /* TimeTravelSnapshot.swift */; };
 		TT001000000000000000002 /* UnifiedTimeTravelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000002 /* UnifiedTimeTravelView.swift */; };
 		TT001000000000000000003 /* CosmicMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000003 /* CosmicMapView.swift */; };
@@ -217,6 +200,7 @@
 		3D01F8152C0A000000000009 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3D01F8162C0A00000000000A /* AstronovaApp.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaApp.entitlements; sourceTree = "<group>"; };
 		3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = AstronovaAppDebug.entitlements; sourceTree = "<group>"; };
+		PRIVACY00000000000000000 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4E3043F1B1EB12D1759F3C0C /* TempleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TempleView.swift; path = AstronovaApp/Features/Temple/TempleView.swift; sourceTree = SOURCE_ROOT; };
 		5874E5CCEF7D1D00B10D5D94 /* TopoContentLoader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TopoContentLoader.swift; sourceTree = "<group>"; };
 		5938AF4040E13465D8986D69 /* PauseLayerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PauseLayerView.swift; sourceTree = "<group>"; };
@@ -490,8 +474,9 @@
 				DA064C6DD11D46FF955A7FAA /* EnhancedTimeTravelView.swift */,
 				CDFF139DD6F247BDBF102B37 /* DashaModels.swift */,
 				PRDFR000000000000001 /* PredictionTimelineView.swift */,
-				3D01F8152C0A000000000009 /* Info.plist */,
-				LAUNCH000000000000001 /* LaunchScreen.storyboard */,
+					3D01F8152C0A000000000009 /* Info.plist */,
+					PRIVACY00000000000000000 /* PrivacyInfo.xcprivacy */,
+					LAUNCH000000000000001 /* LaunchScreen.storyboard */,
 				3D01F8162C0A00000000000A /* AstronovaApp.entitlements */,
 				3D01F8172C0A00000000000B /* AstronovaAppDebug.entitlements */,
 				3D01F7E32C0A000000000001 /* AstronovaAppApp.swift */,
@@ -951,9 +936,9 @@
 			files = (
 				3D01F7EB2C0A000000000001 /* Preview Assets.xcassets in Resources */,
 				3D01F7E82C0A000000000001 /* Assets.xcassets in Resources */,
-				AA0002000000000000000008 /* remote_config.json in Resources */,
-				LAUNCH100000000000001 /* LaunchScreen.storyboard in Resources */,
-				TMPLBF0000000000000000FF /* bell.wav in Resources */,
+					AA0002000000000000000008 /* remote_config.json in Resources */,
+					PRIVACY00000000000000001 /* PrivacyInfo.xcprivacy in Resources */,
+					LAUNCH100000000000001 /* LaunchScreen.storyboard in Resources */,
 				A046B0B2D251008FB6DC3C02 /* protocols.json in Resources */,
 				2CAA9E3AE918D3D88E0A1635 /* patterns.json in Resources */,
 				0C4B24E55110B18AF685645E /* consciousness-levels.json in Resources */,
@@ -1069,23 +1054,6 @@
 				DIS001000000000000000010 /* DomainCardView.swift in Sources */,
 				DIS001000000000000000011 /* DomainGridView.swift in Sources */,
 				DIS001000000000000000012 /* DomainDetailView.swift in Sources */,
-				975D40439C2F2C5BDEA2AAC9 /* TempleModels.swift in Sources */,
-				D71E47F8936E2830D8E3DFB2 /* TempleView.swift in Sources */,
-				TMPLBF000000000000000001 /* TempleBellView.swift in Sources */,
-				TMPLBF000000000000000002 /* TempleBellAnimationView.swift in Sources */,
-				TMPLBF000000000000000003 /* DIYPoojaListView.swift in Sources */,
-				TMPLBF000000000000000004 /* DIYPoojaDetailView.swift in Sources */,
-				TMPLBF000000000000000005 /* DIYPoojaStepView.swift in Sources */,
-				TMPLBF000000000000000006 /* DIYPoojaIngredientsView.swift in Sources */,
-				TMPLBF000000000000000007 /* DIYPoojaCompletionView.swift in Sources */,
-				TMPLBF000000000000000008 /* MuhuratCardView.swift in Sources */,
-				TMPLBF000000000000000009 /* PanchangDisplayView.swift in Sources */,
-				TMPLBF00000000000000000A /* MuhuratCalculatorView.swift in Sources */,
-				TMPLBF00000000000000000B /* VedicLibraryView.swift in Sources */,
-				TMPLBF00000000000000000C /* VedicEntryDetailView.swift in Sources */,
-				TMPLBF00000000000000000D /* VedicSearchView.swift in Sources */,
-				TMPLBF00000000000000000E /* ShastrijiConsultView.swift in Sources */,
-				TMPLBF00000000000000000F /* ShastrijiCallView.swift in Sources */,
 				WAVE13PA01000000000001 /* PortfolioAnalytics.swift in Sources */,
 				WAVE13FL01000000000001 /* AstronovaFlags.swift in Sources */,
 				WAVE13RV01000000000001 /* AstronovaReviewPrompts.swift in Sources */,
@@ -1332,7 +1300,7 @@
 				CODE_SIGN_ENTITLEMENTS = AstronovaApp/AstronovaAppDebug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026052301;
+				CURRENT_PROJECT_VERSION = 2026053101;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
 				ENABLE_PREVIEWS = YES;
@@ -1348,7 +1316,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1366,7 +1333,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = AstronovaApp/AstronovaApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026052301;
+				CURRENT_PROJECT_VERSION = 2026053101;
 				DEVELOPMENT_ASSET_PATHS = "\"AstronovaApp/Preview Content\"";
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
 				ENABLE_PREVIEWS = YES;
@@ -1382,7 +1349,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1398,11 +1364,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026052301;
+				CURRENT_PROJECT_VERSION = 2026053101;
 				DEVELOPMENT_TEAM = ZBSZPCY34Y;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1418,11 +1383,10 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026052301;
+				CURRENT_PROJECT_VERSION = 2026053101;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1437,10 +1401,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026052301;
+				CURRENT_PROJECT_VERSION = 2026053101;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1455,10 +1418,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2026052301;
+				CURRENT_PROJECT_VERSION = 2026053101;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				LIBRARY_SEARCH_PATHS = "$(SRCROOT)/AstronovaApp/Features/Temple";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.astronova.app.AstronovaAppUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

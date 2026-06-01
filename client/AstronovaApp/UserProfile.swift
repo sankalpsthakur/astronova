@@ -134,7 +134,7 @@ class UserProfileManager: ObservableObject {
         }
     }
 
-    /// Sync birth data to server for features that require server-side data (Time Travel, Oracle, etc.)
+    /// Sync birth data to server for features that require server-side data (Timeline, Oracle, etc.)
     func syncBirthDataToServer(userId: String? = nil) async {
         // Only sync if we have complete location data
         guard hasCompleteLocationData else {

@@ -52,8 +52,8 @@ final class AccessibilityTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["homeTab"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["timeTravelTab"].exists)
-        XCTAssertTrue(app.buttons["templeTab"].exists)
-        XCTAssertTrue(app.buttons["connectTab"].exists)
+        XCTAssertTrue(app.buttons["timelineTab"].exists)
+        XCTAssertTrue(app.buttons["matrixTab"].exists)
         XCTAssertTrue(app.buttons["selfTab"].exists)
     }
 
@@ -66,28 +66,15 @@ final class AccessibilityTests: XCTestCase {
     }
 
     @MainActor
-    func testOracleViewAccessibility() throws {
+    func testTimelineViewAccessibility() throws {
         launchSignedIn()
 
-        tapTab("templeTab")
+        tapTab("timelineTab")
 
-        let askOracle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Ask the Oracle'")).firstMatch
-        XCTAssertTrue(askOracle.waitForExistence(timeout: 10), "Ask the Oracle card should be visible")
-        askOracle.tap()
-
-        let scrollList = app.scrollViews["chatMessagesList"]
-        if scrollList.waitForExistence(timeout: 10) {
-            XCTAssertTrue(scrollList.exists)
-        } else {
-            let otherList = app.otherElements["chatMessagesList"]
-            XCTAssertTrue(otherList.waitForExistence(timeout: 10), "Chat messages list should be accessible")
-        }
-
-        let input = chatInputElement()
-        XCTAssertTrue(input.waitForExistence(timeout: 10), "Chat input field should be accessible")
-
-        let sendButton = app.buttons["sendMessageButton"]
-        XCTAssertTrue(sendButton.waitForExistence(timeout: 10), "Send button should be accessible")
+        XCTAssertTrue(app.otherElements["timelineTabView"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.otherElements["timeline.systemOverview"].exists)
+        XCTAssertTrue(app.otherElements["timeline.dashaPulse"].exists)
+        XCTAssertTrue(app.otherElements["predictionTimelineView"].exists)
     }
 
     @MainActor

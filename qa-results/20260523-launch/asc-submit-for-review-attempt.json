@@ -1,0 +1,207 @@
+{
+  "startedAt": "2026-05-23T15:41:38Z",
+  "attempts": [
+    {
+      "step": "create-review-submission-for-app",
+      "status": "error",
+      "payload": "{\n  \"method\": \"POST\",\n  \"path\": \"/reviewSubmissions\",\n  \"status\": 409,\n  \"payload\": {\n    \"errors\": [\n      {\n        \"id\": \"c9d4e861-f1f8-4d91-9dd0-64d9c4fc39d2\",\n        \"status\": \"409\",\n        \"code\": \"STATE_ERROR.ENTITY_STATE_INVALID\",\n        \"title\": \"apps with id '6746982743' is not in valid state.\",\n        \"detail\": \"This resource cannot be reviewed, please check associated errors to see why.\",\n        \"meta\": {\n          \"associatedErrors\": {\n            \"/apps/6746982743\": [\n              {\n                \"id\": \"31ebf0a5-a384-45ec-bdbd-276e5c42a0bd\",\n                \"status\": \"409\",\n                \"code\": \"STATE_ERROR.CONCURRENT_REVIEW_SUBMISSION_LIMIT_EXCEEDED\",\n                \"title\": \"ReviewSubmission creation concurrency limit is reached\",\n                \"detail\": \"Unable to create reviewSubmission for appId=6746982743 reviewSubmissionType=DEFAULT platform=ANY as maximum limit=5 of concurrency has reached\"\n              }\n            ]\n          }\n        }\n      }\n    ]\n  }\n}"
+    },
+    {
+      "step": "create-review-submission-item",
+      "status": "error",
+      "payload": "{\n  \"method\": \"POST\",\n  \"path\": \"/reviewSubmissionItems\",\n  \"status\": 409,\n  \"payload\": {\n    \"errors\": [\n      {\n        \"id\": \"cce53082-a652-499f-afba-5bd4281f85a8\",\n        \"status\": \"409\",\n        \"code\": \"STATE_ERROR.ENTITY_STATE_INVALID\",\n        \"title\": \"appStoreVersions with id '1577f289-33ba-4b51-9143-d488d8020ed9' is not in valid state.\",\n        \"detail\": \"This resource cannot be reviewed, please check associated errors to see why.\",\n        \"meta\": {\n          \"associatedErrors\": {\n            \"/v1/appDataUsages/\": [\n              {\n                \"id\": \"6508f330-43df-4333-b438-04c2752cca4c\",\n                \"status\": \"409\",\n                \"code\": \"STATE_ERROR.APP_DATA_USAGES_REQUIRED\",\n                \"title\": \"Answers to what data your app collects and how it's used are needed.\",\n                \"detail\": \"You must have published answers to your app's data usages.\"\n              }\n            ]\n          }\n        }\n      }\n    ]\n  }\n}"
+    },
+    {
+      "step": "patch-submitted-true",
+      "status": "error",
+      "payload": "{\n  \"method\": \"PATCH\",\n  \"path\": \"/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9\",\n  \"status\": 409,\n  \"payload\": {\n    \"errors\": [\n      {\n        \"id\": \"c2fe8f69-4aa9-4f77-b290-0b1b1077b837\",\n        \"status\": \"409\",\n        \"code\": \"ENTITY_ERROR.RELATIONSHIP.REQUIRED\",\n        \"title\": \"Relationship is required\",\n        \"detail\": \"App 6746982743 must have an approved appStoreVersions for platform IOS, or an appStoreVersions must be included in this review submission.\",\n        \"source\": {\n          \"pointer\": \"/data/relationships/appStoreVersionForReview\"\n        }\n      }\n    ]\n  }\n}"
+    }
+  ],
+  "reviewSubmissions": {
+    "data": [
+      {
+        "type": "reviewSubmissions",
+        "id": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+        "attributes": {
+          "platform": null,
+          "submittedDate": null,
+          "state": "READY_FOR_REVIEW"
+        },
+        "relationships": {
+          "items": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/relationships/items",
+              "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/items"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9"
+        }
+      },
+      {
+        "type": "reviewSubmissions",
+        "id": "baf472e0-1891-4014-960f-c8cf4cbeb62b",
+        "attributes": {
+          "platform": null,
+          "submittedDate": null,
+          "state": "READY_FOR_REVIEW"
+        },
+        "relationships": {
+          "items": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/baf472e0-1891-4014-960f-c8cf4cbeb62b/relationships/items",
+              "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/baf472e0-1891-4014-960f-c8cf4cbeb62b/items"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/baf472e0-1891-4014-960f-c8cf4cbeb62b"
+        }
+      },
+      {
+        "type": "reviewSubmissions",
+        "id": "4829f0a3-5492-436b-ac3c-b01147155e91",
+        "attributes": {
+          "platform": null,
+          "submittedDate": null,
+          "state": "READY_FOR_REVIEW"
+        },
+        "relationships": {
+          "items": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/4829f0a3-5492-436b-ac3c-b01147155e91/relationships/items",
+              "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/4829f0a3-5492-436b-ac3c-b01147155e91/items"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/4829f0a3-5492-436b-ac3c-b01147155e91"
+        }
+      },
+      {
+        "type": "reviewSubmissions",
+        "id": "b4a24de4-09ec-41d5-b977-b02b83f9f7d6",
+        "attributes": {
+          "platform": null,
+          "submittedDate": null,
+          "state": "READY_FOR_REVIEW"
+        },
+        "relationships": {
+          "items": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/b4a24de4-09ec-41d5-b977-b02b83f9f7d6/relationships/items",
+              "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/b4a24de4-09ec-41d5-b977-b02b83f9f7d6/items"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/b4a24de4-09ec-41d5-b977-b02b83f9f7d6"
+        }
+      },
+      {
+        "type": "reviewSubmissions",
+        "id": "cfdc0ae3-48fa-45ec-a8f5-c4f503144b50",
+        "attributes": {
+          "platform": "IOS",
+          "submittedDate": null,
+          "state": "READY_FOR_REVIEW"
+        },
+        "relationships": {
+          "items": {
+            "links": {
+              "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/cfdc0ae3-48fa-45ec-a8f5-c4f503144b50/relationships/items",
+              "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/cfdc0ae3-48fa-45ec-a8f5-c4f503144b50/items"
+            }
+          }
+        },
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/cfdc0ae3-48fa-45ec-a8f5-c4f503144b50"
+        }
+      }
+    ],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/apps/6746982743/reviewSubmissions?limit=200"
+    },
+    "meta": {
+      "paging": {
+        "total": 5,
+        "limit": 200
+      }
+    }
+  },
+  "submission_id_after_create": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+  "before": {
+    "data": {
+      "type": "reviewSubmissions",
+      "id": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+      "attributes": {
+        "submittedDate": null,
+        "platform": null,
+        "state": "READY_FOR_REVIEW"
+      },
+      "relationships": {
+        "appStoreVersionForReview": {
+          "data": null
+        },
+        "items": {
+          "meta": {
+            "paging": {
+              "total": 0,
+              "limit": 10
+            }
+          },
+          "data": [],
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/relationships/items",
+            "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/items"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9"
+      }
+    },
+    "included": [],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9?include=appStoreVersionForReview%2Citems"
+    }
+  },
+  "after": {
+    "data": {
+      "type": "reviewSubmissions",
+      "id": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+      "attributes": {
+        "submittedDate": null,
+        "platform": null,
+        "state": "READY_FOR_REVIEW"
+      },
+      "relationships": {
+        "appStoreVersionForReview": {
+          "data": null
+        },
+        "items": {
+          "meta": {
+            "paging": {
+              "total": 0,
+              "limit": 10
+            }
+          },
+          "data": [],
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/relationships/items",
+            "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/items"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9"
+      }
+    },
+    "included": [],
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9?include=appStoreVersionForReview%2Citems"
+    }
+  },
+  "finishedAt": "2026-05-23T15:41:45Z"
+}

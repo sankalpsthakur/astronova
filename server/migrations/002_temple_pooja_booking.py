@@ -199,13 +199,14 @@ def up(conn: sqlite3.Connection) -> None:
 def _seed_pooja_types(cur: sqlite3.Cursor) -> None:
     """Seed default pooja types if table is empty."""
     import json
-    from datetime import datetime
+
+    from utils.time_utils import utc_now_iso
 
     cur.execute("SELECT COUNT(*) FROM pooja_types")
     if cur.fetchone()[0] > 0:
         return
 
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
 
     poojas = [
         {

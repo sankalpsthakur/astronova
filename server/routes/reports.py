@@ -5,7 +5,6 @@ import hashlib
 import logging
 import threading
 import uuid
-from datetime import datetime
 
 from flask import Blueprint, Response, g, jsonify, request
 from werkzeug.exceptions import BadRequest
@@ -14,6 +13,7 @@ import db
 from middleware import get_authenticated_user_id, require_auth
 from services.pdf import render_report_pdf
 from services.report_generation_service import ReportGenerationService
+from utils.time_utils import utc_now_iso
 
 reports_bp = Blueprint("reports", __name__)
 
@@ -184,8 +184,11 @@ def generate_report():
         domain = None
 
     entitlement = db.get_premium_entitlement(user_id)
+    report_purchase = None
     if not entitlement["hasPremium"]:
-        return _payment_required_response("report_generation", entitlement)
+        report_purchase = db.get_available_report_purchase(user_id, report_type)
+        if not report_purchase:
+            return _payment_required_response("report_generation", entitlement)
 
     report_id = str(uuid.uuid4())
     report_title = _get_report_title(report_type)
@@ -213,6 +216,8 @@ def generate_report():
         except Exception as exc:
             logger.error("Report placeholder creation failed: %s", exc)
             return jsonify({"error": "Unable to start report generation", "code": "REPORT_CREATION_FAILED"}), 500
+        if report_purchase:
+            db.consume_report_purchase(report_purchase["id"], report_id)
 
         # Start background generation
         thread = threading.Thread(
@@ -229,7 +234,7 @@ def generate_report():
             "summary": "Your report is being generated. This may take a few minutes.",
             "keyInsights": ["Generation in progress..."],
             "downloadUrl": f"/api/v1/reports/{report_id}/pdf",
-            "generatedAt": datetime.utcnow().isoformat() + "Z",
+            "generatedAt": utc_now_iso() + "Z",
             "status": "processing",
             "disclaimer": "For entertainment purposes only. Not professional advice.",
         }
@@ -250,6 +255,8 @@ def generate_report():
         except Exception as exc:
             logger.error("Report persistence failed: %s", exc)
             return jsonify({"error": "Unable to save report at this time", "code": "REPORT_PERSISTENCE_FAILED"}), 500
+        if report_purchase:
+            db.consume_report_purchase(report_purchase["id"], report_id)
 
         response = {
             "reportId": report_id,
@@ -258,7 +265,7 @@ def generate_report():
             "summary": generated.summary,
             "keyInsights": generated.key_insights,
             "downloadUrl": f"/api/v1/reports/{report_id}/pdf",
-            "generatedAt": datetime.utcnow().isoformat() + "Z",
+            "generatedAt": utc_now_iso() + "Z",
             "status": "completed",
             "disclaimer": "For entertainment purposes only. Not professional advice.",
         }

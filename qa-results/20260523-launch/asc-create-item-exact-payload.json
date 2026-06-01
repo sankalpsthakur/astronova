@@ -1,0 +1,24 @@
+{
+  "errors": [
+    {
+      "id": "c56fc0bb-2559-44f7-aabc-397bfb2469ee",
+      "status": "409",
+      "code": "STATE_ERROR.ENTITY_STATE_INVALID",
+      "title": "appStoreVersions with id '1577f289-33ba-4b51-9143-d488d8020ed9' is not in valid state.",
+      "detail": "This resource cannot be reviewed, please check associated errors to see why.",
+      "meta": {
+        "associatedErrors": {
+          "/v1/appDataUsages/": [
+            {
+              "id": "88a28640-cf79-4f46-b0f2-e376b64b8ae3",
+              "status": "409",
+              "code": "STATE_ERROR.APP_DATA_USAGES_REQUIRED",
+              "title": "Answers to what data your app collects and how it's used are needed.",
+              "detail": "You must have published answers to your app's data usages."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

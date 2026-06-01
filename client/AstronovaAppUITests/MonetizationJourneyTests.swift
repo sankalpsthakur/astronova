@@ -101,37 +101,44 @@ final class MonetizationJourneyTests: XCTestCase {
         XCTFail("Tab '\(identifier)' should exist (tried: \(candidates.joined(separator: ", ")))", file: file, line: line)
     }
 
-    private func tabCandidates(for identifier: String) -> [String] {
-        switch identifier {
-        case "askTab":
-            return ["askTab", "timelineTab"]
-        case "manageTab":
-            return ["manageTab", "selfTab"]
-        default:
-            return [identifier]
+    private func openSettingsFromToday(file: StaticString = #filePath, line: UInt = #line) {
+        tapTab("homeTab", file: file, line: line)
+
+        let byImage = app.buttons["gearshape"]
+        if byImage.waitForExistence(timeout: 4), byImage.isHittable {
+            byImage.tap()
+        } else {
+            let candidates = app.buttons.allElementsBoundByIndex
+            if let topTrailing = candidates.reversed().first(where: { button in
+                let frame = button.frame
+                return button.isHittable && frame.minY < 200 && frame.minX > 250
+            }) {
+                topTrailing.tap()
+            } else {
+                XCTFail("Could not find the Today settings button", file: file, line: line)
+                return
+            }
         }
+
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8), "Settings should open from Today", file: file, line: line)
     }
 
-    private func openOracleFromTemple(file: StaticString = #filePath, line: UInt = #line) {
-        let quickAccess = anyElement("oracleQuickAccessButton")
-        if quickAccess.waitForExistence(timeout: 8) {
-            quickAccess.tap()
-            return
-        }
+    private func openOracleFromSettings(file: StaticString = #filePath, line: UInt = #line) {
+        openSettingsFromToday(file: file, line: line)
+        let askOracle = app.buttons["Ask the Oracle"]
+        XCTAssertTrue(askOracle.waitForExistence(timeout: 8), "Settings should expose Ask the Oracle", file: file, line: line)
+        tapVisibleElement(askOracle, file: file, line: line)
+    }
 
-        let askOracle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ask the Oracle")).firstMatch
-        if askOracle.waitForExistence(timeout: 8) {
-            askOracle.tap()
-            return
-        }
+    private func openReportsShopFromSettings(file: StaticString = #filePath, line: UInt = #line) {
+        openSettingsFromToday(file: file, line: line)
+        let buyReports = app.buttons["Buy Reports"]
+        XCTAssertTrue(buyReports.waitForExistence(timeout: 8), "Settings should expose Buy Reports", file: file, line: line)
+        tapVisibleElement(buyReports, file: file, line: line)
+    }
 
-        let askOracleRow = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ask the Oracle")).firstMatch
-        if askOracleRow.waitForExistence(timeout: 4) {
-            askOracleRow.tap()
-            return
-        }
-
-        XCTFail("Oracle quick access card should be visible in Temple tab.", file: file, line: line)
+    private func tabCandidates(for identifier: String) -> [String] {
+        [identifier]
     }
 
     private func waitForNotExists(_ element: XCUIElement, timeout: TimeInterval = 8) -> Bool {
@@ -233,8 +240,8 @@ final class MonetizationJourneyTests: XCTestCase {
             "UITEST_START_TAB_INDEX=4"
         ])
 
-        XCTAssertTrue(anyElement("selfTabView").waitForExistence(timeout: 12), "UITEST_START_TAB_INDEX=4 should route directly to Self")
-        XCTAssertTrue(app.buttons["selfTab"].exists || app.otherElements["selfTab"].exists, "Self tab hook should remain exposed")
+        XCTAssertTrue(anyElement("journalView").waitForExistence(timeout: 12), "UITEST_START_TAB_INDEX=4 should route directly to Journal")
+        XCTAssertTrue(app.buttons["selfTab"].exists || app.otherElements["selfTab"].exists, "Journal tab hook should remain exposed")
     }
 
     @MainActor
@@ -261,7 +268,12 @@ final class MonetizationJourneyTests: XCTestCase {
             anyElement("reportsStoreView").waitForExistence(timeout: 8) || app.navigationBars["Reports Shop"].waitForExistence(timeout: 8),
             "Reports Shop should open from the paywall"
         )
-        XCTAssertTrue(visibleText(containing: "Reports available immediately").waitForExistence(timeout: 8), "Reports Shop safe-area footer should be visible")
+        let reportsFooter = anyElement("reportsShopFooter")
+        let reportsFooterCopy = visibleText(containing: "One-time purchase")
+        XCTAssertTrue(
+            reportsFooter.waitForExistence(timeout: 8) || reportsFooterCopy.waitForExistence(timeout: 8),
+            "Reports Shop safe-area footer should be visible"
+        )
         try screenshotProof("monetization-proof-paywall-to-reports-shop")
     }
 
@@ -309,8 +321,7 @@ final class MonetizationJourneyTests: XCTestCase {
             "UITEST_CHAT_CREDITS_VALUE": "0"
         ])
 
-        tapTab("askTab")
-        openOracleFromTemple()
+        openOracleFromSettings()
 
         let getPackages = anyElement("getChatPackagesButton")
         XCTAssertTrue(getPackages.waitForExistence(timeout: 8), "Get Chat Packages CTA should be visible")
@@ -359,8 +370,7 @@ final class MonetizationJourneyTests: XCTestCase {
             "UITEST_CHAT_CREDITS_VALUE": "0"
         ])
 
-        tapTab("askTab")
-        openOracleFromTemple()
+        openOracleFromSettings()
 
         let goUnlimited = anyElement("goUnlimitedButton")
         if !goUnlimited.waitForExistence(timeout: 8) {
@@ -381,7 +391,7 @@ final class MonetizationJourneyTests: XCTestCase {
         XCTAssertTrue(waitForNotExists(anyElement("goUnlimitedButton"), timeout: 12), "Free limit banner should not show for Pro users")
     }
 
-    // MARK: - Journey C: Report Purchase -> Generation -> Library
+    // MARK: - Journey C: Report Purchase -> Generation -> Purchased State
 
     @MainActor
     func testJourneyC_ReportPurchaseAndLibrary() throws {
@@ -393,16 +403,7 @@ final class MonetizationJourneyTests: XCTestCase {
             "UITEST_ENABLE_LOGGING"
         ])
 
-        tapTab("manageTab")
-
-        let reportsShopButton = anyElement("reportsShopButton")
-        if reportsShopButton.waitForExistence(timeout: 10) {
-            tapVisibleElement(reportsShopButton)
-        } else {
-            let reportsShopLink = app.staticTexts["Reports Shop"]
-            XCTAssertTrue(reportsShopLink.waitForExistence(timeout: 5), "Reports Shop entry should exist in Manage")
-            reportsShopLink.tap()
-        }
+        openReportsShopFromSettings()
 
         XCTAssertTrue(
             anyElement("reportsStoreView").waitForExistence(timeout: 8) || app.navigationBars["Reports Shop"].waitForExistence(timeout: 8),
@@ -419,20 +420,9 @@ final class MonetizationJourneyTests: XCTestCase {
 
         let done = anyElement("doneButton")
         XCTAssertTrue(done.waitForExistence(timeout: 8), "Done button should exist to exit the shop")
+        let purchasedBadge = firstElement(withIdentifierPrefix: "reportIncludedBadge_")
+        XCTAssertTrue(purchasedBadge.waitForExistence(timeout: 8), "Purchased report should show an included/purchased state before leaving the shop")
         done.tap()
-
-        // Back to Discover and open the library.
-        tapTab("homeTab")
-
-        let viewAll = anyElement("viewAllReportsButton")
-        XCTAssertTrue(viewAll.waitForExistence(timeout: 12), "View All should appear once at least one report exists")
-        scrollToElement(viewAll)
-        viewAll.tap()
-
-        XCTAssertTrue(anyElement("myReportsView").waitForExistence(timeout: 10), "My Reports library should open")
-
-        let anyReport = firstElement(withIdentifierPrefix: "reportRow_")
-        XCTAssertTrue(anyReport.waitForExistence(timeout: 10), "At least one report should appear in the library")
     }
 
     // MARK: - Journey D: Minimal profile → Map value → Accuracy recovery
@@ -487,16 +477,7 @@ final class MonetizationJourneyTests: XCTestCase {
             "UITEST_ENABLE_LOGGING"
         ])
 
-        tapTab("manageTab")
-
-        let reportsShopButton = anyElement("reportsShopButton")
-        if reportsShopButton.waitForExistence(timeout: 10) {
-            tapVisibleElement(reportsShopButton)
-        } else {
-            let reportsShopLink = app.staticTexts["Reports Shop"]
-            XCTAssertTrue(reportsShopLink.waitForExistence(timeout: 5), "Reports Shop entry should exist in Manage")
-            reportsShopLink.tap()
-        }
+        openReportsShopFromSettings()
 
         XCTAssertTrue(
             anyElement("reportsStoreView").waitForExistence(timeout: 8) || app.navigationBars["Reports Shop"].waitForExistence(timeout: 8),
@@ -522,6 +503,6 @@ final class MonetizationJourneyTests: XCTestCase {
         tapTab("matrixTab")
         tapTab("timeTravelTab")
         tapTab("timelineTab")
-        tapTab("manageTab")
+        tapTab("selfTab")
     }
 }

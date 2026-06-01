@@ -51,6 +51,11 @@ struct PaywallVariant_TieredV2: View {
         ShopCatalog.proPlan(for: selectedPlanProductId)
     }
 
+    private var mockPurchasesEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+        TestEnvironment.shared.hasArgument(.mockPurchases)
+    }
+
     private var ctaTitle: String {
         if isPurchasing { return "Starting trial..." }
         if allProductsUnavailable { return "Plans loading..." }
@@ -101,8 +106,8 @@ struct PaywallVariant_TieredV2: View {
         plan.fallbackCommitmentDisplayPrice
     }
 
-    /// Wave-0 guard: if the 12-month commitment SKU failed to load (e.g.
-    /// `MISSING_METADATA` in App Store Connect) the trial/Subscribe tap
+    /// Wave-0 guard: if the 12-month commitment SKU failed to load (for
+    /// example because product metadata is unavailable) the trial/Subscribe tap
     /// would route through a SKU StoreKit never returned and silently
     /// fail. When the loaded catalog is missing it, fall back to monthly
     /// so the default action is purchasable. Only adjusts the *default*
@@ -112,10 +117,13 @@ struct PaywallVariant_TieredV2: View {
     /// back to anything purchasable, so we raise `allProductsUnavailable`
     /// and let the view disable the CTA + surface a banner.
     private func adjustDefaultPlanIfAnnualUnavailable() {
-        let loaded = storeKitManager.products
-        guard !loaded.isEmpty else { return }
-        let annualMissing = loaded[ShopCatalog.pro12MonthCommitmentProductID] == nil
-        let monthlyMissing = loaded[ShopCatalog.proMonthlyProductID] == nil
+        if mockPurchasesEnabled {
+            allProductsUnavailable = false
+            return
+        }
+        guard storeKitManager.productLoadCompleted else { return }
+        let annualMissing = !storeKitManager.isProductAvailableForPurchase(ShopCatalog.pro12MonthCommitmentProductID)
+        let monthlyMissing = !storeKitManager.isProductAvailableForPurchase(ShopCatalog.proMonthlyProductID)
         if annualMissing && monthlyMissing {
             allProductsUnavailable = true
             return
@@ -132,9 +140,8 @@ struct PaywallVariant_TieredV2: View {
     /// can't pick a SKU that will silently fail to purchase. Returns `false`
     /// while products are still loading (empty catalog).
     private func isPlanUnavailable(_ plan: ShopCatalog.ProPlan) -> Bool {
-        let loaded = storeKitManager.products
-        guard !loaded.isEmpty else { return false }
-        return loaded[plan.productId] == nil
+        storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(plan.productId)
     }
 
     private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
@@ -229,7 +236,7 @@ struct PaywallVariant_TieredV2: View {
     private var cosmicTrialCard: some View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             HStack {
-                Text("7-DAY COSMIC TRIAL")
+                Text("14-DAY COSMIC TRIAL")
                     .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicVoid)
                     .padding(.horizontal, Cosmic.Spacing.xs)
@@ -455,9 +462,9 @@ struct PaywallVariant_TieredV2: View {
                 }
             }
             .buttonStyle(.cosmicPrimary)
-            .disabled(allProductsUnavailable)
+            .disabled(allProductsUnavailable && !mockPurchasesEnabled)
             .accessibilityIdentifier(AccessibilityID.startProButton)
-            .accessibilityHint(allProductsUnavailable ? "Plans loading. Try again in a moment." : "")
+            .accessibilityHint(allProductsUnavailable && !mockPurchasesEnabled ? "Plans loading. Try again in a moment." : "")
 
             Button {
                 CosmicHaptics.light()
@@ -483,6 +490,7 @@ struct PaywallVariant_TieredV2: View {
         .padding(.top, Cosmic.Spacing.sm)
         .padding(.bottom, Cosmic.Spacing.xs)
         .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.paywallFooter)
     }
 
@@ -495,7 +503,21 @@ struct PaywallVariant_TieredV2: View {
         // Routes through the selected Pro subscription product, which carries
         // the 14-day free introductory offer. Tags the event with
         // `cosmic_trial_requested` so trial-led conversions are measurable.
-        let success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
+        let success: Bool
+        if mockPurchasesEnabled {
+            success = await BasicStoreManager.shared.purchaseProduct(productId: plan.productId)
+        } else {
+            guard await MainActor.run(body: {
+                storeKitManager.isProductAvailableForPurchase(plan.productId)
+            }) else {
+                await MainActor.run {
+                    purchaseResult = .error("This plan is unavailable right now. You were not charged.")
+                }
+                return
+            }
+            success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
+        }
+
         if success {
             Analytics.shared.track(
                 .paywallConversion,
@@ -526,7 +548,9 @@ struct PaywallVariant_TieredV2: View {
         await MainActor.run { isRestoring = true }
         defer { Task { @MainActor in isRestoring = false } }
 
-        let restored = await storeKitManager.restorePurchases()
+        let restored = mockPurchasesEnabled
+            ? await BasicStoreManager.shared.restorePurchases()
+            : await storeKitManager.restorePurchases()
         await MainActor.run {
             OracleQuotaManager.shared.checkSubscription()
             purchaseResult = restored ? .restored : .restoredNone

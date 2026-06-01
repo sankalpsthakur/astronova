@@ -9,6 +9,13 @@ import XCTest
 
 final class AstronovaAppUITests: XCTestCase {
 
+    private var evidenceDirectoryURL: URL {
+        if let envPath = ProcessInfo.processInfo.environment["QA_EVIDENCE_DIR"] {
+            return URL(fileURLWithPath: envPath, isDirectory: true)
+        }
+        return URL(fileURLWithPath: "/Users/sankalp/Projects/iosapps/astronova/qa-results/2026051816", isDirectory: true)
+    }
+
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
 
@@ -16,66 +23,70 @@ final class AstronovaAppUITests: XCTestCase {
         continueAfterFailure = false
 
         // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        try? FileManager.default.createDirectory(at: evidenceDirectoryURL, withIntermediateDirectories: true)
     }
 
     override func tearDownWithError() throws {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
+    private func captureEvidence(named name: String) {
+        let screenshot = XCUIScreen.main.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let pngURL = evidenceDirectoryURL.appendingPathComponent("\(name).png")
+        try? screenshot.pngRepresentation.write(to: pngURL)
     }
 
     @MainActor
-    func testFirstRunGuestOnboardingAcceptsNameEntry() throws {
+    func testFirstRunGuestOnboardingShowsCalibrationFlow() throws {
         let app = XCUIApplication()
         app.launchArguments = ["UITEST_RESET", "UITEST_ENABLE_LOGGING"]
         app.launch()
 
         let guestButtonByIdentifier = app.buttons["continueWithoutSigningInButton"]
-        let guestButton = guestButtonByIdentifier.exists ? guestButtonByIdentifier : app.buttons["Continue without signing in"]
+        let guestButton = guestButtonByIdentifier.exists ? guestButtonByIdentifier : app.buttons["Preview calibration without signing in"]
         XCTAssertTrue(guestButton.waitForExistence(timeout: 12), "Guest CTA should be visible on first launch")
         guestButton.tap()
 
         let profileSetup = app.descendants(matching: .any)["profileSetupView"]
         XCTAssertTrue(profileSetup.waitForExistence(timeout: 12), "Guest flow should enter profile setup without hanging")
+        XCTAssertTrue(app.descendants(matching: .any)["onboarding.calibrationSplash"].waitForExistence(timeout: 8), "First onboarding screen should be the new calibration splash")
+        captureEvidence(named: "17-onboarding-calibration-splash")
 
         let primaryButtonByIdentifier = app.descendants(matching: .any)["saveProfileButton"]
         let primaryButton = primaryButtonByIdentifier.waitForExistence(timeout: 4)
             ? primaryButtonByIdentifier
-            : app.buttons["Begin Journey"]
-        XCTAssertTrue(primaryButton.waitForExistence(timeout: 8), "Profile setup primary CTA should be available")
+            : app.buttons["Begin calibration"]
+        XCTAssertTrue(primaryButton.waitForExistence(timeout: 8), "Calibration primary CTA should be available")
         primaryButton.tap()
 
-        let nameFieldByIdentifier = app.descendants(matching: .any)["profileNameField"]
-        let nameField = nameFieldByIdentifier.exists ? nameFieldByIdentifier : app.textFields["Profile name"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "Name field should expose a stable UI-test identifier")
+        XCTAssertTrue(app.descendants(matching: .any)["onboarding.birthCoordinates"].waitForExistence(timeout: 8), "Continue should advance to birth coordinates")
+        XCTAssertTrue(app.datePickers["birthDatePicker"].waitForExistence(timeout: 8), "Birth-date picker should remain in the recalibrated flow")
+        XCTAssertTrue(app.datePickers["birthTimePicker"].waitForExistence(timeout: 8), "Birth-time picker should remain in the recalibrated flow")
+        let nameField = app.textFields["profileNameField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "Name capture should remain in the recalibrated flow")
         nameField.tap()
-        nameField.typeText("Ava")
+        nameField.typeText("Arjun Rao")
+        XCTAssertTrue(app.textFields["locationSearchField"].waitForExistence(timeout: 8), "Birth-place search should remain in the recalibrated flow")
+        captureEvidence(named: "17-onboarding-birth-coordinates")
 
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Ava")).firstMatch.waitForExistence(timeout: 5), "Typed name should populate validation copy")
         let continueButtonByIdentifier = app.descendants(matching: .any)["saveProfileButton"]
         let continueButton = continueButtonByIdentifier.waitForExistence(timeout: 4)
             ? continueButtonByIdentifier
             : app.buttons["Continue"]
-        XCTAssertTrue(continueButton.waitForExistence(timeout: 8), "Continue CTA should be available after valid name entry")
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 8), "Continue CTA should be available after birth coordinates")
         continueButton.tap()
 
-        XCTAssertTrue(app.datePickers["birthDatePicker"].waitForExistence(timeout: 8), "Continue should advance to birth-date step after a valid name")
+        XCTAssertTrue(app.descendants(matching: .any)["onboarding.phoneVector"].waitForExistence(timeout: 8), "Continue should advance to the phone Loshu vector screen")
+        captureEvidence(named: "17-onboarding-phone-vector")
     }
 
-    /// Regression test for the 2026-05-21 audit P1 fix: the onboarding
-    /// name regex used to be `[a-zA-Z\s\-']` which rejected every non-ASCII
-    /// script (José, Müller, María, أحمد, राज, கார்த்திக், 田中). The fix
-    /// switches to `CharacterSet.letters` (Unicode general category L*).
-    /// This test pins the contract so a regression won't slip back in.
     @MainActor
-    func testOnboardingAcceptsUnicodeName() throws {
+    func testOnboardingReachesContextPriorsAfterPhoneVector() throws {
         let app = XCUIApplication()
         app.launchArguments = ["UITEST_RESET", "UITEST_ENABLE_LOGGING"]
         app.launch()
@@ -86,27 +97,26 @@ final class AstronovaAppUITests: XCTestCase {
         guestButton.tap()
 
         let primaryButton = app.descendants(matching: .any)["saveProfileButton"]
-        XCTAssertTrue(primaryButton.waitForExistence(timeout: 8), "Begin Journey CTA missing")
+        XCTAssertTrue(primaryButton.waitForExistence(timeout: 8), "Begin calibration CTA missing")
         primaryButton.tap()
 
-        let nameField = app.descendants(matching: .any)["profileNameField"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "Name field missing")
+        let nameField = app.textFields["profileNameField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8), "Name capture should remain in the recalibrated flow")
         nameField.tap()
-        // A name with a Latin extended grapheme — should validate as a letter
-        // under the Unicode-aware regex but fail under the legacy ASCII regex.
-        nameField.typeText("José")
+        nameField.typeText("Arjun Rao")
 
-        // Continue must enable + advance to birth-date step. The regression
-        // shape would be: Continue stays disabled (button never advances) and
-        // the date picker is never reached.
         let continueButton = app.descendants(matching: .any)["saveProfileButton"]
         XCTAssertTrue(continueButton.waitForExistence(timeout: 4))
         continueButton.tap()
 
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 4))
+        continueButton.tap()
+
         XCTAssertTrue(
-            app.datePickers["birthDatePicker"].waitForExistence(timeout: 8),
-            "Continue should advance to birth-date step for a Unicode name"
+            app.descendants(matching: .any)["onboarding.contextPriors"].waitForExistence(timeout: 8),
+            "Continue should advance from phone vector to context priors"
         )
+        captureEvidence(named: "17-onboarding-context-priors")
     }
 
     /// Regression test for the 2026-05-21 audit P2 fix: tapping

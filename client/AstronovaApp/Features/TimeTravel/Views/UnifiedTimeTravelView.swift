@@ -3,7 +3,7 @@ import Combine
 import AudioToolbox
 import UIKit
 
-// MARK: - Unified Time Travel View
+// MARK: - Unified Timeline View
 // North Star: "Pick any month/year → instantly see what changes, why it matters, what to do next."
 
 struct UnifiedTimeTravelView: View {
@@ -28,7 +28,7 @@ struct UnifiedTimeTravelView: View {
         let profile = auth.profileManager.profile
 
         if profile.timezone == nil || profile.birthLatitude == nil || profile.birthLongitude == nil {
-            return "Add your birth location and timezone to unlock Time Travel insights."
+            return "Add your birth location and timezone to unlock Timeline insights."
         }
         return nil
     }
@@ -197,15 +197,15 @@ struct UnifiedTimeTravelView: View {
                     }
                 }
             }
-            .navigationTitle("Time Travel")
+            .navigationTitle("Timeline")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showGuideSheet = true } label: {
                         Image(systemName: "book.fill")
                     }
-                    .accessibilityLabel("Time travel guide")
-                    .accessibilityHint("Opens an explainer for how time travel works")
+                    .accessibilityLabel("Timeline guide")
+                    .accessibilityHint("Opens an explainer for how timeline insights work")
                 }
             }
             .sheet(isPresented: $showGuideSheet) {
@@ -482,7 +482,7 @@ private struct TimeTravelGuideSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Cosmic.Spacing.lg) {
                 VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
-                    Text("How to use Time Travel")
+                    Text("How to use Timeline")
                         .font(.cosmicTitle2)
                     Text("Scrub to any month or year. Tap a planet or dasha for details.")
                         .font(.cosmicBody)

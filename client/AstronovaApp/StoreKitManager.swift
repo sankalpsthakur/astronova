@@ -17,6 +17,8 @@ class StoreKitManager: ObservableObject {
     @Published var products: [String: String] = [:]  // Product ID to localized price
     @Published var monthlyBillingPlanPrices: [String: String] = [:]
     @Published var commitmentDisplayPrices: [String: String] = [:]
+    @Published private(set) var availableProductIDs: Set<String> = []
+    @Published private(set) var productLoadCompleted = false
     
     private var storeKitProducts: [Product] = []
     private var updateListenerTask: Task<Void, Error>?
@@ -29,6 +31,15 @@ class StoreKitManager: ObservableObject {
     struct PurchaseAnalyticsEmission: Equatable {
         let event: AnalyticsEvent
         let properties: [String: String]
+    }
+
+    private struct EntitlementRefreshResult {
+        let hasProSubscription: Bool
+        let productIds: [String]
+
+        var hasAnyEntitlement: Bool {
+            !productIds.isEmpty
+        }
     }
     
     // Product IDs defined in App Store Connect
@@ -47,7 +58,7 @@ class StoreKitManager: ObservableObject {
         // Load products on initialization
         Task {
             await loadProducts()
-            await checkCurrentEntitlements()
+            await refreshEntitlements()
         }
     }
     
@@ -78,6 +89,8 @@ class StoreKitManager: ObservableObject {
                 self.products = newProducts
                 self.monthlyBillingPlanPrices = newMonthlyBillingPlanPrices
                 self.commitmentDisplayPrices = newCommitmentDisplayPrices
+                self.availableProductIDs = Set(self.storeKitProducts.map(\.id))
+                self.productLoadCompleted = true
                 if newProducts.isEmpty {
                     debugPrint("[StoreKit] App Store Connect returned no Astronova products for: \(self.productIDs.joined(separator: ", "))")
                 }
@@ -91,8 +104,14 @@ class StoreKitManager: ObservableObject {
                 self.products = ShopCatalog.fallbackPrices
                 self.monthlyBillingPlanPrices = [:]
                 self.commitmentDisplayPrices = [:]
+                self.availableProductIDs = []
+                self.productLoadCompleted = true
             }
         }
+    }
+
+    func isProductAvailableForPurchase(_ productId: String) -> Bool {
+        availableProductIDs.contains(productId)
     }
     
     // Synchronous version for protocol compatibility
@@ -118,7 +137,11 @@ class StoreKitManager: ObservableObject {
                 let transaction = try checkVerified(verification)
                 
                 // Handle successful purchase
-                await handleSuccessfulPurchase(transaction: transaction, analyticsSource: .purchaseFlow)
+                await handleSuccessfulPurchase(
+                    transaction: transaction,
+                    signedTransactionJWS: verification.jwsRepresentation,
+                    analyticsSource: .purchaseFlow
+                )
                 
                 // Finish the transaction
                 await transaction.finish()
@@ -167,7 +190,6 @@ class StoreKitManager: ObservableObject {
     /// Returns true if any purchases were restored
     @discardableResult
     func restorePurchases() async -> Bool {
-        let hadProBefore = hasProSubscription
         do {
             try await AppStore.sync()
         } catch {
@@ -175,15 +197,15 @@ class StoreKitManager: ObservableObject {
             debugPrint("[StoreKit] AppStore sync failed: \(error.localizedDescription)")
             #endif
         }
-        await checkCurrentEntitlements()
-        return hasProSubscription || hadProBefore
+        let result = await checkCurrentEntitlements()
+        return result.hasAnyEntitlement
     }
 
     /// Refresh entitlement state without triggering a restore flow
     @discardableResult
     func refreshEntitlements() async -> Bool {
-        await checkCurrentEntitlements()
-        return hasProSubscription
+        let result = await checkCurrentEntitlements()
+        return result.hasProSubscription
     }
     
     // MARK: - Private Methods
@@ -194,7 +216,10 @@ class StoreKitManager: ObservableObject {
             for await result in StoreKit.Transaction.updates {
                 do {
                     let transaction = try self.checkVerified(result)
-                    await self.handleSuccessfulPurchase(transaction: transaction)
+                    await self.handleSuccessfulPurchase(
+                        transaction: transaction,
+                        signedTransactionJWS: result.jwsRepresentation
+                    )
                     await transaction.finish()
                 } catch {
                     #if DEBUG
@@ -287,10 +312,14 @@ class StoreKitManager: ObservableObject {
 
     private func handleSuccessfulPurchase(
         transaction: StoreKit.Transaction,
+        signedTransactionJWS: String,
         analyticsSource: PurchaseAnalyticsSource? = nil
     ) async {
+        let shouldSyncProEntitlement = ShopCatalog.isProProduct(transaction.productID)
+        let shouldSyncReportEntitlement = ShopCatalog.reportProductIDs.contains(transaction.productID)
+
         await MainActor.run {
-            if ShopCatalog.isProProduct(transaction.productID) {
+            if shouldSyncProEntitlement {
                 self.hasProSubscription = true
             }
 
@@ -322,11 +351,20 @@ class StoreKitManager: ObservableObject {
                 Analytics.shared.track(emission.event, properties: emission.properties)
             }
         }
+
+        if shouldSyncProEntitlement {
+            await syncProEntitlement(transaction: transaction, signedTransactionJWS: signedTransactionJWS)
+        }
+        if shouldSyncReportEntitlement {
+            await syncReportEntitlement(transaction: transaction, signedTransactionJWS: signedTransactionJWS)
+        }
     }
     
-    private func checkCurrentEntitlements() async {
+    private func checkCurrentEntitlements() async -> EntitlementRefreshResult {
         var hasPro = false
         var purchasedProductIds: [String] = []
+        var proTransactions: [(transaction: StoreKit.Transaction, signedTransactionJWS: String)] = []
+        var reportTransactions: [(transaction: StoreKit.Transaction, signedTransactionJWS: String)] = []
 
         // Check for current subscription entitlements
         for await result in StoreKit.Transaction.currentEntitlements {
@@ -335,6 +373,10 @@ class StoreKitManager: ObservableObject {
 
                 if ShopCatalog.isProProduct(transaction.productID) {
                     hasPro = true
+                    proTransactions.append((transaction, result.jwsRepresentation))
+                }
+                if ShopCatalog.reportProductIDs.contains(transaction.productID) {
+                    reportTransactions.append((transaction, result.jwsRepresentation))
                 }
 
                 // Mark individual products as purchased if they're current entitlements
@@ -356,6 +398,54 @@ class StoreKitManager: ObservableObject {
                 let purchaseKey = "purchased_\(productId)"
                 UserDefaults.standard.set(true, forKey: purchaseKey)
             }
+        }
+
+        for item in proTransactions {
+            await syncProEntitlement(transaction: item.transaction, signedTransactionJWS: item.signedTransactionJWS)
+        }
+        for item in reportTransactions {
+            await syncReportEntitlement(transaction: item.transaction, signedTransactionJWS: item.signedTransactionJWS)
+        }
+
+        return EntitlementRefreshResult(
+            hasProSubscription: finalHasPro,
+            productIds: finalPurchasedProductIds
+        )
+    }
+
+    private func syncProEntitlement(transaction: StoreKit.Transaction, signedTransactionJWS: String) async {
+        guard ShopCatalog.isProProduct(transaction.productID) else { return }
+
+        do {
+            _ = try await APIServices.shared.syncSubscriptionEntitlement(
+                productId: transaction.productID,
+                transactionId: String(transaction.id),
+                originalTransactionId: String(transaction.originalID),
+                environment: String(describing: transaction.environment),
+                signedTransactionJWS: signedTransactionJWS
+            )
+        } catch {
+            #if DEBUG
+            debugPrint("[StoreKit] Server subscription sync failed: \(error.localizedDescription)")
+            #endif
+        }
+    }
+
+    private func syncReportEntitlement(transaction: StoreKit.Transaction, signedTransactionJWS: String) async {
+        guard ShopCatalog.reportProductIDs.contains(transaction.productID) else { return }
+
+        do {
+            _ = try await APIServices.shared.syncReportEntitlement(
+                productId: transaction.productID,
+                transactionId: String(transaction.id),
+                originalTransactionId: String(transaction.originalID),
+                environment: String(describing: transaction.environment),
+                signedTransactionJWS: signedTransactionJWS
+            )
+        } catch {
+            #if DEBUG
+            debugPrint("[StoreKit] Server report entitlement sync failed: \(error.localizedDescription)")
+            #endif
         }
     }
 }
