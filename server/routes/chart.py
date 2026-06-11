@@ -5,6 +5,7 @@ from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 
+from extensions import limiter
 from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
 from utils.birth_data import parse_birth_data, BirthDataError
@@ -185,6 +186,7 @@ def _compute_aspects(lon_map: dict[str, float], orb: float = 6.0) -> list[dict]:
 
 
 @chart_bp.route("/generate", methods=["POST"])
+@limiter.limit("30 per minute")
 def generate_chart():
     payload = request.get_json(silent=True)
     if not payload:

@@ -5,12 +5,14 @@ from flask_babel import gettext as _
 
 from db import (
     add_chat_message,
+    consume_credit,
     ensure_conversation,
     get_premium_entitlement,
     get_user_birth_data,
     init_db,
     upsert_user_birth_data,
 )
+from extensions import limiter
 from middleware import require_auth
 from services.chat_response_service import ChatResponseService, ChatServiceError
 
@@ -80,6 +82,7 @@ def chat_info():
 
 
 @chat_bp.route("", methods=["POST"])
+@limiter.limit("30 per minute")
 @require_auth
 def chat():
     data = request.get_json(silent=True) or {}
@@ -91,7 +94,11 @@ def chat():
     if _is_paid_chat_request(data):
         entitlement = get_premium_entitlement(user_id)
         if not entitlement["hasPremium"]:
-            return _payment_required_response("oracle_chat_deep", entitlement)
+            # Pro subscription is the primary gate; a server-side chat credit
+            # (purchased via /payments/verify) is an accepted alternative. The
+            # credit is consumed only when access is actually granted.
+            if not consume_credit(user_id, reason="oracle_chat_deep"):
+                return _payment_required_response("oracle_chat_deep", entitlement)
 
     # Support optional birth data in request for immediate personalization
     birth_data = data.get("birthData")

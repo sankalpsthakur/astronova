@@ -6,11 +6,10 @@ import os
 from flask import Flask, Response, jsonify, redirect, request, g
 from flask_babel import Babel
 from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from werkzeug.exceptions import HTTPException
 
 from db import get_user_preferred_language, init_db
+from extensions import limiter
 from errors import SwissEphemerisUnavailableError
 from middleware import add_request_id, log_request_response, setup_logging
 from portfolio_analytics import install as install_portfolio_analytics
@@ -27,6 +26,7 @@ from routes import (
     horoscope_bp,
     locations_bp,
     misc_bp,
+    payments_bp,
     reports_bp,
     temple_bp,
 )
@@ -77,40 +77,17 @@ def create_app():
         ])
     CORS(app, origins=allowed_origins, supports_credentials=True)
 
-    # Rate limiting to prevent abuse
-    # Uses IP address as key; applies sensible defaults per endpoint type
-    def get_key():
-        # Prefer X-User-Id for authenticated requests, fall back to IP
-        user_id = request.headers.get("X-User-Id")
-        if user_id:
-            return f"user:{user_id}"
-        return get_remote_address()
-
-    limiter = Limiter(
-        key_func=get_key,
-        app=app,
-        default_limits=["2000 per day", "500 per hour"],
-        storage_uri="memory://",
-        enabled=not (
-            app.config.get("TESTING", False)
-            or os.environ.get("ASTRONOVA_DISABLE_RATE_LIMITS") == "1"
-        ),
+    # Rate limiting to prevent abuse.
+    # The shared limiter (extensions.limiter) keys on the verified JWT user id
+    # (falling back to remote IP) rather than the spoofable X-User-Id header,
+    # and individual expensive/auth routes attach stricter per-endpoint limits
+    # via @limiter.limit decorators. Limits are disabled under test and when
+    # explicitly turned off via env.
+    app.config["RATELIMIT_ENABLED"] = not (
+        app.config.get("TESTING", False)
+        or os.environ.get("ASTRONOVA_DISABLE_RATE_LIMITS") == "1"
     )
-
-    # Apply stricter limits to expensive endpoints
-    @limiter.limit("20 per minute")
-    @app.before_request
-    def limit_expensive_endpoints():
-        # Stricter rate limits for computationally expensive endpoints
-        expensive_prefixes = [
-            "/api/v1/reports",
-            "/api/v1/chart/generate",
-            "/api/v1/compatibility",
-            "/api/v1/astrology/dashas",
-        ]
-        for prefix in expensive_prefixes:
-            if request.path.startswith(prefix) and request.method == "POST":
-                return  # Rate limit applied
+    limiter.init_app(app)
 
     # Rate limit handler
     @app.errorhandler(429)
@@ -164,6 +141,7 @@ def create_app():
     app.register_blueprint(chart_bp, url_prefix="/api/v1/chart")
     app.register_blueprint(locations_bp, url_prefix="/api/v1/location")
     app.register_blueprint(reports_bp, url_prefix="/api/v1/reports")
+    app.register_blueprint(payments_bp, url_prefix="/api/v1/payments")
 
     # Backward-compatibility alias: redirect singular to plural
     @app.route("/api/v1/report", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "PATCH"])

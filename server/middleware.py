@@ -72,14 +72,12 @@ def get_authenticated_user_id() -> Tuple[Optional[str], Optional[dict]]:
     except ValueError as e:
         return None, {"error": str(e), "code": "INVALID_TOKEN"}
     except ImportError:
-        # Fallback for tests or when auth module not available
-        # In this case, fall back to header-based auth (less secure)
-        logger.warning("JWT validation unavailable - falling back to header auth")
-        data = request.get_json(silent=True) or {}
-        user_id = data.get("userId") or request.headers.get("X-User-Id") or request.args.get("userId")
-        if not user_id:
-            return None, {"error": "User ID required", "code": "USER_ID_REQUIRED"}
-        return user_id, None
+        # The JWT validator must always be available in a correctly deployed
+        # server. Falling back to trusting a client-supplied X-User-Id header
+        # would be a complete authentication bypass (any caller could
+        # impersonate any user), so fail closed instead.
+        logger.error("JWT validation module unavailable - rejecting request")
+        return None, {"error": "Authentication temporarily unavailable", "code": "AUTH_UNAVAILABLE"}
 
 
 def require_auth(f):

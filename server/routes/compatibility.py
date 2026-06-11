@@ -7,6 +7,7 @@ from typing import Optional
 from flask import Blueprint, g, jsonify, request
 
 import db
+from extensions import limiter
 from middleware import require_auth
 from services.ephemeris_service import EphemerisService
 from services.transit_service import TransitService
@@ -428,6 +429,7 @@ def _chart_to_client_format(chart: dict) -> dict:
 
 
 @compat_bp.route("", methods=["POST"])
+@limiter.limit("20 per minute")
 def compatibility():
     """Calculate comprehensive compatibility between two birth charts."""
     data = request.get_json(silent=True)

@@ -1,7 +1,7 @@
 import logging
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -362,24 +362,52 @@ def get_user_conversations(user_id: str, limit: int = 20) -> list[dict]:
 
 
 # Subscription helpers
+def _column_exists(cur, table: str, column: str) -> bool:
+    cur.execute(f"PRAGMA table_info({table})")
+    return any(r[1] == column for r in cur.fetchall())
+
+
 def get_subscription(user_id: Optional[str]) -> dict:
     if not user_id:
         return {"isActive": False}
     conn = get_connection()
     cur = conn.cursor()
+    # expires_at is added by migration 009; tolerate older schemas.
+    has_expiry = _column_exists(cur, "subscription_status", "expires_at")
+    columns = "is_active, product_id, updated_at" + (", expires_at" if has_expiry else "")
     cur.execute(
-        "SELECT is_active, product_id, updated_at FROM subscription_status WHERE user_id=?",
+        f"SELECT {columns} FROM subscription_status WHERE user_id=?",
         (user_id,),
     )
     row = cur.fetchone()
     conn.close()
     if not row:
         return {"isActive": False}
-    return {
-        "isActive": bool(row["is_active"]),
+
+    is_active = bool(row["is_active"])
+    expires_at = row["expires_at"] if has_expiry else None
+
+    # A verified auto-renewable subscription stays entitled only until it
+    # expires. If Apple hasn't told us about a renewal past the expiry, treat
+    # it as lapsed so a stale 'active' flag can't grant indefinite access.
+    if is_active and expires_at:
+        try:
+            parsed = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            if parsed < datetime.now(timezone.utc):
+                is_active = False
+        except (ValueError, AttributeError):
+            pass
+
+    result = {
+        "isActive": is_active,
         "productId": row["product_id"],
         "updatedAt": row["updated_at"],
     }
+    if expires_at:
+        result["expiresAt"] = expires_at
+    return result
 
 
 def get_premium_entitlement(user_id: Optional[str]) -> dict:
@@ -414,6 +442,205 @@ def set_subscription(user_id: str, is_active: bool, product_id: Optional[str] = 
     )
     conn.commit()
     conn.close()
+
+
+def set_subscription_from_transaction(
+    user_id: str,
+    *,
+    is_active: bool,
+    product_id: Optional[str],
+    expires_at: Optional[str] = None,
+    original_transaction_id: Optional[str] = None,
+    latest_transaction_id: Optional[str] = None,
+    environment: Optional[str] = None,
+    auto_renew: Optional[bool] = None,
+) -> None:
+    """Record an App Store-verified subscription state.
+
+    Unlike set_subscription, this persists the transaction metadata used to
+    reason about renewals, expiry and revocations.
+    """
+    now = datetime.utcnow().isoformat()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO subscription_status
+             (user_id, is_active, product_id, expires_at, original_transaction_id,
+              latest_transaction_id, environment, auto_renew, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(user_id) DO UPDATE SET
+             is_active = excluded.is_active,
+             product_id = excluded.product_id,
+             expires_at = excluded.expires_at,
+             original_transaction_id = excluded.original_transaction_id,
+             latest_transaction_id = excluded.latest_transaction_id,
+             environment = excluded.environment,
+             auto_renew = excluded.auto_renew,
+             updated_at = excluded.updated_at""",
+        (
+            user_id,
+            int(is_active),
+            product_id,
+            expires_at,
+            original_transaction_id,
+            latest_transaction_id,
+            environment,
+            None if auto_renew is None else int(auto_renew),
+            now,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def deactivate_subscription(user_id: str, *, reason: Optional[str] = None) -> None:
+    """Revoke a user's subscription (refund, expiry, revocation)."""
+    now = datetime.utcnow().isoformat()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE subscription_status SET is_active=0, auto_renew=0, updated_at=? WHERE user_id=?",
+        (now, user_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+# Transaction idempotency helpers
+def is_transaction_processed(transaction_id: str) -> bool:
+    if not transaction_id:
+        return False
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT 1 FROM processed_transactions WHERE transaction_id=?",
+        (transaction_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row is not None
+
+
+def record_processed_transaction(
+    transaction_id: str,
+    *,
+    user_id: Optional[str],
+    product_id: Optional[str],
+    type: Optional[str],
+    environment: Optional[str] = None,
+) -> bool:
+    """Record a transaction as processed. Returns False if already present."""
+    if not transaction_id:
+        return False
+    now = datetime.utcnow().isoformat()
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            """INSERT INTO processed_transactions
+                 (transaction_id, user_id, product_id, type, environment, processed_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (transaction_id, user_id, product_id, type, environment, now),
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        # Already recorded - replay.
+        return False
+    finally:
+        conn.close()
+
+
+def find_user_by_original_transaction(original_transaction_id: str) -> Optional[str]:
+    """Resolve which user owns a subscription by its original transaction id.
+
+    Used by App Store Server Notifications, which identify the subscription by
+    originalTransactionId rather than our user id.
+    """
+    if not original_transaction_id:
+        return None
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT user_id FROM subscription_status WHERE original_transaction_id=?",
+        (original_transaction_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row["user_id"] if row else None
+
+
+# Server-side chat-credit helpers
+def get_credit_balance(user_id: Optional[str]) -> int:
+    if not user_id:
+        return 0
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT balance FROM user_credits WHERE user_id=?", (user_id,))
+    row = cur.fetchone()
+    conn.close()
+    return int(row["balance"]) if row else 0
+
+
+def add_credits(
+    user_id: str,
+    amount: int,
+    *,
+    reason: Optional[str] = None,
+    transaction_id: Optional[str] = None,
+) -> int:
+    """Add (or remove, if negative) credits and append to the ledger.
+
+    Returns the new balance. Does not allow the balance to go below zero.
+    """
+    now = datetime.utcnow().isoformat()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT balance FROM user_credits WHERE user_id=?", (user_id,))
+    row = cur.fetchone()
+    current = int(row["balance"]) if row else 0
+    new_balance = max(0, current + amount)
+    cur.execute(
+        """INSERT INTO user_credits (user_id, balance, updated_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(user_id) DO UPDATE SET
+             balance = excluded.balance,
+             updated_at = excluded.updated_at""",
+        (user_id, new_balance, now),
+    )
+    cur.execute(
+        """INSERT INTO credit_ledger (user_id, delta, reason, transaction_id, created_at)
+           VALUES (?, ?, ?, ?, ?)""",
+        (user_id, new_balance - current, reason, transaction_id, now),
+    )
+    conn.commit()
+    conn.close()
+    return new_balance
+
+
+def consume_credit(user_id: str, *, reason: Optional[str] = None) -> bool:
+    """Atomically spend one credit. Returns True if a credit was available."""
+    now = datetime.utcnow().isoformat()
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # Conditional decrement guards against concurrent double-spend.
+        cur.execute(
+            "UPDATE user_credits SET balance = balance - 1, updated_at=? WHERE user_id=? AND balance > 0",
+            (now, user_id),
+        )
+        if cur.rowcount != 1:
+            conn.rollback()
+            return False
+        cur.execute(
+            """INSERT INTO credit_ledger (user_id, delta, reason, transaction_id, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (user_id, -1, reason or "chat_consume", None, now),
+        )
+        conn.commit()
+        return True
+    finally:
+        conn.close()
 
 
 # Birth data helpers
@@ -634,13 +861,21 @@ def delete_user_data(user_id: str) -> dict:
         ("chat_conversations", "user_id"),
         ("reports", "user_id"),
         ("subscription_status", "user_id"),
+        ("processed_transactions", "user_id"),
+        ("user_credits", "user_id"),
+        ("credit_ledger", "user_id"),
         ("user_birth_data", "user_id"),
         ("users", "id"),
     ]
 
     for table, id_column in tables_to_clean:
-        cur.execute(f"DELETE FROM {table} WHERE {id_column}=?", (user_id,))
-        deleted_counts[table] = cur.rowcount
+        # Tables created by later migrations may be absent in older databases;
+        # skip cleanly rather than aborting the whole deletion.
+        try:
+            cur.execute(f"DELETE FROM {table} WHERE {id_column}=?", (user_id,))
+            deleted_counts[table] = cur.rowcount
+        except sqlite3.OperationalError:
+            deleted_counts[table] = 0
 
     conn.commit()
     conn.close()

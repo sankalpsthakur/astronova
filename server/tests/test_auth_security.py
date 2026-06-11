@@ -836,36 +836,36 @@ class TestJWTExpiration:
 
 
 class TestRateLimiting:
-    """Test rate limiting (if implemented)."""
+    """Rate limiting is enforced on auth endpoints (JWT-keyed, per-IP fallback)."""
 
-    def test_rate_limiting_not_implemented(self, client, monkeypatch):
-        """Test that rate limiting is not currently implemented."""
+    def test_apple_auth_is_rate_limited(self, client, monkeypatch):
+        """Auth endpoint blocks abusive bursts with HTTP 429."""
         mock_apple_validation(monkeypatch, sub="rate-limit-user")
 
-        # Send many requests rapidly
-        responses = []
+        # /auth/apple is limited to 10 per minute. Many requests from the same
+        # IP must eventually be rejected with 429 rather than all succeeding.
+        statuses = []
         for i in range(100):
             response = client.post(
                 "/api/v1/auth/apple",
                 json={"idToken": VALID_APPLE_ID_TOKEN, "userIdentifier": f"user-{i}"},
             )
-            responses.append(response.status_code)
+            statuses.append(response.status_code)
 
-        # All should succeed (no rate limiting)
-        assert all(status == 200 for status in responses)
-        # This is a security vulnerability - needs rate limiting
+        assert statuses[0] == 200
+        assert 429 in statuses, "expected rate limiting to kick in on /auth/apple"
 
-    def test_brute_force_protection_not_implemented(self, client):
-        """Test that brute force protection is not implemented."""
-        # Try many failed auth attempts (empty tokens which are rejected)
-        responses = []
+    def test_brute_force_protection_on_refresh(self, client):
+        """Repeated failed refresh attempts are rate limited, not unbounded."""
+        # /auth/refresh is limited to 20 per minute. Empty tokens are rejected
+        # with 401 until the limiter starts returning 429.
+        statuses = []
         for i in range(50):
             response = client.post("/api/v1/auth/refresh", headers={"Authorization": "Bearer "})
-            responses.append(response.status_code)
+            statuses.append(response.status_code)
 
-        # All should fail with 401 but not be blocked (no rate limiting)
-        assert all(status == 401 for status in responses)
-        # No rate limiting or IP blocking implemented - this is a security gap
+        assert statuses[0] == 401
+        assert 429 in statuses, "expected brute-force protection on /auth/refresh"
 
 
 class TestSecurityHeaders:

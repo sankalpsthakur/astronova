@@ -10,6 +10,7 @@ from .ephemeris import ephemeris_bp
 from .horoscope import horoscope_bp
 from .locations import locations_bp
 from .misc import misc_bp
+from .payments import payments_bp
 from .reports import reports_bp
 from .temple import temple_bp
 
@@ -26,6 +27,7 @@ __all__ = [
     "horoscope_bp",
     "locations_bp",
     "misc_bp",
+    "payments_bp",
     "reports_bp",
     "temple_bp",
 ]

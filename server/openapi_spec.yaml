@@ -777,6 +777,101 @@ paths:
                           element:
                             type: string
                             
+  /api/v1/payments:
+    get:
+      summary: Get payments service info
+      tags:
+        - Payments
+      responses:
+        '200':
+          description: Service information
+  /api/v1/payments/verify:
+    post:
+      summary: Verify a StoreKit 2 signed transaction and record entitlement
+      description: >
+        Validates an Apple StoreKit 2 signed transaction (JWSTransaction)
+        against Apple's certificate chain and records the resulting entitlement
+        (Pro subscription, chat credits, or report unlock). The server is the
+        source of truth; clients should trust the returned entitlement.
+      tags:
+        - Payments
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - signedTransaction
+              properties:
+                signedTransaction:
+                  type: string
+                  description: StoreKit 2 Transaction.jwsRepresentation
+      responses:
+        '200':
+          description: Transaction verified and entitlement updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  granted:
+                    type: object
+                  entitlement:
+                    type: object
+        '400':
+          description: Receipt could not be verified or is for a different app
+        '401':
+          description: Authorization required
+  /api/v1/payments/credits:
+    get:
+      summary: Get server-side chat-credit balance
+      tags:
+        - Payments
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current credit balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+        '401':
+          description: Authorization required
+  /api/v1/payments/notifications:
+    post:
+      summary: App Store Server Notifications V2 webhook
+      description: >
+        Receives signed notifications from Apple (renewals, refunds,
+        expirations, revocations). The payload signature is verified against
+        Apple's certificate chain; no bearer token is required since Apple does
+        not send one.
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - signedPayload
+              properties:
+                signedPayload:
+                  type: string
+      responses:
+        '200':
+          description: Notification accepted (acted on or acknowledged)
+        '400':
+          description: Notification signature could not be verified
   /api/v1/reports:
     get:
       summary: Get reports service info

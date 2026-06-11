@@ -11,6 +11,7 @@ from flask import Blueprint, Response, g, jsonify, request
 from werkzeug.exceptions import BadRequest
 
 import db
+from extensions import limiter
 from middleware import get_authenticated_user_id, require_auth
 from services.pdf import render_report_pdf
 from services.report_generation_service import ReportGenerationService
@@ -157,6 +158,7 @@ def user_reports(user_id: str):
 @reports_bp.route("", methods=["POST"])
 @reports_bp.route("/full", methods=["POST"])
 @reports_bp.route("/generate", methods=["POST"])
+@limiter.limit("20 per minute")
 @require_auth
 def generate_report():
     try:

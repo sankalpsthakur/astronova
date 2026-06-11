@@ -10,6 +10,7 @@ from flask import Blueprint, jsonify, request
 from flask_babel import gettext as _
 
 from db import upsert_user, delete_user_data
+from extensions import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +128,34 @@ def validate_apple_id_token(id_token: str) -> dict:
 # Render's blueprint historically generated JWT_SECRET_KEY, while local docs use
 # JWT_SECRET. Accept both so existing deployments do not silently fall back to
 # the development secret.
+_DEV_JWT_SECRET = "astronova-dev-secret-change-in-production"
+
+
+def _is_production_environment() -> bool:
+    """True when the process is running in a production deployment.
+
+    Mirrors the detection used in routes/misc.py so security-critical
+    behavior is consistent across the codebase.
+    """
+    return any(
+        os.environ.get(name, "").lower() == "production"
+        for name in ("FLASK_ENV", "APP_ENV", "ENV")
+    )
+
+
 def get_jwt_secret() -> str:
-    return os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY") or "astronova-dev-secret-change-in-production"
+    secret = os.environ.get("JWT_SECRET") or os.environ.get("JWT_SECRET_KEY")
+    if secret:
+        return secret
+    if _is_production_environment():
+        # Never sign or verify production tokens with a public, hardcoded
+        # secret. Failing loudly here prevents a complete authentication
+        # bypass if the deployment forgets to configure the secret.
+        raise RuntimeError(
+            "JWT_SECRET (or JWT_SECRET_KEY) must be configured in production; "
+            "refusing to fall back to the development secret."
+        )
+    return _DEV_JWT_SECRET
 
 
 JWT_ALGORITHM = "HS256"
@@ -201,6 +228,7 @@ def auth_info():
 
 
 @auth_bp.route("/apple", methods=["POST"])
+@limiter.limit("10 per minute")
 def apple_auth():
     """
     Authenticate with Apple Sign-In.
@@ -318,6 +346,7 @@ def validate():
 
 
 @auth_bp.route("/refresh", methods=["POST"])
+@limiter.limit("20 per minute")
 def refresh():
     """Token refresh - validates current token and issues a new one."""
     auth_header = request.headers.get("Authorization", "")
