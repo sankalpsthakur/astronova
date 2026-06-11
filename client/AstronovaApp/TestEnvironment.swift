@@ -96,8 +96,14 @@ final class TestEnvironment {
         return intValue
     }
 
-    /// Apply test configuration to the app state
+    /// Apply test configuration to the app state.
+    ///
+    /// Compiled to a no-op in release builds: this method can grant Pro, set
+    /// chat credits, and skip onboarding from launch arguments, which must
+    /// never be reachable in a shipped binary. UI tests run against DEBUG
+    /// builds, so gating the body here loses no test coverage.
     func applyTestConfiguration() {
+        #if DEBUG
         guard isUITest else { return }
 
         log("Applying UI test configuration...")
@@ -149,6 +155,7 @@ final class TestEnvironment {
         }
 
         log("UI test configuration applied")
+        #endif
     }
 
     // MARK: - Private Configuration Methods

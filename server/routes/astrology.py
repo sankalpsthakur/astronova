@@ -115,7 +115,7 @@ def dashas():
         bd = bd_local.replace(tzinfo=ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
         target_date = datetime.strptime(target_date_str, "%Y-%m-%d")
     except Exception as e:
-        return jsonify({"error": f"Invalid date/time/timezone: {str(e)}"}), 400
+        return jsonify({"error": "Invalid date, time, or timezone format", "code": "INVALID_DATE"}), 400
 
     # Get sidereal Moon position for dasha calculation
     moon_longitude = 0.0
@@ -244,19 +244,19 @@ def dashas_complete():
                 target_dt_local.replace(tzinfo=ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
             )
         except Exception as e:
-            return jsonify({"error": f"Invalid timezone for targetDate: {str(e)}"}), 400
+            return jsonify({"error": "Invalid timezone for targetDate", "code": "INVALID_TIMEZONE"}), 400
     else:
         try:
             target_date = datetime.now(ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
         except Exception as e:
-            return jsonify({"error": f"Invalid timezone: {str(e)}"}), 400
+            return jsonify({"error": "Invalid timezone", "code": "INVALID_TIMEZONE"}), 400
 
     # Parse birth datetime
     try:
         bd_local = datetime.strptime(f"{birth_date}T{birth_time}", "%Y-%m-%dT%H:%M")
         bd = bd_local.replace(tzinfo=ZoneInfo(timezone)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
     except Exception as e:
-        return jsonify({"error": f"Invalid date/time/timezone: {str(e)}"}), 400
+        return jsonify({"error": "Invalid date, time, or timezone format", "code": "INVALID_DATE"}), 400
 
     # Validate target_date is not before birth_date
     if target_date < bd:

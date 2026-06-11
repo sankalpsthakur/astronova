@@ -447,20 +447,21 @@ class TestReportsEndpoint:
         assert pdf_response.mimetype == "application/pdf"
         assert pdf_response.data.startswith(b"%PDF")
 
-    def test_download_pdf_headers(self, authenticated_client):
-        """Test that PDF download has correct headers."""
-        response = authenticated_client.get("/api/v1/reports/test-report-id/pdf")
+    def test_download_pdf_headers(self, authenticated_client, sample_user):
+        """A user's own report PDF downloads with the correct headers."""
+        from db import insert_report
+
+        report_id = "pdf-headers-report"
+        insert_report(report_id, sample_user["id"], "birth_chart", "My Report", "{}")
+        response = authenticated_client.get(f"/api/v1/reports/{report_id}/pdf")
         assert response.status_code == 200
         assert response.content_type == "application/pdf"
 
-    def test_download_pdf_content(self, authenticated_client):
-        """Test that PDF content is valid binary data."""
-        response = authenticated_client.get("/api/v1/reports/any-report-id/pdf")
-        assert response.status_code == 200
-        data = response.data
-        assert isinstance(data, bytes)
-        assert len(data) > 0
-        assert b"PDF" in data  # Check for PDF marker
+    def test_download_pdf_requires_ownership(self, authenticated_client):
+        """Fetching a report id that isn't yours returns 404, not a PDF."""
+        response = authenticated_client.get("/api/v1/reports/some-other-users-report/pdf")
+        assert response.status_code == 404
+        assert response.content_type != "application/pdf"
 
     def test_report_key_insights_structure(self, authenticated_client):
         """Test that report key insights are properly formatted."""
