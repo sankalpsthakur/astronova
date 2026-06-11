@@ -778,6 +778,16 @@ class TestCrossUserAccess:
         assert response.status_code == 403
         assert response.get_json()["code"] == "FORBIDDEN"
 
+    def test_report_pdf_requires_authentication(self, client):
+        """The PDF endpoint must require auth even for an unknown report id.
+
+        Regression: the auth check used to sit inside `if report:`, so an
+        unknown id skipped auth and still rendered a placeholder PDF.
+        """
+        response = client.get("/api/v1/reports/any-random-id/pdf")
+        assert response.status_code == 401
+        assert response.content_type != "application/pdf"
+
     def test_subscription_status_requires_authentication(self, client):
         """Subscription status should not be queryable without a JWT."""
         response = client.get("/api/v1/subscription/status?userId=test-user-123")
