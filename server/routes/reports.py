@@ -292,7 +292,7 @@ def get_report_status(report_id: str):
     report = db.get_report(report_id)
     if not report:
         return jsonify({"error": "Report not found", "code": "REPORT_NOT_FOUND"}), 404
-    if report.get("user_id") and report.get("user_id") != user_id:
+    if report.get("user_id") != user_id:
         return jsonify({"error": "Access denied - cannot access this report", "code": "FORBIDDEN"}), 403
 
     status = report.get("status", "completed")
@@ -327,17 +327,23 @@ def get_report_status(report_id: str):
 
 @reports_bp.route("/<report_id>/pdf", methods=["GET"])
 def get_pdf(report_id: str):
-    report = None
+    # Require authentication before doing any work. Previously the auth/
+    # ownership check sat inside `if report:`, so a missing report id skipped
+    # auth entirely and still rendered a (placeholder) PDF — an unauthenticated
+    # CPU-spending endpoint and an ownership-bypass for reports lacking a
+    # user_id. Authenticate first, 404 unknown reports, and require ownership.
+    user_id, auth_error = get_authenticated_user_id()
+    if auth_error:
+        return jsonify(auth_error), 401
+
     try:
         report = db.get_report(report_id)
     except Exception:
         report = None
-    if report:
-        user_id, auth_error = get_authenticated_user_id()
-        if auth_error:
-            return jsonify(auth_error), 401
-        if report.get("user_id") and report.get("user_id") != user_id:
-            return jsonify({"error": "Access denied - cannot access this report", "code": "FORBIDDEN"}), 403
+    if not report:
+        return jsonify({"error": "Report not found", "code": "REPORT_NOT_FOUND"}), 404
+    if report.get("user_id") != user_id:
+        return jsonify({"error": "Access denied - cannot access this report", "code": "FORBIDDEN"}), 403
 
     # The report generator may run asynchronously. To keep the PDF response
     # stable (and avoid returning a "processing" placeholder), wait briefly
