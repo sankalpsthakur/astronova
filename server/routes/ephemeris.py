@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
@@ -6,6 +7,8 @@ from flask import Blueprint, jsonify, request
 
 from errors import SwissEphemerisUnavailableError
 from services.ephemeris_service import EphemerisService
+
+logger = logging.getLogger(__name__)
 
 try:  # Swiss Ephemeris is required at runtime but the import can be deferred.
     import swisseph as _swe  # type: ignore
@@ -91,8 +94,9 @@ def current_positions():
 
     except SwissEphemerisUnavailableError:
         raise
-    except Exception as e:
-        return jsonify({"error": f"Failed to get current positions: {str(e)}"}), 500
+    except Exception:
+        logger.exception("Failed to get current positions")
+        return jsonify({"error": "Failed to get current positions", "code": "EPHEMERIS_ERROR"}), 500
 
 
 @ephemeris_bp.route("/at", methods=["GET"])
@@ -158,8 +162,9 @@ def positions_at_date():
 
     except SwissEphemerisUnavailableError:
         raise
-    except Exception as e:
-        return jsonify({"error": f"Failed to get positions: {str(e)}"}), 500
+    except Exception:
+        logger.exception("Failed to get positions")
+        return jsonify({"error": "Failed to get positions", "code": "EPHEMERIS_ERROR"}), 500
 
 
 # ── Topo terrain substitutions ───────────────────────────────────────────────
@@ -373,8 +378,9 @@ def topo_substitutions():
 
     except SwissEphemerisUnavailableError as exc:
         return jsonify({"error": str(exc), "code": "EPHEMERIS_UNAVAILABLE"}), 503
-    except Exception as exc:
-        return jsonify({"error": f"Failed to compute topo substitutions: {exc}"}), 500
+    except Exception:
+        logger.exception("Failed to compute topo substitutions")
+        return jsonify({"error": "Failed to compute topo substitutions", "code": "TOPO_SUBSTITUTIONS_ERROR"}), 500
 
 
 def get_planet_symbol(planet_name: str) -> str:

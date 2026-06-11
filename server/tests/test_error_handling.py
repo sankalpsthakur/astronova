@@ -181,21 +181,24 @@ class TestGeocoderFailures:
 class TestPDFGenerationErrors:
     """Test report PDF generation error handling."""
 
-    def test_pdf_endpoint_returns_minimal_pdf(self, authenticated_client):
-        """Test that PDF endpoint returns minimal PDF placeholder."""
-        response = authenticated_client.get("/api/v1/reports/test-report-id/pdf")
+    def test_pdf_endpoint_renders_owned_report(self, authenticated_client, sample_user):
+        """The PDF endpoint renders a real PDF for the caller's own report."""
+        from db import insert_report
+
+        report_id = "pdf-owned-report"
+        insert_report(report_id, sample_user["id"], "birth_chart", "Mine", "{}")
+        response = authenticated_client.get(f"/api/v1/reports/{report_id}/pdf")
 
         assert response.status_code == 200
         assert response.mimetype == "application/pdf"
         assert response.data.startswith(b"%PDF-1.4")
 
     def test_pdf_generation_with_invalid_report_id(self, authenticated_client):
-        """Test PDF generation with non-existent report ID."""
+        """A non-existent report id returns 404 JSON, not a placeholder PDF."""
         response = authenticated_client.get("/api/v1/reports/nonexistent-report-id/pdf")
 
-        # Current implementation returns minimal PDF regardless
-        assert response.status_code == 200
-        assert response.mimetype == "application/pdf"
+        assert response.status_code == 404
+        assert response.mimetype != "application/pdf"
 
     def test_report_generation_stores_content_safely(self, authenticated_client):
         """Test that report generation stores content without corruption."""
