@@ -1,0 +1,90 @@
+{
+  "self": {
+    "flowing": {
+      "do": "Say yes to the thing that scares you a little — momentum is on your side today.",
+      "avoid": "Don't dilute a clear impulse by asking too many people what they think.",
+      "why": "With energy moving freely, the cost of action is low and confidence compounds quickly."
+    },
+    "intense": {
+      "do": "Pour the heat into one decisive move you've been circling for weeks.",
+      "avoid": "Avoid picking a fight just to discharge the charge you're carrying.",
+      "why": "High-intensity days reward focus and punish scatter — channel, don't spray."
+    },
+    "quiet": {
+      "do": "Rest on purpose and let an honest question about yourself sit unanswered for a day.",
+      "avoid": "Don't mistake stillness for stagnation and force a breakthrough that isn't due yet.",
+      "why": "The quieter field is for integration, not output — pushing now just tires the engine."
+    },
+    "volatile": {
+      "do": "Keep your plans loose and your values fixed; decide what you won't compromise.",
+      "avoid": "Avoid signing, sending, or committing to anything you can't easily undo.",
+      "why": "When the ground shifts, the win is staying recognizable to yourself, not being right."
+    }
+  },
+  "love": {
+    "flowing": {
+      "do": "Reach out first — warmth lands easily today and small gestures travel far.",
+      "avoid": "Don't overthink the wording; sincerity reads louder than polish.",
+      "why": "Relational energy is open, so connection costs little and means a lot."
+    },
+    "intense": {
+      "do": "Have the real conversation you've been rehearsing, and lead with what you feel, not who's wrong.",
+      "avoid": "Avoid using intensity as proof of love — heat and care aren't the same thing.",
+      "why": "Strong currents can deepen a bond or scorch it; intention decides which."
+    },
+    "quiet": {
+      "do": "Offer quiet presence — sit with someone without trying to fix anything.",
+      "avoid": "Don't read silence as distance; not every gap needs to be closed today.",
+      "why": "Tender, low-key days build the trust that dramatic ones can't."
+    },
+    "volatile": {
+      "do": "Name your own state out loud before reacting to anyone else's.",
+      "avoid": "Avoid making permanent relationship decisions on a turbulent day.",
+      "why": "Volatility distorts signal; what feels final today often reads differently tomorrow."
+    }
+  },
+  "work": {
+    "flowing": {
+      "do": "Ship the thing — clear the task that unlocks three others downstream.",
+      "avoid": "Don't open new fronts when finishing one would change more.",
+      "why": "Smooth conditions favor completion; capitalize before the window narrows."
+    },
+    "intense": {
+      "do": "Block the world out and give your hardest problem ninety uninterrupted minutes.",
+      "avoid": "Avoid back-to-back meetings that scatter a rare burst of deep focus.",
+      "why": "Intense energy is your sharpest tool — aim it at depth, not busywork."
+    },
+    "quiet": {
+      "do": "Tidy the system: notes, backlog, and the small debts that slow everything down.",
+      "avoid": "Don't force a creative leap; maintenance is the honest work of a low day.",
+      "why": "Quiet stretches are for sharpening the saw so the next push cuts cleaner."
+    },
+    "volatile": {
+      "do": "Protect what's already committed and document decisions as you make them.",
+      "avoid": "Avoid betting the quarter on a plan formed in a single unstable afternoon.",
+      "why": "When variables swing, resilience beats ambition — keep optionality alive."
+    }
+  },
+  "mind": {
+    "flowing": {
+      "do": "Follow the curiosity that keeps tugging — learn out loud and let one idea lead to the next.",
+      "avoid": "Don't bury a good insight under ten more tabs.",
+      "why": "Mental energy is fluid; connection between ideas comes almost for free today."
+    },
+    "intense": {
+      "do": "Write the hard thought down in full — the one you keep half-thinking.",
+      "avoid": "Avoid doom-looping on a worry; intensity makes small fears feel enormous.",
+      "why": "A focused mind can either solve or spiral — direction is everything."
+    },
+    "quiet": {
+      "do": "Let your attention wander without a goal; the best ideas arrive sideways.",
+      "avoid": "Don't demand productivity from a mind that's asking to rest.",
+      "why": "Diffuse, unforced thinking is where real synthesis happens."
+    },
+    "volatile": {
+      "do": "Slow your inputs — one source at a time, and verify before you react.",
+      "avoid": "Avoid forwarding, posting, or concluding on incomplete information.",
+      "why": "In noisy conditions, the disciplined mind wins by refusing the first story."
+    }
+  }
+}

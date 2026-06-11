@@ -1,0 +1,70 @@
+{
+  "self": {
+    "high": {
+      "opener": "Your sense of self is loud and clear today — identity, vitality, and nerve are all online.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Use the charge for something that matters to you, not just something that looks impressive."
+    },
+    "moderate": {
+      "opener": "There's steady fuel in your personal sector — enough to move, not enough to burn out on.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Pick one self-honoring action and let it be the whole win."
+    },
+    "gentle": {
+      "opener": "A softer day for the self — less about proving, more about tending.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Rest is a strategy here, not a retreat."
+    }
+  },
+  "love": {
+    "high": {
+      "opener": "Connection is vivid today; the relational field is wide open.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Say the warm thing while the door is this easy to walk through."
+    },
+    "moderate": {
+      "opener": "Love runs at a workable, human pace today — real but unhurried.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Small attentiveness will carry further than grand gestures."
+    },
+    "gentle": {
+      "opener": "A quiet stretch for the heart, better suited to presence than performance.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Let closeness be low-key; not every feeling needs a conversation today."
+    }
+  },
+  "work": {
+    "high": {
+      "opener": "Your ambition has traction today and the path forward is unusually clear.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Spend the momentum on the task that unlocks the most, not the one that's easiest."
+    },
+    "moderate": {
+      "opener": "Work moves at a sustainable clip — good for finishing, not for heroics.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Steady, visible progress is the assignment."
+    },
+    "gentle": {
+      "opener": "A lower-key day at work, better for maintenance and planning than for big swings.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Sharpen the tools now so the next push cuts cleaner."
+    }
+  },
+  "mind": {
+    "high": {
+      "opener": "Your mind is fast and connective today; ideas want to find each other.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Capture the best thought before the next ten crowd it out."
+    },
+    "moderate": {
+      "opener": "Clear-enough thinking is available — enough to decide, learn, or explain something well.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Choose one idea to actually finish rather than five to start."
+    },
+    "gentle": {
+      "opener": "A diffuse, unforced mental day where insight arrives sideways or not at all.",
+      "middle_with_driver": "{driver_phrase}",
+      "closer": "Let attention wander; synthesis is happening even when it's quiet."
+    }
+  }
+}

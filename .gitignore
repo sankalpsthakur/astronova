@@ -149,6 +149,9 @@ qa-results/**/*.mov
 
 # Temporary files
 .scratch/
-server/data/
+# Ignore runtime data (e.g. SQLite databases) under server/data, but keep the
+# curated astrology content library that the horoscope/Discover features load.
+server/data/*
+!server/data/astrology/
 tmp/
 main

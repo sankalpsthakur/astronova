@@ -1,0 +1,59 @@
+{
+  "Saturn": {
+    "Sun": {
+      "conjunction": "Saturn meets your Sun: a season of weight and definition. What's real survives this; what's inflated quietly falls away. Build slowly and let the results speak.",
+      "trine": "Saturn supports your Sun: discipline feels less like a cage and more like a backbone. This is a good window to commit to something that takes years.",
+      "sextile": "Saturn opens a small, steady door for your Sun. Modest, consistent effort now earns disproportionate trust later.",
+      "square": "Saturn presses on your Sun: responsibility, doubt, or a hard limit asks to be met head-on. The lesson is structural, not personal — answer it with patience.",
+      "opposition": "Saturn pulls against your Sun: an authority, deadline, or reality check sits opposite your will. Don't collapse and don't bulldoze — negotiate with the facts."
+    },
+    "Moon": {
+      "conjunction": "Saturn meets your Moon: feelings turn serious and a little heavy. Treat the mood as information, not a verdict, and tend to one real need.",
+      "trine": "Saturn steadies your Moon: emotional maturity comes easily now. A good time to set a boundary you've been avoiding.",
+      "sextile": "Saturn quietly grounds your Moon. Small acts of self-care build a base that holds.",
+      "square": "Saturn squares your Moon: loneliness or duty may press on your inner world. Let yourself feel it without letting it decide everything.",
+      "opposition": "Saturn opposes your Moon: care and obligation pull in different directions. Honor both by naming the cost out loud."
+    }
+  },
+  "Jupiter": {
+    "Sun": {
+      "conjunction": "Jupiter meets your Sun: confidence and opportunity expand together. Say yes to the larger version of the plan — just don't over-promise on the way.",
+      "trine": "Jupiter blesses your Sun: things open with unusual ease. Aim higher than feels reasonable; the runway is longer than usual.",
+      "sextile": "Jupiter offers your Sun a door worth walking through. Reach for the opportunity rather than waiting for it to insist.",
+      "square": "Jupiter squares your Sun: optimism outruns capacity. Enthusiasm is real — just pressure-test the scope before you leap.",
+      "opposition": "Jupiter opposes your Sun: a bigger vision sits across from your daily reality. Hold the ambition, but right-size the first step."
+    },
+    "Venus": {
+      "conjunction": "Jupiter meets your Venus: warmth, generosity, and pleasure expand. A genuinely good window for love, art, and saying yes to connection.",
+      "trine": "Jupiter eases the channel to your Venus: affection and good fortune flow toward you. Receive it without explaining why you deserve it.",
+      "sextile": "Jupiter opens a small door to your Venus. A kind gesture or creative risk pays back more than it costs.",
+      "square": "Jupiter squares your Venus: indulgence or over-giving can tip out of balance. Enjoy generously, but keep one eye on proportion.",
+      "opposition": "Jupiter opposes your Venus: desire wants more than the moment can hold. Savor it without mistaking abundance for a decision."
+    }
+  },
+  "Mars": {
+    "Sun": {
+      "conjunction": "Mars meets your Sun: drive surges and patience thins. Aim the heat at a real obstacle before it finds a fake one.",
+      "trine": "Mars energizes your Sun: action feels natural and well-timed. Start the thing you've been postponing.",
+      "sextile": "Mars opens a door for your Sun. A bit of initiative now goes further than usual.",
+      "square": "Mars squares your Sun: friction, frustration, or a power struggle flares. Move your body, then make the decision — not the reverse.",
+      "opposition": "Mars opposes your Sun: someone or something meets your will with equal force. Pick the battle that's actually yours."
+    },
+    "Mars": {
+      "conjunction": "Transiting Mars returns to your natal Mars: a fresh cycle of desire and assertion begins. Notice what you genuinely want to fight for this year.",
+      "trine": "Mars flows with your natal Mars: your engine runs clean. Spend the stamina on something that matters to you.",
+      "sextile": "Mars offers a steady opening to act. Convert a long-held intention into a first concrete move.",
+      "square": "Mars squares your natal Mars: your usual way of pushing meets resistance. Try a different angle instead of more force.",
+      "opposition": "Mars opposes your natal Mars: your drive collides with someone else's. Coordinate the effort or it cancels out."
+    }
+  },
+  "Venus": {
+    "Moon": {
+      "conjunction": "Venus meets your Moon: tenderness and the wish for closeness rise together. Let yourself be soft with someone safe.",
+      "trine": "Venus eases the channel to your Moon: comfort and affection come naturally. A good day to mend a small rift.",
+      "sextile": "Venus opens a small door to your Moon. A gentle gesture lands more deeply than its size suggests.",
+      "square": "Venus squares your Moon: a craving for harmony can paper over a real feeling. Be kind and honest, not just kind.",
+      "opposition": "Venus opposes your Moon: what you want and what you need don't quite match today. Name the difference before you act on either."
+    }
+  }
+}

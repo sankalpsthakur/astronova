@@ -1,0 +1,50 @@
+{
+  "aries": {
+    "archetype": "You're the Initiator — the spark that turns a standstill into motion before anyone else has finished debating.",
+    "this_year_question": "Where would decisive action serve you better than waiting for the perfect moment?"
+  },
+  "taurus": {
+    "archetype": "You're the Builder — patient, sensory, and quietly unshakeable once your roots go down.",
+    "this_year_question": "What is worth holding onto, and what comfort is quietly holding you back?"
+  },
+  "gemini": {
+    "archetype": "You're the Messenger — curious, quick, and happiest when ideas are moving between people.",
+    "this_year_question": "Which conversation, if you finally started it, would change the most for you?"
+  },
+  "cancer": {
+    "archetype": "You're the Nurturer — tuned to the emotional weather of every room you walk into.",
+    "this_year_question": "Where are you caring for everyone but yourself, and what would change if you reversed that?"
+  },
+  "leo": {
+    "archetype": "You're the Performer — warm, generous, and made to be seen doing what you love.",
+    "this_year_question": "What would you create this year if you trusted that your light was already enough?"
+  },
+  "virgo": {
+    "archetype": "You're the Craftsperson — precise, devoted, and able to find the one detail that makes the whole thing work.",
+    "this_year_question": "Where is 'good enough' actually the wiser, kinder standard right now?"
+  },
+  "libra": {
+    "archetype": "You're the Diplomat — drawn to balance, beauty, and the fairness most people only talk about.",
+    "this_year_question": "Whose approval are you weighing more heavily than your own clear preference?"
+  },
+  "scorpio": {
+    "archetype": "You're the Alchemist — unafraid of depth, and able to turn what others avoid into power.",
+    "this_year_question": "What are you ready to release so something truer can take its place?"
+  },
+  "sagittarius": {
+    "archetype": "You're the Explorer — restless for meaning, allergic to the cage of someone else's small story.",
+    "this_year_question": "Which belief have you outgrown, and where is your next real horizon?"
+  },
+  "capricorn": {
+    "archetype": "You're the Architect — strategic, durable, and quietly building something that will outlast the moment.",
+    "this_year_question": "Are you climbing your own mountain, or one you were simply handed?"
+  },
+  "aquarius": {
+    "archetype": "You're the Visionary — wired to see the system everyone else mistakes for the way things must be.",
+    "this_year_question": "Where could your independence make room for the people who actually get you?"
+  },
+  "pisces": {
+    "archetype": "You're the Dreamer — porous, imaginative, and fluent in the things that can't quite be said.",
+    "this_year_question": "What boundary would protect your gift instead of dimming it this year?"
+  }
+}
