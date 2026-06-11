@@ -1103,7 +1103,10 @@ def get_session_token(session_id: str):
     room_name = f"astronova-{session_id}"
     jitsi_url = f"https://meet.jit.si/{room_name}"
 
-    logger.info(f"Generated Jitsi room URL for {identity}: {jitsi_url}")
+    # Avoid logging the full joinable room URL: the room name is derived from
+    # the session id, so logging it would let anyone with log access join a
+    # confidential consultation. Log only a non-sensitive prefix.
+    logger.info("Generated Jitsi room for session %s…", session_id[:8])
 
     return jsonify({
         "roomUrl": jitsi_url,
