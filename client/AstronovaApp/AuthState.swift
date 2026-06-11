@@ -582,27 +582,52 @@ extension AuthState {
 
         Analytics.shared.track(.tokenExpired, properties: nil)
 
-        do {
-            // Try to refresh the token
-            let authResponse = try await apiServices.refreshToken()
-
-            await MainActor.run {
-                self.jwtToken = authResponse.jwtToken
-                self.authenticatedUser = authResponse.user
-                self.storeJWTToken(authResponse.jwtToken)
-                self.apiServices.jwtToken = authResponse.jwtToken
-                self.authError = nil
+        // Retry transient failures (offline, timeout, 5xx) with exponential
+        // backoff so a single network hiccup doesn't eject the user. Only a
+        // genuine auth failure (the refresh token itself is rejected) signs out.
+        let backoffSeconds: [UInt64] = [0, 2, 4, 8]
+        for (attempt, delay) in backoffSeconds.enumerated() {
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: delay * 1_000_000_000)
             }
+            do {
+                let authResponse = try await apiServices.refreshToken()
+                await MainActor.run {
+                    self.jwtToken = authResponse.jwtToken
+                    self.authenticatedUser = authResponse.user
+                    self.storeJWTToken(authResponse.jwtToken)
+                    self.apiServices.jwtToken = authResponse.jwtToken
+                    self.authError = nil
+                    self.connectionError = nil
+                }
+                Analytics.shared.track(.tokenRefreshSuccess, properties: nil)
+                return
+            } catch {
+                let networkError = error as? NetworkError
+                let isAuthFailure = networkError?.requiresReauthentication ?? false
+                let isLastAttempt = attempt == backoffSeconds.count - 1
 
-            Analytics.shared.track(.tokenRefreshSuccess, properties: nil)
+                if isAuthFailure {
+                    // The refresh token is invalid/expired — re-auth is required.
+                    Analytics.shared.track(.tokenRefreshFailed, properties: nil)
+                    await MainActor.run {
+                        self.authError = "Your session has expired. Please sign in again."
+                        self.signOut()
+                    }
+                    return
+                }
 
-        } catch {
-            Analytics.shared.track(.tokenRefreshFailed, properties: nil)
-
-            // Refresh failed, sign out user
-            await MainActor.run {
-                self.authError = "Your session has expired. Please sign in again."
-                self.signOut()
+                if isLastAttempt {
+                    // Transient failures exhausted: keep the user signed in (the
+                    // token may still work once the network recovers) and surface
+                    // a soft connection warning instead of ejecting them.
+                    Analytics.shared.track(.tokenRefreshFailed, properties: nil)
+                    await MainActor.run {
+                        self.connectionError = "Unable to refresh your session. Some features may be limited until you reconnect."
+                    }
+                    return
+                }
+                // Otherwise loop and retry after backoff.
             }
         }
     }
