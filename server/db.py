@@ -551,6 +551,30 @@ def record_processed_transaction(
         conn.close()
 
 
+def has_report_entitlement(user_id: Optional[str], domain: Optional[str]) -> bool:
+    """Whether the user has purchased the non-consumable report for ``domain``.
+
+    Report SKUs are named ``report_<domain>`` (e.g. report_love) and recorded in
+    processed_transactions when verified. This lets a one-off report purchase
+    unlock generation without a full Pro subscription.
+    """
+    if not user_id or not domain:
+        return False
+    product_id = f"report_{domain}"
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT 1 FROM processed_transactions WHERE user_id=? AND product_id=? LIMIT 1",
+            (user_id, product_id),
+        )
+        return cur.fetchone() is not None
+    except sqlite3.OperationalError:
+        return False
+    finally:
+        conn.close()
+
+
 def find_user_by_original_transaction(original_transaction_id: str) -> Optional[str]:
     """Resolve which user owns a subscription by its original transaction id.
 

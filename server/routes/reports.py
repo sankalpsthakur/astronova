@@ -185,8 +185,10 @@ def generate_report():
     if domain and domain not in _VALID_REPORT_DOMAINS:
         domain = None
 
+    # Access is granted by either an active Pro subscription or a one-off
+    # purchase of this specific report domain (e.g. the report_love SKU).
     entitlement = db.get_premium_entitlement(user_id)
-    if not entitlement["hasPremium"]:
+    if not entitlement["hasPremium"] and not db.has_report_entitlement(user_id, domain):
         return _payment_required_response("report_generation", entitlement)
 
     report_id = str(uuid.uuid4())

@@ -214,6 +214,35 @@ def test_credits_endpoint_returns_balance(authenticated_client, sample_user):
     assert resp.get_json()["balance"] == 30
 
 
+def test_report_purchase_unlocks_that_domain(authenticated_client, sample_user, cert_chain, monkeypatch):
+    """Buying report_love lets the user generate a love report without Pro."""
+    _set_root_env(monkeypatch, cert_chain)
+
+    # Without any entitlement, report generation is gated.
+    def fail_generate(*_a, **_k):
+        raise AssertionError("should not generate without entitlement")
+
+    monkeypatch.setattr("routes.reports._report_service.generate", fail_generate)
+    birth = {"date": "1990-01-15", "time": "14:30", "timezone": "Asia/Kolkata", "latitude": 19.076, "longitude": 72.8777}
+    gated = authenticated_client.post(
+        "/api/v1/reports/generate", json={"reportType": "love", "domain": "love", "birthData": birth}
+    )
+    assert gated.status_code == 402
+
+    # Verify a report_love purchase.
+    token = _sign(
+        _tx_payload(productId="report_love", transactionId="txn-report-love", expiresDate=None),
+        cert_chain["chain"],
+        cert_chain["leaf_key"],
+    )
+    vr = authenticated_client.post("/api/v1/payments/verify", json={"signedTransaction": token})
+    assert vr.status_code == 200
+    assert db_module.has_report_entitlement(sample_user["id"], "love") is True
+
+    # Now generation for that domain is allowed (and a different domain is not).
+    assert db_module.has_report_entitlement(sample_user["id"], "career") is False
+
+
 # ---------------------------------------------------------------------------
 # /payments/notifications webhook (refund revokes access)
 # ---------------------------------------------------------------------------
