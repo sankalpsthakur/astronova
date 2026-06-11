@@ -5,6 +5,7 @@ from flask_babel import gettext as _
 
 from db import (
     add_chat_message,
+    add_credits,
     consume_credit,
     ensure_conversation,
     get_premium_entitlement,
@@ -107,6 +108,7 @@ def chat():
             }
         ), 400
 
+    credit_spent = False
     if _is_paid_chat_request(data):
         entitlement = get_premium_entitlement(user_id)
         if not entitlement["hasPremium"]:
@@ -115,6 +117,7 @@ def chat():
             # credit is consumed only when access is actually granted.
             if not consume_credit(user_id, reason="oracle_chat_deep"):
                 return _payment_required_response("oracle_chat_deep", entitlement)
+            credit_spent = True
 
     # Support optional birth data in request for immediate personalization
     birth_data = data.get("birthData")
@@ -134,6 +137,10 @@ def chat():
             message=message, user_id=user_id, birth_data=birth_data
         )
     except ChatServiceError as exc:
+        if credit_spent:
+            # The user paid for a response they never received; give the
+            # credit back rather than charging for a provider failure.
+            add_credits(user_id, 1, reason="oracle_chat_deep_refund")
         return jsonify({"error": "oracle_unavailable", "detail": str(exc)}), 503
 
     # Persist assistant reply

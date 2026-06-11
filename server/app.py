@@ -515,11 +515,6 @@ def create_app():
     def root_health():
         return jsonify({"status": "ok"})
 
-    @app.route("/api/v1/health", methods=["GET"])
-    @limiter.exempt
-    def api_health():
-        return jsonify({"status": "ok"})
-
     # Global error handlers
     @app.errorhandler(404)
     def not_found(error):
