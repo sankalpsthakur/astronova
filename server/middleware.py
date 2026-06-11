@@ -10,6 +10,8 @@ from typing import Optional, Tuple
 
 from flask import g, jsonify, request
 
+from portfolio_analytics import _hash_ip
+
 logger = logging.getLogger(__name__)
 
 
@@ -131,7 +133,10 @@ def log_request_response(response):
             "path": request.path,
             "status": response.status_code,
             "duration_ms": round(duration_ms, 2),
-            "ip": request.remote_addr,
+            # Hash the client IP rather than logging it in plaintext (PII),
+            # reusing the salted hasher the analytics layer already uses so the
+            # values correlate without storing the raw address.
+            "ip_hash": _hash_ip(request.remote_addr),
             "user_agent": request.headers.get("User-Agent", "unknown")[:50],
         }
 
