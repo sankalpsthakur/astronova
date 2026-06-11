@@ -293,3 +293,116 @@ def test_notification_rejects_unverified_payload(authenticated_client, cert_chai
     resp = authenticated_client.post("/api/v1/payments/notifications", json={"signedPayload": note})
     assert resp.status_code == 400
     assert resp.get_json()["code"] == "VERIFICATION_FAILED"
+
+
+# ---------------------------------------------------------------------------
+# Notification subtypes, expiry lapse, idempotency, malformed payloads
+# ---------------------------------------------------------------------------
+
+
+def _establish_subscription(authenticated_client, cert_chain):
+    purchase = _sign(_tx_payload(), cert_chain["chain"], cert_chain["leaf_key"])
+    authenticated_client.post("/api/v1/payments/verify", json={"signedTransaction": purchase})
+
+
+def test_notification_did_renew_keeps_active_and_extends(authenticated_client, sample_user, cert_chain, monkeypatch):
+    _set_root_env(monkeypatch, cert_chain)
+    _establish_subscription(authenticated_client, cert_chain)
+    future = int((datetime.now(timezone.utc) + timedelta(days=60)).timestamp() * 1000)
+    note = _notification("DID_RENEW", _tx_payload(expiresDate=future), cert_chain["chain"], cert_chain["leaf_key"])
+    resp = authenticated_client.post("/api/v1/payments/notifications", json={"signedPayload": note})
+    assert resp.status_code == 200
+    assert resp.get_json()["action"] == "updated"
+    assert db_module.get_premium_entitlement(sample_user["id"])["hasPremium"] is True
+
+
+def test_notification_expired_revokes(authenticated_client, sample_user, cert_chain, monkeypatch):
+    _set_root_env(monkeypatch, cert_chain)
+    _establish_subscription(authenticated_client, cert_chain)
+    note = _notification("EXPIRED", _tx_payload(), cert_chain["chain"], cert_chain["leaf_key"])
+    resp = authenticated_client.post("/api/v1/payments/notifications", json={"signedPayload": note})
+    assert resp.status_code == 200
+    assert resp.get_json()["action"] == "revoked"
+    assert db_module.get_premium_entitlement(sample_user["id"])["hasPremium"] is False
+
+
+def test_notification_grace_period_expired_revokes(authenticated_client, sample_user, cert_chain, monkeypatch):
+    _set_root_env(monkeypatch, cert_chain)
+    _establish_subscription(authenticated_client, cert_chain)
+    note = _notification("GRACE_PERIOD_EXPIRED", _tx_payload(), cert_chain["chain"], cert_chain["leaf_key"])
+    resp = authenticated_client.post("/api/v1/payments/notifications", json={"signedPayload": note})
+    assert resp.status_code == 200
+    assert db_module.get_premium_entitlement(sample_user["id"])["hasPremium"] is False
+
+
+def test_subscription_lapses_at_expiry(sample_user, clean_db):
+    """A subscription flagged active but past its expiry must read as inactive."""
+    past = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+    db_module.set_subscription_from_transaction(
+        sample_user["id"],
+        is_active=True,
+        product_id="astronova_pro_monthly",
+        expires_at=past,
+        original_transaction_id="orig-lapse",
+        latest_transaction_id="tx-lapse",
+        environment="Sandbox",
+        auto_renew=True,
+    )
+    assert db_module.get_subscription(sample_user["id"])["isActive"] is False
+    assert db_module.get_premium_entitlement(sample_user["id"])["hasPremium"] is False
+
+
+def test_verify_credits_idempotent_ledger_net(authenticated_client, sample_user, cert_chain, monkeypatch):
+    _set_root_env(monkeypatch, cert_chain)
+    token = _sign(
+        _tx_payload(productId="chat_credits_5", transactionId="txn-ledger", expiresDate=None),
+        cert_chain["chain"],
+        cert_chain["leaf_key"],
+    )
+    authenticated_client.post("/api/v1/payments/verify", json={"signedTransaction": token})
+    authenticated_client.post("/api/v1/payments/verify", json={"signedTransaction": token})
+    conn = db_module.get_connection()
+    total = conn.execute("SELECT COALESCE(SUM(delta),0) FROM credit_ledger WHERE user_id=?", (sample_user["id"],)).fetchone()[0]
+    conn.close()
+    assert total == 50  # not 100
+
+
+def test_credit_double_spend_prevented_under_concurrency(sample_user, clean_db):
+    from concurrent.futures import ThreadPoolExecutor
+
+    db_module.add_credits(sample_user["id"], 2, reason="test")
+    results = []
+
+    def consume():
+        results.append(db_module.consume_credit(sample_user["id"], reason="concurrent"))
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for f in [ex.submit(consume) for _ in range(8)]:
+            f.result()
+
+    assert sum(1 for r in results if r) == 2
+    assert db_module.get_credit_balance(sample_user["id"]) == 0
+
+
+def test_verify_rejects_empty_and_nonstring_payload(authenticated_client, cert_chain, monkeypatch):
+    _set_root_env(monkeypatch, cert_chain)
+    for bad in ({"signedTransaction": ""}, {"signedTransaction": 123}, {}):
+        resp = authenticated_client.post("/api/v1/payments/verify", json=bad)
+        assert resp.status_code == 400
+
+
+def test_notifications_rejects_empty_payload(authenticated_client, cert_chain, monkeypatch):
+    _set_root_env(monkeypatch, cert_chain)
+    resp = authenticated_client.post("/api/v1/payments/notifications", json={"signedPayload": ""})
+    assert resp.status_code == 400
+
+
+def test_verify_rejects_missing_x5c(authenticated_client, cert_chain, monkeypatch):
+    import jwt as pyjwt
+
+    _set_root_env(monkeypatch, cert_chain)
+    # Sign with the leaf key but omit the x5c chain header entirely.
+    token = pyjwt.encode(_tx_payload(), cert_chain["leaf_key"], algorithm="ES256")
+    resp = authenticated_client.post("/api/v1/payments/verify", json={"signedTransaction": token})
+    assert resp.status_code == 400
+    assert resp.get_json()["code"] == "VERIFICATION_FAILED"

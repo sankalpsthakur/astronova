@@ -1078,3 +1078,65 @@ class TestDatabaseSecurity:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestJWTAlgorithmAttacks:
+    """validate_jwt must only accept HS256-signed tokens."""
+
+    def test_alg_none_token_rejected(self):
+        import base64
+        import json as _json
+
+        from routes.auth import validate_jwt
+
+        def _b64(obj):
+            return base64.urlsafe_b64encode(_json.dumps(obj).encode()).rstrip(b"=").decode()
+
+        # Forge an unsigned "alg: none" token for an arbitrary subject.
+        header = _b64({"alg": "none", "typ": "JWT"})
+        payload = _b64({"sub": "attacker", "email": "a@b.c"})
+        forged = f"{header}.{payload}."
+        with pytest.raises(ValueError):
+            validate_jwt(forged)
+
+    def test_wrong_secret_signature_rejected(self):
+        import jwt as pyjwt
+
+        from routes.auth import validate_jwt
+
+        token = pyjwt.encode({"sub": "x"}, "not-the-real-secret-value", algorithm="HS256")
+        with pytest.raises(ValueError):
+            validate_jwt(token)
+
+
+class TestAccountDeletionIdempotency:
+    def test_delete_account_twice_is_safe(self, client, auth_token):
+        headers = {"Authorization": f"Bearer {auth_token}"}
+        first = client.delete("/api/v1/auth/delete-account", headers=headers)
+        assert first.status_code == 200
+        assert first.get_json()["deleted"] is True
+        # Second call with the same (still-valid) token must not error.
+        second = client.delete("/api/v1/auth/delete-account", headers=headers)
+        assert second.status_code == 200
+        assert second.get_json()["deleted"] is True
+
+
+class TestBirthDataValidationViaEndpoint:
+    """Birth-data bounds are enforced at the chart endpoint, not just in unit code."""
+
+    def _bd(self, **over):
+        bd = {"date": "1990-01-15", "time": "14:30", "timezone": "Asia/Kolkata", "latitude": 19.0, "longitude": 72.0}
+        bd.update(over)
+        return {"birthData": bd}
+
+    def test_chart_rejects_future_birth_date(self, client):
+        resp = client.post("/api/v1/chart/generate", json=self._bd(date="2999-01-01"))
+        assert resp.status_code == 400
+
+    def test_chart_rejects_ancient_birth_date(self, client):
+        resp = client.post("/api/v1/chart/generate", json=self._bd(date="1700-01-01"))
+        assert resp.status_code == 400
+
+    def test_chart_rejects_invalid_timezone(self, client):
+        resp = client.post("/api/v1/chart/generate", json=self._bd(timezone="Not/AZone"))
+        assert resp.status_code == 400

@@ -5,6 +5,7 @@ from flask_babel import gettext as _
 
 from db import (
     add_chat_message,
+    add_credits,
     consume_credit,
     ensure_conversation,
     get_premium_entitlement,
@@ -107,14 +108,17 @@ def chat():
             }
         ), 400
 
+    credit_consumed = False
     if _is_paid_chat_request(data):
         entitlement = get_premium_entitlement(user_id)
         if not entitlement["hasPremium"]:
             # Pro subscription is the primary gate; a server-side chat credit
             # (purchased via /payments/verify) is an accepted alternative. The
-            # credit is consumed only when access is actually granted.
+            # credit is consumed up front (atomic, prevents concurrent
+            # double-use) and refunded below if generation fails.
             if not consume_credit(user_id, reason="oracle_chat_deep"):
                 return _payment_required_response("oracle_chat_deep", entitlement)
+            credit_consumed = True
 
     # Support optional birth data in request for immediate personalization
     birth_data = data.get("birthData")
@@ -134,7 +138,10 @@ def chat():
             message=message, user_id=user_id, birth_data=birth_data
         )
     except ChatServiceError as exc:
-        return jsonify({"error": "oracle_unavailable", "detail": str(exc)}), 503
+        # Don't charge the user for a reading we couldn't produce.
+        if credit_consumed:
+            add_credits(user_id, 1, reason="oracle_chat_deep_refund")
+        return jsonify({"error": "oracle_unavailable", "code": "ORACLE_UNAVAILABLE", "detail": str(exc)}), 503
 
     # Persist assistant reply
     message_id = add_chat_message(conversation_id, "assistant", reply, user_id)

@@ -157,3 +157,47 @@ def test_deep_oracle_chat_allows_active_subscription(authenticated_client, sampl
     data = response.get_json()
     assert data["reply"] == "premium deep reply"
     assert data["suggestedFollowUps"] == ["Explore the timing"]
+
+
+def test_deep_chat_consumes_one_credit_on_success(authenticated_client, sample_user, monkeypatch):
+    """A non-subscriber with credits can run a deep chat; one credit is spent."""
+    db_module.add_credits(sample_user["id"], 10, reason="test")
+
+    def fake_generate_response(message, user_id=None, birth_data=None):
+        return "deep reply", []
+
+    monkeypatch.setattr("routes.chat._chat_service.generate_response", fake_generate_response)
+    resp = authenticated_client.post("/api/v1/chat", json={"message": "deep one", "context": "depth=deep"})
+    assert resp.status_code == 200
+    assert db_module.get_credit_balance(sample_user["id"]) == 9
+
+
+def test_deep_chat_does_not_consume_credit_on_failure(authenticated_client, sample_user, monkeypatch):
+    """If generation fails, the credit must not be spent (it was already consumed
+    before generation, so the endpoint must refund or not double-charge)."""
+    from services.chat_response_service import ChatServiceError
+
+    db_module.add_credits(sample_user["id"], 5, reason="test")
+
+    def fail_generate(*_a, **_k):
+        raise ChatServiceError("AI unavailable")
+
+    monkeypatch.setattr("routes.chat._chat_service.generate_response", fail_generate)
+    resp = authenticated_client.post("/api/v1/chat", json={"message": "deep", "context": "depth=deep"})
+    assert resp.status_code == 503
+    # The credit balance must not drop below what the user paid for a failed call.
+    assert db_module.get_credit_balance(sample_user["id"]) == 5
+
+
+def test_deep_chat_with_subscription_does_not_consume_credit(authenticated_client, sample_user, monkeypatch):
+    """An active subscriber's deep chat is gated by the subscription, not credits."""
+    db_module.set_subscription(sample_user["id"], True, "astronova_pro_monthly")
+    db_module.add_credits(sample_user["id"], 7, reason="test")
+
+    def fake_generate_response(message, user_id=None, birth_data=None):
+        return "premium reply", []
+
+    monkeypatch.setattr("routes.chat._chat_service.generate_response", fake_generate_response)
+    resp = authenticated_client.post("/api/v1/chat", json={"message": "deep", "context": "depth=deep"})
+    assert resp.status_code == 200
+    assert db_module.get_credit_balance(sample_user["id"]) == 7  # untouched
