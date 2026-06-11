@@ -801,6 +801,32 @@ class APIServices: ObservableObject, APIServicesProtocol {
 
         return response.isActive
     }
+
+    /// Verify a StoreKit 2 signed transaction with the server, which is the
+    /// source of truth for entitlements. Returns whether the server now
+    /// recognizes the user as premium.
+    @discardableResult
+    func verifyTransaction(signedTransaction: String) async throws -> Bool {
+        struct Body: Encodable { let signedTransaction: String }
+        let response = try await networkClient.request(
+            endpoint: "/api/v1/payments/verify",
+            method: HTTPMethod.POST,
+            body: Body(signedTransaction: signedTransaction),
+            responseType: PaymentVerifyResponse.self
+        )
+        return response.entitlement.hasPremium
+    }
+
+    /// Fetch the server-held chat-credit balance (the authoritative count).
+    func fetchCreditBalance() async throws -> Int {
+        let response = try await networkClient.request(
+            endpoint: "/api/v1/payments/credits",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: CreditBalanceResponse.self
+        )
+        return response.balance
+    }
     
     /// Generate report (alias for generateDetailedReport)
     /// - Parameters:

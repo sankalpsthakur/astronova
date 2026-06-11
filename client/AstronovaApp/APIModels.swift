@@ -592,6 +592,22 @@ struct SubscriptionStatusResponse: Codable {
     let updatedAt: String?
 }
 
+// MARK: - Payments / Entitlement Models (server-authoritative)
+
+/// Server response to POST /api/v1/payments/verify after a StoreKit purchase.
+struct PaymentVerifyResponse: Codable {
+    struct Entitlement: Codable {
+        let hasPremium: Bool
+    }
+    let status: String
+    let entitlement: Entitlement
+}
+
+/// Server response to GET /api/v1/payments/credits.
+struct CreditBalanceResponse: Codable {
+    let balance: Int
+}
+
 // MARK: - Discover Snapshot Models
 
 /// Unified Discover snapshot for daily check-in

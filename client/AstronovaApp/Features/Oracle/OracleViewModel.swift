@@ -181,6 +181,10 @@ final class OracleViewModel: ObservableObject {
                 switch networkError {
                 case .authenticationFailed, .tokenExpired:
                     errorMessage = L10n.Oracle.signInRequired
+                case .paymentRequired:
+                    // Server (source of truth) gated this as premium: present
+                    // the paywall rather than showing a generic error.
+                    showingPaywall = true
                 case .offline:
                     errorMessage = L10n.Errors.noInternet
                 case .timeout:

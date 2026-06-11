@@ -10,9 +10,12 @@ enum NetworkError: Error, LocalizedError {
     case networkError(Error)
     case authenticationFailed(String?)
     case tokenExpired
+    /// The server (source of truth) requires an active entitlement for this
+    /// feature. The associated string is the gated feature key, if provided.
+    case paymentRequired(String?)
     case offline
     case timeout
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
@@ -34,6 +37,8 @@ enum NetworkError: Error, LocalizedError {
             return message ?? "Authentication failed"
         case .tokenExpired:
             return "Your session has expired. Please sign in again."
+        case .paymentRequired:
+            return "Astronova Pro is required for this feature."
         case .offline:
             return "No internet connection. Some features may be limited."
         case .timeout:
@@ -199,6 +204,15 @@ class NetworkClient: NetworkClientProtocol {
                 } else {
                     throw NetworkError.authenticationFailed(errorMessage)
                 }
+            case 402:
+                // Server is the source of truth for entitlements: surface a
+                // distinct error so the UI can prompt to upgrade/restore.
+                let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.apiError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "402"
+                ])
+                throw NetworkError.paymentRequired(errorMessage)
             case 400...499:
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.apiError, properties: [
@@ -374,6 +388,15 @@ class NetworkClient: NetworkClientProtocol {
                 } else {
                     throw NetworkError.authenticationFailed(errorMessage)
                 }
+            case 402:
+                // Server is the source of truth for entitlements: surface a
+                // distinct error so the UI can prompt to upgrade/restore.
+                let errorMessage = extractErrorMessage(from: data)
+                Analytics.shared.track(.apiError, properties: [
+                    "endpoint": endpoint,
+                    "status_code": "402"
+                ])
+                throw NetworkError.paymentRequired(errorMessage)
             case 400...499:
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.apiError, properties: [

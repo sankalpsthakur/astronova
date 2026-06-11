@@ -1,0 +1,56 @@
+# Client ↔ Server Payment Verification — Handoff
+
+**Status:** Code written, **NOT yet built or run** (this work was done in a Linux
+environment without Xcode and without an App Store sandbox account). Everything
+below compiles in principle and follows StoreKit 2 APIs, but must be verified in
+Xcode + TestFlight before release.
+
+## What changed on the client
+
+| File | Change |
+|------|--------|
+| `NetworkClient.swift` | New `NetworkError.paymentRequired(String?)`; HTTP **402** now maps to it (previously a generic `serverError`). |
+| `APIModels.swift` | `PaymentVerifyResponse`, `CreditBalanceResponse`. |
+| `APIServices.swift` | `verifyTransaction(signedTransaction:)` → `POST /api/v1/payments/verify`; `fetchCreditBalance()` → `GET /api/v1/payments/credits`. |
+| `StoreKitManager.swift` | On every verified purchase (`purchaseProduct`) and out-of-band transaction (`listenForTransactions`), the signed `jwsRepresentation` is sent to the server. New `verifyWithServer(...)` and `syncEntitlementsFromServer()`; `refreshEntitlements()` now reconciles with the server (source of truth). |
+| `Features/Oracle/OracleViewModel.swift` | A `paymentRequired` error now presents the paywall (`showingPaywall = true`) instead of a generic error. |
+
+## Why
+
+The server already gated premium features (deep chat, paid reports) on a
+`subscription_status` table, but nothing wrote that table from a real purchase —
+so paying users got **402** and the client showed a generic failure, while local
+`UserDefaults` flags (`hasAstronovaPro`, `chat_credits`) were trivially
+spoofable. The client now treats the **server** as authoritative: purchases are
+verified server-side, and the local flags are an optimistic cache reconciled on
+launch/foreground and after each purchase.
+
+## Required to finish (needs Xcode / App Store Connect)
+
+1. **Build & resolve types.** Confirm `VerificationResult.jwsRepresentation` is
+   used correctly for the project's deployment target and that the new
+   `NetworkError` case doesn't break any non-`default` switch (audited: all
+   current switches have a `default`).
+2. **Configure the server's Apple root.** Set `APPLE_ROOT_CA_PEM` (or
+   `APPLE_ROOT_CA_PATH`) to **Apple Root CA - G3** on the backend, and
+   `APPLE_BUNDLE_ID` to the real bundle id. Without a trusted root the verify
+   endpoint fails closed (by design).
+3. **App Store Server Notifications V2.** Register the production + sandbox
+   notification URL in App Store Connect → `POST /api/v1/payments/notifications`.
+4. **Sandbox E2E.** With a sandbox tester: purchase Pro → confirm server
+   entitlement flips and gated features unlock; buy chat credits → confirm the
+   server balance increments and the client reads it; issue a refund → confirm
+   the notification revokes access. Test restore on a second device.
+5. **Foreground sync.** Confirm `refreshEntitlements()` (which now calls
+   `syncEntitlementsFromServer()`) runs on launch and on return-to-foreground.
+
+## Known follow-ups (not blocking, but worth doing)
+
+- Chat credits are still decremented locally by `OracleQuotaManager` *and*
+  server-side on each paid chat. The server value wins on the next sync, but the
+  client should ideally stop local decrementing and treat the server balance as
+  the only source.
+- Bind purchases to the account with StoreKit `appAccountToken` (set at purchase,
+  verified server-side) so a shared/leaked signed transaction can't be applied to
+  a different account. Today idempotency means a given transaction only ever
+  grants one account, but explicit binding is stronger.

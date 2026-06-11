@@ -116,13 +116,19 @@ class StoreKitManager: ObservableObject {
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
-                
+
+                // Server is the source of truth: verify the signed transaction
+                // server-side before granting access locally. The local flags
+                // updated in handleSuccessfulPurchase are an optimistic cache
+                // that the next entitlement sync reconciles.
+                await verifyWithServer(jwsRepresentation: verification.jwsRepresentation)
+
                 // Handle successful purchase
                 await handleSuccessfulPurchase(transaction: transaction, analyticsSource: .purchaseFlow)
-                
+
                 // Finish the transaction
                 await transaction.finish()
-                
+
                 return true
                 
             case .userCancelled:
@@ -179,10 +185,14 @@ class StoreKitManager: ObservableObject {
         return hasProSubscription || hadProBefore
     }
 
-    /// Refresh entitlement state without triggering a restore flow
+    /// Refresh entitlement state without triggering a restore flow.
+    /// Reconciles local StoreKit entitlements first, then defers to the server
+    /// (the source of truth) so a refunded/expired subscription is correctly
+    /// revoked even if a stale local flag remains.
     @discardableResult
     func refreshEntitlements() async -> Bool {
         await checkCurrentEntitlements()
+        await syncEntitlementsFromServer()
         return hasProSubscription
     }
     
@@ -194,6 +204,9 @@ class StoreKitManager: ObservableObject {
             for await result in StoreKit.Transaction.updates {
                 do {
                     let transaction = try self.checkVerified(result)
+                    // Record out-of-band transactions (renewals, ask-to-buy,
+                    // restores) with the server too.
+                    await self.verifyWithServer(jwsRepresentation: result.jwsRepresentation)
                     await self.handleSuccessfulPurchase(transaction: transaction)
                     await transaction.finish()
                 } catch {
@@ -324,6 +337,49 @@ class StoreKitManager: ObservableObject {
         }
     }
     
+    /// Send a StoreKit signed transaction to the server for authoritative
+    /// verification. On success, reconcile the local Pro flag and chat-credit
+    /// balance with the server's response so the client never self-attests
+    /// entitlements. Failures are non-fatal: the local optimistic state stands
+    /// until the next sync, and the App Store Server Notification webhook keeps
+    /// the server correct regardless.
+    private func verifyWithServer(jwsRepresentation: String) async {
+        do {
+            let hasPremium = try await APIServices.shared.verifyTransaction(
+                signedTransaction: jwsRepresentation
+            )
+            await MainActor.run {
+                self.hasProSubscription = hasPremium
+            }
+            // Pull the authoritative credit balance after a consumable purchase.
+            if let balance = try? await APIServices.shared.fetchCreditBalance() {
+                await MainActor.run {
+                    UserDefaults.standard.set(balance, forKey: "chat_credits")
+                }
+            }
+        } catch {
+            #if DEBUG
+            debugPrint("[StoreKit] Server verification failed: \(error.localizedDescription)")
+            #endif
+        }
+    }
+
+    /// Reconcile local entitlement/credit caches with the server on launch and
+    /// when the app returns to foreground. The server (fed by receipt
+    /// verification and App Store notifications) is authoritative.
+    func syncEntitlementsFromServer() async {
+        if let isActive = try? await APIServices.shared.checkSubscriptionStatus() {
+            await MainActor.run {
+                self.hasProSubscription = isActive
+            }
+        }
+        if let balance = try? await APIServices.shared.fetchCreditBalance() {
+            await MainActor.run {
+                UserDefaults.standard.set(balance, forKey: "chat_credits")
+            }
+        }
+    }
+
     private func checkCurrentEntitlements() async {
         var hasPro = false
         var purchasedProductIds: [String] = []
