@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import hashlib
 import logging
-import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from flask import Blueprint, Response, g, jsonify, request
@@ -35,6 +35,12 @@ def _payment_required_response(feature: str, entitlement: dict):
     ), 402
 
 
+# Bound concurrent report generation so a burst of requests can't exhaust
+# threads/CPU. Excess work queues in the executor rather than spawning unbounded
+# daemon threads.
+_REPORT_EXECUTOR = ThreadPoolExecutor(max_workers=3, thread_name_prefix="report-gen")
+
+
 def _generate_report_async(report_id: str, report_type: str, birth_data: dict | None, domain: str | None = None):
     """Background task to generate report content."""
     try:
@@ -51,13 +57,19 @@ def _generate_report_async(report_id: str, report_type: str, birth_data: dict | 
                 pass
         db.update_report(report_id, generated.title, content, status="completed")
         logger.info("Report %s generation completed successfully", report_id)
-    except Exception as exc:
-        logger.error("Async report generation failed for %s: %s", report_id, exc)
-        # Mark as failed so client knows to retry
+    except Exception:
+        # Log the detail server-side; never echo the raw exception back to the
+        # client via the stored report content (info disclosure).
+        logger.exception("Async report generation failed for %s", report_id)
         try:
-            db.update_report(report_id, f"Report Generation Failed", json.dumps({"error": str(exc)}), status="failed")
+            db.update_report(
+                report_id,
+                "Report Generation Failed",
+                json.dumps({"error": "Report generation failed. Please try again.", "code": "REPORT_GENERATION_FAILED"}),
+                status="failed",
+            )
         except Exception:
-            pass
+            logger.exception("Failed to mark report %s as failed", report_id)
 
 
 @reports_bp.route("", methods=["GET"])
@@ -218,13 +230,9 @@ def generate_report():
             logger.error("Report placeholder creation failed: %s", exc)
             return jsonify({"error": "Unable to start report generation", "code": "REPORT_CREATION_FAILED"}), 500
 
-        # Start background generation
-        thread = threading.Thread(
-            target=_generate_report_async,
-            args=(report_id, report_type, birth_data_raw, domain),
-            daemon=True,
-        )
-        thread.start()
+        # Start background generation on the bounded pool (caps concurrency so
+        # a burst of requests can't exhaust threads/CPU).
+        _REPORT_EXECUTOR.submit(_generate_report_async, report_id, report_type, birth_data_raw, domain)
 
         response = {
             "reportId": report_id,

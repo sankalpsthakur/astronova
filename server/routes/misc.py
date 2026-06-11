@@ -48,6 +48,21 @@ def health_check():
     )
 
 
+@misc_bp.route("/readiness", methods=["GET"])
+def readiness_check():
+    """Deep readiness probe (distinct from the cheap /health liveness check).
+
+    Verifies core dependencies (database, ephemeris) and reports the status of
+    soft dependencies (payments, AI provider). Returns 503 when a hard
+    dependency is down so an orchestrator avoids routing traffic to a broken
+    instance.
+    """
+    from config_validation import readiness_report
+
+    report = readiness_report()
+    return jsonify(report), (200 if report["ready"] else 503)
+
+
 @misc_bp.route("/system-status", methods=["GET"])
 def system_status():
     return jsonify(

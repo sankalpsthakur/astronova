@@ -148,6 +148,24 @@ def create_app():
     except Exception as e:
         logger.error(f"DB init failed: {e}", exc_info=True)
 
+    # Validate runtime configuration. In production this fails fast on missing
+    # security-critical settings (e.g. JWT secret) instead of serving traffic
+    # in a broken state; outside production it only logs warnings.
+    from config_validation import validate_startup_config
+
+    validate_startup_config(app)
+
+    # Reports generated in background threads don't survive a restart; clear any
+    # left 'processing' so clients see a definitive failure instead of a spinner.
+    try:
+        from db import fail_stuck_reports
+
+        recovered = fail_stuck_reports()
+        if recovered:
+            logger.warning("Marked %d stuck report(s) as failed on startup", recovered)
+    except Exception:
+        logger.exception("Stuck-report recovery failed")
+
     # Register minimal blueprints
     app.register_blueprint(horoscope_bp, url_prefix="/api/v1/horoscope")
     app.register_blueprint(ephemeris_bp, url_prefix="/api/v1/ephemeris")

@@ -2120,6 +2120,26 @@ paths:
                     type: string
                     format: date-time
 
+  /api/v1/readiness:
+    get:
+      summary: Deep readiness probe (database, ephemeris, payments, AI provider)
+      tags:
+        - System
+      responses:
+        '200':
+          description: All hard dependencies healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                  checks:
+                    type: object
+        '503':
+          description: A hard dependency (database or ephemeris) is unavailable
+
   /api/v1/report:
     get:
       summary: Legacy report endpoint (redirect)

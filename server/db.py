@@ -1,7 +1,8 @@
+import json
 import logging
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,16 @@ DB_PATH = _resolve_db_path()
 def get_connection():
     conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    # WAL lets readers and a writer proceed concurrently (vs. the default
+    # rollback journal that locks the whole DB on write), and busy_timeout makes
+    # a contended write wait briefly instead of failing with "database is
+    # locked" — both matter under multi-worker gunicorn. In-memory test DBs do
+    # not support WAL, so tolerate failure there.
+    try:
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA busy_timeout = 5000")
+    except sqlite3.OperationalError:
+        pass
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
@@ -224,6 +235,33 @@ def update_report(report_id: str, title: str, content: str, status: str = "compl
     )
     conn.commit()
     conn.close()
+
+
+def fail_stuck_reports(older_than_minutes: int = 15) -> int:
+    """Mark reports stuck in 'processing' past a threshold as failed.
+
+    Async generation runs in background threads that don't survive a process
+    restart, leaving reports 'processing' forever. Called at startup to clear
+    those so the client sees a definitive 'failed' (and can retry) instead of a
+    spinner that never resolves. Returns the number of reports updated.
+    """
+    cutoff = (datetime.utcnow() - timedelta(minutes=older_than_minutes)).isoformat()
+    payload = json.dumps(
+        {"error": "Report generation was interrupted. Please try again.", "code": "REPORT_GENERATION_INTERRUPTED"}
+    )
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "UPDATE reports SET status='failed', content=? WHERE status IN ('processing','generating') AND generated_at < ?",
+            (payload, cutoff),
+        )
+        conn.commit()
+        return cur.rowcount
+    except sqlite3.OperationalError:
+        return 0
+    finally:
+        conn.close()
 
 
 # Content accessors
