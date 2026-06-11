@@ -22,6 +22,10 @@ _chat_service = ChatResponseService()
 
 _FREE_CHAT_DEPTHS = {"quick", "daily", "free", ""}
 
+# Upper bound on a single chat message. Generous for any genuine question while
+# preventing oversized payloads from inflating LLM cost/latency.
+MAX_CHAT_MESSAGE_CHARS = 4000
+
 
 def _requested_chat_depth(data: dict) -> str:
     for key in ("depth", "oracleDepth", "readingDepth"):
@@ -90,6 +94,18 @@ def chat():
     message = data.get("message", "")
     user_id = g.user_id  # Use authenticated user ID from decorator
     conversation_id = data.get("conversationId")
+
+    # Bound the message size to protect the LLM/backend from oversized payloads
+    # (cost and latency abuse). 4000 characters is well beyond any real question.
+    if not isinstance(message, str):
+        return jsonify({"error": _("message must be a string"), "code": "INVALID_MESSAGE"}), 400
+    if len(message) > MAX_CHAT_MESSAGE_CHARS:
+        return jsonify(
+            {
+                "error": _("Message is too long (max %(max)d characters)") % {"max": MAX_CHAT_MESSAGE_CHARS},
+                "code": "MESSAGE_TOO_LONG",
+            }
+        ), 400
 
     if _is_paid_chat_request(data):
         entitlement = get_premium_entitlement(user_id)

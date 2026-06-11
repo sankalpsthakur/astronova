@@ -886,6 +886,65 @@ class TestSecurityHeaders:
         # Check if CORS headers would be present
         assert response.status_code in [200, 204]
 
+    def test_defensive_security_headers_present(self, client):
+        """Responses carry MIME/clickjacking/referrer protection headers."""
+        response = client.get("/api/v1/health")
+        assert response.headers.get("X-Content-Type-Options") == "nosniff"
+        assert response.headers.get("X-Frame-Options") == "DENY"
+        assert response.headers.get("Referrer-Policy") == "no-referrer"
+
+
+class TestBirthDataValidation:
+    """Birth-date and timezone plausibility validation in the parser."""
+
+    def test_future_birth_date_rejected(self):
+        from utils.birth_data import BirthDataError, parse_birth_data
+
+        with pytest.raises(BirthDataError):
+            parse_birth_data(
+                {"birthData": {"date": "2999-01-01", "time": "12:00", "latitude": 1.0, "longitude": 1.0}}
+            )
+
+    def test_ancient_birth_date_rejected(self):
+        from utils.birth_data import BirthDataError, parse_birth_data
+
+        with pytest.raises(BirthDataError):
+            parse_birth_data(
+                {"birthData": {"date": "1700-01-01", "time": "12:00", "latitude": 1.0, "longitude": 1.0}}
+            )
+
+    def test_invalid_timezone_rejected(self):
+        from utils.birth_data import BirthDataError, parse_birth_data
+
+        with pytest.raises(BirthDataError):
+            parse_birth_data(
+                {
+                    "birthData": {
+                        "date": "1990-01-01",
+                        "time": "12:00",
+                        "timezone": "Not/AZone",
+                        "latitude": 1.0,
+                        "longitude": 1.0,
+                    }
+                }
+            )
+
+    def test_valid_birth_data_accepted(self):
+        from utils.birth_data import parse_birth_data
+
+        dt, lat, lon = parse_birth_data(
+            {
+                "birthData": {
+                    "date": "1990-01-15",
+                    "time": "14:30",
+                    "timezone": "Asia/Kolkata",
+                    "latitude": 19.076,
+                    "longitude": 72.8777,
+                }
+            }
+        )
+        assert dt is not None and lat == 19.076
+
 
 class TestDataValidation:
     """Test input validation and sanitization."""

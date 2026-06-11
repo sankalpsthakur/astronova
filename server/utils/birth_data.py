@@ -1,7 +1,14 @@
 """Shared birth data parsing utilities."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+
+# Plausibility bounds for a real user's birth date. Dates outside this range are
+# rejected with a clear error rather than fed into the ephemeris.
+MIN_BIRTH_YEAR = 1900
+# Small grace window so a user whose device clock is slightly ahead, or who was
+# born "today", is not rejected at a timezone boundary.
+_FUTURE_GRACE = timedelta(days=1)
 
 
 class BirthDataError(ValueError):
@@ -72,14 +79,39 @@ def parse_birth_data(
     time = bd.get("time") or bd.get("birth_time") or "12:00"
     tz = bd.get("timezone") or "UTC"
 
-    # Create UTC datetime
+    # Validate the timezone explicitly so callers get a clear message rather
+    # than a generic "invalid date/time" for a bad IANA identifier.
+    try:
+        tzinfo = ZoneInfo(tz)
+    except Exception:
+        if require_coords:
+            raise BirthDataError(f"Invalid timezone: {tz!r} (expected an IANA name like 'Asia/Kolkata')")
+        return (None, None, None, None) if include_timezone else (None, None, None)
+
+    # Parse the local datetime as entered.
     try:
         dt_local = datetime.fromisoformat(f"{date}T{time}")
-        dt = dt_local.replace(tzinfo=ZoneInfo(tz)).astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
     except Exception as e:
         if require_coords:
             raise BirthDataError(f"Invalid date/time format: {e}")
         return (None, None, None, None) if include_timezone else (None, None, None)
+
+    # Reject implausible birth dates. A birth date cannot be in the future, and
+    # dates before 1900 are not real users (and stress the ephemeris). This
+    # turns garbage input into a clear 400 instead of meaningless results.
+    if MIN_BIRTH_YEAR is not None and dt_local.year < MIN_BIRTH_YEAR:
+        if require_coords:
+            raise BirthDataError(f"Birth year must be {MIN_BIRTH_YEAR} or later, got {dt_local.year}")
+        return (None, None, None, None) if include_timezone else (None, None, None)
+
+    aware_local = dt_local.replace(tzinfo=tzinfo)
+    if aware_local > datetime.now(tzinfo) + _FUTURE_GRACE:
+        if require_coords:
+            raise BirthDataError("Birth date/time cannot be in the future")
+        return (None, None, None, None) if include_timezone else (None, None, None)
+
+    # Convert to UTC for downstream astronomical calculations.
+    dt = aware_local.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
 
     if include_timezone:
         return dt, lat_f, lon_f, tz

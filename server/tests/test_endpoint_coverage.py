@@ -971,10 +971,19 @@ class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_chat_very_long_message(self, authenticated_client):
-        """Test chat with very long message."""
-        long_message = "What is astrology? " * 1000  # Very long message
+        """Oversized chat messages are rejected to protect the LLM/backend."""
+        long_message = "What is astrology? " * 1000  # ~19k chars, over the cap
         response = authenticated_client.post("/api/v1/chat", json={"message": long_message, "userId": "test-user-edge-1"})
-        assert response.status_code in (200, 503)  # 503 if no AI provider
+        assert response.status_code == 400
+        assert response.get_json()["code"] == "MESSAGE_TOO_LONG"
+
+    def test_chat_message_at_reasonable_length_is_accepted(self, authenticated_client):
+        """A normal-length message is not blocked by the size guard."""
+        response = authenticated_client.post(
+            "/api/v1/chat", json={"message": "What does my week look like?", "userId": "test-user-edge-1b"}
+        )
+        # 200 normally, 503 when no AI provider is configured in this env.
+        assert response.status_code in (200, 503)
 
     def test_chat_special_characters(self, authenticated_client):
         """Test chat with special characters."""

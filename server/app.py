@@ -125,6 +125,22 @@ def create_app():
     app.before_request(add_request_id)
     app.after_request(log_request_response)
 
+    @app.after_request
+    def set_security_headers(response):
+        # Defensive headers. The API serves JSON to a native client and a small
+        # docs page; these mitigate MIME sniffing, clickjacking and referrer
+        # leakage at no functional cost.
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        # Only assert HSTS when actually served over TLS so local HTTP dev is
+        # unaffected.
+        if request.is_secure:
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+        return response
+
     # Ensure local SQLite is initialized once on startup
     try:
         init_db()
