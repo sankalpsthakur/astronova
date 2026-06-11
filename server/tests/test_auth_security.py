@@ -32,7 +32,7 @@ VALID_APPLE_ID_TOKEN = "valid-apple-id-token"
 _UNSET = object()
 
 
-def mock_apple_validation(monkeypatch, *, sub="apple-user-001", email=_UNSET):
+def mock_apple_validation(monkeypatch, *, sub="apple-user-001", email=_UNSET, nonce=None):
     """Mock Apple JWT validation while preserving token-required auth semantics."""
 
     def fake_validate(id_token):
@@ -42,6 +42,8 @@ def mock_apple_validation(monkeypatch, *, sub="apple-user-001", email=_UNSET):
             payload["sub"] = sub
         if email is not _UNSET:
             payload["email"] = email
+        if nonce is not None:
+            payload["nonce"] = nonce
         return payload
 
     monkeypatch.setattr("routes.auth.validate_apple_id_token", fake_validate)
@@ -866,6 +868,44 @@ class TestRateLimiting:
 
         assert statuses[0] == 401
         assert 429 in statuses, "expected brute-force protection on /auth/refresh"
+
+
+class TestAppleNonceValidation:
+    """Optional, backward-compatible nonce binding on Apple Sign-In."""
+
+    def test_matching_nonce_accepted(self, client, monkeypatch):
+        import hashlib
+
+        raw = "raw-nonce-abc"
+        hashed = hashlib.sha256(raw.encode()).hexdigest()
+        mock_apple_validation(monkeypatch, sub="nonce-user-ok", nonce=hashed)
+        resp = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN, "rawNonce": raw},
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()["jwtToken"]
+
+    def test_mismatched_nonce_rejected(self, client, monkeypatch):
+        import hashlib
+
+        hashed = hashlib.sha256(b"a-different-nonce").hexdigest()
+        mock_apple_validation(monkeypatch, sub="nonce-user-bad", nonce=hashed)
+        resp = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN, "rawNonce": "attacker-nonce"},
+        )
+        assert resp.status_code == 401
+        assert resp.get_json()["code"] == "NONCE_MISMATCH"
+
+    def test_no_nonce_is_backward_compatible(self, client, monkeypatch):
+        # Client that doesn't send a nonce, token without a nonce claim: accepted.
+        mock_apple_validation(monkeypatch, sub="nonce-user-none")
+        resp = client.post(
+            "/api/v1/auth/apple",
+            json={"idToken": VALID_APPLE_ID_TOKEN},
+        )
+        assert resp.status_code == 200
 
 
 class TestSecurityHeaders:

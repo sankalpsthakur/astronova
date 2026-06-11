@@ -44,6 +44,27 @@ launch/foreground and after each purchase.
 5. **Foreground sync.** Confirm `refreshEntitlements()` (which now calls
    `syncEntitlementsFromServer()`) runs on launch and on return-to-foreground.
 
+## Apple Sign-In nonce binding (server is ready; client change still needed)
+
+The server now validates the Apple identity-token nonce **when the client sends
+it** (`routes/auth.py`: compares `sha256(rawNonce)` to the token's `nonce`
+claim, with `NONCE_MISMATCH` on failure). This is backward compatible — the
+current client sends no nonce, so it takes the unverified path with no
+regression. To actually gain replay protection, change the client to Apple's
+documented pattern (then it becomes enforced end-to-end):
+
+1. Generate a random `rawNonce` (e.g. 32 bytes, base64url) and keep it for the
+   duration of the sign-in.
+2. In `SignInWithAppleButton(onRequest:)` (RootView.swift:350 and :8852), set
+   `request.nonce = sha256(rawNonce)` (hex) — **not** the raw value, and not a
+   fresh `UUID()` each call.
+3. In the completion handler, send `rawNonce` to the backend alongside
+   `identityToken` (the `/auth/apple` payload already accepts `rawNonce`).
+
+This must be verified in TestFlight: a wrong hashing convention breaks sign-in
+entirely, which is why it was intentionally left as a documented, server-ready
+change rather than an untested edit.
+
 ## Known follow-ups (not blocking, but worth doing)
 
 - Chat credits are still decremented locally by `OracleQuotaManager` *and*

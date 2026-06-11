@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -291,6 +293,19 @@ def apple_auth():
 
         if not token_user_id:
             return jsonify({"error": _("Apple identity token is missing subject"), "code": "INVALID_TOKEN"}), 401
+
+        # Optional nonce binding (mitigates identity-token replay). Apple places
+        # SHA256(rawNonce) in the token's `nonce` claim. If the client sends the
+        # raw nonce, verify it matches. Backward compatible: clients that don't
+        # send a nonce are still accepted, and tokens without a nonce claim skip
+        # the check.
+        raw_nonce = data.get("rawNonce") or data.get("nonce")
+        token_nonce = decoded_token.get("nonce")
+        if raw_nonce and token_nonce:
+            expected = hashlib.sha256(raw_nonce.encode("utf-8")).hexdigest()
+            if not hmac.compare_digest(expected, token_nonce):
+                logger.warning("Apple Sign-In nonce mismatch for user %s", token_user_id)
+                return jsonify({"error": _("Sign-in verification failed"), "code": "NONCE_MISMATCH"}), 401
 
         # Use token values as authoritative if available
         user_identifier = token_user_id
