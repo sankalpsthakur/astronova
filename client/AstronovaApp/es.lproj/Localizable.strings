@@ -199,3 +199,20 @@
 "datetime.today" = "Today";
 "datetime.tomorrow" = "Tomorrow";
 "datetime.yesterday" = "Yesterday";
+
+/* Paywall */
+"paywall.or" = "O";
+"paywall.deeperJourney" = "Abre un viaje más profundo (desde $12.99)";
+"paywall.chatPackages" = "Obtén paquetes de chat (sin suscripción)";
+"paywall.defaultSubtitle" = "Chat ilimitado, recorridos completos y el siguiente paso claro cuando lo necesites.";
+"paywall.pickBillingAfterTrial" = "Elige la facturación después de la prueba";
+"paywall.unlockedAnnouncement" = "Acceso cósmico desbloqueado";
+"paywall.continue" = "Continuar";
+"paywall.ok" = "OK";
+"paywall.success.title" = "¡Bienvenido a Pro!";
+"paywall.success.message" = "Tu suscripción ya está activa. Disfruta del acceso ilimitado a todas las funciones.";
+"paywall.failed.title" = "Error en la compra";
+"paywall.restored.title" = "Compras restauradas";
+"paywall.restored.message" = "Tu suscripción Pro ha sido restaurada. ¡Bienvenido de nuevo!";
+"paywall.noPurchases.title" = "No se encontraron compras";
+"paywall.noPurchases.message" = "No pudimos encontrar compras anteriores para restaurar.";

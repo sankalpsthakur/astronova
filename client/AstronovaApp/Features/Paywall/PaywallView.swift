@@ -94,7 +94,7 @@ struct PaywallView: View {
         case (.home, "tiered_v1"):
             return "Turn today's insight into the next clear action with premium guidance and unlimited chat."
         default:
-            return "Unlimited chat, complete journeys, and the next clear step when you need it."
+            return L10n.Paywall.defaultSubtitle
         }
     }
 
@@ -257,7 +257,7 @@ struct PaywallView: View {
                     Rectangle()
                         .fill(Color.cosmicTextTertiary.opacity(0.3))
                         .frame(height: 1)
-                    Text("OR")
+                    Text(L10n.Paywall.or)
                         .font(.cosmicCaption)
                         .foregroundStyle(Color.cosmicTextTertiary)
                     Rectangle()
@@ -274,7 +274,7 @@ struct PaywallView: View {
                         HStack(spacing: Cosmic.Spacing.sm) {
                             Image(systemName: "doc.text.magnifyingglass")
                                 .foregroundStyle(Color.cosmicGold)
-                            Text("Open a deeper journey (from $12.99)")
+                            Text(L10n.Paywall.deeperJourney)
                                 .font(.cosmicCallout)
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -291,7 +291,7 @@ struct PaywallView: View {
                         HStack(spacing: Cosmic.Spacing.sm) {
                             Image(systemName: "bubble.left.and.bubble.right")
                                 .foregroundStyle(Color.cosmicAmethyst)
-                            Text("Get chat packages (no subscription)")
+                            Text(L10n.Paywall.chatPackages)
                                 .font(.cosmicCallout)
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -373,31 +373,31 @@ struct PaywallView: View {
             switch result {
             case .success:
                 return Alert(
-                    title: Text("Welcome to Pro!"),
-                    message: Text("Your subscription is now active. Enjoy unlimited access to all features."),
-                    dismissButton: .default(Text("Continue")) {
+                    title: Text(L10n.Paywall.successTitle),
+                    message: Text(L10n.Paywall.successMessage),
+                    dismissButton: .default(Text(L10n.Paywall.continueAction)) {
                         dismiss()
                     }
                 )
             case .error(let message):
                 return Alert(
-                    title: Text("Purchase Failed"),
+                    title: Text(L10n.Paywall.failedTitle),
                     message: Text(message),
-                    dismissButton: .default(Text("OK"))
+                    dismissButton: .default(Text(L10n.Paywall.okAction))
                 )
             case .restored:
                 return Alert(
-                    title: Text("Purchases Restored"),
-                    message: Text("Your Pro subscription has been restored. Welcome back!"),
-                    dismissButton: .default(Text("Continue")) {
+                    title: Text(L10n.Paywall.restoredTitle),
+                    message: Text(L10n.Paywall.restoredMessage),
+                    dismissButton: .default(Text(L10n.Paywall.continueAction)) {
                         dismiss()
                     }
                 )
             case .restoredNone:
                 return Alert(
-                    title: Text("No Purchases Found"),
-                    message: Text("We couldn't find any previous purchases to restore."),
-                    dismissButton: .default(Text("OK"))
+                    title: Text(L10n.Paywall.noPurchasesTitle),
+                    message: Text(L10n.Paywall.noPurchasesMessage),
+                    dismissButton: .default(Text(L10n.Paywall.okAction))
                 )
             }
         }
@@ -467,7 +467,7 @@ struct PaywallView: View {
 
     private var proPlanPicker: some View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
-            Text("Pick billing after trial")
+            Text(L10n.Paywall.pickBillingAfterTrial)
                 .font(.cosmicHeadline)
                 .foregroundStyle(Color.cosmicTextPrimary)
 
@@ -633,12 +633,12 @@ struct PaywallView: View {
         HapticFeedbackService.shared.celebration()
         AudioServicesPlaySystemSound(1407)
         UIAccessibility.post(notification: .announcement,
-                             argument: "Cosmic access unlocked")
+                             argument: L10n.Paywall.unlockedAnnouncement)
 
         // Defer TTS by ~600ms so the system sound finishes before the
         // .duckOthers audio-session category silences everything else.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            SpeechService.shared.speak("Cosmic access unlocked")
+            SpeechService.shared.speak(L10n.Paywall.unlockedAnnouncement)
         }
     }
 

@@ -199,3 +199,20 @@
 "datetime.today" = "Today";
 "datetime.tomorrow" = "Tomorrow";
 "datetime.yesterday" = "Yesterday";
+
+/* Paywall */
+"paywall.or" = "OR";
+"paywall.deeperJourney" = "Open a deeper journey (from $12.99)";
+"paywall.chatPackages" = "Get chat packages (no subscription)";
+"paywall.defaultSubtitle" = "Unlimited chat, complete journeys, and the next clear step when you need it.";
+"paywall.pickBillingAfterTrial" = "Pick billing after trial";
+"paywall.unlockedAnnouncement" = "Cosmic access unlocked";
+"paywall.continue" = "Continue";
+"paywall.ok" = "OK";
+"paywall.success.title" = "Welcome to Pro!";
+"paywall.success.message" = "Your subscription is now active. Enjoy unlimited access to all features.";
+"paywall.failed.title" = "Purchase Failed";
+"paywall.restored.title" = "Purchases Restored";
+"paywall.restored.message" = "Your Pro subscription has been restored. Welcome back!";
+"paywall.noPurchases.title" = "No Purchases Found";
+"paywall.noPurchases.message" = "We couldn't find any previous purchases to restore.";
