@@ -31,13 +31,22 @@ def test_validate_config_production_fails_without_jwt_secret(monkeypatch):
         validate_startup_config()
 
 
-def test_validate_config_production_passes_with_jwt_secret(monkeypatch):
+def test_validate_config_production_passes_with_required_secrets(monkeypatch):
     monkeypatch.setenv("FLASK_ENV", "production")
     monkeypatch.setenv("JWT_SECRET", "a-strong-production-secret")
+    monkeypatch.setenv("IP_HASH_SALT", "a-long-enough-salt")
     # Missing Apple root / rate-limit store are warnings, not errors.
     result = validate_startup_config()
     assert result["errors"] == []
     assert result["production"] is True
+
+
+def test_validate_config_production_fails_without_ip_hash_salt(monkeypatch):
+    monkeypatch.setenv("FLASK_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET", "a-strong-production-secret")
+    monkeypatch.delenv("IP_HASH_SALT", raising=False)
+    with pytest.raises(ConfigError):
+        validate_startup_config()
 
 
 def test_readiness_report_shape_and_db_ok(client):

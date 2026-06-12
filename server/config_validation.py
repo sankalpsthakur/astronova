@@ -49,6 +49,13 @@ def validate_startup_config(app=None) -> dict:
             "JWT_SECRET (or JWT_SECRET_KEY) is not set; tokens would use the public dev secret."
         )
 
+    # IP hash salt — analytics raise on the first request in production when
+    # this is unset (or too short), which would 500 every request. Fail fast at
+    # startup with a clear message instead.
+    salt = os.environ.get("IP_HASH_SALT", "")
+    if production and len(salt) < 8:
+        errors.append("IP_HASH_SALT must be set (>= 8 chars) in production; analytics raise without it.")
+
     # Apple bundle id — required for Sign-In audience and receipt bundle checks.
     if not os.environ.get("APPLE_BUNDLE_ID"):
         warnings.append("APPLE_BUNDLE_ID is not set; using the default bundle id.")

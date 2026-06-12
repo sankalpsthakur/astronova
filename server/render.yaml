@@ -19,6 +19,21 @@ services:
         generateValue: true
       - key: APPLE_BUNDLE_ID
         value: com.astronova.app
+      # Required in production: portfolio_analytics raises on the first request
+      # if this is unset (IP hashing). generateValue gives a stable per-service
+      # salt.
+      - key: IP_HASH_SALT
+        generateValue: true
+      # Required for App Store receipt verification. Without it,
+      # /api/v1/payments/verify fails closed and no purchase can grant Pro.
+      # Set to the PEM contents of "Apple Root CA - G3" via the dashboard.
+      - key: APPLE_ROOT_CA_PEM
+        sync: false  # Set via Render dashboard (multi-line PEM)
+      # Shared rate-limit store. Only needed if you scale to multiple workers/
+      # instances; with the single-process start command below, in-memory is
+      # fine. Set to a redis:// URL when scaling.
+      - key: RATELIMIT_STORAGE_URI
+        sync: false
       - key: GEMINI_API_KEY
         sync: false  # Set via Render dashboard
       - key: DB_PATH
