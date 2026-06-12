@@ -201,3 +201,41 @@ def test_deep_chat_with_subscription_does_not_consume_credit(authenticated_clien
     resp = authenticated_client.post("/api/v1/chat", json={"message": "deep", "context": "depth=deep"})
     assert resp.status_code == 200
     assert db_module.get_credit_balance(sample_user["id"]) == 7  # untouched
+
+
+def test_deep_oracle_chat_spends_a_credit_without_subscription(authenticated_client, sample_user, monkeypatch):
+    db_module.add_credits(sample_user["id"], 1, reason="test_grant")
+
+    def fake_generate_response(message: str, user_id: str | None = None, birth_data: dict | None = None):
+        return "credit-funded deep reply", []
+
+    monkeypatch.setattr("routes.chat._chat_service.generate_response", fake_generate_response)
+
+    response = authenticated_client.post(
+        "/api/v1/chat",
+        json={"message": "Give me a deep reading.", "context": "depth=deep"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["reply"] == "credit-funded deep reply"
+    assert db_module.get_credit_balance(sample_user["id"]) == 0
+
+
+def test_deep_oracle_chat_refunds_credit_when_provider_fails(authenticated_client, sample_user, monkeypatch):
+    from services.chat_response_service import ChatServiceError
+
+    db_module.add_credits(sample_user["id"], 1, reason="test_grant")
+
+    def failing_generate_response(*_args, **_kwargs):
+        raise ChatServiceError("provider down")
+
+    monkeypatch.setattr("routes.chat._chat_service.generate_response", failing_generate_response)
+
+    response = authenticated_client.post(
+        "/api/v1/chat",
+        json={"message": "Give me a deep reading.", "context": "depth=deep"},
+    )
+
+    assert response.status_code == 503
+    # The purchased credit must not be burned on a failure the user didn't cause.
+    assert db_module.get_credit_balance(sample_user["id"]) == 1
