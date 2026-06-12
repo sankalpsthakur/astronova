@@ -29,6 +29,9 @@ from services.ephemeris_service import EphemerisService
 
 logger = logging.getLogger(__name__)
 
+# A hung AI-provider call must not pin a gunicorn worker indefinitely.
+LLM_REQUEST_TIMEOUT_SECONDS = int(os.environ.get("LLM_REQUEST_TIMEOUT_SECONDS", "30"))
+
 
 class ChatServiceError(RuntimeError):
     """Raised when the chat pipeline cannot reach the AI provider."""
@@ -286,7 +289,9 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
                     generation_config=genai.GenerationConfig(
                         max_output_tokens=300,
                         temperature=0.8,
-                    )
+                    ),
+                    # A hung provider call must not pin a worker indefinitely.
+                    request_options={"timeout": LLM_REQUEST_TIMEOUT_SECONDS},
                 )
                 reply = response.text.strip()
 
@@ -300,6 +305,7 @@ Remember: You're interpreting the cosmic patterns, not predicting fate. Empower 
                     ],
                     max_tokens=300,
                     temperature=0.8,
+                    timeout=LLM_REQUEST_TIMEOUT_SECONDS,
                 )
                 reply = response.choices[0].message.content.strip()
 

@@ -45,14 +45,25 @@ class AuthState: ObservableObject {
         
         // Delete existing item first
         SecItemDelete(query as CFDictionary)
-        
+
         // Add new item
-        let status = SecItemAdd(query as CFDictionary, nil)
-        #if DEBUG
-        if status != errSecSuccess {
-            debugPrint("[AuthState] Failed to store JWT token in Keychain: \(status)")
+        var status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecDuplicateItem {
+            // Another write raced the delete+add; retry once after deleting.
+            SecItemDelete(query as CFDictionary)
+            status = SecItemAdd(query as CFDictionary, nil)
         }
-        #endif
+        if status != errSecSuccess {
+            #if DEBUG
+            debugPrint("[AuthState] Failed to store JWT token in Keychain: \(status)")
+            #endif
+            // A failed persist means the session silently dies on next launch —
+            // make it visible in production telemetry.
+            Analytics.shared.track(.authenticationError, properties: [
+                "error_type": "keychain_store_failed",
+                "os_status": "\(status)"
+            ])
+        }
     }
     
     private func getJWTToken() -> String? {

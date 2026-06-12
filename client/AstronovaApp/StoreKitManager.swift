@@ -79,7 +79,12 @@ class StoreKitManager: ObservableObject {
                 self.monthlyBillingPlanPrices = newMonthlyBillingPlanPrices
                 self.commitmentDisplayPrices = newCommitmentDisplayPrices
                 if newProducts.isEmpty {
+                    #if DEBUG
                     debugPrint("[StoreKit] App Store Connect returned no Astronova products for: \(self.productIDs.joined(separator: ", "))")
+                    #endif
+                    Analytics.shared.track(.apiError, properties: [
+                        "error_type": "storekit_no_products"
+                    ])
                 }
             }
         } catch {

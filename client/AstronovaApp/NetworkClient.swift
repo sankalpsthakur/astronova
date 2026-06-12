@@ -286,9 +286,12 @@ class NetworkClient: NetworkClientProtocol {
                 // Only log decoding errors in debug builds, never response data
                 debugPrint("[NetworkClient] Decoding error for \(responseType): \(error.localizedDescription)")
                 #endif
+                // Report which field failed (coding path only — never response
+                // data) so server/client schema drift is diagnosable in prod.
                 Analytics.shared.track(.decodingError, properties: [
                     "endpoint": endpoint,
-                    "response_type": "\(responseType)"
+                    "response_type": "\(responseType)",
+                    "detail": Self.decodingFailureDetail(error)
                 ])
                 throw NetworkError.decodingError
             }
@@ -324,6 +327,31 @@ class NetworkClient: NetworkClientProtocol {
         }
     }
     
+    /// Summarize a DecodingError as its failure kind plus coding path.
+    /// Deliberately excludes decoded values so no user data reaches analytics.
+    static func decodingFailureDetail(_ error: Error) -> String {
+        guard let decodingError = error as? DecodingError else {
+            return "unknown"
+        }
+
+        func path(_ context: DecodingError.Context) -> String {
+            context.codingPath.map(\.stringValue).joined(separator: ".")
+        }
+
+        switch decodingError {
+        case .keyNotFound(let key, let context):
+            return "keyNotFound:\(path(context)).\(key.stringValue)"
+        case .typeMismatch(_, let context):
+            return "typeMismatch:\(path(context))"
+        case .valueNotFound(_, let context):
+            return "valueNotFound:\(path(context))"
+        case .dataCorrupted(let context):
+            return "dataCorrupted:\(path(context))"
+        @unknown default:
+            return "unknown"
+        }
+    }
+
     /// Convenience method for GET requests without body
     func request<T: Codable>(
         endpoint: String,

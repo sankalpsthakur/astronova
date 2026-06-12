@@ -118,29 +118,31 @@ def _log_contact_filter(
     """Log contact filter activity for monitoring."""
     try:
         conn = get_connection()
-        cur = conn.cursor()
-        now = datetime.utcnow().isoformat()
-        log_id = str(uuid.uuid4())
+        try:
+            cur = conn.cursor()
+            now = datetime.utcnow().isoformat()
+            log_id = str(uuid.uuid4())
 
-        cur.execute("""
-            INSERT INTO contact_filter_logs
-            (id, context_type, context_id, sender_type, sender_id,
-             original_message, filtered_message, patterns_matched, action_taken, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            log_id,
-            context_type,
-            context_id,
-            sender_type,
-            sender_id,
-            original_message[:500],  # Truncate for storage
-            filtered_message[:500],
-            json.dumps(patterns_matched[:10]),  # Limit matches stored
-            "filtered",
-            now,
-        ))
-        conn.commit()
-        conn.close()
+            cur.execute("""
+                INSERT INTO contact_filter_logs
+                (id, context_type, context_id, sender_type, sender_id,
+                 original_message, filtered_message, patterns_matched, action_taken, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                log_id,
+                context_type,
+                context_id,
+                sender_type,
+                sender_id,
+                original_message[:500],  # Truncate for storage
+                filtered_message[:500],
+                json.dumps(patterns_matched[:10]),  # Limit matches stored
+                "filtered",
+                now,
+            ))
+            conn.commit()
+        finally:
+            conn.close()
     except Exception as e:
         logger.error(f"Failed to log contact filter: {e}")
 
@@ -158,31 +160,32 @@ def list_pooja_types():
     List all available pooja types.
     """
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    cur.execute("""
-        SELECT id, name, description, deity, duration_minutes, base_price,
-               icon_name, benefits, ingredients, sort_order
-        FROM pooja_types
-        WHERE is_active = 1
-        ORDER BY sort_order ASC
-    """)
+        cur.execute("""
+            SELECT id, name, description, deity, duration_minutes, base_price,
+                   icon_name, benefits, ingredients, sort_order
+            FROM pooja_types
+            WHERE is_active = 1
+            ORDER BY sort_order ASC
+        """)
 
-    poojas = []
-    for row in cur.fetchall():
-        poojas.append({
-            "id": row["id"],
-            "name": row["name"],
-            "description": row["description"],
-            "deity": row["deity"],
-            "durationMinutes": row["duration_minutes"],
-            "basePrice": row["base_price"],
-            "iconName": row["icon_name"],
-            "benefits": json.loads(row["benefits"]) if row["benefits"] else [],
-            "ingredients": json.loads(row["ingredients"]) if row["ingredients"] else [],
-        })
-
-    conn.close()
+        poojas = []
+        for row in cur.fetchall():
+            poojas.append({
+                "id": row["id"],
+                "name": row["name"],
+                "description": row["description"],
+                "deity": row["deity"],
+                "durationMinutes": row["duration_minutes"],
+                "basePrice": row["base_price"],
+                "iconName": row["icon_name"],
+                "benefits": json.loads(row["benefits"]) if row["benefits"] else [],
+                "ingredients": json.loads(row["ingredients"]) if row["ingredients"] else [],
+            })
+    finally:
+        conn.close()
     return jsonify({"poojas": poojas})
 
 
@@ -244,51 +247,52 @@ def list_pandits():
     available_only = request.args.get("available", "true").lower() == "true"
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    query = """
-        SELECT id, name, specializations, languages, experience_years,
-               rating, review_count, price_per_session, avatar_url, bio,
-               is_verified, is_available
-        FROM pandits
-        WHERE is_verified = 1
-    """
-    params = []
+        query = """
+            SELECT id, name, specializations, languages, experience_years,
+                   rating, review_count, price_per_session, avatar_url, bio,
+                   is_verified, is_available
+            FROM pandits
+            WHERE is_verified = 1
+        """
+        params = []
 
-    if available_only:
-        query += " AND is_available = 1"
+        if available_only:
+            query += " AND is_available = 1"
 
-    query += " ORDER BY rating DESC, review_count DESC"
+        query += " ORDER BY rating DESC, review_count DESC"
 
-    cur.execute(query, params)
+        cur.execute(query, params)
 
-    pandits = []
-    for row in cur.fetchall():
-        specializations = json.loads(row["specializations"]) if row["specializations"] else []
-        languages = json.loads(row["languages"]) if row["languages"] else []
+        pandits = []
+        for row in cur.fetchall():
+            specializations = json.loads(row["specializations"]) if row["specializations"] else []
+            languages = json.loads(row["languages"]) if row["languages"] else []
 
-        # Apply filters in Python for flexibility
-        if specialization and specialization not in specializations:
-            continue
-        if language and language not in languages:
-            continue
+            # Apply filters in Python for flexibility
+            if specialization and specialization not in specializations:
+                continue
+            if language and language not in languages:
+                continue
 
-        pandits.append({
-            "id": row["id"],
-            "name": row["name"],
-            "specializations": specializations,
-            "languages": languages,
-            "experienceYears": row["experience_years"],
-            "rating": row["rating"],
-            "reviewCount": row["review_count"],
-            "pricePerSession": row["price_per_session"],
-            "avatarUrl": row["avatar_url"],
-            "bio": row["bio"],
-            "isVerified": bool(row["is_verified"]),
-            "isAvailable": bool(row["is_available"]),
-        })
-
-    conn.close()
+            pandits.append({
+                "id": row["id"],
+                "name": row["name"],
+                "specializations": specializations,
+                "languages": languages,
+                "experienceYears": row["experience_years"],
+                "rating": row["rating"],
+                "reviewCount": row["review_count"],
+                "pricePerSession": row["price_per_session"],
+                "avatarUrl": row["avatar_url"],
+                "bio": row["bio"],
+                "isVerified": bool(row["is_verified"]),
+                "isAvailable": bool(row["is_available"]),
+            })
+    finally:
+        conn.close()
     logger.info(
         "Temple list_pandits available_only=%s specialization=%s language=%s count=%d",
         available_only,
@@ -556,51 +560,53 @@ def list_user_bookings():
     status_filter = request.args.get("status")
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    query = """
-        SELECT b.id, b.pooja_type_id, b.pandit_id, b.scheduled_date, b.scheduled_time,
-               b.timezone, b.status, b.sankalp_name, b.amount_paid, b.payment_status,
-               b.session_link, b.created_at,
-               p.name as pooja_name, p.icon_name, p.duration_minutes,
-               pd.name as pandit_name
-        FROM pooja_bookings b
-        JOIN pooja_types p ON b.pooja_type_id = p.id
-        LEFT JOIN pandits pd ON b.pandit_id = pd.id
-        WHERE b.user_id = ?
-    """
-    params = [user_id]
+        query = """
+            SELECT b.id, b.pooja_type_id, b.pandit_id, b.scheduled_date, b.scheduled_time,
+                   b.timezone, b.status, b.sankalp_name, b.amount_paid, b.payment_status,
+                   b.session_link, b.created_at,
+                   p.name as pooja_name, p.icon_name, p.duration_minutes,
+                   pd.name as pandit_name
+            FROM pooja_bookings b
+            JOIN pooja_types p ON b.pooja_type_id = p.id
+            LEFT JOIN pandits pd ON b.pandit_id = pd.id
+            WHERE b.user_id = ?
+        """
+        params = [user_id]
 
-    if status_filter:
-        query += " AND b.status = ?"
-        params.append(status_filter)
+        if status_filter:
+            query += " AND b.status = ?"
+            params.append(status_filter)
 
-    query += " ORDER BY b.scheduled_date DESC, b.scheduled_time DESC"
+        query += " ORDER BY b.scheduled_date DESC, b.scheduled_time DESC"
 
-    cur.execute(query, params)
+        cur.execute(query, params)
 
-    bookings = []
-    for row in cur.fetchall():
-        bookings.append({
-            "id": row["id"],
-            "poojaTypeId": row["pooja_type_id"],
-            "poojaName": row["pooja_name"],
-            "poojaIcon": row["icon_name"],
-            "durationMinutes": row["duration_minutes"],
-            "panditId": row["pandit_id"],
-            "panditName": row["pandit_name"],
-            "scheduledDate": row["scheduled_date"],
-            "scheduledTime": row["scheduled_time"],
-            "timezone": row["timezone"],
-            "status": row["status"],
-            "sankalpName": row["sankalp_name"],
-            "amountPaid": row["amount_paid"],
-            "paymentStatus": row["payment_status"],
-            "sessionLink": row["session_link"],
-            "createdAt": row["created_at"],
-        })
+        bookings = []
+        for row in cur.fetchall():
+            bookings.append({
+                "id": row["id"],
+                "poojaTypeId": row["pooja_type_id"],
+                "poojaName": row["pooja_name"],
+                "poojaIcon": row["icon_name"],
+                "durationMinutes": row["duration_minutes"],
+                "panditId": row["pandit_id"],
+                "panditName": row["pandit_name"],
+                "scheduledDate": row["scheduled_date"],
+                "scheduledTime": row["scheduled_time"],
+                "timezone": row["timezone"],
+                "status": row["status"],
+                "sankalpName": row["sankalp_name"],
+                "amountPaid": row["amount_paid"],
+                "paymentStatus": row["payment_status"],
+                "sessionLink": row["session_link"],
+                "createdAt": row["created_at"],
+            })
 
-    conn.close()
+    finally:
+        conn.close()
     return jsonify({"bookings": bookings})
 
 
@@ -954,45 +960,47 @@ def list_pandit_bookings():
     status_filter = request.args.get("status")
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    query = """
-        SELECT b.id, b.pooja_type_id, b.scheduled_date, b.scheduled_time,
-               b.timezone, b.status, b.sankalp_name, b.sankalp_gotra,
-               b.sankalp_nakshatra, b.special_requests,
-               p.name as pooja_name, p.duration_minutes
-        FROM pooja_bookings b
-        JOIN pooja_types p ON b.pooja_type_id = p.id
-        WHERE b.pandit_id = ?
-    """
-    params = [pandit_id]
+        query = """
+            SELECT b.id, b.pooja_type_id, b.scheduled_date, b.scheduled_time,
+                   b.timezone, b.status, b.sankalp_name, b.sankalp_gotra,
+                   b.sankalp_nakshatra, b.special_requests,
+                   p.name as pooja_name, p.duration_minutes
+            FROM pooja_bookings b
+            JOIN pooja_types p ON b.pooja_type_id = p.id
+            WHERE b.pandit_id = ?
+        """
+        params = [pandit_id]
 
-    if status_filter:
-        query += " AND b.status = ?"
-        params.append(status_filter)
+        if status_filter:
+            query += " AND b.status = ?"
+            params.append(status_filter)
 
-    query += " ORDER BY b.scheduled_date ASC, b.scheduled_time ASC"
+        query += " ORDER BY b.scheduled_date ASC, b.scheduled_time ASC"
 
-    cur.execute(query, params)
+        cur.execute(query, params)
 
-    bookings = []
-    for row in cur.fetchall():
-        bookings.append({
-            "id": row["id"],
-            "poojaTypeId": row["pooja_type_id"],
-            "poojaName": row["pooja_name"],
-            "durationMinutes": row["duration_minutes"],
-            "scheduledDate": row["scheduled_date"],
-            "scheduledTime": row["scheduled_time"],
-            "timezone": row["timezone"],
-            "status": row["status"],
-            "sankalpName": row["sankalp_name"],
-            "sankalpGotra": row["sankalp_gotra"],
-            "sankalpNakshatra": row["sankalp_nakshatra"],
-            "specialRequests": row["special_requests"],
-        })
+        bookings = []
+        for row in cur.fetchall():
+            bookings.append({
+                "id": row["id"],
+                "poojaTypeId": row["pooja_type_id"],
+                "poojaName": row["pooja_name"],
+                "durationMinutes": row["duration_minutes"],
+                "scheduledDate": row["scheduled_date"],
+                "scheduledTime": row["scheduled_time"],
+                "timezone": row["timezone"],
+                "status": row["status"],
+                "sankalpName": row["sankalp_name"],
+                "sankalpGotra": row["sankalp_gotra"],
+                "sankalpNakshatra": row["sankalp_nakshatra"],
+                "specialRequests": row["special_requests"],
+            })
 
-    conn.close()
+    finally:
+        conn.close()
     return jsonify({"bookings": bookings})
 
 
@@ -1312,46 +1320,48 @@ def get_vedic_library():
     search = request.args.get("search")
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    query = """
-        SELECT id, category, title, sanskrit_text, transliteration,
-               translation, source, tags, sort_order
-        FROM vedic_entries
-        WHERE is_active = 1
-    """
-    params = []
+        query = """
+            SELECT id, category, title, sanskrit_text, transliteration,
+                   translation, source, tags, sort_order
+            FROM vedic_entries
+            WHERE is_active = 1
+        """
+        params = []
 
-    if category:
-        query += " AND category = ?"
-        params.append(category)
+        if category:
+            query += " AND category = ?"
+            params.append(category)
 
-    if search:
-        query += " AND (title LIKE ? OR translation LIKE ? OR tags LIKE ?)"
-        search_term = f"%{search}%"
-        params.extend([search_term, search_term, search_term])
+        if search:
+            query += " AND (title LIKE ? OR translation LIKE ? OR tags LIKE ?)"
+            search_term = f"%{search}%"
+            params.extend([search_term, search_term, search_term])
 
-    query += " ORDER BY category, sort_order ASC"
+        query += " ORDER BY category, sort_order ASC"
 
-    cur.execute(query, params)
+        cur.execute(query, params)
 
-    # Group by category
-    categories_map: dict[str, list] = {}
-    for row in cur.fetchall():
-        cat = row["category"]
-        if cat not in categories_map:
-            categories_map[cat] = []
-        categories_map[cat].append({
-            "id": row["id"],
-            "title": row["title"],
-            "sanskritText": row["sanskrit_text"],
-            "transliteration": row["transliteration"],
-            "translation": row["translation"],
-            "source": row["source"],
-            "tags": json.loads(row["tags"]) if row["tags"] else [],
-        })
+        # Group by category
+        categories_map: dict[str, list] = {}
+        for row in cur.fetchall():
+            cat = row["category"]
+            if cat not in categories_map:
+                categories_map[cat] = []
+            categories_map[cat].append({
+                "id": row["id"],
+                "title": row["title"],
+                "sanskritText": row["sanskrit_text"],
+                "transliteration": row["transliteration"],
+                "translation": row["translation"],
+                "source": row["source"],
+                "tags": json.loads(row["tags"]) if row["tags"] else [],
+            })
 
-    conn.close()
+    finally:
+        conn.close()
 
     categories_list = [
         {"name": name, "count": len(entries), "entries": entries}

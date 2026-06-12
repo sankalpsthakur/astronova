@@ -119,7 +119,12 @@ class ReportGenerationService:
 
         dashas: dict[str, Any] | None = None
         try:
-            moon_lon = float(vedic.get("moon", {}).get("longitude", 0.0))
+            moon_raw = vedic.get("moon", {}).get("longitude")
+            if moon_raw is None:
+                # A missing moon position must not silently become 0° Aries —
+                # that fabricates a wrong dasha timeline for the user.
+                raise ValueError("moon longitude missing from ephemeris result")
+            moon_lon = float(moon_raw)
             dasha_info = self._dasha.calculate_complete_dasha(
                 birth_date=dt,
                 moon_longitude=moon_lon,
