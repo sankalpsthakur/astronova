@@ -80,13 +80,17 @@ purchase copy risks rejection (Guideline localization completeness). Done:
 - `tr(value:)` provides an English fallback, so hi/ta/te/bn render English (no
   broken keys) until translated — same as other partially-translated keys.
 
+Also now localized (English source + Spanish): all five `heroTitle` variants
+and all `heroSubtitle` variants (`L10n.Paywall.Hero.*`) — these were fully
+hardcoded English, not localized as a prior report assumed.
+
+Account deletion (`Features/Self/MoreOptionsSheet.swift`) now only signs out
+locally after the server confirms deletion; on failure it shows a "Couldn't
+Delete Account / your data has not been removed" alert instead of silently
+signing out (privacy / Guideline 5.1.1).
+
 Remaining for the translator pipeline / a Mac build:
-- Translate the new `paywall.*` keys into hi, ta, te, bn.
-- `PaywallView.swift:92-95` context-specific hero subtitles are still hardcoded
-  English (the default at :97 is now localized); route those through L10n too.
-- Account deletion (`Features/Self/MoreOptionsSheet.swift`) swallows server
-  errors and signs out locally even if the server delete fails — add error
-  feedback + retry so data isn't orphaned (privacy/Guideline 5.1.1).
+- Translate the new `paywall.*` keys (24 of them) into hi, ta, te, bn.
 - Surface subscription renewal/expiry in the Self tab using the existing
   `APIServices.checkSubscriptionStatus()` (prior QA flagged it as not shown).
 

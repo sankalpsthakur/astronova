@@ -71,28 +71,28 @@ struct PaywallView: View {
     private var heroTitle: String {
         switch context {
         case .chatLimit:
-            return "Keep asking without limits"
+            return L10n.Paywall.Hero.titleChatLimit
         case .report:
-            return "Unlock the full map"
+            return L10n.Paywall.Hero.titleReport
         case .home:
-            return "Make today easier"
+            return L10n.Paywall.Hero.titleHome
         case .journalInsights:
-            return "Unlock Journal Insights"
+            return L10n.Paywall.Hero.titleJournalInsights
         case .general:
-            return "Unlock unlimited guidance"
+            return L10n.Paywall.Hero.titleGeneral
         }
     }
 
     private var heroSubtitle: String {
         switch (context, paywallVariant) {
         case (.chatLimit, _):
-            return "You hit today's free limit. Start Pro to keep the conversation moving now."
+            return L10n.Paywall.Hero.subtitleChatLimit
         case (.report, _):
-            return "Start with Pro for unlimited chat, saved progress, and every journey path."
+            return L10n.Paywall.Hero.subtitleReport
         case (.journalInsights, _):
-            return "You used this month's free insight sessions. Start Pro to keep pattern, body, and mood trends available."
+            return L10n.Paywall.Hero.subtitleJournalInsights
         case (.home, "B"):
-            return "Turn today's insight into the next clear action with premium guidance and unlimited chat."
+            return L10n.Paywall.Hero.subtitleHomeB
         default:
             return L10n.Paywall.defaultSubtitle
         }

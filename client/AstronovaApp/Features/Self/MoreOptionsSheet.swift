@@ -10,6 +10,7 @@ struct MoreOptionsSheet: View {
 
     @State private var showingSignOutConfirmation = false
     @State private var showingDeleteConfirmation = false
+    @State private var deleteFailed = false
     @State private var showingPrivacyPolicy = false
     @State private var showingDataPrivacy = false
     @State private var showingExportData = false
@@ -294,18 +295,26 @@ struct MoreOptionsSheet: View {
             Button("Delete", role: .destructive) {
                 Task {
                     do {
+                        // Only sign out locally once the server confirms deletion,
+                        // so a failed server delete doesn't leave data orphaned
+                        // while the user believes the account is gone.
                         try await APIServices.shared.deleteAccount()
+                        await MainActor.run {
+                            auth.signOut()
+                            dismiss()
+                        }
                     } catch {
-                        // Continue with local sign out even if API fails
-                    }
-                    await MainActor.run {
-                        auth.signOut()
-                        dismiss()
+                        await MainActor.run { deleteFailed = true }
                     }
                 }
             }
         } message: {
             Text("This cannot be undone. All your data will be permanently deleted.")
+        }
+        .alert("Couldn't Delete Account", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("We couldn't delete your account just now. Your data has not been removed. Please check your connection and try again.")
         }
         .sheet(isPresented: $showingPrivacyPolicy) {
             NavigationStack {
