@@ -43,6 +43,58 @@ enum L10n {
         )
     }
 
+    enum Paywall {
+        static let or = tr("paywall.or", "OR", "Separator between primary and alternative purchase options")
+        static let deeperJourney = tr(
+            "paywall.deeperJourney",
+            "Open a deeper journey (from $12.99)",
+            "CTA to buy an individual detailed report instead of subscribing"
+        )
+        static let chatPackages = tr(
+            "paywall.chatPackages",
+            "Get chat packages (no subscription)",
+            "CTA to buy consumable chat credits"
+        )
+        static let defaultSubtitle = tr(
+            "paywall.defaultSubtitle",
+            "Unlimited chat, complete journeys, and the next clear step when you need it.",
+            "Fallback paywall subtitle"
+        )
+        static let pickBillingAfterTrial = tr(
+            "paywall.pickBillingAfterTrial",
+            "Pick billing after trial",
+            "Note that billing plan is chosen after the trial"
+        )
+        static let unlockedAnnouncement = tr(
+            "paywall.unlockedAnnouncement",
+            "Cosmic access unlocked",
+            "VoiceOver/TTS announcement after a successful purchase"
+        )
+
+        static let continueAction = tr("paywall.continue", "Continue", "Continue button")
+        static let okAction = tr("paywall.ok", "OK", "OK button")
+
+        static let successTitle = tr("paywall.success.title", "Welcome to Pro!", "Purchase success alert title")
+        static let successMessage = tr(
+            "paywall.success.message",
+            "Your subscription is now active. Enjoy unlimited access to all features.",
+            "Purchase success alert message"
+        )
+        static let failedTitle = tr("paywall.failed.title", "Purchase Failed", "Purchase failure alert title")
+        static let restoredTitle = tr("paywall.restored.title", "Purchases Restored", "Restore success alert title")
+        static let restoredMessage = tr(
+            "paywall.restored.message",
+            "Your Pro subscription has been restored. Welcome back!",
+            "Restore success alert message"
+        )
+        static let noPurchasesTitle = tr("paywall.noPurchases.title", "No Purchases Found", "Restore-empty alert title")
+        static let noPurchasesMessage = tr(
+            "paywall.noPurchases.message",
+            "We couldn't find any previous purchases to restore.",
+            "Restore-empty alert message"
+        )
+    }
+
     enum Onboarding {
         static let progressTitle = tr(
             "onboarding.progress.title",

@@ -65,7 +65,32 @@ This must be verified in TestFlight: a wrong hashing convention breaks sign-in
 entirely, which is why it was intentionally left as a documented, server-ready
 change rather than an untested edit.
 
-## Known follow-ups (not blocking, but worth doing)
+## Paywall localization (App Store blocker — partially addressed)
+
+The paywall had hardcoded English strings; a 6-locale app showing English-only
+purchase copy risks rejection (Guideline localization completeness). Done:
+
+- Routed all flagged paywall strings through `L10n.Paywall.*`
+  (`Localization/LocalizedStrings.swift`): OR separator, the two alternative
+  CTAs, the success/failure/restore/no-purchases alert titles+messages,
+  Continue/OK actions, the default hero subtitle, "Pick billing after trial",
+  and the post-purchase VoiceOver/TTS announcement.
+- Added English source entries (`en.lproj`) and Spanish translations
+  (`es.lproj`).
+- `tr(value:)` provides an English fallback, so hi/ta/te/bn render English (no
+  broken keys) until translated — same as other partially-translated keys.
+
+Remaining for the translator pipeline / a Mac build:
+- Translate the new `paywall.*` keys into hi, ta, te, bn.
+- `PaywallView.swift:92-95` context-specific hero subtitles are still hardcoded
+  English (the default at :97 is now localized); route those through L10n too.
+- Account deletion (`Features/Self/MoreOptionsSheet.swift`) swallows server
+  errors and signs out locally even if the server delete fails — add error
+  feedback + retry so data isn't orphaned (privacy/Guideline 5.1.1).
+- Surface subscription renewal/expiry in the Self tab using the existing
+  `APIServices.checkSubscriptionStatus()` (prior QA flagged it as not shown).
+
+## Other known follow-ups (not blocking, but worth doing)
 
 - Chat credits are still decremented locally by `OracleQuotaManager` *and*
   server-side on each paid chat. The server value wins on the next sync, but the
