@@ -441,7 +441,10 @@ def get_subscription(user_id: Optional[str]) -> dict:
             if parsed < datetime.now(timezone.utc):
                 is_active = False
         except (ValueError, AttributeError):
-            pass
+            # Fail closed: an unparseable expiry must not grant indefinite
+            # access. Apple re-verification will restore a legitimate sub.
+            logger.warning("Unparseable subscription expiry %r; treating as lapsed", expires_at)
+            is_active = False
 
     result = {
         "isActive": is_active,
@@ -662,26 +665,31 @@ def add_credits(
     """
     now = datetime.utcnow().isoformat()
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT balance FROM user_credits WHERE user_id=?", (user_id,))
-    row = cur.fetchone()
-    current = int(row["balance"]) if row else 0
-    new_balance = max(0, current + amount)
-    cur.execute(
-        """INSERT INTO user_credits (user_id, balance, updated_at)
-           VALUES (?, ?, ?)
-           ON CONFLICT(user_id) DO UPDATE SET
-             balance = excluded.balance,
-             updated_at = excluded.updated_at""",
-        (user_id, new_balance, now),
-    )
-    cur.execute(
-        """INSERT INTO credit_ledger (user_id, delta, reason, transaction_id, created_at)
-           VALUES (?, ?, ?, ?, ?)""",
-        (user_id, new_balance - current, reason, transaction_id, now),
-    )
-    conn.commit()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        # Take the write lock before reading so two concurrent grants can't
+        # both read the same balance and overwrite each other's credit.
+        cur.execute("BEGIN IMMEDIATE")
+        cur.execute("SELECT balance FROM user_credits WHERE user_id=?", (user_id,))
+        row = cur.fetchone()
+        current = int(row["balance"]) if row else 0
+        new_balance = max(0, current + amount)
+        cur.execute(
+            """INSERT INTO user_credits (user_id, balance, updated_at)
+               VALUES (?, ?, ?)
+               ON CONFLICT(user_id) DO UPDATE SET
+                 balance = excluded.balance,
+                 updated_at = excluded.updated_at""",
+            (user_id, new_balance, now),
+        )
+        cur.execute(
+            """INSERT INTO credit_ledger (user_id, delta, reason, transaction_id, created_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (user_id, new_balance - current, reason, transaction_id, now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
     return new_balance
 
 

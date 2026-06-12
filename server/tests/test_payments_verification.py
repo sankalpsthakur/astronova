@@ -406,3 +406,57 @@ def test_verify_rejects_missing_x5c(authenticated_client, cert_chain, monkeypatc
     resp = authenticated_client.post("/api/v1/payments/verify", json={"signedTransaction": token})
     assert resp.status_code == 400
     assert resp.get_json()["code"] == "VERIFICATION_FAILED"
+
+
+def test_concurrent_replay_of_same_transaction_grants_once(sample_user, clean_db):
+    """Two simultaneous /verify submissions of one transaction must not
+    double-credit: the processed_transactions PK insert is the gate."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from routes.payments import _apply_transaction
+
+    tx = {
+        "productId": "chat_credits_5",
+        "transactionId": "txn-race",
+        "environment": "Sandbox",
+    }
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for f in [ex.submit(_apply_transaction, sample_user["id"], dict(tx)) for _ in range(8)]:
+            f.result()
+
+    assert db_module.get_credit_balance(sample_user["id"]) == 50
+    conn = db_module.get_connection()
+    total = conn.execute(
+        "SELECT COALESCE(SUM(delta),0) FROM credit_ledger WHERE user_id=?",
+        (sample_user["id"],),
+    ).fetchone()[0]
+    conn.close()
+    assert total == 50
+
+
+def test_concurrent_add_credits_all_land(sample_user, clean_db):
+    """Concurrent grants must accumulate, not overwrite each other."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for f in [ex.submit(db_module.add_credits, sample_user["id"], 10, reason="race") for _ in range(8)]:
+            f.result()
+
+    assert db_module.get_credit_balance(sample_user["id"]) == 80
+
+
+def test_malformed_expiry_fails_closed(sample_user, clean_db):
+    """An unparseable expires_at must lapse the subscription, not grant
+    indefinite access."""
+    db_module.set_subscription_from_transaction(
+        sample_user["id"],
+        is_active=True,
+        product_id="astronova_pro_monthly",
+        expires_at="not-a-date",
+        original_transaction_id="orig-bad-expiry",
+        latest_transaction_id="tx-bad-expiry",
+        environment="Sandbox",
+        auto_renew=True,
+    )
+    assert db_module.get_subscription(sample_user["id"])["isActive"] is False

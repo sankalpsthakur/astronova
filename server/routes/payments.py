@@ -86,10 +86,30 @@ def _apply_transaction(user_id: str, tx: dict) -> dict:
     expires_at = _ms_to_iso(tx.get("expiresDate"))
     revoked = tx.get("revocationDate") is not None
 
-    # Idempotency: a given transaction id is only applied once.
-    already = db.is_transaction_processed(transaction_id)
+    # Idempotency: claiming the transaction (a PRIMARY KEY insert) is the
+    # gate. Two concurrent submissions of the same transaction race on the
+    # insert, and only the winner grants — a check-then-grant here would let
+    # both through and double-credit the purchase.
+    if product_id in PRO_SUBSCRIPTION_SKUS:
+        tx_type = "subscription"
+    elif product_id in CHAT_CREDIT_SKUS:
+        tx_type = "credits"
+    elif product_id in REPORT_SKUS:
+        tx_type = "report"
+    else:
+        tx_type = "unknown"
+    claimed = db.record_processed_transaction(
+        transaction_id,
+        user_id=user_id,
+        product_id=product_id,
+        type=tx_type,
+        environment=environment,
+    )
 
     if product_id in PRO_SUBSCRIPTION_SKUS:
+        # Subscription state is an idempotent overwrite keyed on the latest
+        # Apple-signed payload, so it applies regardless of claim outcome
+        # (a replay must still be able to deliver a revocation).
         if revoked:
             db.deactivate_subscription(user_id, reason="revoked")
             granted = {"type": "subscription", "active": False, "productId": product_id}
@@ -111,7 +131,7 @@ def _apply_transaction(user_id: str, tx: dict) -> dict:
                 "expiresAt": expires_at,
             }
     elif product_id in CHAT_CREDIT_SKUS:
-        if not already and not revoked:
+        if claimed and not revoked:
             balance = db.add_credits(
                 user_id,
                 CHAT_CREDIT_SKUS[product_id],
@@ -125,15 +145,6 @@ def _apply_transaction(user_id: str, tx: dict) -> dict:
         granted = {"type": "report", "productId": product_id}
     else:
         granted = {"type": "unknown", "productId": product_id}
-
-    if not already:
-        db.record_processed_transaction(
-            transaction_id,
-            user_id=user_id,
-            product_id=product_id,
-            type=granted["type"],
-            environment=environment,
-        )
 
     return granted
 

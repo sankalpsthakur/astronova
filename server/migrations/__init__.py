@@ -75,11 +75,17 @@ def _get_applied_versions(conn: sqlite3.Connection) -> set[int]:
 def _record_migration(conn: sqlite3.Connection, version: int, name: str) -> None:
     """Record a successfully applied migration."""
     now = datetime.utcnow().isoformat()
-    conn.execute(
-        "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
-        (version, name, now),
-    )
-    conn.commit()
+    try:
+        conn.execute(
+            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+            (version, name, now),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        # Another worker booting concurrently applied this version first.
+        # Migrations are idempotent (guarded ALTERs / IF NOT EXISTS), so
+        # losing the race is harmless — don't fail the boot over it.
+        conn.rollback()
 
 
 def _discover_migrations(migrations_dir: Path) -> list[Migration]:

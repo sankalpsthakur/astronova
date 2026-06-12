@@ -87,6 +87,14 @@ class UserProfileManager: ObservableObject {
                     debugPrint("[Profile] Raw JSON: \(jsonString)")
                 }
                 #endif
+                // Keep the undecodable blob so the user's birth data is
+                // recoverable instead of silently wiped, and make the loss
+                // visible in telemetry.
+                userDefaults.set(data, forKey: profileKey + "_corrupt_backup")
+                Analytics.shared.track(.decodingError, properties: [
+                    "endpoint": "local:user_profile",
+                    "detail": NetworkClient.decodingFailureDetail(error)
+                ])
                 self.profile = UserProfile()
             }
         } else {

@@ -993,3 +993,33 @@ def test_suite_summary():
     Total: 55+ comprehensive error handling tests
     """
     assert True
+
+
+class TestHTTPErrorsAreJSON:
+    """The iOS client can't parse HTML error pages — every HTTP error the
+    framework raises itself must come back as JSON."""
+
+    def test_405_method_not_allowed_is_json(self, client):
+        response = client.delete("/api/v1/auth/apple")
+        assert response.status_code == 405
+        data = response.get_json()
+        assert data is not None
+        assert data["code"] == "METHOD_NOT_ALLOWED"
+
+    def test_413_payload_too_large_is_json(self, client):
+        huge = "x" * (2 * 1024 * 1024)
+        response = client.post("/api/v1/auth/apple", json={"idToken": huge})
+        assert response.status_code == 413
+        data = response.get_json()
+        assert data is not None
+        assert data["code"] == "REQUEST_ENTITY_TOO_LARGE"
+
+    def test_400_malformed_json_is_json(self, client):
+        response = client.post(
+            "/api/v1/auth/apple",
+            data="{not json",
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data is not None

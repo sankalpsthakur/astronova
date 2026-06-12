@@ -7,6 +7,18 @@ changes follow existing patterns but **need an Xcode build to verify**.
 
 ## Fixed and verified (server)
 
+- **Payments (wave 3)**: transaction replay race closed — the
+  `processed_transactions` PK insert is now the idempotency gate, so two
+  concurrent `/verify` submissions of one transaction can't double-credit.
+  `add_credits` serializes via `BEGIN IMMEDIATE` (concurrent grants
+  accumulate instead of overwriting). Unparseable subscription `expires_at`
+  fails closed (lapsed) with a warning. All covered by concurrency tests.
+- **Error contract (wave 3)**: every framework-raised HTTP error (405, 413,
+  400 malformed JSON, …) now returns JSON via a global `HTTPException`
+  handler — previously Flask served HTML pages the client can't parse.
+  Migration recording tolerates a concurrent-boot race (IntegrityError →
+  already applied).
+
 - **Auth**: `/auth/validate` returns 401 + error codes on missing/invalid
   tokens (was 200). JWT secret/config fail-fast, receipt verification, WAL,
   rate-limiter JWT keying all in via the payments-hardening line.
@@ -78,6 +90,17 @@ changes follow existing patterns but **need an Xcode build to verify**.
   `render.yaml`).
 - hi/ta/te/bn paywall translations.
 
+## Accepted risks (deliberate decisions)
+- Sandbox transactions are accepted in production: App Review exercises
+  purchases from the production build against the sandbox environment, so
+  rejecting `environment == "Sandbox"` would break review. The environment
+  is recorded per transaction for auditability.
+- Refunded credit purchases are not clawed back (credits are consumable;
+  negative balances are never allowed) — business decision, revisit if abuse
+  appears.
+- `originalTransactionId` collisions across users are not constrained;
+  Apple guarantees global uniqueness.
+
 ## False positives from agent scans (do not re-flag)
 - `/health` exists (`app.py:519`, plus `/api/v1/health`).
 - Ephemeris cache is bounded (evicts per insert under `_CACHE_LOCK`) and its
@@ -87,3 +110,6 @@ changes follow existing patterns but **need an Xcode build to verify**.
 - Report PDF failures ARE surfaced (`pdfError` rendered in
   `ReportDetailView`).
 - No unguarded `print()` in client release code (swept mechanically).
+- Migrations 006/009 ALTERs ARE guarded by `PRAGMA table_info` checks.
+- Deploy runs `python app.py` (single process) — multi-worker migration
+  races are theoretical; a guard was added anyway.

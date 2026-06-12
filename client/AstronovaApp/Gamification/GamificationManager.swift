@@ -414,7 +414,16 @@ final class GamificationManager: ObservableObject {
 
     private static func load(storageKey: String) -> PersistedState? {
         guard let data = UserDefaults.standard.data(forKey: storageKey) else { return nil }
-        return try? JSONDecoder().decode(PersistedState.self, from: data)
+        do {
+            return try JSONDecoder().decode(PersistedState.self, from: data)
+        } catch {
+            // Losing XP/streak state should show up in telemetry, not vanish.
+            Analytics.shared.track(.decodingError, properties: [
+                "endpoint": "local:\(storageKey)",
+                "detail": NetworkClient.decodingFailureDetail(error)
+            ])
+            return nil
+        }
     }
 
     private static func save(_ state: PersistedState, storageKey: String) {

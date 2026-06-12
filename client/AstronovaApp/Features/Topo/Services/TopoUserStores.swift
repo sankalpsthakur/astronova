@@ -43,8 +43,16 @@ final class JournalStore: ObservableObject {
         guard let data = defaults.data(forKey: storageKey) else { return }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        if let decoded = try? decoder.decode([JournalEntry].self, from: data) {
-            self.entries = decoded
+        do {
+            self.entries = try decoder.decode([JournalEntry].self, from: data)
+        } catch {
+            // An undecodable blob must not be silently replaced by the next
+            // persist() — back it up for recovery and surface in telemetry.
+            defaults.set(data, forKey: storageKey + ".corrupt_backup")
+            Analytics.shared.track(.decodingError, properties: [
+                "endpoint": "local:\(storageKey)",
+                "detail": NetworkClient.decodingFailureDetail(error)
+            ])
         }
     }
 
@@ -90,8 +98,16 @@ final class DecisionStore: ObservableObject {
         guard let data = defaults.data(forKey: storageKey) else { return }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        if let decoded = try? decoder.decode([Decision].self, from: data) {
-            self.decisions = decoded
+        do {
+            self.decisions = try decoder.decode([Decision].self, from: data)
+        } catch {
+            // An undecodable blob must not be silently replaced by the next
+            // persist() — back it up for recovery and surface in telemetry.
+            defaults.set(data, forKey: storageKey + ".corrupt_backup")
+            Analytics.shared.track(.decodingError, properties: [
+                "endpoint": "local:\(storageKey)",
+                "detail": NetworkClient.decodingFailureDetail(error)
+            ])
         }
     }
 
@@ -154,8 +170,16 @@ final class NavigationRuleStore: ObservableObject {
         guard let data = defaults.data(forKey: storageKey) else { return }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        if let decoded = try? decoder.decode([NavigationRule].self, from: data) {
-            self.rules = decoded
+        do {
+            self.rules = try decoder.decode([NavigationRule].self, from: data)
+        } catch {
+            // An undecodable blob must not be silently replaced by the next
+            // persist() — back it up for recovery and surface in telemetry.
+            defaults.set(data, forKey: storageKey + ".corrupt_backup")
+            Analytics.shared.track(.decodingError, properties: [
+                "endpoint": "local:\(storageKey)",
+                "detail": NetworkClient.decodingFailureDetail(error)
+            ])
         }
     }
 

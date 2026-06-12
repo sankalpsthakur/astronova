@@ -115,11 +115,23 @@ def create_app():
             "requestId": request_id,
         }), 503
 
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(e):
+        # Flask's default HTTPException response is an HTML page the iOS
+        # client cannot parse — return the same status as JSON instead.
+        return (
+            jsonify({
+                "error": e.name,
+                "message": e.description,
+                "code": (e.name or "HTTP_ERROR").upper().replace(" ", "_"),
+            }),
+            e.code or 500,
+        )
+
     @app.errorhandler(Exception)
     def handle_unhandled_exception(e):
-        # Preserve default handling for HTTP errors (404, 400, etc).
         if isinstance(e, HTTPException):
-            return e
+            return handle_http_exception(e)
 
         request_id = getattr(g, "request_id", None)
         logger.exception("Unhandled exception")
