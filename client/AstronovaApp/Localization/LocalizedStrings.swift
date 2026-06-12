@@ -92,6 +92,35 @@ enum L10n {
             "We couldn't find any previous purchases to restore.",
             "Restore-empty alert message"
         )
+
+        enum Hero {
+            static let titleChatLimit = tr("paywall.hero.title.chatLimit", "Keep asking without limits", "Paywall hero title (chat limit)")
+            static let titleReport = tr("paywall.hero.title.report", "Unlock the full map", "Paywall hero title (report)")
+            static let titleHome = tr("paywall.hero.title.home", "Make today easier", "Paywall hero title (home)")
+            static let titleJournalInsights = tr("paywall.hero.title.journalInsights", "Unlock Journal Insights", "Paywall hero title (journal insights)")
+            static let titleGeneral = tr("paywall.hero.title.general", "Unlock unlimited guidance", "Paywall hero title (general)")
+
+            static let subtitleChatLimit = tr(
+                "paywall.hero.subtitle.chatLimit",
+                "You hit today's free limit. Start Pro to keep the conversation moving now.",
+                "Paywall hero subtitle (chat limit)"
+            )
+            static let subtitleReport = tr(
+                "paywall.hero.subtitle.report",
+                "Start with Pro for unlimited chat, saved progress, and every journey path.",
+                "Paywall hero subtitle (report)"
+            )
+            static let subtitleJournalInsights = tr(
+                "paywall.hero.subtitle.journalInsights",
+                "You used this month's free insight sessions. Start Pro to keep pattern, body, and mood trends available.",
+                "Paywall hero subtitle (journal insights)"
+            )
+            static let subtitleHomeB = tr(
+                "paywall.hero.subtitle.homeB",
+                "Turn today's insight into the next clear action with premium guidance and unlimited chat.",
+                "Paywall hero subtitle (home variant B)"
+            )
+        }
     }
 
     enum Onboarding {

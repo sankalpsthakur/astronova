@@ -216,3 +216,12 @@
 "paywall.restored.message" = "Tu suscripción Pro ha sido restaurada. ¡Bienvenido de nuevo!";
 "paywall.noPurchases.title" = "No se encontraron compras";
 "paywall.noPurchases.message" = "No pudimos encontrar compras anteriores para restaurar.";
+"paywall.hero.title.chatLimit" = "Sigue preguntando sin límites";
+"paywall.hero.title.report" = "Desbloquea el mapa completo";
+"paywall.hero.title.home" = "Haz que hoy sea más fácil";
+"paywall.hero.title.journalInsights" = "Desbloquea las Perspectivas del Diario";
+"paywall.hero.title.general" = "Desbloquea orientación ilimitada";
+"paywall.hero.subtitle.chatLimit" = "Alcanzaste el límite gratuito de hoy. Activa Pro para seguir la conversación ahora.";
+"paywall.hero.subtitle.report" = "Empieza con Pro para chat ilimitado, progreso guardado y todos los recorridos.";
+"paywall.hero.subtitle.journalInsights" = "Usaste las sesiones de perspectivas gratuitas de este mes. Activa Pro para mantener las tendencias de patrones, cuerpo y ánimo.";
+"paywall.hero.subtitle.homeB" = "Convierte la perspectiva de hoy en el siguiente paso claro con orientación premium y chat ilimitado.";

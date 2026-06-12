@@ -216,3 +216,12 @@
 "paywall.restored.message" = "Your Pro subscription has been restored. Welcome back!";
 "paywall.noPurchases.title" = "No Purchases Found";
 "paywall.noPurchases.message" = "We couldn't find any previous purchases to restore.";
+"paywall.hero.title.chatLimit" = "Keep asking without limits";
+"paywall.hero.title.report" = "Unlock the full map";
+"paywall.hero.title.home" = "Make today easier";
+"paywall.hero.title.journalInsights" = "Unlock Journal Insights";
+"paywall.hero.title.general" = "Unlock unlimited guidance";
+"paywall.hero.subtitle.chatLimit" = "You hit today's free limit. Start Pro to keep the conversation moving now.";
+"paywall.hero.subtitle.report" = "Start with Pro for unlimited chat, saved progress, and every journey path.";
+"paywall.hero.subtitle.journalInsights" = "You used this month's free insight sessions. Start Pro to keep pattern, body, and mood trends available.";
+"paywall.hero.subtitle.homeB" = "Turn today's insight into the next clear action with premium guidance and unlimited chat.";
