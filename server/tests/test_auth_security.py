@@ -395,17 +395,19 @@ class TestTokenValidation:
         """Test validation with incorrect token."""
         response = client.get("/api/v1/auth/validate", headers={"Authorization": "Bearer wrong-token"})
 
-        assert response.status_code == 200
+        assert response.status_code == 401
         data = response.get_json()
         assert data["valid"] is False
+        assert data["code"] == "INVALID_TOKEN"
 
     def test_validate_without_token(self, client):
         """Test validation without token."""
         response = client.get("/api/v1/auth/validate")
 
-        assert response.status_code == 200
+        assert response.status_code == 401
         data = response.get_json()
         assert data["valid"] is False
+        assert data["code"] == "NO_TOKEN"
 
 
 class TestAdminTokenProtection:

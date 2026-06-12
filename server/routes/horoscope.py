@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
-import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -11,6 +11,8 @@ from flask_babel import gettext as _
 
 from db import get_user_birth_data
 from services.ephemeris_service import EphemerisService
+
+logger = logging.getLogger(__name__)
 
 horoscope_bp = Blueprint("horoscope", __name__)
 _ephem = EphemerisService()
@@ -28,7 +30,7 @@ def _load_json(path: str) -> dict:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (OSError, json.JSONDecodeError) as exc:
-        print(f"[horoscope] failed to load {path}: {exc}", file=sys.stderr)
+        logger.warning("Failed to load curated content %s: %s", path, exc)
         return {}
 
 

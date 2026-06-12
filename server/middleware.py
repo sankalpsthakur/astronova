@@ -3,6 +3,7 @@ Request/Response logging middleware for Flask
 """
 
 import logging
+import os
 import time
 import uuid
 from functools import wraps
@@ -100,8 +101,9 @@ def require_auth(f):
 
 def setup_logging():
     """Configure structured logging for the application"""
+    level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
     logging.basicConfig(
-        level=logging.INFO,
+        level=getattr(logging, level_name, logging.INFO),
         format="%(asctime)s [%(levelname)s] [req:%(request_id)s user:%(user_id)s] %(name)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )

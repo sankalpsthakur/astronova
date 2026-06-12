@@ -66,59 +66,52 @@ def grant_pro():
         return jsonify({"error": "email or userId is required"}), 400
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Find user by email or userId
-    if email:
-        cur.execute("SELECT id, email, full_name FROM users WHERE email = ?", (email,))
-    else:
-        cur.execute("SELECT id, email, full_name FROM users WHERE id = ?", (user_id,))
+        # Find user by email or userId
+        if email:
+            cur.execute("SELECT id, email, full_name FROM users WHERE email = ?", (email,))
+        else:
+            cur.execute("SELECT id, email, full_name FROM users WHERE id = ?", (user_id,))
 
-    user = cur.fetchone()
+        user = cur.fetchone()
 
-    if not user:
-        conn.close()
-        return jsonify({
-            "error": "User not found",
-            "email": email,
-            "userId": user_id,
-            "message": "User must sign in at least once before granting Pro access"
-        }), 404
+        if not user:
+            return jsonify({
+                "error": "User not found",
+                "email": email,
+                "userId": user_id,
+                "message": "User must sign in at least once before granting Pro access"
+            }), 404
 
-    user_id = user["id"]
-    full_name = user["full_name"] or "User"
+        user_id = user["id"]
+        full_name = user["full_name"] or "User"
 
-    # Update or insert subscription
-    now = datetime.utcnow().isoformat()
+        # Atomic upsert of subscription status
+        now = datetime.utcnow().isoformat()
 
-    cur.execute("SELECT user_id FROM subscription_status WHERE user_id = ?", (user_id,))
-    existing = cur.fetchone()
+        cur.execute("SELECT user_id FROM subscription_status WHERE user_id = ?", (user_id,))
+        action = "updated" if cur.fetchone() else "created"
 
-    if existing:
-        cur.execute("""
-            UPDATE subscription_status
-            SET is_active = 1,
-                product_id = ?,
-                updated_at = ?
-            WHERE user_id = ?
-        """, (ASTRONOVA_PRO_PRODUCT_ID, now, user_id))
-        action = "updated"
-    else:
         cur.execute("""
             INSERT INTO subscription_status (user_id, is_active, product_id, updated_at)
             VALUES (?, 1, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                is_active = 1,
+                product_id = excluded.product_id,
+                updated_at = excluded.updated_at
         """, (user_id, ASTRONOVA_PRO_PRODUCT_ID, now))
-        action = "created"
 
-    conn.commit()
+        conn.commit()
 
-    # Verify
-    cur.execute("SELECT is_active, product_id FROM subscription_status WHERE user_id = ?", (user_id,))
-    sub = cur.fetchone()
+        # Verify
+        cur.execute("SELECT is_active, product_id FROM subscription_status WHERE user_id = ?", (user_id,))
+        sub = cur.fetchone()
+    finally:
+        conn.close()
 
-    conn.close()
-
-    logger.info(f"Pro access granted to {email} (user_id: {user_id})")
+    logger.info("Pro access granted (user_id: %s)", user_id)
 
     return jsonify({
         "success": True,
@@ -160,45 +153,49 @@ def list_users():
         "total": 123
     }
     """
-    limit = min(int(request.args.get("limit", 50)), 200)
-    offset = int(request.args.get("offset", 0))
+    try:
+        limit = min(int(request.args.get("limit", 50)), 200)
+        offset = max(int(request.args.get("offset", 0)), 0)
+    except (TypeError, ValueError):
+        return jsonify({"error": "limit and offset must be integers", "code": "INVALID_PARAMS"}), 400
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Get total count
-    cur.execute("SELECT COUNT(*) as count FROM users")
-    total = cur.fetchone()["count"]
+        # Get total count
+        cur.execute("SELECT COUNT(*) as count FROM users")
+        total = cur.fetchone()["count"]
 
-    # Get users with subscription info
-    cur.execute("""
-        SELECT
-            u.id,
-            u.email,
-            u.full_name,
-            u.created_at,
-            s.is_active,
-            s.product_id
-        FROM users u
-        LEFT JOIN subscription_status s ON u.id = s.user_id
-        ORDER BY u.created_at DESC
-        LIMIT ? OFFSET ?
-    """, (limit, offset))
+        # Get users with subscription info
+        cur.execute("""
+            SELECT
+                u.id,
+                u.email,
+                u.full_name,
+                u.created_at,
+                s.is_active,
+                s.product_id
+            FROM users u
+            LEFT JOIN subscription_status s ON u.id = s.user_id
+            ORDER BY u.created_at DESC
+            LIMIT ? OFFSET ?
+        """, (limit, offset))
 
-    users = []
-    for row in cur.fetchall():
-        users.append({
-            "id": row["id"],
-            "email": row["email"],
-            "fullName": row["full_name"],
-            "subscription": {
-                "isActive": bool(row["is_active"]) if row["is_active"] is not None else False,
-                "productId": row["product_id"]
-            },
-            "createdAt": row["created_at"]
-        })
-
-    conn.close()
+        users = []
+        for row in cur.fetchall():
+            users.append({
+                "id": row["id"],
+                "email": row["email"],
+                "fullName": row["full_name"],
+                "subscription": {
+                    "isActive": bool(row["is_active"]) if row["is_active"] is not None else False,
+                    "productId": row["product_id"]
+                },
+                "createdAt": row["created_at"]
+            })
+    finally:
+        conn.close()
 
     return jsonify({
         "users": users,

@@ -128,20 +128,25 @@ def _seed_content(conn: sqlite3.Connection) -> None:
 def upsert_user(user_id: str, email: Optional[str], first_name: Optional[str], last_name: Optional[str], full_name: str):
     now = datetime.utcnow().isoformat()
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM users WHERE id=?", (user_id,))
-    if cur.fetchone():
-        cur.execute(
-            "UPDATE users SET email=?, first_name=?, last_name=?, full_name=?, updated_at=? WHERE id=?",
-            (email, first_name, last_name, full_name, now, user_id),
-        )
-    else:
-        cur.execute(
-            "INSERT INTO users (id, email, first_name, last_name, full_name, created_at, updated_at) VALUES (?,?,?,?,?,?,?)",
+    try:
+        # Atomic upsert: two concurrent first sign-ins for the same user must
+        # not race a SELECT-then-INSERT into an IntegrityError.
+        conn.execute(
+            """
+            INSERT INTO users (id, email, first_name, last_name, full_name, created_at, updated_at)
+            VALUES (?,?,?,?,?,?,?)
+            ON CONFLICT(id) DO UPDATE SET
+                email=excluded.email,
+                first_name=excluded.first_name,
+                last_name=excluded.last_name,
+                full_name=excluded.full_name,
+                updated_at=excluded.updated_at
+            """,
             (user_id, email, first_name, last_name, full_name, now, now),
         )
-    conn.commit()
-    conn.close()
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def get_user_preferred_language(user_id: str) -> Optional[str]:

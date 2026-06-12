@@ -50,3 +50,28 @@ def test_completed_reports_are_not_affected(clean_db, sample_user):
 
     db_module.fail_stuck_reports(older_than_minutes=15)
     assert db_module.get_report("done-1")["status"] == "completed"
+
+
+def test_upsert_user_is_atomic_and_idempotent(clean_db):
+    db_module.upsert_user("upsert-user-1", "a@example.com", "A", "One", "A One")
+    db_module.upsert_user("upsert-user-1", "b@example.com", "B", "Two", "B Two")
+
+    conn = db_module.get_connection()
+    rows = conn.execute(
+        "SELECT email, full_name FROM users WHERE id=?", ("upsert-user-1",)
+    ).fetchall()
+    conn.close()
+
+    assert len(rows) == 1
+    assert rows[0]["email"] == "b@example.com"
+    assert rows[0]["full_name"] == "B Two"
+
+
+def test_oversized_request_body_is_rejected_with_413(client):
+    # Bodies past MAX_CONTENT_LENGTH must be refused, not buffered into memory.
+    huge = "x" * (2 * 1024 * 1024)
+    response = client.post(
+        "/api/v1/auth/apple",
+        json={"idToken": huge},
+    )
+    assert response.status_code == 413

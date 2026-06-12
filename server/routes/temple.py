@@ -460,68 +460,69 @@ def create_booking():
     pandit_id = requested_pandit_id
 
     conn = get_connection()
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    # Verify pooja type exists
-    cur.execute("SELECT base_price FROM pooja_types WHERE id = ? AND is_active = 1", (pooja_type_id,))
-    pooja_row = cur.fetchone()
-    if not pooja_row:
-        conn.close()
-        return jsonify({"error": _("Invalid pooja type")}), 400
+        # Verify pooja type exists
+        cur.execute("SELECT base_price FROM pooja_types WHERE id = ? AND is_active = 1", (pooja_type_id,))
+        pooja_row = cur.fetchone()
+        if not pooja_row:
+            return jsonify({"error": _("Invalid pooja type")}), 400
 
-    # Auto-assign pandit if not provided
-    if not pandit_id:
+        # Auto-assign pandit if not provided
+        if not pandit_id:
+            cur.execute("""
+                SELECT id FROM pandits
+                WHERE is_verified = 1 AND is_available = 1
+                ORDER BY rating DESC
+                LIMIT 1
+            """)
+            pandit_row = cur.fetchone()
+            if pandit_row:
+                pandit_id = pandit_row["id"]
+
+        logger.info(
+            "Temple booking_create user_id=%s pooja_type=%s requested_pandit=%s assigned_pandit=%s scheduled=%s %s",
+            user_id,
+            pooja_type_id,
+            requested_pandit_id,
+            pandit_id,
+            scheduled_date,
+            scheduled_time,
+        )
+
+        # Create booking
+        booking_id = str(uuid.uuid4())
+        now = datetime.utcnow().isoformat()
+
         cur.execute("""
-            SELECT id FROM pandits
-            WHERE is_verified = 1 AND is_available = 1
-            ORDER BY rating DESC
-            LIMIT 1
-        """)
-        pandit_row = cur.fetchone()
-        if pandit_row:
-            pandit_id = pandit_row["id"]
+            INSERT INTO pooja_bookings
+            (id, user_id, pooja_type_id, pandit_id, scheduled_date, scheduled_time,
+             timezone, status, sankalp_name, sankalp_gotra, sankalp_nakshatra,
+             special_requests, amount_paid, payment_status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            booking_id,
+            user_id,
+            pooja_type_id,
+            pandit_id,
+            scheduled_date,
+            scheduled_time,
+            data.get("timezone", "Asia/Kolkata"),
+            "pending",
+            data.get("sankalpName"),
+            data.get("sankalpGotra"),
+            data.get("sankalpNakshatra"),
+            data.get("specialRequests"),
+            pooja_row["base_price"],
+            "pending",
+            now,
+            now,
+        ))
 
-    logger.info(
-        "Temple booking_create user_id=%s pooja_type=%s requested_pandit=%s assigned_pandit=%s scheduled=%s %s",
-        user_id,
-        pooja_type_id,
-        requested_pandit_id,
-        pandit_id,
-        scheduled_date,
-        scheduled_time,
-    )
-
-    # Create booking
-    booking_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
-
-    cur.execute("""
-        INSERT INTO pooja_bookings
-        (id, user_id, pooja_type_id, pandit_id, scheduled_date, scheduled_time,
-         timezone, status, sankalp_name, sankalp_gotra, sankalp_nakshatra,
-         special_requests, amount_paid, payment_status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        booking_id,
-        user_id,
-        pooja_type_id,
-        pandit_id,
-        scheduled_date,
-        scheduled_time,
-        data.get("timezone", "Asia/Kolkata"),
-        "pending",
-        data.get("sankalpName"),
-        data.get("sankalpGotra"),
-        data.get("sankalpNakshatra"),
-        data.get("specialRequests"),
-        pooja_row["base_price"],
-        "pending",
-        now,
-        now,
-    ))
-
-    conn.commit()
-    conn.close()
+        conn.commit()
+    finally:
+        conn.close()
 
     logger.info(
         "Temple booking_created booking_id=%s status=pending user_id=%s pooja_type=%s pandit_id=%s",

@@ -347,7 +347,7 @@ def validate():
     token = request.headers.get("Authorization", "").replace("Bearer ", "").strip()
 
     if not token:
-        return jsonify({"valid": False, "error": _("No token provided")})
+        return jsonify({"valid": False, "error": _("No token provided"), "code": "NO_TOKEN"}), 401
 
     try:
         decoded = validate_jwt(token)
@@ -357,7 +357,7 @@ def validate():
             "email": decoded.get("email"),
         })
     except ValueError as e:
-        return jsonify({"valid": False, "error": str(e)})
+        return jsonify({"valid": False, "error": str(e), "code": "INVALID_TOKEN"}), 401
 
 
 @auth_bp.route("/refresh", methods=["POST"])

@@ -724,7 +724,9 @@ class APIServices: ObservableObject, APIServicesProtocol {
             return false
         }
         
-        // Then validate with backend
+        // Then validate with backend. Only an explicit auth rejection means
+        // the token is invalid; transient failures (offline, 5xx) propagate
+        // so callers don't sign the user out over a network blip.
         do {
             let response = try await networkClient.request(
                 endpoint: "/api/v1/auth/validate",
@@ -732,10 +734,9 @@ class APIServices: ObservableObject, APIServicesProtocol {
                 body: nil,
                 responseType: AuthValidationResponse.self
             )
-            
+
             return response.valid
-        } catch {
-            // If validation fails, assume token is invalid
+        } catch let error as NetworkError where error.requiresReauthentication {
             return false
         }
     }

@@ -544,10 +544,16 @@ extension AuthState {
         
         // Try to use the token with a simple API call
         do {
-            let _ = try await apiServices.validateToken()
-            // Token is valid, user remains signed in
-            await MainActor.run {
-                self.authError = nil
+            let isValid = try await apiServices.validateToken()
+            if isValid {
+                // Token is valid, user remains signed in
+                await MainActor.run {
+                    self.authError = nil
+                }
+            } else {
+                // Server explicitly rejected the token — attempt a refresh
+                // (with backoff) before forcing the user to re-authenticate.
+                await handleTokenExpiry()
             }
         } catch {
             // Handle token validation failure

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
-import sys
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
@@ -14,6 +14,8 @@ from flask import Blueprint, jsonify, request
 from db import get_user_birth_data
 from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
+
+logger = logging.getLogger(__name__)
 
 discover_bp = Blueprint("discover", __name__)
 _ephem = EphemerisService()
@@ -32,7 +34,7 @@ def _load_curated(filename: str) -> dict:
         with open(os.path.join(_ASTROLOGY_DATA_DIR, filename), "r", encoding="utf-8") as f:
             return json.load(f)
     except (OSError, json.JSONDecodeError) as exc:
-        print(f"[discover] failed to load {filename}: {exc}", file=sys.stderr)
+        logger.warning("Failed to load curated content %s: %s", filename, exc)
         return {}
 
 

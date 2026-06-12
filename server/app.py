@@ -58,6 +58,13 @@ def create_app():
     app.config["BABEL_SUPPORTED_LOCALES"] = SUPPORTED_LOCALES
     babel.init_app(app, locale_selector=select_locale)
 
+    # Cap request bodies so oversized payloads are rejected with 413 instead of
+    # buffering into memory. The largest legitimate payload is an App Store
+    # signed-transaction JWS (tens of KB); 1 MB leaves ample headroom.
+    app.config["MAX_CONTENT_LENGTH"] = int(
+        os.environ.get("MAX_CONTENT_LENGTH_BYTES", str(1024 * 1024))
+    )
+
     # CORS configuration - restrict to known browser origins.
     # iOS native apps do not send Origin headers; localhost is only included
     # for local development unless explicitly provided through the environment.
