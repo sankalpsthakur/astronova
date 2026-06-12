@@ -11,6 +11,7 @@ from datetime import datetime
 from flask import Blueprint, g, jsonify, request
 
 from db import get_subscription, init_db
+from extensions import limiter
 from middleware import require_auth
 
 misc_bp = Blueprint("misc", __name__)
@@ -42,6 +43,7 @@ def _require_admin_token_if_production():
 
 
 @misc_bp.route("/health", methods=["GET"])
+@limiter.exempt
 def health_check():
     return jsonify(
         {"status": "healthy", "service": "astronova-api", "version": "minimal", "timestamp": datetime.utcnow().isoformat()}
@@ -190,7 +192,7 @@ def seed_test_user():
                 "location": "New York, NY, USA"
             },
             "subscription": "active (Pro)",
-            "instructions": "Use X-User-Id header with this user_id for API testing"
+            "instructions": "Sign in to obtain a JWT for this user; X-User-Id headers are no longer accepted for authentication"
         }), 201
 
     except Exception as e:

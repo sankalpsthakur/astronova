@@ -177,6 +177,11 @@ def log_line(app_id: str, level: str, event: str, **fields: Any) -> None:
 def install(app: Flask, *, app_id: str) -> None:
     """Wire the request and error logging into the Flask app."""
 
+    # Resolve the salt eagerly so a missing IP_HASH_SALT in production fails
+    # at boot (like JWT_SECRET) instead of 500ing every request — including
+    # health checks — at runtime.
+    _get_salt()
+
     @app.before_request
     def _before():
         g.request_started_at = time.perf_counter()
