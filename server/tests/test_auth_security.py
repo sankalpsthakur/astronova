@@ -412,10 +412,22 @@ class TestTokenValidation:
 class TestAdminTokenProtection:
     """Test admin endpoints require the configured admin token."""
 
-    def test_admin_grant_pro_without_config_returns_503(self, client, monkeypatch):
+    def test_admin_grant_pro_without_token_returns_401_before_config_check(self, client, monkeypatch):
         monkeypatch.delenv("ADMIN_API_TOKEN", raising=False)
 
         response = client.post("/api/v1/admin/grant-pro", json={"userId": "admin-test-user"})
+
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
+
+    def test_admin_grant_pro_with_token_without_config_returns_503(self, client, monkeypatch):
+        monkeypatch.delenv("ADMIN_API_TOKEN", raising=False)
+
+        response = client.post(
+            "/api/v1/admin/grant-pro",
+            json={"userId": "admin-test-user"},
+            headers={"X-Admin-Token": "some-admin-token"},
+        )
 
         assert response.status_code == 503
         assert response.get_json()["code"] == "ADMIN_NOT_CONFIGURED"
@@ -501,11 +513,29 @@ class TestSeedTestUserProtection:
         assert response.status_code == 401
         assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
 
+    def test_seed_test_user_defaults_closed_without_env_marker(self, client, monkeypatch):
+        monkeypatch.delenv("FLASK_ENV", raising=False)
+        monkeypatch.delenv("APP_ENV", raising=False)
+        monkeypatch.delenv("ENV", raising=False)
+        monkeypatch.delenv("RENDER", raising=False)
+        monkeypatch.delenv("RENDER_SERVICE_ID", raising=False)
+        monkeypatch.delenv("PUBLIC_BASE_URL", raising=False)
+        monkeypatch.delenv("ASTRONOVA_BASE_URL", raising=False)
+        monkeypatch.delenv("ADMIN_API_TOKEN", raising=False)
+
+        response = client.post("/api/v1/seed-test-user")
+
+        assert response.status_code == 401
+        assert response.get_json()["code"] == "ADMIN_AUTH_REQUIRED"
+
     def test_seed_test_user_returns_503_if_admin_token_unconfigured_in_production(self, client, monkeypatch):
         monkeypatch.setenv("FLASK_ENV", "production")
         monkeypatch.delenv("ADMIN_API_TOKEN", raising=False)
 
-        response = client.post("/api/v1/seed-test-user")
+        response = client.post(
+            "/api/v1/seed-test-user",
+            headers={"X-Admin-Token": "some-admin-token"},
+        )
 
         assert response.status_code == 503
         assert response.get_json()["code"] == "ADMIN_NOT_CONFIGURED"

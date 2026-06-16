@@ -33,24 +33,37 @@ _REPORT_PRODUCT_TYPES = {
 
 
 def _is_production_environment() -> bool:
-    return any(
-        os.environ.get(name, "").lower() == "production"
-        for name in ("FLASK_ENV", "APP_ENV", "ENV")
-    )
+    markers = [os.environ.get(name, "").strip().lower() for name in ("FLASK_ENV", "APP_ENV", "ENV")]
+    if any(marker in {"production", "prod"} for marker in markers):
+        return True
+    if any(marker in {"development", "dev", "local", "test", "testing"} for marker in markers):
+        return False
+    if os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID"):
+        return True
+
+    public_base_url = os.environ.get("PUBLIC_BASE_URL") or os.environ.get("ASTRONOVA_BASE_URL") or ""
+    public_base_url = public_base_url.strip().lower()
+    if public_base_url.startswith("https://") and "localhost" not in public_base_url and "127.0.0.1" not in public_base_url:
+        return True
+
+    return True
 
 
 def _require_admin_token_if_production():
     if not _is_production_environment():
         return None
 
+    authorization = request.headers.get("Authorization", "")
+    supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
+    if not supplied_token:
+        return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
+
     expected_token = os.environ.get("ADMIN_API_TOKEN")
     if not expected_token:
         logger.error("ADMIN_API_TOKEN is not configured; refusing seed-test-user request")
         return jsonify({"error": "Admin API is not configured", "code": "ADMIN_NOT_CONFIGURED"}), 503
 
-    authorization = request.headers.get("Authorization", "")
-    supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
-    if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+    if not hmac.compare_digest(supplied_token, expected_token):
         return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
 
     return None

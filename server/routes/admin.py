@@ -20,14 +20,17 @@ ASTRONOVA_PRO_PRODUCT_ID = "astronova_pro_monthly"
 def require_admin_token(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        authorization = request.headers.get("Authorization", "")
+        supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
+        if not supplied_token:
+            return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
+
         expected_token = os.environ.get("ADMIN_API_TOKEN")
         if not expected_token:
             logger.error("ADMIN_API_TOKEN is not configured; refusing admin request")
             return jsonify({"error": "Admin API is not configured", "code": "ADMIN_NOT_CONFIGURED"}), 503
 
-        authorization = request.headers.get("Authorization", "")
-        supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
-        if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+        if not hmac.compare_digest(supplied_token, expected_token):
             return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
 
         return func(*args, **kwargs)

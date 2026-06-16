@@ -148,6 +148,7 @@ struct MoreOptionsSheet: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("more.dataPrivacy.button")
 
                         Button {
                             showingExportData = true
@@ -160,6 +161,7 @@ struct MoreOptionsSheet: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("more.exportData.button")
 
                         // Wave 13 — anonymous analytics opt-out. Default ON;
                         // user can switch off at any time. Per
@@ -239,6 +241,7 @@ struct MoreOptionsSheet: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("more.signOut.button")
                         if auth.isAuthenticated {
                             Button {
                                 showingDeleteConfirmation = true
@@ -252,6 +255,7 @@ struct MoreOptionsSheet: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("more.deleteAccount.button")
                         }
                     }
 

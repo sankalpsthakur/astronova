@@ -881,6 +881,32 @@ final class JourneyAcceptanceTests: XCTestCase {
         captureEvidence(named: "11-auth-landing-after-sign-out")
     }
 
+    @MainActor
+    func test_J13_reviewerAccessShowsDataAndAccountControls() throws {
+        launchSignedIn(extraArguments: ["UITEST_OFFLINE_BACKEND"])
+
+        XCTAssertTrue(waitForHomeTab(), "Need signed-in home before opening reviewer settings")
+        tapTab("homeTab")
+        openSettingsFromToday()
+
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8),
+                      "Reviewer-access proof should open the active Settings sheet")
+
+        XCTAssertTrue(waitForElementByScrolling("settings.dataPrivacy.button", timeout: 8).exists,
+                      "Settings should expose Data & Privacy")
+        XCTAssertTrue(waitForElementByScrolling("settings.exportData.button", timeout: 8).exists,
+                      "Settings should expose Export My Data")
+        XCTAssertTrue(waitForElementByScrolling("settings.analyticsOptIn.toggle", timeout: 8).exists,
+                      "Settings should expose anonymous usage sharing consent")
+        captureEvidence(named: "13-reviewer-data-controls")
+
+        XCTAssertTrue(waitForElementByScrolling("settings.signOut.button", timeout: 8).exists,
+                      "Settings should expose Sign Out")
+        XCTAssertTrue(waitForElementByScrolling("settings.deleteAccount.button", timeout: 8).exists,
+                      "Signed-in Settings should expose Delete Account without requiring review credentials")
+        captureEvidence(named: "13-reviewer-account-controls")
+    }
+
     // MARK: - Journey 12 — Journal is agency-first, not an analysis launcher
 
     @MainActor
