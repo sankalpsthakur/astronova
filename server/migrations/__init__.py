@@ -74,13 +74,30 @@ def _get_applied_versions(conn: sqlite3.Connection) -> set[int]:
 
 
 def _record_migration(conn: sqlite3.Connection, version: int, name: str) -> None:
-    """Record a successfully applied migration."""
+    """Record a successfully applied migration.
+
+    Tolerates a concurrent-boot race: if two instances start at the same time
+    (e.g. a rolling deploy), both may apply and try to record the same version.
+    The ``version`` PRIMARY KEY makes the loser's INSERT raise IntegrityError.
+    Migrations are idempotent (``CREATE TABLE IF NOT EXISTS`` / guarded ALTERs),
+    so losing the race is harmless — don't fail the boot over it.
+    """
     now = utc_now_iso()
-    conn.execute(
-        "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
-        (version, name, now),
-    )
-    conn.commit()
+    try:
+        conn.execute(
+            "INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)",
+            (version, name, now),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        # Another worker recorded this version first; the schema is already at
+        # this version. Roll back our duplicate insert and carry on.
+        conn.rollback()
+        logger.info(
+            "Migration %03d_%s already recorded by a concurrent worker; skipping duplicate record",
+            version,
+            name,
+        )
 
 
 def _discover_migrations(migrations_dir: Path) -> list[Migration]:
