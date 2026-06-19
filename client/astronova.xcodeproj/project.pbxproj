@@ -44,6 +44,8 @@
 		6D4B76EA31E4033A1F5C787C /* BreathingOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBA1F6F0CC8AEEBDC730935 /* BreathingOrb.swift */; };
 		734A6C9B88F382F8E4BD1376 /* PauseLayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5938AF4040E13465D8986D69 /* PauseLayerView.swift */; };
 		82C6AE78FE6F912DE4734C4E /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24FEB2DF3505F411A377C9E /* SettingsSheet.swift */; };
+		DA7A9211CE0000000000DP01 /* DataPrivacyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA7A9211CE0000000000DP02 /* DataPrivacyView.swift */; };
+		E40D9211CE0000000000EX01 /* ExportDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40D9211CE0000000000EX02 /* ExportDataView.swift */; };
 		86A1C86F6338E74FB4860646 /* DecisionSimulatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D72AFCBB03BC651BADE3F6 /* DecisionSimulatorView.swift */; };
 		NAVRBF000000000000001 /* TimelineTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NAVRFR000000000000001 /* TimelineTabView.swift */; };
 		NAVRBF000000000000002 /* MatrixDeepDiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NAVRFR000000000000002 /* MatrixDeepDiveView.swift */; };
@@ -286,6 +288,8 @@
 		EC26BB86B2EF29041456F9C8 /* PauseProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PauseProtocol.swift; sourceTree = "<group>"; };
 		EE1949EBB93135391AC11D9D /* TempleModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TempleModels.swift; path = AstronovaApp/Features/Temple/TempleModels.swift; sourceTree = SOURCE_ROOT; };
 		F24FEB2DF3505F411A377C9E /* SettingsSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
+		DA7A9211CE0000000000DP02 /* DataPrivacyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataPrivacyView.swift; sourceTree = "<group>"; };
+		E40D9211CE0000000000EX02 /* ExportDataView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExportDataView.swift; sourceTree = "<group>"; };
 		F63A72C22E86F9E8003419B4 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaChakraWheelView.swift; sourceTree = "<group>"; };
 		GAM000000000000000000001 /* GamificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationModels.swift; sourceTree = "<group>"; };
@@ -426,6 +430,8 @@
 				90D72AFCBB03BC651BADE3F6 /* DecisionSimulatorView.swift */,
 				B2515EC804CCF9BD790B0B15 /* JournalView.swift */,
 				F24FEB2DF3505F411A377C9E /* SettingsSheet.swift */,
+				DA7A9211CE0000000000DP02 /* DataPrivacyView.swift */,
+				E40D9211CE0000000000EX02 /* ExportDataView.swift */,
 			);
 			name = Views;
 			path = Views;
@@ -1083,6 +1089,8 @@
 				AE2256B100C634141962C024 /* JournalView.swift in Sources */,
 				6136BB4F91CB83F3948F5F2A /* ProQuotaManager.swift in Sources */,
 				82C6AE78FE6F912DE4734C4E /* SettingsSheet.swift in Sources */,
+				DA7A9211CE0000000000DP01 /* DataPrivacyView.swift in Sources */,
+				E40D9211CE0000000000EX01 /* ExportDataView.swift in Sources */,
 				SELFFB000000000000001 /* MatrixView.swift in Sources */,
 				SELFFB000000000000002 /* LoshuGridView.swift in Sources */,
 				SELFFB000000000000003 /* ConstraintCardView.swift in Sources */,

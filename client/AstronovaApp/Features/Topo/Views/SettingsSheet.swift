@@ -16,6 +16,11 @@ struct SettingsSheet: View {
     @State private var showingReportShop = false
     @State private var showingOracle = false
     @State private var showingPrivacy = false
+    @State private var showingDataPrivacy = false
+    @State private var showingExportData = false
+    @State private var showingDeleteConfirmation = false
+    @State private var deleteFailed = false
+    @State private var analyticsOptedIn: Bool = !PortfolioAnalytics.shared.isOptedOut
     @State private var restoreMessage: String?
 
     var body: some View {
@@ -62,6 +67,15 @@ struct SettingsSheet: View {
                                 auth.signOut()
                                 dismiss()
                             }
+                            actionRow(
+                                icon: "trash.fill",
+                                title: "Delete Account",
+                                subtitle: "Permanently remove this account and local session",
+                                tint: .cosmicError,
+                                accessibilityIdentifier: "settings.deleteAccount.button"
+                            ) {
+                                showingDeleteConfirmation = true
+                            }
                         } else {
                             actionRow(
                                 icon: "person.crop.circle.badge.plus",
@@ -78,6 +92,23 @@ struct SettingsSheet: View {
 
                         sectionHeader("LEGAL")
                         actionRow(icon: "hand.raised.fill", title: "Privacy", subtitle: nil) { showingPrivacy = true }
+                        actionRow(
+                            icon: "lock.shield.fill",
+                            title: "Data & Privacy",
+                            subtitle: "See what Astronova stores and how to control it",
+                            accessibilityIdentifier: "settings.dataPrivacy.button"
+                        ) {
+                            showingDataPrivacy = true
+                        }
+                        actionRow(
+                            icon: "square.and.arrow.up",
+                            title: "Export My Data",
+                            subtitle: "Prepare a local JSON export for sharing",
+                            accessibilityIdentifier: "settings.exportData.button"
+                        ) {
+                            showingExportData = true
+                        }
+                        anonymousUsageToggleRow
                         actionRow(
                             icon: "arrow.counterclockwise",
                             title: "Restore purchases",
@@ -135,6 +166,53 @@ struct SettingsSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
             }
         }
+        .sheet(isPresented: $showingDataPrivacy) {
+            NavigationStack {
+                DataPrivacyView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showingDataPrivacy = false }
+                        }
+                    }
+            }
+        }
+        .sheet(isPresented: $showingExportData) {
+            NavigationStack {
+                ExportDataView(auth: auth)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showingExportData = false }
+                        }
+                    }
+            }
+        }
+        .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task {
+                    do {
+                        // Privacy (App Store Guideline 5.1.1): only sign out
+                        // locally once the server confirms the account is gone.
+                        // A failed server delete must NOT sign the user out, or
+                        // their data is orphaned while they believe it's deleted.
+                        try await APIServices.shared.deleteAccount()
+                        await MainActor.run {
+                            auth.signOut()
+                            dismiss()
+                        }
+                    } catch {
+                        await MainActor.run { deleteFailed = true }
+                    }
+                }
+            }
+        } message: {
+            Text("This cannot be undone. All your data will be permanently deleted.")
+        }
+        .alert("Couldn't Delete Account", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("We couldn't delete your account just now. Your data has not been removed. Please check your connection and try again.")
+        }
     }
 
     // MARK: - Voice reading toggle (Wave 3b A1)
@@ -169,6 +247,39 @@ struct SettingsSheet: View {
             if !newValue {
                 SpeechService.shared.stop()
             }
+        }
+    }
+
+    private var anonymousUsageToggleRow: some View {
+        Toggle(isOn: $analyticsOptedIn) {
+            HStack(spacing: 14) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.cosmicBodyEmphasis)
+                    .foregroundStyle(Color.cosmicGold)
+                    .frame(width: 28, height: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Share Anonymous Usage")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                    Text("Helps us improve using a random app ID.")
+                        .font(.cosmicLabel)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.cosmicSurface)
+        )
+        .accessibilityIdentifier("settings.analyticsOptIn.toggle")
+        .onChange(of: analyticsOptedIn) { _, newValue in
+            PortfolioAnalytics.shared.isOptedOut = !newValue
+            let projectKey = Bundle.main.infoDictionary?["SMARTLOOK_PROJECT_KEY"] as? String
+            AnalyticsConsentController.applySmartlookConsent(projectKey: projectKey)
         }
     }
 

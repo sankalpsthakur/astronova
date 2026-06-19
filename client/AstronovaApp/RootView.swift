@@ -5770,124 +5770,13 @@ private struct PolicySection: View {
     }
 }
 
-struct DataPrivacyView: View {
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("We take your privacy seriously. Here's how we handle your data:")
-                    .font(.cosmicBody)
-                
-                PrivacySection(
-                    title: "What We Collect",
-                    content: "• Birth date, time, and location\n• Astrological preferences\n• Pseudonymous usage events tied to a random app UUID\n• Session diagnostics when Share Anonymous Usage is enabled\n\nYou can turn off anonymous analytics in Settings → Privacy → Share Anonymous Usage. Turning it off stops analytics forwarding, clears buffered portfolio events, rotates the analytics UUID, and stops Smartlook diagnostics."
-                )
-                
-                PrivacySection(
-                    title: "How We Use It",
-                    content: "• Generate personalized horoscopes\n• Calculate astrological charts\n• Improve app experience"
-                )
-                
-                PrivacySection(
-                    title: "Data Security",
-                    content: "• All data is encrypted in transit\n• Stored securely on your device and our servers\n• Access controlled with authentication"
-                )
-            }
-            .padding()
-        }
-        .navigationTitle("Data & Privacy")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct PrivacySection: View {
-    let title: String
-    let content: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.cosmicHeadline)
-            
-            Text(content)
-                .font(.cosmicBody)
-                .foregroundStyle(Color.cosmicTextSecondary)
-        }
-    }
-}
-
-struct ExportDataView: View {
-    @ObservedObject var auth: AuthState
-    @State private var showingShareSheet = false
-    @State private var exportData: String = ""
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "square.and.arrow.up.circle.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.blue)
-            
-            VStack(spacing: 12) {
-                Text("Export Your Data")
-                    .font(.title2.weight(.semibold))
-                
-                Text("Download all your astrological data including birth information, preferences, and saved readings.")
-                    .font(.cosmicBody)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            
-            Button("Export Data") {
-                generateExportData()
-                showingShareSheet = true
-            }
-            .font(.cosmicHeadline)
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            Spacer()
-        }
-        .padding()
-        .navigationTitle("Export Data")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingShareSheet) {
-            ShareSheet(items: [exportData])
-        }
-    }
-    
-    private func generateExportData() {
-        let profile = auth.profileManager.profile
-        
-        // Create JSON format for better structure and safety
-        let exportDict: [String: Any] = [
-            "app": "Astronova",
-            "version": "1.0.0",
-            "exportDate": Date().ISO8601Format(),
-            "profile": [
-                "fullName": profile.fullName,
-                "birthDate": profile.birthDate.ISO8601Format(),
-                "birthTime": profile.birthTime?.ISO8601Format() ?? "",
-                "birthPlace": profile.birthPlace ?? "",
-                "sunSign": profile.sunSign ?? "",
-                "moonSign": profile.moonSign ?? "",
-                "risingSign": profile.risingSign ?? ""
-            ]
-        ]
-        
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: exportDict, options: .prettyPrinted)
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                exportData = jsonString
-            } else {
-                exportData = "Error: Could not convert export data to string"
-            }
-        } catch {
-            exportData = "Error generating export data: \(error.localizedDescription)"
-        }
-    }
-}
+// NOTE: `DataPrivacyView` and `ExportDataView` were moved out of this file into
+// dedicated, fully-featured implementations:
+//   client/AstronovaApp/Features/Topo/Views/DataPrivacyView.swift
+//   client/AstronovaApp/Features/Topo/Views/ExportDataView.swift
+// The old `PrivacySection` helper moved with them (it was only used by the old
+// DataPrivacyView). `ShareSheet` stays here — it is shared by ExportDataView and
+// any other share affordance.
 
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
