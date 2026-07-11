@@ -1,4 +1,5 @@
 import SwiftUI
+import Diagnostics
 
 struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -22,6 +23,9 @@ struct SettingsSheet: View {
     @State private var deleteFailed = false
     @State private var analyticsOptedIn: Bool = !PortfolioAnalytics.shared.isOptedOut
     @State private var restoreMessage: String?
+    @State private var diagnosticsURL: URL?
+    @State private var diagnosticsError: String?
+    @State private var isGeneratingDiagnostics = false
 
     var body: some View {
         NavigationStack {
@@ -109,6 +113,17 @@ struct SettingsSheet: View {
                             showingExportData = true
                         }
                         anonymousUsageToggleRow
+                        sectionHeader("SUPPORT")
+                        actionRow(
+                            icon: "wrench.and.screwdriver.fill",
+                            title: isGeneratingDiagnostics ? "Preparing Diagnostics…" : "Share Diagnostics Report",
+                            subtitle: "App and system details with privacy-safe support events",
+                            showsChevron: false,
+                            accessibilityIdentifier: "settings.shareDiagnostics.button"
+                        ) {
+                            generateDiagnosticsReport()
+                        }
+                        .disabled(isGeneratingDiagnostics)
                         actionRow(
                             icon: "arrow.counterclockwise",
                             title: "Restore purchases",
@@ -186,6 +201,17 @@ struct SettingsSheet: View {
                     }
             }
         }
+        .sheet(
+            isPresented: Binding(
+                get: { diagnosticsURL != nil },
+                set: { if !$0 { cleanUpDiagnosticsReport() } }
+            ),
+            onDismiss: cleanUpDiagnosticsReport
+        ) {
+            if let diagnosticsURL {
+                ShareSheet(items: [diagnosticsURL])
+            }
+        }
         .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
@@ -213,6 +239,55 @@ struct SettingsSheet: View {
         } message: {
             Text("We couldn't delete your account just now. Your data has not been removed. Please check your connection and try again.")
         }
+        .alert(
+            "Couldn't Prepare Diagnostics",
+            isPresented: Binding(
+                get: { diagnosticsError != nil },
+                set: { if !$0 { diagnosticsError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { diagnosticsError = nil }
+        } message: {
+            Text(diagnosticsError ?? "Please try again.")
+        }
+    }
+
+    private func generateDiagnosticsReport() {
+        guard !isGeneratingDiagnostics else { return }
+        isGeneratingDiagnostics = true
+        Task {
+            await DiagnosticsSupportLog.shared.record("Diagnostics report requested from Settings")
+            let reporters = DiagnosticsReporter.DefaultReporter.allCases.filter {
+                if case .logs = $0 { return false }
+                return true
+            }.map(\.reporter) + [AstronovaSupportReporter()]
+            let report = await DiagnosticsReporter.create(
+                filename: "Astronova-Diagnostics.html",
+                using: reporters,
+                reportTitle: "Astronova Diagnostics Report"
+            )
+
+            do {
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                    .appendingPathComponent(report.filename)
+                try FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try report.data.write(to: url, options: .atomic)
+                diagnosticsURL = url
+            } catch {
+                diagnosticsError = "The report couldn't be saved for sharing."
+            }
+            isGeneratingDiagnostics = false
+        }
+    }
+
+    private func cleanUpDiagnosticsReport() {
+        guard let diagnosticsURL else { return }
+        try? FileManager.default.removeItem(at: diagnosticsURL.deletingLastPathComponent())
+        self.diagnosticsURL = nil
     }
 
     // MARK: - Voice reading toggle (Wave 3b A1)

@@ -109,7 +109,7 @@ enum JourneyMilestone: String, Codable, CaseIterable {
         case .firstTimeTravelSnapshot: return "Generate a snapshot."
         case .firstShare: return "Share an insight card."
         case .weeklyChallengeComplete: return "Complete this week's challenge."
-        case .weeklyChapterComplete: return "Complete a week of practice."
+        case .weeklyChapterComplete: return "Complete 7 daily signals this week."
         }
     }
 }

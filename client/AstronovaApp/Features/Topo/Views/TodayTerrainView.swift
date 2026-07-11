@@ -46,12 +46,16 @@ struct TodayTerrainView: View {
                 if let snapshot {
                     dashboardSynthesisLead(snapshot)
                     if let dailySignalCard {
+                        let chapter = gamification.weeklyChapterProgress
                         DailySignalCardView(
                             card: dailySignalCard,
                             isNewCheckIn: dailySignalIsNew,
+                            isTodayComplete: gamification.hasCheckedInToday,
                             streak: gamification.streak,
-                            level: gamification.level.rawValue,
-                            xp: gamification.xp
+                            level: gamification.level.title,
+                            xp: gamification.xp,
+                            weeklyChapterLabel: chapter.label,
+                            weeklyChapterFraction: chapter.fraction
                         ) {
                             HapticFeedbackService.shared.mediumImpact()
                             showLogMoment = true

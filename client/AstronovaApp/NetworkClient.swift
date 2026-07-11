@@ -161,6 +161,9 @@ class NetworkClient: NetworkClientProtocol {
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(getOrCreateUserId(), forHTTPHeaderField: "X-User-Id")
+        // Correlate client telemetry with server structured logs (story 41).
+        let requestId = NetworkClient.makeRequestId()
+        request.setValue(requestId, forHTTPHeaderField: "X-Request-ID")
         
         // Add JWT token if available
         if let jwtToken = jwtToken {
@@ -182,6 +185,13 @@ class NetworkClient: NetworkClientProtocol {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw NetworkError.networkError(URLError(.badServerResponse))
             }
+
+            PortfolioAnalytics.shared.track(.networkRequest, properties: [
+                "request_id": requestId,
+                "endpoint": NetworkClient.analyticsRoute(for: endpoint),
+                "status_code": "\(httpResponse.statusCode)",
+                "method": method.rawValue
+            ])
             
             // Handle different HTTP status codes
             switch httpResponse.statusCode {
@@ -192,7 +202,8 @@ class NetworkClient: NetworkClientProtocol {
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.authenticationError, properties: [
                     "endpoint": endpoint,
-                    "status_code": "401"
+                    "status_code": "401",
+                    "request_id": requestId
                 ])
                 if errorMessage?.contains("expired") == true {
                     throw NetworkError.tokenExpired
@@ -336,6 +347,8 @@ class NetworkClient: NetworkClientProtocol {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let requestId = NetworkClient.makeRequestId()
+        request.setValue(requestId, forHTTPHeaderField: "X-Request-ID")
         
         // Add JWT token if available
         if let jwtToken = jwtToken {
@@ -442,6 +455,30 @@ class NetworkClient: NetworkClientProtocol {
     /// Set JWT token for authenticated requests
     func setJWTToken(_ token: String?) {
         self.jwtToken = token
+    }
+
+    /// Generate a compact request id for X-Request-ID correlation with server logs.
+    static func makeRequestId() -> String {
+        let ms = Int(Date().timeIntervalSince1970 * 1000)
+        let rnd = UInt32.random(in: 0...UInt32.max)
+        return String(format: "%llx%08x", ms, rnd)
+    }
+
+    /// Keep network analytics useful without retaining query values or
+    /// user-specific path identifiers.
+    static func analyticsRoute(for endpoint: String) -> String {
+        let path = endpoint.split(separator: "?", maxSplits: 1).first.map(String.init) ?? endpoint
+        let normalized = path
+            .split(separator: "/", omittingEmptySubsequences: true)
+            .map { component in
+                let value = String(component)
+                if UUID(uuidString: value) != nil || value.allSatisfy(\.isNumber) {
+                    return ":id"
+                }
+                return value
+            }
+            .joined(separator: "/")
+        return "/" + normalized
     }
     
     /// Extract error message from response data

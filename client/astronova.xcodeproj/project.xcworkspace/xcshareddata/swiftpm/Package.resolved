@@ -1,5 +1,5 @@
 {
-  "originHash" : "0c7a87057f1cd30b4f4cd7940be3e408b19161292fed893a3273b9459e1f32b5",
+  "originHash" : "a0cfa87fb6b26c6c8cde3e5c9ca178405a2d26bbce8f8ba15cffc442c849b5ee",
   "pins" : [
     {
       "identity" : "analytics-swift-package",
@@ -8,6 +8,24 @@
       "state" : {
         "revision" : "9e07a62f426365a06ffd75471b2ad4ade4efa0ce",
         "version" : "2.2.15"
+      }
+    },
+    {
+      "identity" : "diagnostics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AvdLee/Diagnostics.git",
+      "state" : {
+        "revision" : "490338813372da5fe5415ae1012b0108b793435a",
+        "version" : "7.0.0"
+      }
+    },
+    {
+      "identity" : "exceptioncatcher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/sindresorhus/ExceptionCatcher",
+      "state" : {
+        "revision" : "9e57a89e7ed5e11cbc04fbaa5f1397448f91bb73",
+        "version" : "2.2.0"
       }
     }
   ],

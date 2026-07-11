@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppIntents
+import Diagnostics
 #if canImport(SmartlookAnalytics)
 import SmartlookAnalytics
 #endif
@@ -51,6 +52,8 @@ struct AstronovaAppApp: App {
         #endif
 
         _authState = StateObject(wrappedValue: AuthState())
+
+        Task { await DiagnosticsSupportLog.shared.record("Application initialized") }
 
         // Warm the Today-screen ephemeris substitutions cache so the Today
         // tab renders real moon void-of-course / aspect / eclipse values on

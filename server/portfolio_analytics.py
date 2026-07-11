@@ -162,6 +162,33 @@ def _generate_request_id() -> str:
     return "".join(reversed(out)).rjust(16, "0")[:16]
 
 
+_SECRET_KEY_RE = re.compile(
+    r"(authorization|password|token|secret|jwt|api[_-]?key|birth|ssn)",
+    re.IGNORECASE,
+)
+_BEARER_RE = re.compile(r"Bearer\s+[A-Za-z0-9\-._~+/]+=*", re.IGNORECASE)
+
+
+def scrub(value: Any) -> Any:
+    """Redact secrets and sensitive substrings from log fields."""
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        return {
+            k: ("[REDACTED]" if _SECRET_KEY_RE.search(str(k)) else scrub(v))
+            for k, v in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [scrub(v) for v in value]
+    if isinstance(value, str):
+        cleaned = _BEARER_RE.sub("Bearer [REDACTED]", value)
+        # Drop long JWT-looking blobs.
+        if cleaned.count(".") >= 2 and len(cleaned) > 40:
+            return "[REDACTED]"
+        return cleaned
+    return value
+
+
 def log_line(app_id: str, level: str, event: str, **fields: Any) -> None:
     """Write one JSON line to stdout. Honours ``LOG_LEVEL``."""
     if _LEVEL_RANK.get(level, 0) < _env_level():
@@ -173,7 +200,7 @@ def log_line(app_id: str, level: str, event: str, **fields: Any) -> None:
         "app": app_id,
         "event": event,
     }
-    payload.update({k: v for k, v in fields.items() if v is not None})
+    payload.update({k: scrub(v) for k, v in fields.items() if v is not None})
     sys.stdout.write(json.dumps(payload) + "\n")
     sys.stdout.flush()
 

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DIAGBF00000000000000001 /* Diagnostics in Frameworks */ = {isa = PBXBuildFile; productRef = DIAGPD00000000000000001 /* Diagnostics */; };
+		DIAGBF00000000000000002 /* DiagnosticsSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = DIAGFR00000000000000001 /* DiagnosticsSupport.swift */; };
 		02BF82B08A9C4246B3BD0A51 /* DashaChakraWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */; };
 		0C4B24E55110B18AF685645E /* consciousness-levels.json in Resources */ = {isa = PBXBuildFile; fileRef = 96A65879FDBDA9DC7BCDFD49 /* consciousness-levels.json */; };
 		16C522101C9D6440B66B668B /* ProtocolRunnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 897CD75B31A3005EB690A4B8 /* ProtocolRunnerView.swift */; };
@@ -111,6 +113,8 @@
 		F231BC7A1D2C7E7574B2F00E /* MyMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFEF5ECDC49D89B4550592CD /* MyMapView.swift */; };
 		GAM001000000000000000001 /* GamificationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000001 /* GamificationModels.swift */; };
 		GAM001000000000000000002 /* GamificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = GAM000000000000000000002 /* GamificationManager.swift */; };
+		HABIT10B00000000000001 /* DailyProgressionMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = HABIT10F00000000000001 /* DailyProgressionMath.swift */; };
+		HABIT10B00000000000002 /* DailyProgressionMath_test.swift in Sources */ = {isa = PBXBuildFile; fileRef = HABIT10F00000000000002 /* DailyProgressionMath_test.swift */; };
 		L10NBF000000000000000001 /* LocalizedStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000001 /* LocalizedStrings.swift */; };
 		L10NBF000000000000000002 /* LocaleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000002 /* LocaleFormatter.swift */; };
 		L10NBF000000000000000003 /* CurrencyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = L10NFR000000000000000003 /* CurrencyManager.swift */; };
@@ -138,6 +142,7 @@
 		WAVE13NP01000000000001 /* NPSService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13NP00000000000001 /* NPSService.swift */; };
 		WAVE13NV01000000000001 /* NPSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13NV00000000000001 /* NPSView.swift */; };
 		WAVE13PA01000000000001 /* PortfolioAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13PA00000000000001 /* PortfolioAnalytics.swift */; };
+		WAVE13LC01000000000001 /* SubscriptionLifecycleAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13LC00000000000001 /* SubscriptionLifecycleAnalytics.swift */; };
 		WAVE13RV01000000000001 /* AstronovaReviewPrompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13RV00000000000001 /* AstronovaReviewPrompts.swift */; };
 		WAVE13ST01000000000001 /* SessionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13ST00000000000001 /* SessionTracker.swift */; };
 		WAVE13T02000000000001 /* PortfolioAnalyticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000001 /* PortfolioAnalyticsTests.swift */; };
@@ -180,6 +185,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DIAGFR00000000000000001 /* DiagnosticsSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaApp/DiagnosticsSupport.swift; sourceTree = "<group>"; };
 		15AD03360A6D6EA408FE6593 /* domain-mappings.json */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.json; path = "domain-mappings.json"; sourceTree = "<group>"; };
 		1672DC0F7BAF5FF4CB460B32 /* PatternLibraryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PatternLibraryView.swift; sourceTree = "<group>"; };
 		19DBD80877DFCC5B8A8AF43F /* TopoContentModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TopoContentModels.swift; sourceTree = "<group>"; };
@@ -294,6 +300,8 @@
 		F7A9038673F14F90BAEDC170 /* DashaChakraWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashaChakraWheelView.swift; sourceTree = "<group>"; };
 		GAM000000000000000000001 /* GamificationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationModels.swift; sourceTree = "<group>"; };
 		GAM000000000000000000002 /* GamificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/GamificationManager.swift; sourceTree = "<group>"; };
+		HABIT10F00000000000001 /* DailyProgressionMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gamification/DailyProgressionMath.swift; sourceTree = "<group>"; };
+		HABIT10F00000000000002 /* DailyProgressionMath_test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyProgressionMath_test.swift; sourceTree = "<group>"; };
 		L10NFL000000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		L10NFL000000000000000002 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hi; path = hi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		L10NFL000000000000000003 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -349,6 +357,7 @@
 		WAVE13NP00000000000001 /* NPSService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPSService.swift; sourceTree = "<group>"; };
 		WAVE13NV00000000000001 /* NPSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NPSView.swift; path = AstronovaApp/Features/NPS/NPSView.swift; sourceTree = SOURCE_ROOT; };
 		WAVE13PA00000000000001 /* PortfolioAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioAnalytics.swift; sourceTree = "<group>"; };
+		WAVE13LC00000000000001 /* SubscriptionLifecycleAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionLifecycleAnalytics.swift; sourceTree = "<group>"; };
 		WAVE13RV00000000000001 /* AstronovaReviewPrompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaReviewPrompts.swift; sourceTree = "<group>"; };
 		WAVE13ST00000000000001 /* SessionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTracker.swift; sourceTree = "<group>"; };
 		WAVE13T01000000000001 /* PortfolioAnalyticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioAnalyticsTests.swift; sourceTree = "<group>"; };
@@ -378,6 +387,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DIAGBF00000000000000001 /* Diagnostics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -468,6 +478,7 @@
 				5A811C042DF79DA000BD6D7F /* MapKitLocationService.swift */,
 				GAM000000000000000000001 /* GamificationModels.swift */,
 				GAM000000000000000000002 /* GamificationManager.swift */,
+				HABIT10F00000000000001 /* DailyProgressionMath.swift */,
 				TT000000000000000000001 /* TimeTravelSnapshot.swift */,
 				TT000000000000000000002 /* UnifiedTimeTravelView.swift */,
 				TT000000000000000000003 /* CosmicMapView.swift */,
@@ -528,6 +539,7 @@
 				WAVE13T01000000000004 /* LapsedUserServiceTests.swift */,
 				WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */,
 				WAVE13T01000000000006 /* SubscriptionLifecycleAnalyticsTests.swift */,
+				HABIT10F00000000000002 /* DailyProgressionMath_test.swift */,
 			);
 			path = AstronovaAppTests;
 			sourceTree = "<group>";
@@ -598,6 +610,7 @@
 			children = (
 				AA0001000000000000000003 /* AnalyticsService.swift */,
 				WAVE13PA00000000000001 /* PortfolioAnalytics.swift */,
+				WAVE13LC00000000000001 /* SubscriptionLifecycleAnalytics.swift */,
 			);
 			path = Analytics;
 			sourceTree = "<group>";
@@ -844,6 +857,9 @@
 			dependencies = (
 			);
 			name = AstronovaApp;
+			packageProductDependencies = (
+				DIAGPD00000000000000001 /* Diagnostics */,
+			);
 			productName = AstronovaApp;
 			productReference = 5AD3E1402E147FA500333B75 /* AstronovaApp.app */;
 			productType = "com.apple.product-type.application";
@@ -922,6 +938,7 @@
 			);
 			mainGroup = 3D01F7D72C0A000000000001;
 			packageReferences = (
+				DIAGPKG0000000000000001 /* XCRemoteSwiftPackageReference "Diagnostics" */,
 				F6DE070D2F10857D00496C25 /* XCRemoteSwiftPackageReference "analytics-swift-package" */,
 			);
 			productRefGroup = 3D01F7D72C0A000000000001;
@@ -974,6 +991,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DIAGBF00000000000000002 /* DiagnosticsSupport.swift in Sources */,
 				SELFNEW01000000000001 /* SelfTabView.swift in Sources */,
 				SELFNEW01000000000002 /* CosmicPulseView.swift in Sources */,
 				SELFNEW01000000000003 /* EssenceBar.swift in Sources */,
@@ -995,6 +1013,7 @@
 				5A811C092DF79DA000BD6D7F /* MapKitAutocompleteView.swift in Sources */,
 				GAM001000000000000000001 /* GamificationModels.swift in Sources */,
 				GAM001000000000000000002 /* GamificationManager.swift in Sources */,
+				HABIT10B00000000000001 /* DailyProgressionMath.swift in Sources */,
 				TT001000000000000000001 /* TimeTravelSnapshot.swift in Sources */,
 				TT001000000000000000002 /* UnifiedTimeTravelView.swift in Sources */,
 				TT001000000000000000003 /* CosmicMapView.swift in Sources */,
@@ -1061,6 +1080,7 @@
 				DIS001000000000000000011 /* DomainGridView.swift in Sources */,
 				DIS001000000000000000012 /* DomainDetailView.swift in Sources */,
 				WAVE13PA01000000000001 /* PortfolioAnalytics.swift in Sources */,
+				WAVE13LC01000000000001 /* SubscriptionLifecycleAnalytics.swift in Sources */,
 				WAVE13FL01000000000001 /* AstronovaFlags.swift in Sources */,
 				WAVE13RV01000000000001 /* AstronovaReviewPrompts.swift in Sources */,
 				WAVE13NP01000000000001 /* NPSService.swift in Sources */,
@@ -1120,6 +1140,7 @@
 				WAVE13T02000000000004 /* LapsedUserServiceTests.swift in Sources */,
 				WAVE13T02000000000005 /* AstronovaReviewPromptsTests.swift in Sources */,
 				WAVE13T02000000000006 /* SubscriptionLifecycleAnalyticsTests.swift in Sources */,
+				HABIT10B00000000000002 /* DailyProgressionMath_test.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1481,6 +1502,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		DIAGPKG0000000000000001 /* XCRemoteSwiftPackageReference "Diagnostics" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AvdLee/Diagnostics.git";
+			requirement = {
+				kind = exactVersion;
+				version = 7.0.0;
+			};
+		};
 		F6DE070D2F10857D00496C25 /* XCRemoteSwiftPackageReference "analytics-swift-package" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/smartlook/analytics-swift-package";
@@ -1490,6 +1519,14 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DIAGPD00000000000000001 /* Diagnostics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DIAGPKG0000000000000001 /* XCRemoteSwiftPackageReference "Diagnostics" */;
+			productName = Diagnostics;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3D01F7D82C0A000000000001 /* Project object */;
 }

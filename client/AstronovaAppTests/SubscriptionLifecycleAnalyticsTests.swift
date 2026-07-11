@@ -79,4 +79,52 @@ final class SubscriptionLifecycleAnalyticsTests: XCTestCase {
         XCTAssertEqual(captured.first?.1["sku"], ShopCatalog.proMonthlyProductID)
         XCTAssertEqual(captured.last?.1["sku"], "chat_credits_5")
     }
+
+    func testLifecyclePhasesEmitAllowListedEvents() {
+        var captured: [PortfolioEvent] = []
+        PortfolioAnalytics.shared.testEventSink = { event, _ in
+            captured.append(event)
+        }
+
+        SubscriptionLifecycleAnalytics.emit(.renewed, sku: ShopCatalog.proMonthlyProductID)
+        SubscriptionLifecycleAnalytics.emit(.cancelled, sku: ShopCatalog.proMonthlyProductID)
+        SubscriptionLifecycleAnalytics.emit(.grace, sku: ShopCatalog.proMonthlyProductID)
+        SubscriptionLifecycleAnalytics.emit(.billingRetry, sku: ShopCatalog.proMonthlyProductID)
+        SubscriptionLifecycleAnalytics.emit(.lapsed, sku: ShopCatalog.proMonthlyProductID)
+        SubscriptionLifecycleAnalytics.emit(.refunded, sku: ShopCatalog.proMonthlyProductID)
+        SubscriptionLifecycleAnalytics.emit(.trialStarted, sku: ShopCatalog.proMonthlyProductID)
+
+        XCTAssertEqual(captured, [
+            .subscriptionRenewed,
+            .subscriptionCancelled,
+            .subscriptionGrace,
+            .subscriptionBillingRetry,
+            .subscriptionLapsed,
+            .subscriptionRefunded,
+            .trialStarted
+        ])
+    }
+
+    func testRequestIdGeneratorIsNonEmptyAndUnique() {
+        let a = NetworkClient.makeRequestId()
+        let b = NetworkClient.makeRequestId()
+        XCTAssertFalse(a.isEmpty)
+        XCTAssertFalse(b.isEmpty)
+        XCTAssertNotEqual(a, b)
+    }
+
+    func testNetworkAnalyticsRouteDropsQueriesAndIdentifiers() {
+        XCTAssertEqual(
+            NetworkClient.analyticsRoute(for: "/api/v1/location/search?q=private-place"),
+            "/api/v1/location/search"
+        )
+        XCTAssertEqual(
+            NetworkClient.analyticsRoute(for: "/api/v1/reports/12345"),
+            "/api/v1/reports/:id"
+        )
+        XCTAssertEqual(
+            NetworkClient.analyticsRoute(for: "/api/v1/reports/18D4AF04-FA01-4F2A-82D6-B900D47D4E0A"),
+            "/api/v1/reports/:id"
+        )
+    }
 }

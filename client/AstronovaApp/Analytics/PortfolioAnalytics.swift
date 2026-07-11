@@ -38,7 +38,17 @@ public enum PortfolioEvent: String, CaseIterable, Codable {
     case subscriptionStarted = "subscription_started"
     case subscriptionCancelled = "subscription_cancelled"
     case subscriptionPaused = "subscription_paused"
+    case subscriptionRenewed = "subscription_renewed"
+    case trialStarted = "trial_started"
+    case subscriptionGrace = "subscription_grace"
+    case subscriptionBillingRetry = "subscription_billing_retry"
+    case subscriptionLapsed = "subscription_lapsed"
+    case subscriptionRefunded = "subscription_refunded"
     case iapPurchased = "iap_purchased"
+
+    // Network correlation (story 41)
+    case networkRequest = "network_request"
+    case networkError = "network_error"
 
     // Growth
     case referralSent = "referral_sent"

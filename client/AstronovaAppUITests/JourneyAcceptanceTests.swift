@@ -55,7 +55,8 @@ final class JourneyAcceptanceTests: XCTestCase {
 
     @discardableResult
     private func launchSignedIn(extraArguments: [String] = [],
-                                environment: [String: String] = [:]) -> XCUIApplication {
+                                environment: [String: String] = [:],
+                                onWillLaunch: ((Date) -> Void)? = nil) -> XCUIApplication {
         app.terminate()
         app.launchArguments = [
             "UITEST_RESET",
@@ -70,6 +71,7 @@ final class JourneyAcceptanceTests: XCTestCase {
             merged["QA_EVIDENCE_DIR"] = qaDir
         }
         app.launchEnvironment = merged
+        onWillLaunch?(Date())
         app.launch()
         return app
     }
@@ -898,6 +900,8 @@ final class JourneyAcceptanceTests: XCTestCase {
                       "Settings should expose Export My Data")
         XCTAssertTrue(waitForElementByScrolling("settings.analyticsOptIn.toggle", timeout: 8).exists,
                       "Settings should expose anonymous usage sharing consent")
+        XCTAssertTrue(waitForElementByScrolling("settings.shareDiagnostics.button", timeout: 8).exists,
+                      "Settings should expose the privacy-safe diagnostics report surface")
         captureEvidence(named: "13-reviewer-data-controls")
 
         XCTAssertTrue(waitForElementByScrolling("settings.signOut.button", timeout: 8).exists,
@@ -905,6 +909,42 @@ final class JourneyAcceptanceTests: XCTestCase {
         XCTAssertTrue(waitForElementByScrolling("settings.deleteAccount.button", timeout: 8).exists,
                       "Signed-in Settings should expose Delete Account without requiring review credentials")
         captureEvidence(named: "13-reviewer-account-controls")
+    }
+
+    @MainActor
+    func test_J13_diagnosticsReportPresentsShareSheetAndCancels() throws {
+        launchSignedIn(extraArguments: ["UITEST_OFFLINE_BACKEND"])
+
+        XCTAssertTrue(waitForHomeTab(), "Need signed-in home before opening diagnostics")
+        tapTab("homeTab")
+        openSettingsFromToday()
+
+        let diagnostics = waitForElementByScrolling("settings.shareDiagnostics.button", timeout: 8)
+        XCTAssertTrue(diagnostics.exists,
+                      "Settings should expose diagnostics report generation")
+        diagnostics.tap()
+
+        let close = app.buttons["Close"]
+        let cancel = app.buttons["Cancel"]
+        let activityList = app.otherElements["ActivityListView"]
+        let shareSheetPresented = close.waitForExistence(timeout: 20)
+            || cancel.waitForExistence(timeout: 1)
+            || activityList.waitForExistence(timeout: 1)
+        XCTAssertTrue(shareSheetPresented,
+                      "Generating diagnostics should present the system share sheet")
+        captureEvidence(named: "13-diagnostics-share-sheet")
+        if close.isHittable {
+            close.tap()
+        } else if cancel.isHittable {
+            cancel.tap()
+        } else {
+            app.swipeDown()
+        }
+
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8),
+                      "Cancelling diagnostics sharing should return to Settings")
+        XCTAssertTrue(waitForElementByScrolling("settings.shareDiagnostics.button", timeout: 8).exists,
+                      "Diagnostics should remain available after cancelling the share sheet")
     }
 
     // MARK: - Journey 12 — Journal is agency-first, not an analysis launcher
@@ -984,14 +1024,25 @@ final class JourneyAcceptanceTests: XCTestCase {
 
     @MainActor
     func test_J14_todayDailySignalOpensHabitLoop() throws {
-        let started = Date()
+        var started: Date?
         launchSignedIn(extraArguments: [
             "UITEST_START_TAB_INDEX=0",
             "UITEST_OFFLINE_BACKEND"
-        ])
+        ], onWillLaunch: { started = $0 })
 
         XCTAssertTrue(anyElement("todayTerrainView").waitForExistence(timeout: 18),
                       "Today should boot directly into the active value surface")
+
+        let dailySignal = anyElement("today.dailySignal.card")
+        XCTAssertTrue(dailySignal.waitForExistence(timeout: 12),
+                      "Today should show a daily signal without requiring navigation")
+        let launchStarted = try XCTUnwrap(started, "The launch timer should start immediately before app.launch()")
+        let timeToSignal = Date().timeIntervalSince(launchStarted)
+        XCTAssertLessThan(timeToSignal, 30,
+                          "Daily signal should be available inside the 30s first-value window")
+        let ttv = ["time_to_daily_signal_seconds": timeToSignal]
+        let ttvData = try JSONSerialization.data(withJSONObject: ttv, options: [.prettyPrinted, .sortedKeys])
+        writeArtifact(ttvData, filename: "14-today-ttv.json")
 
         XCTAssertTrue(anyElement("today.dashboard.refreshed").waitForExistence(timeout: 12),
                       "Today should render the ZIP-guided dashboard surface")
@@ -1004,16 +1055,6 @@ final class JourneyAcceptanceTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Today's Horoscope"].exists,
                        "The stale horoscope title should not be the Today dashboard anchor")
         captureEvidence(named: "14-today-refreshed-dashboard")
-
-        let dailySignal = anyElement("today.dailySignal.card")
-        XCTAssertTrue(dailySignal.waitForExistence(timeout: 12),
-                      "Today should show a daily signal without requiring navigation")
-        let timeToSignal = Date().timeIntervalSince(started)
-        XCTAssertLessThan(timeToSignal, 30,
-                          "Daily signal should be visible inside the 30s first-value window")
-        let ttv = ["time_to_daily_signal_seconds": timeToSignal]
-        let ttvData = try JSONSerialization.data(withJSONObject: ttv, options: [.prettyPrinted, .sortedKeys])
-        writeArtifact(ttvData, filename: "14-today-ttv.json")
         captureEvidence(named: "14-today-daily-signal")
 
         tapElementByScrolling("today.dailySignal.logCTA", timeout: 8)

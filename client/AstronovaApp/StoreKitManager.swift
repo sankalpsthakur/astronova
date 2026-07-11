@@ -218,8 +218,11 @@ class StoreKitManager: ObservableObject {
                     let transaction = try self.checkVerified(result)
                     await self.handleSuccessfulPurchase(
                         transaction: transaction,
-                        signedTransactionJWS: result.jwsRepresentation
+                        signedTransactionJWS: result.jwsRepresentation,
+                        analyticsSource: .transactionUpdate
                     )
+                    // Lifecycle analytics for renewals / revokes (story 41 follow-up).
+                    await self.emitLifecycleFromTransaction(transaction)
                     await transaction.finish()
                 } catch {
                     #if DEBUG
@@ -227,6 +230,47 @@ class StoreKitManager: ObservableObject {
                     #endif
                 }
             }
+        }
+    }
+
+    /// Map verified transaction fields to allow-listed lifecycle phases.
+    @MainActor
+    private func emitLifecycleFromTransaction(_ transaction: StoreKit.Transaction) async {
+        guard ShopCatalog.isProProduct(transaction.productID) else { return }
+        let sku = transaction.productID
+        if transaction.revocationDate != nil {
+            SubscriptionLifecycleAnalytics.emit(.refunded, sku: sku)
+            return
+        }
+        // Fresh purchase vs renewal: expirationDate moving forward without revocation.
+        if transaction.offerType == .introductory {
+            SubscriptionLifecycleAnalytics.emit(.trialStarted, sku: sku)
+        } else {
+            SubscriptionLifecycleAnalytics.emit(.renewed, sku: sku)
+        }
+        await emitLifecycleFromSubscriptionStatuses(for: sku)
+    }
+
+    @MainActor
+    private func emitLifecycleFromSubscriptionStatuses(for productID: String) async {
+        guard let product = storeKitProducts.first(where: { $0.id == productID }),
+              let subscription = product.subscription else { return }
+        do {
+            let statuses = try await subscription.status
+            for status in statuses {
+                // Product.SubscriptionInfo.Status.state is the renewal state enum.
+                let raw = String(describing: status.state)
+                if let phase = SubscriptionLifecycleAnalytics.phase(fromRenewalState: raw) {
+                    SubscriptionLifecycleAnalytics.emit(phase, sku: productID)
+                }
+                if case .verified(let renewal) = status.renewalInfo, renewal.willAutoRenew == false {
+                    SubscriptionLifecycleAnalytics.emit(.cancelled, sku: productID)
+                }
+            }
+        } catch {
+            #if DEBUG
+            debugPrint("[StoreKit] subscription status read failed: \(error.localizedDescription)")
+            #endif
         }
     }
     
