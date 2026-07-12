@@ -52,13 +52,73 @@ enum SubscriptionLifecycleAnalytics {
     /// Accepts both bare cases (`subscribed`) and `String(describing:)` forms.
     static func phase(fromRenewalState raw: String) -> SubscriptionLifecyclePhase? {
         let s = raw.lowercased()
-        if s == "subscribed" || s.hasSuffix(".subscribed") { return .renewed }
-        if s == "expired" || s.hasSuffix(".expired")
-            || s == "revoked" || s.hasSuffix(".revoked") { return .lapsed }
+        // A subscribed status proves current access, not that a renewal just
+        // happened. Renewal attribution requires a new transaction ID.
+        if s == "subscribed" || s.hasSuffix(".subscribed") { return nil }
+        if s == "expired" || s.hasSuffix(".expired") { return .lapsed }
+        if s == "revoked" || s.hasSuffix(".revoked") { return .refunded }
         if s.contains("billingretry") || s.contains("billing_retry") { return .billingRetry }
         if s.contains("graceperiod") || s.contains("grace_period") { return .grace }
         if s == "cancelled" || s == "canceled"
             || s.hasSuffix(".cancelled") || s.hasSuffix(".canceled") { return .cancelled }
         return nil
+    }
+}
+
+/// Persists the minimum state needed to avoid replaying lifecycle analytics.
+/// Values contain only StoreKit product/transaction identifiers and phases;
+/// no account, birth, or free-text data is stored.
+struct SubscriptionLifecycleStateStore {
+    private let defaults: UserDefaults
+    private let keyPrefix: String
+    private let transactionHistoryLimit = 50
+
+    init(
+        defaults: UserDefaults = .standard,
+        keyPrefix: String = "astronova.subscription.lifecycle."
+    ) {
+        self.defaults = defaults
+        self.keyPrefix = keyPrefix
+    }
+
+    func shouldEmitTransaction(
+        _ phase: SubscriptionLifecyclePhase,
+        sku: String,
+        transactionID: UInt64
+    ) -> Bool {
+        let key = keyPrefix + "transactions"
+        let fingerprint = "\(phase.rawValue)|\(sku)|\(transactionID)"
+        var history = defaults.stringArray(forKey: key) ?? []
+        guard !history.contains(fingerprint) else { return false }
+
+        history.append(fingerprint)
+        if history.count > transactionHistoryLimit {
+            history.removeFirst(history.count - transactionHistoryLimit)
+        }
+        defaults.set(history, forKey: key)
+        return true
+    }
+
+    func shouldEmitStatus(
+        _ phase: SubscriptionLifecyclePhase,
+        sku: String,
+        channel: String = "renewal_state"
+    ) -> Bool {
+        let key = statusKey(for: sku, channel: channel)
+        guard defaults.string(forKey: key) != phase.rawValue else { return false }
+        defaults.set(phase.rawValue, forKey: key)
+        return true
+    }
+
+    func markSubscribed(sku: String) {
+        defaults.set("subscribed", forKey: statusKey(for: sku, channel: "renewal_state"))
+    }
+
+    func markAutoRenewEnabled(sku: String) {
+        defaults.set("enabled", forKey: statusKey(for: sku, channel: "auto_renew"))
+    }
+
+    private func statusKey(for sku: String, channel: String) -> String {
+        keyPrefix + "status." + channel + "." + sku
     }
 }

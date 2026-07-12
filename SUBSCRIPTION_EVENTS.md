@@ -1,8 +1,9 @@
 # Astronova — Subscription Lifecycle Events
 
-**Status:** Partial implementation (Wave 13). Verified direct StoreKit purchases
-now emit typed purchase-success analytics; renewal/cancel/grace states remain
-documented below.
+**Status:** Partial implementation (Wave 14). Verified direct StoreKit purchases
+emit typed purchase-success analytics. Transaction updates and opportunistic
+subscription-status reads now emit privacy-safe lifecycle events with persisted
+deduplication; a long-lived status observer and sandbox validation remain.
 **Source of truth:** [`ANALYTICS_INTEGRATION.md`](ANALYTICS_INTEGRATION.md) — monetization event vocabulary.
 **Implementation target:** local `StoreKitManager` until the portfolio
 `SubscriptionEventEmitter` package is linked.
@@ -35,14 +36,14 @@ to the local `PortfolioAnalytics` shim for portfolio-standard event names. The
 |------------------|-------|---------------|------------|--------------------|
 | Trial begins | `trial_started` | `handleSuccessfulPurchase(transaction:)` when `transaction.offerType == .introductory` | `sku`, `tier`, `is_trial: true`, `expiration_date` | **No** |
 | First paid charge or trial → paid | `subscription_started` | `purchaseProduct(productId:billingPlan:)` after verified StoreKit success | `sku`, `product`, `product_type: "subscription"`, `tier: "pro"`, `period`, `billing_plan`, `is_trial: false`, `source: "purchase_flow"` | **Yes, direct purchase only** |
-| Auto-renewal | `subscription_renewed` | `listenForTransactions` when `transaction.originalID != transaction.id` | `sku`, `tier`, `is_trial: false` | **No** |
-| User disables auto-renew, still entitled | `subscription_cancelled` | `Product.SubscriptionInfo.Status` observer when `willAutoRenew == false` | `sku`, `tier`, `was_trial: bool`, `reason: "user_cancelled"` | **No** |
+| Auto-renewal | `subscription_renewed` | `listenForTransactions` when `transaction.originalID != transaction.id` | `sku`, `tier`, `is_trial: false` | **Yes, transaction updates; deduplicated** |
+| User disables auto-renew, still entitled | `subscription_cancelled` | status read when `willAutoRenew == false` | `sku`, `tier`, `was_trial: bool`, `reason: "user_cancelled"` | **Yes, opportunistic; deduplicated** |
 | User pauses subscription | `subscription_paused` | `RenewalState == .paused` | `sku`, `tier`, `until` | **No** |
 | Resumed from pause | `subscription_resumed` | `RenewalState` returns to `.subscribed` from `.paused` | `sku`, `tier` | **No** |
-| Grace period entered | `subscription_grace_period` | `RenewalState == .inGracePeriod` | `sku`, `tier` | **No** |
-| Billing retry entered | `subscription_billing_retry` | `RenewalState == .inBillingRetryPeriod` | `sku`, `tier` | **No** |
-| Expired (no recovery) | `subscription_lapsed` | `RenewalState == .expired` and entitlement removed | `sku`, `tier`, `reason` | **No** |
-| Refund / family-sharing revoke | `subscription_refunded` | `transaction.revocationDate != nil` (also `RenewalState == .revoked`) | `sku`, `tier`, `reason` | **No** |
+| Grace period entered | `subscription_grace_period` | `RenewalState == .inGracePeriod` | `sku`, `tier` | **Yes, opportunistic; deduplicated** |
+| Billing retry entered | `subscription_billing_retry` | `RenewalState == .inBillingRetryPeriod` | `sku`, `tier` | **Yes, opportunistic; deduplicated** |
+| Expired (no recovery) | `subscription_lapsed` | `RenewalState == .expired` and entitlement removed | `sku`, `tier`, `reason` | **Yes, opportunistic; deduplicated** |
+| Refund / family-sharing revoke | `subscription_refunded` | `transaction.revocationDate != nil` (also `RenewalState == .revoked`) | `sku`, `tier`, `reason` | **Yes, transaction/status reads; deduplicated** |
 | Consumable IAP purchase | `iap_purchased` | `purchaseProduct(productId:billingPlan:)` after verified StoreKit success for `chat_credits_*` | `sku`, `product`, `product_type: "consumable"`, `is_consumable: true`, `credits`, `source: "purchase_flow"` | **Yes** |
 | Report IAP purchase | `iap_purchased` | `purchaseProduct(productId:billingPlan:)` after verified StoreKit success for report SKUs | `sku`, `product`, `product_type: "non_consumable"`, `is_consumable: false`, `source: "purchase_flow"` | **Yes** |
 
@@ -58,32 +59,20 @@ to the local `PortfolioAnalytics` shim for portfolio-standard event names. The
 
 ## Remaining implementation plan
 
-1. Link `IOSAppsAnalytics` Swift package into the `AstronovaApp` target.
-2. Add a property on `StoreKitManager`:
-   ```swift
-   private let subscriptionEmitter = SubscriptionEventEmitter.wired(
-       tierResolver: { ShopCatalog.tier(for: $0) },
-       store: UserDefaultsPhaseStore(prefix: "astronova.subscription.phase.")
-   )
-   ```
-3. In `listenForTransactions()`, after `try checkVerified`, call
-   `subscriptionEmitter.handle(transaction: .init(transaction: transaction))`.
-4. In `checkCurrentEntitlements()`, pass `isInitial: true` so launch replay
-   doesn't refire `subscription_started`.
-5. Add a `Task` that loops `Product.SubscriptionInfo.status` for the Pro
-   products and forwards each change to
-   `subscriptionEmitter.handle(status: .init(sku:, status:))`.
+1. Add a long-lived subscription-status observation task so cancel/grace/retry/
+   lapse transitions do not depend on another transaction update arriving.
+2. Preserve the local `SubscriptionLifecycleStateStore` phase history if the
+   portfolio `IOSAppsAnalytics` package is linked later.
+3. In `checkCurrentEntitlements()`, keep launch replay analytics-silent while
+   still syncing server entitlements.
+4. Sandbox-test first buy, renewal, cancellation, grace/billing retry, expiry,
+   refund, restore, and family-sharing revoke against the emitted event stream.
 
 ## Remaining risky states
 
-- `subscription_renewed`: not emitted yet. `Transaction.updates` can include
-  renewals, ask-to-buy approvals, and other out-of-band changes; without a
-  phase store and a dedicated `subscription_renewed` schema entry, treating
-  those as `subscription_started` would overcount.
-- `subscription_cancelled`, `subscription_paused`, grace period, billing retry,
-  lapsed, and refunded states are not emitted yet. They require observing
-  `Product.SubscriptionInfo.Status` / renewal state, not just successful
-  purchase transactions.
+- Lifecycle emissions are locally deduplicated, but cancel/grace/retry/lapse
+  discovery remains opportunistic until a long-lived status observer is added.
+- `subscription_paused` and `subscription_resumed` remain unimplemented.
 - Trial detection remains pending. The current direct-purchase event stamps
   `is_trial: false` because the active local code does not safely inspect and
   persist introductory-offer phase.

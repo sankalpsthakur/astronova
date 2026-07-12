@@ -105,6 +105,35 @@ final class SubscriptionLifecycleAnalyticsTests: XCTestCase {
         ])
     }
 
+    func testSubscribedStatusDoesNotImplyRenewalAndRevokedMapsToRefund() {
+        XCTAssertNil(SubscriptionLifecycleAnalytics.phase(fromRenewalState: "subscribed"))
+        XCTAssertNil(SubscriptionLifecycleAnalytics.phase(fromRenewalState: "RenewalState.subscribed"))
+        XCTAssertEqual(SubscriptionLifecycleAnalytics.phase(fromRenewalState: "expired"), .lapsed)
+        XCTAssertEqual(SubscriptionLifecycleAnalytics.phase(fromRenewalState: "RenewalState.revoked"), .refunded)
+    }
+
+    func testLifecycleStateStoreDeduplicatesTransactionAndStatusReplays() throws {
+        let suiteName = "SubscriptionLifecycleAnalyticsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SubscriptionLifecycleStateStore(defaults: defaults, keyPrefix: "test.lifecycle.")
+        let sku = ShopCatalog.proMonthlyProductID
+
+        XCTAssertTrue(store.shouldEmitTransaction(.renewed, sku: sku, transactionID: 200))
+        XCTAssertFalse(store.shouldEmitTransaction(.renewed, sku: sku, transactionID: 200))
+        XCTAssertTrue(store.shouldEmitTransaction(.renewed, sku: sku, transactionID: 201))
+
+        XCTAssertTrue(store.shouldEmitStatus(.grace, sku: sku))
+        XCTAssertFalse(store.shouldEmitStatus(.grace, sku: sku))
+        store.markSubscribed(sku: sku)
+        XCTAssertTrue(store.shouldEmitStatus(.grace, sku: sku))
+        XCTAssertTrue(store.shouldEmitStatus(.cancelled, sku: sku, channel: "auto_renew"))
+        XCTAssertFalse(store.shouldEmitStatus(.cancelled, sku: sku, channel: "auto_renew"))
+
+        store.markAutoRenewEnabled(sku: sku)
+        XCTAssertTrue(store.shouldEmitStatus(.cancelled, sku: sku, channel: "auto_renew"))
+    }
+
     func testRequestIdGeneratorIsNonEmptyAndUnique() {
         let a = NetworkClient.makeRequestId()
         let b = NetworkClient.makeRequestId()

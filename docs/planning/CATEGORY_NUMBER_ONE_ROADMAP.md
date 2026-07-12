@@ -50,4 +50,6 @@ Today · Map · Timeline · Matrix · Journal · Settings(Oracle/Reports/Paywall
 ## Logging contract
 - Client: `app_open`, `ftue_step`, `screen_view`, `paywall_*`, `subscription_*`, `network_request`+`request_id`
 - Server: one JSON line/request; hash IP; never log JWT or birth payloads
-- Missing: renew/cancel/grace/lapse events; Smartlook unlinked (do not claim)
+- Partial: renew/cancel/grace/lapse events are locally deduplicated but status
+  discovery is opportunistic until a long-lived observer ships; Smartlook is
+  unlinked (do not claim).

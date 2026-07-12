@@ -37,7 +37,7 @@ Astronova captures two parallel signal streams:
 
 This table is the allowed event vocabulary. New event names are forbidden
 until they land in `PortfolioEvent` (Swift) and in this table. Subscription
-lifecycle events are defined as targets but most are not emitted today; see
+lifecycle events are partially emitted by the local StoreKit bridge; see
 [`SUBSCRIPTION_EVENTS.md`](SUBSCRIPTION_EVENTS.md).
 
 ### Lifecycle
@@ -77,8 +77,8 @@ lifecycle events are defined as targets but most are not emitted today; see
 | `paywall_converted`    | `paywall_id`, `product_id`                | Baseline `paywall_to_paid = 0.08`    |
 | `trial_started`        | `product_id`                              | Defined target; not emitted today    |
 | `subscription_started` | `product_id`, `price_minor`, `currency`   | Emitted on direct purchase only      |
-| `subscription_renewed` | `product_id`                              | Defined target; not emitted today    |
-| `subscription_lapsed`  | `product_id`, `reason`                    | Defined target; not emitted today    |
+| `subscription_renewed` | `product_id`                              | Transaction updates; deduplicated    |
+| `subscription_lapsed`  | `product_id`, `reason`                    | Opportunistic status read; deduplicated |
 | `iap_purchased`        | `product_id`, `amount`, `currency`        | Consumables & report SKUs            |
 
 ### Growth

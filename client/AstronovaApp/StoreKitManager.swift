@@ -22,6 +22,7 @@ class StoreKitManager: ObservableObject {
     
     private var storeKitProducts: [Product] = []
     private var updateListenerTask: Task<Void, Error>?
+    private let lifecycleStateStore = SubscriptionLifecycleStateStore()
 
     enum PurchaseAnalyticsSource: String {
         case purchaseFlow = "purchase_flow"
@@ -239,13 +240,21 @@ class StoreKitManager: ObservableObject {
         guard ShopCatalog.isProProduct(transaction.productID) else { return }
         let sku = transaction.productID
         if transaction.revocationDate != nil {
-            SubscriptionLifecycleAnalytics.emit(.refunded, sku: sku)
+            if lifecycleStateStore.shouldEmitTransaction(.refunded, sku: sku, transactionID: transaction.id) {
+                SubscriptionLifecycleAnalytics.emit(.refunded, sku: sku)
+            }
             return
         }
-        // Fresh purchase vs renewal: expirationDate moving forward without revocation.
+
         if transaction.offerType == .introductory {
-            SubscriptionLifecycleAnalytics.emit(.trialStarted, sku: sku)
-        } else {
+            if lifecycleStateStore.shouldEmitTransaction(.trialStarted, sku: sku, transactionID: transaction.id) {
+                SubscriptionLifecycleAnalytics.emit(.trialStarted, sku: sku)
+            }
+        } else if transaction.originalID != transaction.id,
+                  lifecycleStateStore.shouldEmitTransaction(.renewed, sku: sku, transactionID: transaction.id) {
+            // Transaction.updates also carries ask-to-buy approvals and other
+            // out-of-band transactions. A distinct original/current ID is the
+            // bounded signal that this is a renewal rather than a first buy.
             SubscriptionLifecycleAnalytics.emit(.renewed, sku: sku)
         }
         await emitLifecycleFromSubscriptionStatuses(for: sku)
@@ -260,11 +269,21 @@ class StoreKitManager: ObservableObject {
             for status in statuses {
                 // Product.SubscriptionInfo.Status.state is the renewal state enum.
                 let raw = String(describing: status.state)
-                if let phase = SubscriptionLifecycleAnalytics.phase(fromRenewalState: raw) {
+                if let phase = SubscriptionLifecycleAnalytics.phase(fromRenewalState: raw),
+                   lifecycleStateStore.shouldEmitStatus(phase, sku: productID) {
                     SubscriptionLifecycleAnalytics.emit(phase, sku: productID)
                 }
-                if case .verified(let renewal) = status.renewalInfo, renewal.willAutoRenew == false {
-                    SubscriptionLifecycleAnalytics.emit(.cancelled, sku: productID)
+                if case .verified(let renewal) = status.renewalInfo {
+                    if renewal.willAutoRenew == false {
+                        if lifecycleStateStore.shouldEmitStatus(.cancelled, sku: productID, channel: "auto_renew") {
+                            SubscriptionLifecycleAnalytics.emit(.cancelled, sku: productID)
+                        }
+                    } else {
+                        lifecycleStateStore.markAutoRenewEnabled(sku: productID)
+                    }
+                }
+                if raw.lowercased() == "subscribed" || raw.lowercased().hasSuffix(".subscribed") {
+                    lifecycleStateStore.markSubscribed(sku: productID)
                 }
             }
         } catch {
