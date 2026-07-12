@@ -3,6 +3,7 @@ Request/Response logging middleware for Flask
 """
 
 import logging
+import re
 import time
 import uuid
 from functools import wraps
@@ -10,9 +11,11 @@ from typing import Optional, Tuple
 
 from flask import g, jsonify, request
 
-from portfolio_analytics import _hash_ip
+from portfolio_analytics import _classify_user_agent, _hash_ip, log_line, normalise_route
 
 logger = logging.getLogger(__name__)
+
+_REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{7,63}$")
 
 
 # ============================================================================
@@ -116,8 +119,9 @@ def setup_logging():
 
 
 def add_request_id():
-    """Generate and attach request ID to g context"""
-    g.request_id = str(uuid.uuid4())[:8]
+    """Attach a safe client request ID, or generate one when absent/invalid."""
+    supplied = request.headers.get("X-Request-ID", "").strip()
+    g.request_id = supplied if _REQUEST_ID_RE.fullmatch(supplied) else uuid.uuid4().hex
     g.start_time = time.time()
 
 
@@ -127,30 +131,31 @@ def log_request_response(response):
         duration_ms = (time.time() - g.start_time) * 1000 if hasattr(g, "start_time") else 0
         request_id = g.request_id if hasattr(g, "request_id") else "unknown"
 
-        log_data = {
-            "request_id": request_id,
-            "method": request.method,
-            "path": request.path,
-            "status": response.status_code,
-            "duration_ms": round(duration_ms, 2),
-            # Hash the client IP rather than logging it in plaintext (PII),
-            # reusing the salted hasher the analytics layer already uses so the
-            # values correlate without storing the raw address.
-            "ip_hash": _hash_ip(request.remote_addr),
-            "user_agent": request.headers.get("User-Agent", "unknown")[:50],
-        }
-
-        if response.status_code >= 500:
-            logger.error(f"REQUEST {log_data}")
-        elif response.status_code >= 400:
-            logger.warning(f"REQUEST {log_data}")
-        else:
-            logger.info(f"REQUEST {log_data}")
+        rule = str(request.url_rule) if request.url_rule else None
+        level = "error" if response.status_code >= 500 else (
+            "warn" if response.status_code >= 400 else "info"
+        )
+        log_line(
+            "astronova",
+            level,
+            "http_request",
+            request_id=request_id,
+            method=request.method,
+            route=normalise_route(rule, request.path),
+            status=response.status_code,
+            latency_ms=int(round(duration_ms)),
+            # Hash network identity and classify the user agent. Never retain
+            # raw headers, query values, request bodies, auth, or user text.
+            ip_hash=_hash_ip(request.remote_addr),
+            user_agent_class=_classify_user_agent(request.headers.get("User-Agent")),
+        )
 
         # Add request ID to response headers for tracing
         response.headers["X-Request-ID"] = request_id
 
-    except Exception as e:
-        logger.error(f"Error in logging middleware: {e}")
+    except Exception:
+        # Do not include exception text or traceback: malformed header/body
+        # values can surface in parser errors and must not be copied into logs.
+        logger.error("Request logging middleware failed")
 
     return response

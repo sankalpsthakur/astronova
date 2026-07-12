@@ -151,6 +151,7 @@
 		WAVE13T02000000000004 /* LapsedUserServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000004 /* LapsedUserServiceTests.swift */; };
 		WAVE13T02000000000005 /* AstronovaReviewPromptsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */; };
 		WAVE13T02000000000006 /* SubscriptionLifecycleAnalyticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = WAVE13T01000000000006 /* SubscriptionLifecycleAnalyticsTests.swift */; };
+		REQCORR020000000000001 /* RequestCorrelationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = REQCORR010000000000001 /* RequestCorrelationTests.swift */; };
 			SELFFB000000000000001 /* MatrixView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFFR000000000000001 /* MatrixView.swift */; };
 			SELFFB000000000000002 /* LoshuGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFFR000000000000002 /* LoshuGridView.swift */; };
 			SELFFB000000000000003 /* ConstraintCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SELFFR000000000000003 /* ConstraintCardView.swift */; };
@@ -366,6 +367,7 @@
 		WAVE13T01000000000004 /* LapsedUserServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LapsedUserServiceTests.swift; sourceTree = "<group>"; };
 		WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AstronovaReviewPromptsTests.swift; sourceTree = "<group>"; };
 		WAVE13T01000000000006 /* SubscriptionLifecycleAnalyticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionLifecycleAnalyticsTests.swift; sourceTree = "<group>"; };
+		REQCORR010000000000001 /* RequestCorrelationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestCorrelationTests.swift; sourceTree = "<group>"; };
 			SELFFR000000000000001 /* MatrixView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatrixView.swift; sourceTree = "<group>"; };
 			SELFFR000000000000002 /* LoshuGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoshuGridView.swift; sourceTree = "<group>"; };
 			SELFFR000000000000003 /* ConstraintCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstraintCardView.swift; sourceTree = "<group>"; };
@@ -539,6 +541,7 @@
 				WAVE13T01000000000004 /* LapsedUserServiceTests.swift */,
 				WAVE13T01000000000005 /* AstronovaReviewPromptsTests.swift */,
 				WAVE13T01000000000006 /* SubscriptionLifecycleAnalyticsTests.swift */,
+				REQCORR010000000000001 /* RequestCorrelationTests.swift */,
 				HABIT10F00000000000002 /* DailyProgressionMath_test.swift */,
 			);
 			path = AstronovaAppTests;
@@ -1140,6 +1143,7 @@
 				WAVE13T02000000000004 /* LapsedUserServiceTests.swift in Sources */,
 				WAVE13T02000000000005 /* AstronovaReviewPromptsTests.swift in Sources */,
 				WAVE13T02000000000006 /* SubscriptionLifecycleAnalyticsTests.swift in Sources */,
+				REQCORR020000000000001 /* RequestCorrelationTests.swift in Sources */,
 				HABIT10B00000000000002 /* DailyProgressionMath_test.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

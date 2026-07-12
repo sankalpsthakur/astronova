@@ -1,6 +1,6 @@
 # Astronova — Category #1 + Production Readiness Roadmap
 
-**Date:** 2026-07-09
+**Date:** 2026-07-12
 **Category:** Consumer Vedic/Western astrology habit apps
 **Competitors:** Co–Star, The Pattern, CHANI, Sanctuary, Nebula, TimePassages, Astrotalk
 **Git:** `https://github.com/sankalpsthakur/astronova.git`
@@ -35,7 +35,7 @@
 | P0 | App Store v1 reviewers can fully exercise guest + paid paths | #4, #17 |
 | P0 | Paid products real end-to-end with server ledger | #1, new if needed |
 | P0 | Subscription lifecycle observability | new + #11 |
-| P0 | Top-tier request-correlated logging | new |
+| P0 | Top-tier request-correlated logging | implemented locally; production log-drain proof open |
 | P1 | Daily habit beats generic horoscopes | #10, #15 |
 | P1 | Compatibility first-class growth surface | #12, #13 |
 | P1 | Oracle paid always-there astrologer | existing gates |
@@ -49,7 +49,15 @@ Today · Map · Timeline · Matrix · Journal · Settings(Oracle/Reports/Paywall
 
 ## Logging contract
 - Client: `app_open`, `ftue_step`, `screen_view`, `paywall_*`, `subscription_*`, `network_request`+`request_id`
-- Server: one JSON line/request; hash IP; never log JWT or birth payloads
+- Server: one JSON line/request; preserve/echo a safe client `X-Request-ID`;
+  hash IP; classify (do not retain) user agent; never log JWT, query values,
+  request bodies, birth payloads, or user text
 - Partial: renew/cancel/grace/lapse events are locally deduplicated and status
   changes are observed while foregrounded with activation-time refresh;
   StoreKit sandbox proof and Smartlook linkage remain open (do not claim).
+- Request correlation: `NetworkClient` generates one ID per typed/raw request,
+  the server validates and echoes it, and both client allow-listed telemetry and
+  server JSON request logs use that ID. Focused local tests cover propagation,
+  invalid-ID replacement, route redaction, and forbidden-field absence.
+  Production log-drain verification remains external, as does the active
+  `SECURITY-CLOUDKIT-ROTATION.md` owner rotation gate.

@@ -119,12 +119,18 @@ class NetworkClient: NetworkClientProtocol {
     
     private let baseURL: String
     private let session: URLSession
+    private let requestIdGenerator: () -> String
     private var jwtToken: String?
     private var cachedUserId: String?
     
-    public init(baseURL: String? = nil, session: URLSession? = nil) {
+    public init(
+        baseURL: String? = nil,
+        session: URLSession? = nil,
+        requestIdGenerator: @escaping () -> String = { NetworkClient.makeRequestId() }
+    ) {
         // Prefer explicit param, otherwise fall back to AppConfig
         self.baseURL = baseURL ?? AppConfig.shared.apiBaseURL
+        self.requestIdGenerator = requestIdGenerator
         
         if let session = session {
             self.session = session
@@ -162,7 +168,7 @@ class NetworkClient: NetworkClientProtocol {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(getOrCreateUserId(), forHTTPHeaderField: "X-User-Id")
         // Correlate client telemetry with server structured logs (story 41).
-        let requestId = NetworkClient.makeRequestId()
+        let requestId = requestIdGenerator()
         request.setValue(requestId, forHTTPHeaderField: "X-Request-ID")
         
         // Add JWT token if available
@@ -186,9 +192,12 @@ class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.networkError(URLError(.badServerResponse))
             }
 
+            let correlationId = NetworkClient.responseRequestId(from: httpResponse, fallback: requestId)
+            let analyticsEndpoint = NetworkClient.analyticsRoute(for: endpoint)
+
             PortfolioAnalytics.shared.track(.networkRequest, properties: [
-                "request_id": requestId,
-                "endpoint": NetworkClient.analyticsRoute(for: endpoint),
+                "request_id": correlationId,
+                "endpoint": analyticsEndpoint,
                 "status_code": "\(httpResponse.statusCode)",
                 "method": method.rawValue
             ])
@@ -201,9 +210,9 @@ class NetworkClient: NetworkClientProtocol {
                 // Try to extract error message from response
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.authenticationError, properties: [
-                    "endpoint": endpoint,
+                    "endpoint": analyticsEndpoint,
                     "status_code": "401",
-                    "request_id": requestId
+                    "request_id": correlationId
                 ])
                 if errorMessage?.contains("expired") == true {
                     throw NetworkError.tokenExpired
@@ -213,17 +222,17 @@ class NetworkClient: NetworkClientProtocol {
             case 400...499:
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.apiError, properties: [
-                    "endpoint": endpoint,
+                    "endpoint": analyticsEndpoint,
                     "status_code": "\(httpResponse.statusCode)",
-                    "error_message": errorMessage ?? "unknown"
+                    "request_id": correlationId
                 ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             case 500...599:
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.apiError, properties: [
-                    "endpoint": endpoint,
+                    "endpoint": analyticsEndpoint,
                     "status_code": "\(httpResponse.statusCode)",
-                    "error_message": errorMessage ?? "unknown"
+                    "request_id": correlationId
                 ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             default:
@@ -284,32 +293,37 @@ class NetworkClient: NetworkClientProtocol {
                 debugPrint("[NetworkClient] Decoding error for \(responseType): \(error.localizedDescription)")
                 #endif
                 Analytics.shared.track(.decodingError, properties: [
-                    "endpoint": endpoint,
+                    "endpoint": analyticsEndpoint,
+                    "request_id": correlationId,
                     "response_type": "\(responseType)"
                 ])
                 throw NetworkError.decodingError
             }
         } catch {
+            let analyticsEndpoint = NetworkClient.analyticsRoute(for: endpoint)
             // Handle network-specific errors
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .notConnectedToInternet, .networkConnectionLost:
                     Analytics.shared.track(.networkError, properties: [
                         "error_type": "offline",
-                        "endpoint": endpoint
+                        "endpoint": analyticsEndpoint,
+                        "request_id": requestId
                     ])
                     throw NetworkError.offline
                 case .timedOut:
                     Analytics.shared.track(.networkError, properties: [
                         "error_type": "timeout",
-                        "endpoint": endpoint
+                        "endpoint": analyticsEndpoint,
+                        "request_id": requestId
                     ])
                     throw NetworkError.timeout
                 default:
                     Analytics.shared.track(.networkError, properties: [
                         "error_type": "network_failure",
                         "error_code": "\(urlError.code.rawValue)",
-                        "endpoint": endpoint
+                        "endpoint": analyticsEndpoint,
+                        "request_id": requestId
                     ])
                     throw NetworkError.networkError(urlError)
                 }
@@ -347,7 +361,7 @@ class NetworkClient: NetworkClientProtocol {
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let requestId = NetworkClient.makeRequestId()
+        let requestId = requestIdGenerator()
         request.setValue(requestId, forHTTPHeaderField: "X-Request-ID")
         
         // Add JWT token if available
@@ -370,6 +384,15 @@ class NetworkClient: NetworkClientProtocol {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw NetworkError.networkError(URLError(.badServerResponse))
             }
+
+            let correlationId = NetworkClient.responseRequestId(from: httpResponse, fallback: requestId)
+            let analyticsEndpoint = NetworkClient.analyticsRoute(for: endpoint)
+            PortfolioAnalytics.shared.track(.networkRequest, properties: [
+                "request_id": correlationId,
+                "endpoint": analyticsEndpoint,
+                "status_code": "\(httpResponse.statusCode)",
+                "method": method.rawValue
+            ])
             
             // Handle different HTTP status codes
             switch httpResponse.statusCode {
@@ -379,8 +402,9 @@ class NetworkClient: NetworkClientProtocol {
                 // Try to extract error message from response
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.authenticationError, properties: [
-                    "endpoint": endpoint,
-                    "status_code": "401"
+                    "endpoint": analyticsEndpoint,
+                    "status_code": "401",
+                    "request_id": correlationId
                 ])
                 if errorMessage?.contains("expired") == true {
                     throw NetworkError.tokenExpired
@@ -390,17 +414,17 @@ class NetworkClient: NetworkClientProtocol {
             case 400...499:
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.apiError, properties: [
-                    "endpoint": endpoint,
+                    "endpoint": analyticsEndpoint,
                     "status_code": "\(httpResponse.statusCode)",
-                    "error_message": errorMessage ?? "unknown"
+                    "request_id": correlationId
                 ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             case 500...599:
                 let errorMessage = extractErrorMessage(from: data)
                 Analytics.shared.track(.apiError, properties: [
-                    "endpoint": endpoint,
+                    "endpoint": analyticsEndpoint,
                     "status_code": "\(httpResponse.statusCode)",
-                    "error_message": errorMessage ?? "unknown"
+                    "request_id": correlationId
                 ])
                 throw NetworkError.serverError(httpResponse.statusCode, errorMessage)
             default:
@@ -413,26 +437,30 @@ class NetworkClient: NetworkClientProtocol {
             
             return data
         } catch {
+            let analyticsEndpoint = NetworkClient.analyticsRoute(for: endpoint)
             // Handle network-specific errors
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .notConnectedToInternet, .networkConnectionLost:
                     Analytics.shared.track(.networkError, properties: [
                         "error_type": "offline",
-                        "endpoint": endpoint
+                        "endpoint": analyticsEndpoint,
+                        "request_id": requestId
                     ])
                     throw NetworkError.offline
                 case .timedOut:
                     Analytics.shared.track(.networkError, properties: [
                         "error_type": "timeout",
-                        "endpoint": endpoint
+                        "endpoint": analyticsEndpoint,
+                        "request_id": requestId
                     ])
                     throw NetworkError.timeout
                 default:
                     Analytics.shared.track(.networkError, properties: [
                         "error_type": "network_failure",
                         "error_code": "\(urlError.code.rawValue)",
-                        "endpoint": endpoint
+                        "endpoint": analyticsEndpoint,
+                        "request_id": requestId
                     ])
                     throw NetworkError.networkError(urlError)
                 }
@@ -462,6 +490,22 @@ class NetworkClient: NetworkClientProtocol {
         let ms = Int(Date().timeIntervalSince1970 * 1000)
         let rnd = UInt32.random(in: 0...UInt32.max)
         return String(format: "%llx%08x", ms, rnd)
+    }
+
+    /// Accept only the same opaque, bounded character set as the server.
+    /// A malformed response header is ignored rather than copied to telemetry.
+    static func responseRequestId(from response: HTTPURLResponse, fallback: String) -> String {
+        let asciiAlphanumeric = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
+        let asciiRequestID = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-")
+        guard let value = response.value(forHTTPHeaderField: "X-Request-ID"),
+              (8...64).contains(value.utf8.count),
+              value.unicodeScalars.count == value.utf8.count,
+              let first = value.unicodeScalars.first,
+              asciiAlphanumeric.contains(first),
+              value.unicodeScalars.allSatisfy(asciiRequestID.contains) else {
+            return fallback
+        }
+        return value
     }
 
     /// Keep network analytics useful without retaining query values or
