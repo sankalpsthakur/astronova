@@ -10,7 +10,16 @@ import sys
 from flask import Blueprint, g, jsonify, request
 from werkzeug.exceptions import BadRequest
 
-from db import get_subscription, init_db, set_subscription, sync_report_purchase_entitlement
+from db import (
+    StoreKitTransactionConflict,
+    get_oracle_credit_balance,
+    get_subscription,
+    init_db,
+    record_storekit_transaction,
+    set_subscription,
+    sync_oracle_credit_purchase,
+    sync_report_purchase_entitlement,
+)
 from middleware import require_auth
 from services.storekit_verifier import StoreKitVerificationError, verify_storekit_transaction
 from utils.time_utils import utc_now_iso
@@ -30,6 +39,17 @@ _REPORT_PRODUCT_TYPES = {
     "report_family": "family_forecast",
     "report_spiritual": "spiritual_forecast",
 }
+_ORACLE_CREDIT_PRODUCTS = {
+    "chat_credits_5": 50,
+    "chat_credits_15": 150,
+    "chat_credits_50": 500,
+}
+
+
+@misc_bp.route("/oracle-credits/status", methods=["GET"])
+@require_auth
+def oracle_credits_status():
+    return jsonify({"balance": get_oracle_credit_balance(g.user_id)})
 
 
 def _is_production_environment() -> bool:
@@ -163,14 +183,24 @@ def subscription_sync():
         status = 503 if "root certificates" in str(exc) else 400
         return jsonify({"error": str(exc), "code": "STOREKIT_TRANSACTION_UNVERIFIED"}), status
 
+    try:
+        record_storekit_transaction(
+            user_id=g.user_id,
+            product_id=verified_transaction.product_id,
+            purchase_kind="subscription",
+            transaction_id=verified_transaction.transaction_id,
+            original_transaction_id=verified_transaction.original_transaction_id,
+            environment=verified_transaction.environment,
+        )
+    except StoreKitTransactionConflict:
+        return jsonify({"error": "Transaction already belongs to another delivery", "code": "TRANSACTION_REPLAY"}), 409
+
     set_subscription(g.user_id, True, verified_transaction.product_id)
     subscription = get_subscription(g.user_id)
     logger.info(
-        "Synced StoreKit subscription for user=%s product=%s transaction=%s original=%s",
+        "Synced StoreKit subscription for user=%s product=%s",
         g.user_id,
         verified_transaction.product_id,
-        verified_transaction.transaction_id,
-        verified_transaction.original_transaction_id or original_transaction_id,
     )
 
     return jsonify({
@@ -237,6 +267,19 @@ def report_entitlement_sync():
         status = 503 if "root certificates" in str(exc) else 400
         return jsonify({"error": str(exc), "code": "STOREKIT_TRANSACTION_UNVERIFIED"}), status
 
+    try:
+        record_storekit_transaction(
+            user_id=g.user_id,
+            product_id=verified_transaction.product_id,
+            purchase_kind="report",
+            transaction_id=verified_transaction.transaction_id,
+            original_transaction_id=verified_transaction.original_transaction_id,
+            units=1,
+            environment=verified_transaction.environment,
+        )
+    except StoreKitTransactionConflict:
+        return jsonify({"error": "Transaction already belongs to another delivery", "code": "TRANSACTION_REPLAY"}), 409
+
     entitlement = sync_report_purchase_entitlement(
         user_id=g.user_id,
         product_id=verified_transaction.product_id,
@@ -247,11 +290,10 @@ def report_entitlement_sync():
         environment=verified_transaction.environment or (environment.strip() if isinstance(environment, str) else None),
     )
     logger.info(
-        "Synced report purchase entitlement for user=%s product=%s report_type=%s transaction=%s",
+        "Synced report purchase entitlement for user=%s product=%s report_type=%s",
         g.user_id,
         product_id,
         report_type,
-        transaction_id,
     )
 
     return jsonify({
@@ -261,6 +303,59 @@ def report_entitlement_sync():
         "transactionId": entitlement.get("transactionId"),
         "consumedReportId": entitlement.get("consumedReportId"),
         "createdAt": entitlement.get("createdAt"),
+    })
+
+
+@misc_bp.route("/oracle-credits/sync", methods=["POST"])
+@require_auth
+def oracle_credits_sync():
+    """Deliver a verified consumable purchase into the durable credit ledger."""
+    try:
+        payload = request.get_json(force=False, silent=False)
+    except BadRequest:
+        return jsonify({"error": "Request body must be valid JSON", "code": "INVALID_JSON"}), 400
+
+    data = payload or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Request body must be a JSON object", "code": "INVALID_PAYLOAD"}), 400
+
+    product_id = data.get("productId") or data.get("product_id")
+    transaction_id = data.get("transactionId") or data.get("transaction_id")
+    signed_transaction_jws = data.get("signedTransactionJWS") or data.get("signed_transaction_jws")
+    if not isinstance(product_id, str) or product_id.strip() not in _ORACLE_CREDIT_PRODUCTS:
+        return jsonify({"error": "Unsupported Oracle credit product", "code": "UNSUPPORTED_PRODUCT"}), 400
+    product_id = product_id.strip()
+    if not isinstance(transaction_id, str) or not transaction_id.strip():
+        return jsonify({"error": "transactionId is required", "code": "INVALID_PAYLOAD"}), 400
+
+    try:
+        verified_transaction = verify_storekit_transaction(
+            signed_transaction_jws,
+            expected_product_id=product_id,
+            expected_transaction_id=transaction_id.strip(),
+        )
+        delivery = sync_oracle_credit_purchase(
+            user_id=g.user_id,
+            product_id=verified_transaction.product_id,
+            transaction_id=verified_transaction.transaction_id,
+            credits=_ORACLE_CREDIT_PRODUCTS[verified_transaction.product_id],
+            original_transaction_id=verified_transaction.original_transaction_id,
+            environment=verified_transaction.environment,
+        )
+    except StoreKitVerificationError as exc:
+        logger.warning("Rejected StoreKit credit sync for user=%s product=%s: %s", g.user_id, product_id, exc)
+        status = 503 if "root certificates" in str(exc) else 400
+        return jsonify({"error": str(exc), "code": "STOREKIT_TRANSACTION_UNVERIFIED"}), status
+    except StoreKitTransactionConflict:
+        return jsonify({"error": "Transaction already belongs to another delivery", "code": "TRANSACTION_REPLAY"}), 409
+
+    logger.info("Delivered StoreKit Oracle credits for user=%s product=%s replayed=%s", g.user_id, product_id, delivery["replayed"])
+    return jsonify({
+        "productId": product_id,
+        "balance": delivery["balance"],
+        "creditedUnits": delivery["creditedUnits"],
+        "replayed": delivery["replayed"],
+        "updatedAt": delivery["updatedAt"],
     })
 
 

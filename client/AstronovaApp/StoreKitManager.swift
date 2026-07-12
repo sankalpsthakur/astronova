@@ -8,6 +8,18 @@ enum StoreError: Error {
     case failedVerification
 }
 
+enum PurchaseDeliveryOutcome: Equatable {
+    case delivered
+    case userCancelled
+    case pending
+    case storeKitFailure
+    case serverDeliveryFailure
+
+    var shouldFinishTransaction: Bool { self == .delivered }
+    var shouldGrantLocalAccess: Bool { self == .delivered }
+    var shouldEmitCompletion: Bool { self == .delivered }
+}
+
 // MARK: - StoreKit 2 Manager
 
 class StoreKitManager: ObservableObject {
@@ -44,9 +56,10 @@ class StoreKitManager: ObservableObject {
     private struct EntitlementRefreshResult {
         let hasProSubscription: Bool
         let productIds: [String]
+        let hasServerCreditBalance: Bool
 
         var hasAnyEntitlement: Bool {
-            !productIds.isEmpty
+            !productIds.isEmpty || hasServerCreditBalance
         }
     }
     
@@ -146,15 +159,15 @@ class StoreKitManager: ObservableObject {
                 let transaction = try checkVerified(verification)
                 
                 // Handle successful purchase
-                await handleSuccessfulPurchase(
+                let delivered = await handleSuccessfulPurchase(
                     transaction: transaction,
                     signedTransactionJWS: verification.jwsRepresentation,
                     analyticsSource: .purchaseFlow
                 )
-                
-                // Finish the transaction
+                let deliveryOutcome: PurchaseDeliveryOutcome = delivered ? .delivered : .serverDeliveryFailure
+                guard deliveryOutcome.shouldFinishTransaction else { return false }
+
                 await transaction.finish()
-                
                 return true
                 
             case .userCancelled:
@@ -261,14 +274,17 @@ class StoreKitManager: ObservableObject {
             for await result in StoreKit.Transaction.updates {
                 do {
                     let transaction = try self.checkVerified(result)
-                    await self.handleSuccessfulPurchase(
+                    let delivered = await self.handleSuccessfulPurchase(
                         transaction: transaction,
                         signedTransactionJWS: result.jwsRepresentation,
                         analyticsSource: .transactionUpdate
                     )
-                    // Lifecycle analytics for renewals / revokes (story 41 follow-up).
-                    await self.emitLifecycleFromTransaction(transaction)
-                    await transaction.finish()
+                    let deliveryOutcome: PurchaseDeliveryOutcome = delivered ? .delivered : .serverDeliveryFailure
+                    if deliveryOutcome.shouldEmitCompletion {
+                        // Lifecycle events follow durable server delivery too.
+                        await self.emitLifecycleFromTransaction(transaction)
+                        await transaction.finish()
+                    }
                 } catch {
                     #if DEBUG
                     debugPrint("[StoreKit] Transaction verification failed: \(error.localizedDescription)")
@@ -431,30 +447,43 @@ class StoreKitManager: ObservableObject {
         transaction: StoreKit.Transaction,
         signedTransactionJWS: String,
         analyticsSource: PurchaseAnalyticsSource? = nil
-    ) async {
+    ) async -> Bool {
         let shouldSyncProEntitlement = ShopCatalog.isProProduct(transaction.productID)
         let shouldSyncReportEntitlement = ShopCatalog.reportProductIDs.contains(transaction.productID)
+        let shouldSyncOracleCredits = ShopCatalog.chatCreditAmounts[transaction.productID] != nil
 
+        var authoritativeCreditBalance: Int?
+        if shouldSyncProEntitlement {
+            guard await syncProEntitlement(transaction: transaction, signedTransactionJWS: signedTransactionJWS) else {
+                return false
+            }
+        } else if shouldSyncReportEntitlement {
+            guard await syncReportEntitlement(transaction: transaction, signedTransactionJWS: signedTransactionJWS) else {
+                return false
+            }
+        } else if shouldSyncOracleCredits {
+            guard let balance = await syncOracleCredits(transaction: transaction, signedTransactionJWS: signedTransactionJWS) else {
+                return false
+            }
+            authoritativeCreditBalance = balance
+        } else {
+            return false
+        }
+
+        let deliveredCreditBalance = authoritativeCreditBalance
         await MainActor.run {
             if shouldSyncProEntitlement {
                 self.hasProSubscription = true
             }
 
-            // Handle chat credit purchases (consumable)
-            if transaction.productID.hasPrefix("chat_credits_") {
-                // Map Product ID to actual credit amounts
-                // Note: Product IDs can't be changed in App Store Connect,
-                // so we use an explicit mapping instead of parsing the ID
-                if let credits = ShopCatalog.chatCreditAmounts[transaction.productID] {
-                    let currentCredits = UserDefaults.standard.integer(forKey: "chat_credits")
-                    UserDefaults.standard.set(currentCredits + credits, forKey: "chat_credits")
-                }
+            if let deliveredCreditBalance {
+                UserDefaults.standard.set(deliveredCreditBalance, forKey: "chat_credits")
             }
 
-            // Handle other product purchases (individual reports, non-consumable)
-            // Store purchase history or enable access to specific reports
-            let purchaseKey = "purchased_\(transaction.productID)"
-            UserDefaults.standard.set(true, forKey: purchaseKey)
+            if !shouldSyncOracleCredits {
+                let purchaseKey = "purchased_\(transaction.productID)"
+                UserDefaults.standard.set(true, forKey: purchaseKey)
+            }
 
             // Post notification for UI updates
             NotificationCenter.default.post(
@@ -469,17 +498,13 @@ class StoreKitManager: ObservableObject {
             }
         }
 
-        if shouldSyncProEntitlement {
-            await syncProEntitlement(transaction: transaction, signedTransactionJWS: signedTransactionJWS)
-        }
-        if shouldSyncReportEntitlement {
-            await syncReportEntitlement(transaction: transaction, signedTransactionJWS: signedTransactionJWS)
-        }
+        return true
     }
     
     private func checkCurrentEntitlements() async -> EntitlementRefreshResult {
-        var hasPro = false
-        var purchasedProductIds: [String] = []
+        var sawProEntitlement = false
+        var deliveredProEntitlement = false
+        var deliveredProductIds: [String] = []
         var proTransactions: [(transaction: StoreKit.Transaction, signedTransactionJWS: String)] = []
         var reportTransactions: [(transaction: StoreKit.Transaction, signedTransactionJWS: String)] = []
 
@@ -489,15 +514,13 @@ class StoreKitManager: ObservableObject {
                 let transaction = try checkVerified(result)
 
                 if ShopCatalog.isProProduct(transaction.productID) {
-                    hasPro = true
+                    sawProEntitlement = true
                     proTransactions.append((transaction, result.jwsRepresentation))
                 }
                 if ShopCatalog.reportProductIDs.contains(transaction.productID) {
                     reportTransactions.append((transaction, result.jwsRepresentation))
                 }
 
-                // Mark individual products as purchased if they're current entitlements
-                purchasedProductIds.append(transaction.productID)
             } catch {
                 #if DEBUG
                 debugPrint("[StoreKit] Failed to verify current entitlement: \(error.localizedDescription)")
@@ -505,64 +528,99 @@ class StoreKitManager: ObservableObject {
             }
         }
 
-        // Capture values before MainActor context
-        let finalHasPro = hasPro
-        let finalPurchasedProductIds = purchasedProductIds
-
-        await MainActor.run {
-            self.hasProSubscription = finalHasPro
-            for productId in finalPurchasedProductIds {
-                let purchaseKey = "purchased_\(productId)"
-                UserDefaults.standard.set(true, forKey: purchaseKey)
+        for item in proTransactions {
+            if await handleSuccessfulPurchase(
+                transaction: item.transaction,
+                signedTransactionJWS: item.signedTransactionJWS
+            ) {
+                deliveredProEntitlement = true
+                deliveredProductIds.append(item.transaction.productID)
+            }
+        }
+        for item in reportTransactions {
+            if await handleSuccessfulPurchase(
+                transaction: item.transaction,
+                signedTransactionJWS: item.signedTransactionJWS
+            ) {
+                deliveredProductIds.append(item.transaction.productID)
             }
         }
 
-        for item in proTransactions {
-            await syncProEntitlement(transaction: item.transaction, signedTransactionJWS: item.signedTransactionJWS)
+        var hasServerCreditBalance = false
+        if let balance = try? await APIServices.shared.getOracleCreditBalance() {
+            hasServerCreditBalance = balance > 0
+            await MainActor.run {
+                UserDefaults.standard.set(balance, forKey: "chat_credits")
+            }
         }
-        for item in reportTransactions {
-            await syncReportEntitlement(transaction: item.transaction, signedTransactionJWS: item.signedTransactionJWS)
-        }
+
+        let finalHasPro = sawProEntitlement && deliveredProEntitlement
+        await MainActor.run { self.hasProSubscription = finalHasPro }
 
         return EntitlementRefreshResult(
             hasProSubscription: finalHasPro,
-            productIds: finalPurchasedProductIds
+            productIds: deliveredProductIds,
+            hasServerCreditBalance: hasServerCreditBalance
         )
     }
 
-    private func syncProEntitlement(transaction: StoreKit.Transaction, signedTransactionJWS: String) async {
-        guard ShopCatalog.isProProduct(transaction.productID) else { return }
+    private func syncProEntitlement(transaction: StoreKit.Transaction, signedTransactionJWS: String) async -> Bool {
+        guard ShopCatalog.isProProduct(transaction.productID) else { return false }
 
         do {
-            _ = try await APIServices.shared.syncSubscriptionEntitlement(
+            let response = try await APIServices.shared.syncSubscriptionEntitlement(
                 productId: transaction.productID,
                 transactionId: String(transaction.id),
                 originalTransactionId: String(transaction.originalID),
                 environment: String(describing: transaction.environment),
                 signedTransactionJWS: signedTransactionJWS
             )
+            return response.isActive && response.productId == transaction.productID
         } catch {
             #if DEBUG
             debugPrint("[StoreKit] Server subscription sync failed: \(error.localizedDescription)")
             #endif
+            return false
         }
     }
 
-    private func syncReportEntitlement(transaction: StoreKit.Transaction, signedTransactionJWS: String) async {
-        guard ShopCatalog.reportProductIDs.contains(transaction.productID) else { return }
+    private func syncReportEntitlement(transaction: StoreKit.Transaction, signedTransactionJWS: String) async -> Bool {
+        guard ShopCatalog.reportProductIDs.contains(transaction.productID) else { return false }
 
         do {
-            _ = try await APIServices.shared.syncReportEntitlement(
+            let response = try await APIServices.shared.syncReportEntitlement(
                 productId: transaction.productID,
                 transactionId: String(transaction.id),
                 originalTransactionId: String(transaction.originalID),
                 environment: String(describing: transaction.environment),
                 signedTransactionJWS: signedTransactionJWS
             )
+            return response.productId == transaction.productID && response.transactionId == String(transaction.id)
         } catch {
             #if DEBUG
             debugPrint("[StoreKit] Server report entitlement sync failed: \(error.localizedDescription)")
             #endif
+            return false
+        }
+    }
+
+    private func syncOracleCredits(transaction: StoreKit.Transaction, signedTransactionJWS: String) async -> Int? {
+        guard ShopCatalog.chatCreditAmounts[transaction.productID] != nil else { return nil }
+        do {
+            let response = try await APIServices.shared.syncOracleCredits(
+                productId: transaction.productID,
+                transactionId: String(transaction.id),
+                originalTransactionId: String(transaction.originalID),
+                environment: String(describing: transaction.environment),
+                signedTransactionJWS: signedTransactionJWS
+            )
+            guard response.productId == transaction.productID else { return nil }
+            return response.balance
+        } catch {
+            #if DEBUG
+            debugPrint("[StoreKit] Server Oracle credit delivery failed: \(error.localizedDescription)")
+            #endif
+            return nil
         }
     }
 }

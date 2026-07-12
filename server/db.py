@@ -9,6 +9,10 @@ from utils.time_utils import utc_now_iso
 logger = logging.getLogger(__name__)
 
 
+class StoreKitTransactionConflict(ValueError):
+    """A verified App Store transaction was already claimed differently."""
+
+
 def _resolve_db_path() -> str:
     """Resolve database path, ensuring directory exists and is writable."""
     # Check environment variable first
@@ -418,6 +422,147 @@ def set_subscription(user_id: str, is_active: bool, product_id: Optional[str] = 
     conn.close()
 
 
+def record_storekit_transaction(
+    user_id: str,
+    product_id: str,
+    purchase_kind: str,
+    transaction_id: str,
+    original_transaction_id: Optional[str] = None,
+    units: int = 0,
+    environment: Optional[str] = None,
+) -> bool:
+    """Claim a verified transaction once, returning True only for first delivery."""
+    now = utc_now_iso()
+    conn = get_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT user_id, product_id, purchase_kind, units
+               FROM storekit_transaction_ledger WHERE transaction_id=?""",
+            (transaction_id,),
+        ).fetchone()
+        if row:
+            if row["user_id"] is None:
+                raise StoreKitTransactionConflict("StoreKit transaction was previously claimed")
+            if (
+                row["user_id"] != user_id
+                or row["product_id"] != product_id
+                or row["purchase_kind"] != purchase_kind
+                or row["units"] != units
+            ):
+                raise StoreKitTransactionConflict("StoreKit transaction is already claimed")
+            conn.commit()
+            return False
+
+        conn.execute(
+            """INSERT INTO storekit_transaction_ledger
+               (transaction_id, original_transaction_id, user_id, product_id,
+                purchase_kind, units, environment, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                transaction_id,
+                original_transaction_id,
+                user_id,
+                product_id,
+                purchase_kind,
+                units,
+                environment,
+                now,
+            ),
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def sync_oracle_credit_purchase(
+    user_id: str,
+    product_id: str,
+    transaction_id: str,
+    credits: int,
+    original_transaction_id: Optional[str] = None,
+    environment: Optional[str] = None,
+) -> dict:
+    """Atomically claim a verified consumable transaction and credit its owner."""
+    now = utc_now_iso()
+    conn = get_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT user_id, product_id, purchase_kind, units
+               FROM storekit_transaction_ledger WHERE transaction_id=?""",
+            (transaction_id,),
+        ).fetchone()
+        replayed = row is not None
+        if row:
+            if row["user_id"] is None:
+                raise StoreKitTransactionConflict("StoreKit transaction was previously claimed")
+            if (
+                row["user_id"] != user_id
+                or row["product_id"] != product_id
+                or row["purchase_kind"] != "oracle_credits"
+                or row["units"] != credits
+            ):
+                raise StoreKitTransactionConflict("StoreKit transaction is already claimed")
+        else:
+            conn.execute(
+                """INSERT INTO storekit_transaction_ledger
+                   (transaction_id, original_transaction_id, user_id, product_id,
+                    purchase_kind, units, environment, created_at)
+                   VALUES (?, ?, ?, ?, 'oracle_credits', ?, ?, ?)""",
+                (
+                    transaction_id,
+                    original_transaction_id,
+                    user_id,
+                    product_id,
+                    credits,
+                    environment,
+                    now,
+                ),
+            )
+            conn.execute(
+                """INSERT INTO oracle_credit_balances (user_id, balance, updated_at)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(user_id) DO UPDATE SET
+                     balance = oracle_credit_balances.balance + excluded.balance,
+                     updated_at = excluded.updated_at""",
+                (user_id, credits, now),
+            )
+
+        balance_row = conn.execute(
+            "SELECT balance, updated_at FROM oracle_credit_balances WHERE user_id=?",
+            (user_id,),
+        ).fetchone()
+        conn.commit()
+        return {
+            "balance": int(balance_row["balance"]) if balance_row else 0,
+            "creditedUnits": 0 if replayed else credits,
+            "replayed": replayed,
+            "updatedAt": balance_row["updated_at"] if balance_row else now,
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_oracle_credit_balance(user_id: Optional[str]) -> int:
+    if not user_id:
+        return 0
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT balance FROM oracle_credit_balances WHERE user_id=?",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+    return int(row["balance"]) if row else 0
+
+
 # Individual report purchase helpers
 def sync_report_purchase_entitlement(
     user_id: str,
@@ -747,8 +892,21 @@ def delete_user_data(user_id: str) -> dict:
         deleted_counts["contact_filter_logs"] = cur.rowcount
         deleted_counts["pooja_sessions"] = 0
 
+    # Keep the transaction ID/product/kind claim as a replay tombstone while
+    # removing its direct account identifier. A deleted/re-registered account
+    # must never be able to deliver the same signed purchase again.
+    now = utc_now_iso()
+    cur.execute(
+        """UPDATE storekit_transaction_ledger
+           SET user_id=NULL, tombstoned_at=?
+           WHERE user_id=?""",
+        (now, user_id),
+    )
+    deleted_counts["storekit_transaction_ledger_anonymized"] = cur.rowcount
+
     # Delete from all remaining tables that reference user_id.
     tables_to_clean = [
+        ("oracle_credit_balances", "user_id"),
         ("report_purchase_entitlements", "user_id"),
         ("user_temple_activity", "user_id"),
         ("pooja_bookings", "user_id"),  # Temple/Pooja bookings

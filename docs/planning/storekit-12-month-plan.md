@@ -5,7 +5,7 @@ Astronova Pro now has two local catalog products:
 - `astronova_pro_12_month_commitment` - default first-paywall plan; intended for a 12-month commitment billed monthly.
 - `astronova_pro_monthly` - existing month-to-month fallback plan.
 
-The client uses `Product.SubscriptionInfo.pricingTerms` on iOS 26.4+ to prefer StoreKit's monthly billing term display for the 12-month plan. When those terms are absent, the UI falls back to the stable local catalog copy: `$9.99 per month for 12 months`, `$119.88 first-year commitment`.
+The client uses `Product.SubscriptionInfo.pricingTerms` on iOS 26.4+ to prefer StoreKit's billing-plan display for the 12-month plan. When those terms are absent, the current local catalog falls back to `$49.99 per year`. That fallback is local copy, not confirmation of live App Store Connect pricing or monthly commitment terms.
 
 Purchase behavior:
 

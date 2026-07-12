@@ -565,6 +565,18 @@ Check subscription status.
 }
 ```
 
+### POST /subscription/sync
+Verifies an Apple signed transaction JWS, claims the transaction in the durable ledger, and activates the authenticated user's matching Pro subscription. Duplicate delivery to the same owner is idempotent; conflicting reuse returns `TRANSACTION_REPLAY`.
+
+### POST /report-entitlements/sync
+Verifies and records a matching report product before one server-side report generation can consume it.
+
+### POST /oracle-credits/sync
+Verifies a consumable Oracle-credit transaction and atomically credits the authenticated user's durable balance. The response includes `balance`, `creditedUnits`, and `replayed`; the client treats `balance` as authoritative.
+
+### GET /oracle-credits/status
+Returns the authenticated user's durable Oracle credit balance for cross-session/device cache refresh.
+
 ---
 
 ## Error Responses

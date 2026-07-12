@@ -42,6 +42,33 @@ final class SubscriptionLifecycleAnalyticsTests: XCTestCase {
         XCTAssertEqual(emissions.first?.properties["credits"], "150")
     }
 
+    func testPurchaseDeliveryTimingOnlyCompletesAfterServerDelivery() {
+        XCTAssertTrue(PurchaseDeliveryOutcome.delivered.shouldFinishTransaction)
+        XCTAssertTrue(PurchaseDeliveryOutcome.delivered.shouldGrantLocalAccess)
+        XCTAssertTrue(PurchaseDeliveryOutcome.delivered.shouldEmitCompletion)
+
+        let incompleteOutcomes: [PurchaseDeliveryOutcome] = [
+            .userCancelled,
+            .pending,
+            .storeKitFailure,
+            .serverDeliveryFailure
+        ]
+        for outcome in incompleteOutcomes {
+            XCTAssertFalse(outcome.shouldFinishTransaction)
+            XCTAssertFalse(outcome.shouldGrantLocalAccess)
+            XCTAssertFalse(outcome.shouldEmitCompletion)
+        }
+    }
+
+    func testRestoreUsesTheSameServerDeliveredCompletionBoundary() {
+        let restoredVerifiedEntitlement = PurchaseDeliveryOutcome.delivered
+        XCTAssertTrue(restoredVerifiedEntitlement.shouldGrantLocalAccess)
+
+        let restoreServerFailure = PurchaseDeliveryOutcome.serverDeliveryFailure
+        XCTAssertFalse(restoreServerFailure.shouldGrantLocalAccess)
+        XCTAssertFalse(restoreServerFailure.shouldEmitCompletion)
+    }
+
     func testReportPurchaseBuildsNonConsumableIAPPurchasedEvent() {
         let emissions = StoreKitManager.purchaseAnalyticsEvents(
             for: "report_love",

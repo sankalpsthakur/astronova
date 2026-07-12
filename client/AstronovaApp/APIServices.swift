@@ -874,6 +874,40 @@ class APIServices: ObservableObject, APIServicesProtocol {
             responseType: ReportEntitlementSyncResponse.self
         )
     }
+
+    /// Deliver a verified consumable transaction to the server-owned credit
+    /// ledger. The returned absolute balance is authoritative.
+    func syncOracleCredits(
+        productId: String,
+        transactionId: String,
+        originalTransactionId: String?,
+        environment: String?,
+        signedTransactionJWS: String
+    ) async throws -> OracleCreditSyncResponse {
+        let request = OracleCreditSyncRequest(
+            productId: productId,
+            transactionId: transactionId,
+            originalTransactionId: originalTransactionId,
+            environment: environment,
+            signedTransactionJWS: signedTransactionJWS
+        )
+        return try await networkClient.request(
+            endpoint: "/api/v1/oracle-credits/sync",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: OracleCreditSyncResponse.self
+        )
+    }
+
+    func getOracleCreditBalance() async throws -> Int {
+        let response = try await networkClient.request(
+            endpoint: "/api/v1/oracle-credits/status",
+            method: HTTPMethod.GET,
+            body: nil,
+            responseType: OracleCreditBalanceResponse.self
+        )
+        return response.balance
+    }
     
     /// Generate report (alias for generateDetailedReport)
     /// - Parameters:

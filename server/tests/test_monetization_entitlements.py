@@ -75,6 +75,101 @@ def test_subscription_sync_activates_server_premium_entitlement(authenticated_cl
     assert entitlement["subscription"]["productId"] == "astronova_pro_monthly"
 
 
+def test_oracle_credit_sync_is_durable_and_idempotent(authenticated_client, sample_user, monkeypatch):
+    monkeypatch.setenv("ASTRONOVA_ALLOW_UNVERIFIED_STOREKIT_JWS", "true")
+    transaction_id = "2000000777000001"
+    payload = {
+        "productId": "chat_credits_15",
+        "transactionId": transaction_id,
+        "originalTransactionId": transaction_id,
+        "environment": "Sandbox",
+        "signedTransactionJWS": _unsigned_storekit_jws("chat_credits_15", transaction_id),
+    }
+
+    first = authenticated_client.post("/api/v1/oracle-credits/sync", json=payload)
+    replay = authenticated_client.post("/api/v1/oracle-credits/sync", json=payload)
+
+    assert first.status_code == 200
+    assert first.get_json()["balance"] == 150
+    assert first.get_json()["creditedUnits"] == 150
+    assert first.get_json()["replayed"] is False
+    assert replay.status_code == 200
+    assert replay.get_json()["balance"] == 150
+    assert replay.get_json()["creditedUnits"] == 0
+    assert replay.get_json()["replayed"] is True
+    assert db_module.get_oracle_credit_balance(sample_user["id"]) == 150
+
+    status = authenticated_client.get("/api/v1/oracle-credits/status")
+    assert status.status_code == 200
+    assert status.get_json() == {"balance": 150}
+
+
+def test_oracle_credit_sync_rejects_unverified_and_unknown_products(authenticated_client, sample_user):
+    unverified = authenticated_client.post(
+        "/api/v1/oracle-credits/sync",
+        json={"productId": "chat_credits_5", "transactionId": "tx-no-jws"},
+    )
+    unknown = authenticated_client.post(
+        "/api/v1/oracle-credits/sync",
+        json={"productId": "chat_credits_999", "transactionId": "tx-unknown"},
+    )
+
+    assert unverified.status_code == 400
+    assert unverified.get_json()["code"] == "STOREKIT_TRANSACTION_UNVERIFIED"
+    assert unknown.status_code == 400
+    assert unknown.get_json()["code"] == "UNSUPPORTED_PRODUCT"
+    assert db_module.get_oracle_credit_balance(sample_user["id"]) == 0
+
+
+def test_transaction_replay_cannot_move_credits_to_another_user(clean_db):
+    transaction_id = "2000000777000002"
+    first = db_module.sync_oracle_credit_purchase(
+        "user-one", "chat_credits_5", transaction_id, 50, transaction_id, "Sandbox"
+    )
+    assert first["balance"] == 50
+
+    with pytest.raises(db_module.StoreKitTransactionConflict):
+        db_module.sync_oracle_credit_purchase(
+            "user-two", "chat_credits_5", transaction_id, 50, transaction_id, "Sandbox"
+        )
+
+    assert db_module.get_oracle_credit_balance("user-one") == 50
+    assert db_module.get_oracle_credit_balance("user-two") == 0
+
+
+def test_account_deletion_tombstones_transaction_against_reregistration(sample_user):
+    transaction_id = "2000000777000003"
+    db_module.sync_oracle_credit_purchase(
+        sample_user["id"], "chat_credits_5", transaction_id, 50, transaction_id, "Sandbox"
+    )
+
+    deletion = db_module.delete_user_data(sample_user["id"])
+    assert deletion["deleted"] is True
+    assert deletion["deletedRecords"]["storekit_transaction_ledger_anonymized"] == 1
+    assert db_module.get_oracle_credit_balance(sample_user["id"]) == 0
+
+    conn = db_module.get_connection()
+    tombstone = conn.execute(
+        """SELECT user_id, product_id, purchase_kind, units, tombstoned_at
+           FROM storekit_transaction_ledger WHERE transaction_id=?""",
+        (transaction_id,),
+    ).fetchone()
+    conn.close()
+    assert tombstone["user_id"] is None
+    assert tombstone["product_id"] == "chat_credits_5"
+    assert tombstone["purchase_kind"] == "oracle_credits"
+    assert tombstone["units"] == 50
+    assert tombstone["tombstoned_at"] is not None
+
+    # Simulate the same stable Apple subject registering again. The immutable
+    # tombstone must block redelivery even though no direct owner ID remains.
+    with pytest.raises(db_module.StoreKitTransactionConflict):
+        db_module.sync_oracle_credit_purchase(
+            sample_user["id"], "chat_credits_5", transaction_id, 50, transaction_id, "Sandbox"
+        )
+    assert db_module.get_oracle_credit_balance(sample_user["id"]) == 0
+
+
 def test_subscription_sync_rejects_non_pro_products(authenticated_client, sample_user):
     response = authenticated_client.post(
         "/api/v1/subscription/sync",

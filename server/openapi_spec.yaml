@@ -1104,11 +1104,6 @@ paths:
                     format: date-time
         '401':
           description: Authorization required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /api/v1/auth/logout:
     post:
       summary: Logout (no-op)
@@ -2034,6 +2029,8 @@ paths:
           description: Invalid payload or unsupported product
         '401':
           description: Authorization required
+        '409':
+          description: Verified transaction was already claimed by a conflicting delivery
 
   /api/v1/report-entitlements/sync:
     post:
@@ -2101,6 +2098,98 @@ paths:
           description: Invalid payload or unsupported product
         '401':
           description: Authorization required
+        '409':
+          description: Verified transaction was already claimed by a conflicting delivery
+
+  /api/v1/oracle-credits/status:
+    get:
+      summary: Get durable Oracle credit balance
+      tags:
+        - Subscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authoritative credit balance for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - balance
+                properties:
+                  balance:
+                    type: integer
+                    minimum: 0
+        '401':
+          description: Authorization required
+
+  /api/v1/oracle-credits/sync:
+    post:
+      summary: Deliver a verified StoreKit Oracle credit purchase
+      tags:
+        - Subscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - transactionId
+                - signedTransactionJWS
+              properties:
+                productId:
+                  type: string
+                  enum:
+                    - chat_credits_5
+                    - chat_credits_15
+                    - chat_credits_50
+                transactionId:
+                  type: string
+                originalTransactionId:
+                  type: string
+                environment:
+                  type: string
+                signedTransactionJWS:
+                  type: string
+                  description: Apple-signed transaction; never logged or persisted
+      responses:
+        '200':
+          description: Durable idempotent credit delivery result
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - productId
+                  - balance
+                  - creditedUnits
+                  - replayed
+                  - updatedAt
+                properties:
+                  productId:
+                    type: string
+                  balance:
+                    type: integer
+                    minimum: 0
+                  creditedUnits:
+                    type: integer
+                    minimum: 0
+                  replayed:
+                    type: boolean
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid, unsupported, or unverified transaction
+        '401':
+          description: Authorization required
+        '409':
+          description: Verified transaction was already claimed by a conflicting delivery
 
   /api/v1/numerology/report:
     post:

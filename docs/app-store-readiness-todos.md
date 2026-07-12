@@ -13,6 +13,15 @@ without claiming a completed TestFlight upload or live App Store listing.
   response echoing, and structured server request logs. Request telemetry now
   retains only normalized route/status/method/correlation fields and excludes
   JWTs, query values, server error text, birth payloads, and user text.
+- Added a durable server StoreKit transaction ledger and Oracle credit balance.
+  Verified Pro, report, and credit transactions are claimed idempotently; a
+  conflicting replay is rejected. Client Pro/report/credit state, completion
+  events, and transaction finishing now occur only after server delivery.
+- StoreKit transaction JWS values are never logged. Consumable credit retries
+  return the existing absolute balance without adding credits twice.
+- Account deletion clears paid balances/entitlements and direct ledger owner
+  IDs, while retaining anonymized transaction tombstones so deleted or
+  re-registered accounts cannot reclaim the same signed purchase.
 
 ## Tests
 - `pytest server/tests/test_auth_security.py -k delete_account`
@@ -38,6 +47,22 @@ without claiming a completed TestFlight upload or live App Store listing.
 - Pro subscriptions: `astronova_pro_12_month_commitment` (current default Pro plan) and `astronova_pro_monthly`.
 - Non-consumable reports: `report_general`, `report_love`, `report_career`, `report_money`, `report_health`, `report_family`, `report_spiritual`.
 - Consumable chat credits: `chat_credits_5`, `chat_credits_15`, `chat_credits_50`.
+- These 12 IDs match `Info.plist`, `ShopCatalog`, and the local
+  `AstronovaProducts.storekit` file. This is repository/local StoreKit truth
+  only; live/sandbox App Store Connect product availability is still open.
+
+## Remaining Apple Payment Gates
+- Confirm all 12 products, prices, tax/category metadata, subscription group,
+  introductory offers, and the 12-month billing terms in App Store Connect.
+- Run authenticated sandbox purchase, cancellation, Ask to Buy/pending,
+  restore, renewal, expiry, refund/revocation, and interrupted-delivery tests
+  against the deployed server.
+- Configure and verify App Store Server Notifications/webhooks for renewals,
+  expiry, billing retry, refunds, and revocations; client transaction/status
+  listeners do not replace server notification coverage.
+- Configure Apple StoreKit root trust and bundle ID on the deployed server, and
+  verify ledger persistence across deploy/restart. No live ASC, sandbox, or
+  webhook proof was produced in this local pass.
 
 ## Smartlook Gate
 - Current repo state has a Smartlook Swift package reference, but `SmartlookAnalytics` is not linked to the `AstronovaApp` target.

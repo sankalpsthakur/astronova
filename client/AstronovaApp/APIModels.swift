@@ -629,6 +629,26 @@ struct ReportEntitlementSyncResponse: Codable {
     let createdAt: String?
 }
 
+struct OracleCreditSyncRequest: Codable {
+    let productId: String
+    let transactionId: String
+    let originalTransactionId: String?
+    let environment: String?
+    let signedTransactionJWS: String
+}
+
+struct OracleCreditSyncResponse: Codable {
+    let productId: String
+    let balance: Int
+    let creditedUnits: Int
+    let replayed: Bool
+    let updatedAt: String
+}
+
+struct OracleCreditBalanceResponse: Codable {
+    let balance: Int
+}
+
 // MARK: - Discover Snapshot Models
 
 /// Unified Discover snapshot for daily check-in
