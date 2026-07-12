@@ -14,6 +14,7 @@ import SmartlookAnalytics
 
 @main
 struct AstronovaAppApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var authState: AuthState
     @StateObject private var gamification = GamificationManager()
 
@@ -127,11 +128,39 @@ struct AstronovaAppApp: App {
                 .onAppear {
                     Self.setupAnalyticsOnce()
                     Self.setupPortfolioAnalyticsOnce()
+                    if scenePhase == .active {
+                        Self.startStoreKitObservationForForeground()
+                    }
 
                     if !TestEnvironment.shared.isUITest {
                         Analytics.shared.track(.appLaunched, properties: nil)
                     }
                 }
+                .onChange(of: scenePhase) { _, newPhase in
+                    switch newPhase {
+                    case .active:
+                        Self.startStoreKitObservationForForeground()
+                    case .background:
+                        StoreKitManager.shared.stopSubscriptionStatusObservation()
+                    case .inactive:
+                        // Keep observing through short interruptions such as
+                        // StoreKit sheets and Control Center transitions.
+                        break
+                    @unknown default:
+                        break
+                    }
+                }
+        }
+    }
+
+    @MainActor
+    private static func startStoreKitObservationForForeground() {
+        guard !TestEnvironment.shared.isUITest else { return }
+        let store = StoreKitManager.shared
+        store.startSubscriptionStatusObservation()
+        Task {
+            await store.refreshEntitlements()
+            await store.refreshSubscriptionStatusObservation()
         }
     }
 

@@ -23,6 +23,13 @@ class StoreKitManager: ObservableObject {
     private var storeKitProducts: [Product] = []
     private var updateListenerTask: Task<Void, Error>?
     private let lifecycleStateStore = SubscriptionLifecycleStateStore()
+    @MainActor private lazy var subscriptionStatusObserver = SubscriptionStatusObserver { emit in
+        for await status in Product.SubscriptionInfo.Status.updates {
+            guard !Task.isCancelled else { break }
+            guard let snapshot = Self.subscriptionStatusSnapshot(from: status) else { continue }
+            await emit(snapshot)
+        }
+    }
 
     enum PurchaseAnalyticsSource: String {
         case purchaseFlow = "purchase_flow"
@@ -60,6 +67,7 @@ class StoreKitManager: ObservableObject {
         Task {
             await loadProducts()
             await refreshEntitlements()
+            await refreshSubscriptionStatusObservation()
         }
     }
     
@@ -208,6 +216,42 @@ class StoreKitManager: ObservableObject {
         let result = await checkCurrentEntitlements()
         return result.hasProSubscription
     }
+
+    /// Starts one StoreKit status listener for the current foreground session.
+    /// Repeated lifecycle callbacks are intentionally idempotent.
+    @MainActor
+    @discardableResult
+    func startSubscriptionStatusObservation() -> Bool {
+        subscriptionStatusObserver.start { [weak self] snapshot in
+            self?.handleSubscriptionStatusSnapshot(snapshot)
+        }
+    }
+
+    /// Cancels the status listener when the app leaves foreground execution.
+    @MainActor
+    @discardableResult
+    func stopSubscriptionStatusObservation() -> Bool {
+        subscriptionStatusObserver.cancel()
+    }
+
+    /// Reads current statuses on launch/foreground to cover transitions that
+    /// occurred while the process was suspended or terminated.
+    @MainActor
+    func refreshSubscriptionStatusObservation() async {
+        for product in storeKitProducts where ShopCatalog.isProProduct(product.id) {
+            guard let subscription = product.subscription else { continue }
+            do {
+                for status in try await subscription.status {
+                    guard let snapshot = Self.subscriptionStatusSnapshot(from: status) else { continue }
+                    handleSubscriptionStatusSnapshot(snapshot)
+                }
+            } catch {
+                #if DEBUG
+                debugPrint("[StoreKit] subscription status read failed: \(error.localizedDescription)")
+                #endif
+            }
+        }
+    }
     
     // MARK: - Private Methods
     
@@ -257,40 +301,50 @@ class StoreKitManager: ObservableObject {
             // bounded signal that this is a renewal rather than a first buy.
             SubscriptionLifecycleAnalytics.emit(.renewed, sku: sku)
         }
-        await emitLifecycleFromSubscriptionStatuses(for: sku)
+        await refreshSubscriptionStatusObservation()
     }
 
     @MainActor
-    private func emitLifecycleFromSubscriptionStatuses(for productID: String) async {
-        guard let product = storeKitProducts.first(where: { $0.id == productID }),
-              let subscription = product.subscription else { return }
-        do {
-            let statuses = try await subscription.status
-            for status in statuses {
-                // Product.SubscriptionInfo.Status.state is the renewal state enum.
-                let raw = String(describing: status.state)
-                if let phase = SubscriptionLifecycleAnalytics.phase(fromRenewalState: raw),
-                   lifecycleStateStore.shouldEmitStatus(phase, sku: productID) {
-                    SubscriptionLifecycleAnalytics.emit(phase, sku: productID)
-                }
-                if case .verified(let renewal) = status.renewalInfo {
-                    if renewal.willAutoRenew == false {
-                        if lifecycleStateStore.shouldEmitStatus(.cancelled, sku: productID, channel: "auto_renew") {
-                            SubscriptionLifecycleAnalytics.emit(.cancelled, sku: productID)
-                        }
-                    } else {
-                        lifecycleStateStore.markAutoRenewEnabled(sku: productID)
-                    }
-                }
-                if raw.lowercased() == "subscribed" || raw.lowercased().hasSuffix(".subscribed") {
-                    lifecycleStateStore.markSubscribed(sku: productID)
-                }
-            }
-        } catch {
-            #if DEBUG
-            debugPrint("[StoreKit] subscription status read failed: \(error.localizedDescription)")
-            #endif
+    private func handleSubscriptionStatusSnapshot(_ snapshot: SubscriptionStatusSnapshot) {
+        for phase in lifecycleStateStore.phasesToEmit(for: snapshot) {
+            SubscriptionLifecycleAnalytics.emit(phase, sku: snapshot.sku)
         }
+    }
+
+    private static func subscriptionStatusSnapshot(
+        from status: Product.SubscriptionInfo.Status
+    ) -> SubscriptionStatusSnapshot? {
+        guard case .verified(let transaction) = status.transaction,
+              ShopCatalog.isProProduct(transaction.productID) else { return nil }
+
+        let state: SubscriptionStatusSnapshot.State
+        switch status.state {
+        case .subscribed:
+            state = .subscribed
+        case .expired:
+            state = .expired
+        case .revoked:
+            state = .revoked
+        case .inGracePeriod:
+            state = .gracePeriod
+        case .inBillingRetryPeriod:
+            state = .billingRetry
+        default:
+            state = .unknown
+        }
+
+        let willAutoRenew: Bool?
+        if case .verified(let renewalInfo) = status.renewalInfo {
+            willAutoRenew = renewalInfo.willAutoRenew
+        } else {
+            willAutoRenew = nil
+        }
+
+        return SubscriptionStatusSnapshot(
+            sku: transaction.productID,
+            state: state,
+            willAutoRenew: willAutoRenew
+        )
     }
     
     private func checkVerified<T>(_ result: StoreKit.VerificationResult<T>) throws -> T {

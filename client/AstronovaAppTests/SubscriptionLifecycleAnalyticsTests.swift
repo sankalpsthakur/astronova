@@ -112,6 +112,89 @@ final class SubscriptionLifecycleAnalyticsTests: XCTestCase {
         XCTAssertEqual(SubscriptionLifecycleAnalytics.phase(fromRenewalState: "RenewalState.revoked"), .refunded)
     }
 
+    func testStatusDecisionDetectsTransitionsWithoutTreatingSubscribedAsRenewal() {
+        let sku = ShopCatalog.proMonthlyProductID
+
+        XCTAssertEqual(
+            SubscriptionStatusDecisionEngine.phases(for: .init(sku: sku, state: .subscribed, willAutoRenew: true)),
+            []
+        )
+        XCTAssertEqual(
+            SubscriptionStatusDecisionEngine.phases(for: .init(sku: sku, state: .subscribed, willAutoRenew: false)),
+            [.cancelled]
+        )
+        XCTAssertEqual(
+            SubscriptionStatusDecisionEngine.phases(for: .init(sku: sku, state: .gracePeriod, willAutoRenew: true)),
+            [.grace]
+        )
+        XCTAssertEqual(
+            SubscriptionStatusDecisionEngine.phases(for: .init(sku: sku, state: .billingRetry, willAutoRenew: true)),
+            [.billingRetry]
+        )
+        XCTAssertEqual(
+            SubscriptionStatusDecisionEngine.phases(for: .init(sku: sku, state: .expired, willAutoRenew: nil)),
+            [.lapsed]
+        )
+        XCTAssertEqual(
+            SubscriptionStatusDecisionEngine.phases(for: .init(sku: sku, state: .revoked, willAutoRenew: nil)),
+            [.refunded]
+        )
+    }
+
+    func testStatusStateEmitsOnceUntilARealTransitionOccurs() throws {
+        let suiteName = "SubscriptionLifecycleStateTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SubscriptionLifecycleStateStore(defaults: defaults, keyPrefix: "test.observer.")
+        let sku = ShopCatalog.proMonthlyProductID
+
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .gracePeriod, willAutoRenew: true)), [.grace])
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .gracePeriod, willAutoRenew: true)), [])
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .subscribed, willAutoRenew: true)), [])
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .gracePeriod, willAutoRenew: true)), [.grace])
+
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .subscribed, willAutoRenew: false)), [.cancelled])
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .subscribed, willAutoRenew: false)), [])
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .subscribed, willAutoRenew: true)), [])
+        XCTAssertEqual(store.phasesToEmit(for: .init(sku: sku, state: .subscribed, willAutoRenew: false)), [.cancelled])
+    }
+
+    @MainActor
+    func testObserverStartsOnceAndCancelsCleanly() async {
+        var continuation: AsyncStream<SubscriptionStatusSnapshot>.Continuation?
+        let stream = AsyncStream<SubscriptionStatusSnapshot> { continuation = $0 }
+        let observer = SubscriptionStatusObserver { emit in
+            for await snapshot in stream {
+                guard !Task.isCancelled else { break }
+                await emit(snapshot)
+            }
+        }
+        var received: [SubscriptionStatusSnapshot] = []
+        let first = SubscriptionStatusSnapshot(
+            sku: ShopCatalog.proMonthlyProductID,
+            state: .gracePeriod,
+            willAutoRenew: true
+        )
+
+        XCTAssertTrue(observer.start { received.append($0) })
+        XCTAssertFalse(observer.start { received.append($0) })
+        continuation?.yield(first)
+        for _ in 0..<20 where received.isEmpty {
+            await Task.yield()
+        }
+        XCTAssertEqual(received, [first])
+
+        XCTAssertTrue(observer.cancel())
+        XCTAssertFalse(observer.cancel())
+        XCTAssertFalse(observer.isRunning)
+        continuation?.yield(.init(sku: first.sku, state: .expired, willAutoRenew: false))
+        continuation?.finish()
+        for _ in 0..<5 {
+            await Task.yield()
+        }
+        XCTAssertEqual(received, [first])
+    }
+
     func testLifecycleStateStoreDeduplicatesTransactionAndStatusReplays() throws {
         let suiteName = "SubscriptionLifecycleAnalyticsTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

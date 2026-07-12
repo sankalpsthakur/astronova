@@ -78,7 +78,7 @@ lifecycle events are partially emitted by the local StoreKit bridge; see
 | `trial_started`        | `product_id`                              | Defined target; not emitted today    |
 | `subscription_started` | `product_id`, `price_minor`, `currency`   | Emitted on direct purchase only      |
 | `subscription_renewed` | `product_id`                              | Transaction updates; deduplicated    |
-| `subscription_lapsed`  | `product_id`, `reason`                    | Opportunistic status read; deduplicated |
+| `subscription_lapsed`  | `product_id`, `reason`                    | Status observer + foreground refresh; deduplicated |
 | `iap_purchased`        | `product_id`, `amount`, `currency`        | Consumables & report SKUs            |
 
 ### Growth
