@@ -7,12 +7,14 @@
 
 import SwiftUI
 import AppIntents
+import Diagnostics
 #if canImport(SmartlookAnalytics)
 import SmartlookAnalytics
 #endif
 
 @main
 struct AstronovaAppApp: App {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var authState: AuthState
     @StateObject private var gamification = GamificationManager()
 
@@ -51,6 +53,8 @@ struct AstronovaAppApp: App {
         #endif
 
         _authState = StateObject(wrappedValue: AuthState())
+
+        Task { await DiagnosticsSupportLog.shared.record("Application initialized") }
 
         // Warm the Today-screen ephemeris substitutions cache so the Today
         // tab renders real moon void-of-course / aspect / eclipse values on
@@ -124,11 +128,39 @@ struct AstronovaAppApp: App {
                 .onAppear {
                     Self.setupAnalyticsOnce()
                     Self.setupPortfolioAnalyticsOnce()
+                    if scenePhase == .active {
+                        Self.startStoreKitObservationForForeground()
+                    }
 
                     if !TestEnvironment.shared.isUITest {
                         Analytics.shared.track(.appLaunched, properties: nil)
                     }
                 }
+                .onChange(of: scenePhase) { _, newPhase in
+                    switch newPhase {
+                    case .active:
+                        Self.startStoreKitObservationForForeground()
+                    case .background:
+                        StoreKitManager.shared.stopSubscriptionStatusObservation()
+                    case .inactive:
+                        // Keep observing through short interruptions such as
+                        // StoreKit sheets and Control Center transitions.
+                        break
+                    @unknown default:
+                        break
+                    }
+                }
+        }
+    }
+
+    @MainActor
+    private static func startStoreKitObservationForForeground() {
+        guard !TestEnvironment.shared.isUITest else { return }
+        let store = StoreKitManager.shared
+        store.startSubscriptionStatusObservation()
+        Task {
+            await store.refreshEntitlements()
+            await store.refreshSubscriptionStatusObservation()
         }
     }
 
@@ -170,7 +202,6 @@ struct AstronovaAppApp: App {
 extension Notification.Name {
     static let switchToTab = Notification.Name("switchToTab")
     static let switchToProfileSection = Notification.Name("switchToProfileSection")
-    static let openVideoSession = Notification.Name("openVideoSession")
 }
 
 enum AstronovaIntentRouteStore {
@@ -179,7 +210,6 @@ enum AstronovaIntentRouteStore {
     enum Route: String {
         case today
         case timeTravel
-        case temple
         case connect
         case profile
     }
@@ -204,10 +234,8 @@ enum AstronovaIntentRouteStore {
         switch url.host {
         case "today", "guidance", "daily", "cosmic-weather":
             request(.today)
-        case "time", "timeline", "time-travel", "muhurat":
+        case "time", "timeline", "time-travel":
             request(.timeTravel)
-        case "temple", "ritual":
-            request(.temple)
         case "connect", "oracle", "chat":
             request(.connect)
         case "profile", "blueprint", "pro", "paywall":
@@ -231,23 +259,12 @@ struct OpenTodaysGuidanceIntent: AppIntent {
 }
 
 struct OpenTimeTravelIntent: AppIntent {
-    static let title: LocalizedStringResource = "Open Time Travel"
-    static let description = IntentDescription("Open Astronova's timeline view.")
+    static let title: LocalizedStringResource = "Open Timeline"
+    static let description = IntentDescription("Open Astronova's current timeline view.")
     static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
         AstronovaIntentRouteStore.request(.timeTravel)
-        return .result()
-    }
-}
-
-struct OpenTempleIntent: AppIntent {
-    static let title: LocalizedStringResource = "Open Temple"
-    static let description = IntentDescription("Open Astronova's temple and pooja flows.")
-    static let openAppWhenRun = true
-
-    func perform() async throws -> some IntentResult {
-        AstronovaIntentRouteStore.request(.temple)
         return .result()
     }
 }
@@ -267,21 +284,11 @@ struct AstronovaShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: OpenTimeTravelIntent(),
             phrases: [
-                "Open time travel in \(.applicationName)",
+                "Open timeline in \(.applicationName)",
                 "Show my timeline in \(.applicationName)"
             ],
             shortTitle: "Timeline",
             systemImageName: "clock.arrow.circlepath"
-        )
-
-        AppShortcut(
-            intent: OpenTempleIntent(),
-            phrases: [
-                "Open temple in \(.applicationName)",
-                "Open pooja in \(.applicationName)"
-            ],
-            shortTitle: "Temple",
-            systemImageName: "flame"
         )
     }
 }

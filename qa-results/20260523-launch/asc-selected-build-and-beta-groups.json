@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-05-23T15:04:04Z",
+  "selectedBuildPatch": "204 no content",
+  "versionId": "1577f289-33ba-4b51-9143-d488d8020ed9",
+  "selectedBuild": {
+    "type": "builds",
+    "id": "c15fffeb-22d0-4e48-b4e5-ac539f1ead8e"
+  },
+  "betaGroups": [
+    {
+      "id": "847e32b0-c682-4e34-8248-aeb6d5e39ac6",
+      "name": "core",
+      "isInternalGroup": true,
+      "publicLinkEnabled": null
+    },
+    {
+      "id": "ebd6d84d-2794-42fd-9cb5-345cdab3f3a1",
+      "name": "Public TestFlight",
+      "isInternalGroup": false,
+      "publicLinkEnabled": true
+    }
+  ]
+}

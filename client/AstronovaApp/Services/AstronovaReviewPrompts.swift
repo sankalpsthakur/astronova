@@ -17,7 +17,6 @@ import os
 public enum AstronovaReviewPeak: String, Codable {
     case firstChartCompleted = "first_chart_completed"
     case oracleSessionFifth = "oracle_session_5"
-    case templeBellStreak = "temple_bell_streak"
     case firstCosmicDiaryEntry = "first_cosmic_diary_entry"
 }
 

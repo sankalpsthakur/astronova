@@ -4,6 +4,7 @@ from threading import RLock
 from typing import Any, Dict, Optional
 
 from errors import SwissEphemerisUnavailableError
+from utils.time_utils import utc_now_naive
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +37,12 @@ def _cache_key(dt: datetime, lat: Optional[float], lon: Optional[float], system:
 
 
 def _cache_ttl_seconds(dt: datetime) -> int:
-    today = datetime.utcnow().date()
+    today = utc_now_naive().date()
     return 300 if dt.date() == today else 86400
 
 
 def _get_cached_positions(key: tuple) -> Optional[Dict[str, Any]]:
-    now = datetime.utcnow()
+    now = utc_now_naive()
     with _CACHE_LOCK:
         cached = _POSITIONS_CACHE.get(key)
         if not cached:
@@ -54,7 +55,7 @@ def _get_cached_positions(key: tuple) -> Optional[Dict[str, Any]]:
 
 
 def _set_cached_positions(key: tuple, payload: Dict[str, Any], ttl_seconds: int) -> None:
-    expires_at = datetime.utcnow() + timedelta(seconds=ttl_seconds)
+    expires_at = utc_now_naive() + timedelta(seconds=ttl_seconds)
     with _CACHE_LOCK:
         _POSITIONS_CACHE[key] = (payload, expires_at)
         if len(_POSITIONS_CACHE) > _CACHE_MAX_ENTRIES:
@@ -186,7 +187,7 @@ class EphemerisService:
     def get_current_positions(self, lat: Optional[float] = None, lon: Optional[float] = None, system: str = "western"):
         """Get current planetary positions using Swiss Ephemeris."""
         _require_swe()
-        dt = datetime.utcnow()
+        dt = utc_now_naive()
         return self.get_positions_for_date(dt, lat, lon, system=system)
 
     def get_positions_for_date(

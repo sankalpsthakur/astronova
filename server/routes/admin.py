@@ -7,9 +7,9 @@ import logging
 import os
 import hmac
 from functools import wraps
-from datetime import datetime
 from flask import Blueprint, jsonify, request
 from db import get_connection
+from utils.time_utils import utc_now_iso
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +20,17 @@ ASTRONOVA_PRO_PRODUCT_ID = "astronova_pro_monthly"
 def require_admin_token(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        authorization = request.headers.get("Authorization", "")
+        supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
+        if not supplied_token:
+            return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
+
         expected_token = os.environ.get("ADMIN_API_TOKEN")
         if not expected_token:
             logger.error("ADMIN_API_TOKEN is not configured; refusing admin request")
             return jsonify({"error": "Admin API is not configured", "code": "ADMIN_NOT_CONFIGURED"}), 503
 
-        authorization = request.headers.get("Authorization", "")
-        supplied_token = request.headers.get("X-Admin-Token") or authorization.removeprefix("Bearer ").strip()
-        if not supplied_token or not hmac.compare_digest(supplied_token, expected_token):
+        if not hmac.compare_digest(supplied_token, expected_token):
             return jsonify({"error": "Admin authorization required", "code": "ADMIN_AUTH_REQUIRED"}), 401
 
         return func(*args, **kwargs)
@@ -88,8 +91,8 @@ def grant_pro():
         user_id = user["id"]
         full_name = user["full_name"] or "User"
 
-        # Atomic upsert of subscription status
-        now = datetime.utcnow().isoformat()
+        # Atomic upsert of subscription status.
+        now = utc_now_iso()
 
         cur.execute("SELECT user_id FROM subscription_status WHERE user_id = ?", (user_id,))
         action = "updated" if cur.fetchone() else "created"

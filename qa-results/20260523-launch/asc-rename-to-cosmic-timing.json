@@ -1,0 +1,54 @@
+{
+  "startedAt": "2026-05-23T15:11:59Z",
+  "updates": [
+    {
+      "id": "71f7ff61-a1ae-4a74-8285-7fbf1a37e523",
+      "locale": "en-US",
+      "name": "Astronova: Cosmic Timing",
+      "subtitle": "Birth Chart & Free Will"
+    },
+    {
+      "id": "95032eeb-5def-4102-a599-81d6feb36b3c",
+      "locale": "es-MX",
+      "name": "Astronova: Tiempo Cósmico",
+      "subtitle": "Carta Natal y Libre Albedrío"
+    },
+    {
+      "id": "11624efd-47d2-4bc6-a095-cf775855fcbd",
+      "locale": "fr-FR",
+      "name": "Astronova: Temps Cosmique",
+      "subtitle": "Thème Natal et Libre Arbitre"
+    }
+  ],
+  "finishedAt": "2026-05-23T15:12:06Z",
+  "appNameReadback": "Astronova: Cosmic Timing",
+  "localizationReadback": [
+    {
+      "id": "71f7ff61-a1ae-4a74-8285-7fbf1a37e523",
+      "locale": "en-US",
+      "name": "Astronova: Cosmic Timing",
+      "subtitle": "Birth Chart & Free Will",
+      "privacyPolicyUrl": "https://astronova-ghcr.onrender.com/privacy",
+      "privacyChoicesUrl": null,
+      "privacyPolicyText": null
+    },
+    {
+      "id": "11624efd-47d2-4bc6-a095-cf775855fcbd",
+      "locale": "fr-FR",
+      "name": "Astronova: Temps Cosmique",
+      "subtitle": "Thème Natal et Libre Arbitre",
+      "privacyPolicyUrl": "https://astronova-ghcr.onrender.com/privacy",
+      "privacyChoicesUrl": null,
+      "privacyPolicyText": null
+    },
+    {
+      "id": "95032eeb-5def-4102-a599-81d6feb36b3c",
+      "locale": "es-MX",
+      "name": "Astronova: Tiempo Cósmico",
+      "subtitle": "Carta Natal y Libre Albedrío",
+      "privacyPolicyUrl": "https://astronova-ghcr.onrender.com/privacy",
+      "privacyChoicesUrl": null,
+      "privacyPolicyText": null
+    }
+  ]
+}

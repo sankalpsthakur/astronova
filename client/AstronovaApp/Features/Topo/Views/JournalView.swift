@@ -3,15 +3,21 @@ import SwiftUI
 // MARK: - Journal Tab Landing
 
 struct JournalView: View {
+    @EnvironmentObject private var auth: AuthState
+    @EnvironmentObject private var gamification: GamificationManager
     @StateObject private var journal = JournalStore.shared
     @StateObject private var pauseLog = PauseLogStore.shared
     @StateObject private var quota = ProQuotaManager.shared
+    @StateObject private var decisionStore = DecisionStore.shared
     @AppStorage("hasAstronovaPro") private var hasPro: Bool = false
     @State private var tab: Tab = .timeline
     @State private var filter: TimelineFilter = .all
     @State private var showCompose = false
+    @State private var showDecisionCompose = false
     @State private var showingPaywall = false
     @State private var showInsightsLimitBanner = false
+    @State private var activeAnalysisSheet: AnalysisSheet?
+    @State private var pendingDecisionResult: Decision?
 
     enum Tab: String, CaseIterable, Identifiable {
         case timeline, insights
@@ -24,29 +30,39 @@ struct JournalView: View {
         case pattern(String)
     }
 
+    enum AnalysisSheet: String, Identifiable {
+        case freeWillBlend
+
+        var id: String { rawValue }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.cosmicCosmos.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    header
-                    tabBar
-                    if showInsightsLimitBanner && tab == .timeline {
-                        insightsLimitBanner
-                    }
-                    if tab == .timeline {
-                        filterBar
-                        timeline
-                    } else {
-                        if !hasPro {
-                            Text("Pro · used \(quota.insightsViewsUsedThisMonth) / \(ProQuotaManager.insightsMonthlyLimit) this month")
-                                .font(.cosmicLabel).tracking(0.8)
-                                .foregroundStyle(Color.cosmicTextTertiary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 20).padding(.bottom, 6)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        header
+                        agencyLoopSection
+                        tabBar
+                        if showInsightsLimitBanner && tab == .timeline {
+                            insightsLimitBanner
                         }
-                        InsightsView()
+                        if tab == .timeline {
+                            filterBar
+                            timeline
+                        } else {
+                            if !hasPro {
+                                Text("Pro · used \(quota.insightsViewsUsedThisMonth) / \(ProQuotaManager.insightsMonthlyLimit) this month")
+                                    .font(.cosmicLabel).tracking(0.8)
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 20).padding(.bottom, 6)
+                            }
+                            InsightsView()
+                        }
                     }
+                    .padding(.bottom, 132)
                 }
             }
             .toolbar {
@@ -63,8 +79,23 @@ struct JournalView: View {
                 }
             }
             .sheet(isPresented: $showCompose) { JournalComposeView() }
+            .fullScreenCover(isPresented: $showDecisionCompose) {
+                DecisionComposeView { pendingDecisionResult = $0 }
+            }
             .sheet(isPresented: $showingPaywall) { PaywallVariantRouter(context: .journalInsights) }
+            .sheet(item: $activeAnalysisSheet) { destination in
+                analysisSheet(destination)
+            }
             .navigationDestination(for: JournalEntry.self) { JournalEntryDetailView(entry: $0) }
+            .navigationDestination(for: Decision.self) { DecisionResultView(decision: $0) }
+            .navigationDestination(isPresented: Binding(
+                get: { pendingDecisionResult != nil },
+                set: { if !$0 { pendingDecisionResult = nil } }
+            )) {
+                if let decision = pendingDecisionResult {
+                    DecisionResultView(decision: decision)
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
         }
         .accessibilityIdentifier(AccessibilityID.journalView)
@@ -80,7 +111,268 @@ struct JournalView: View {
                 .foregroundStyle(Color.cosmicTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 14)
+        .padding(.horizontal, 20).padding(.top, 58).padding(.bottom, 14)
+    }
+
+    private func analysisSheet(_ destination: AnalysisSheet) -> some View {
+        ZStack(alignment: .topTrailing) {
+            analysisSheetContent(destination)
+
+            Button {
+                HapticFeedbackService.shared.lightImpact()
+                activeAnalysisSheet = nil
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .frame(width: 38, height: 38)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
+                    .shadow(color: .black.opacity(0.18), radius: 10, y: 4)
+            }
+            .accessibilityLabel("Close")
+            .accessibilityIdentifier("analysis.sheet.close")
+            .padding(.top, 18)
+            .padding(.trailing, 18)
+        }
+    }
+
+    @ViewBuilder
+    private func analysisSheetContent(_ destination: AnalysisSheet) -> some View {
+        switch destination {
+        case .freeWillBlend:
+            NavigationStack {
+                BayesianSliderView()
+                    .navigationTitle("Free Will")
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+    }
+
+    private var agencyLoopSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(agencyEyebrow)
+                    .font(.cosmicMicro)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .tracking(1.4)
+
+                Text("Free Will loop")
+                    .font(.cosmicCalloutEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+
+                Text("Tune agency, run the decision, then write what changed.")
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            freeWillHero
+            decisionLoopSection
+
+            Button {
+                HapticFeedbackService.shared.lightImpact()
+                showCompose = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 14, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Log today's signal")
+                            .font(.cosmicCaptionEmphasis)
+                        Text("Turn the live read into a saved decision trace.")
+                            .font(.cosmicMicro)
+                            .foregroundStyle(Color.cosmicVoid.opacity(0.72))
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .foregroundStyle(Color.cosmicVoid)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.cosmicAccent))
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Log today's signal")
+            .accessibilityIdentifier("journal.logTodaySignal.button")
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 12)
+    }
+
+    private var agencyEyebrow: String {
+        let name = auth.profileManager.profile.fullName
+            .split(separator: " ")
+            .first
+            .map { String($0).uppercased() }
+        return "\(name ?? "GUEST") · AGENCY"
+    }
+
+    private var freeWillHero: some View {
+        Button {
+            HapticFeedbackService.shared.lightImpact()
+            activeAnalysisSheet = .freeWillBlend
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.cosmicTitle3)
+                        .foregroundStyle(Color.cosmicAccent)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.cosmicAccent.opacity(0.14)))
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Free Will")
+                            .font(.cosmicHeadline)
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                        Text("Blend prediction with agency before you log the next move.")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.right")
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                }
+
+                HStack(spacing: 8) {
+                    agencyMetric("PRIORS", "stored")
+                    agencyMetric("LIKELIHOOD", "live")
+                    agencyMetric("AGENCY", "tunable")
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.cosmicSurface))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.cosmicAccent.opacity(0.16), lineWidth: 0.5)
+            )
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("journal.freeWillHero")
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("journal.freeWillHero")
+    }
+
+    private var decisionLoopSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Decision loop")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .accessibilityIdentifier("journal.decisionLoop")
+                    Text("Simulate the call, then save the learning below.")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Button {
+                    HapticFeedbackService.shared.mediumImpact()
+                    if quota.canRunDecision {
+                        showDecisionCompose = true
+                    } else {
+                        showingPaywall = true
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicVoid)
+                        .frame(width: 38, height: 38)
+                        .background(Circle().fill(Color.cosmicAccent))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("New Decision")
+                .accessibilityIdentifier(AccessibilityID.decisionNewButton)
+            }
+
+            let recent = Array(decisionStore.recent().prefix(2))
+            if recent.isEmpty {
+                Text("No decisions yet. Start with one live question and let the result become a journal trace.")
+                    .font(.cosmicFootnote)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.cosmicSurfaceSecondary))
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(recent) { decision in
+                        NavigationLink(value: decision) {
+                            journalDecisionRow(decision)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            if !hasPro {
+                Text("\(quota.decisionsRemaining) free decisions left this month")
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.cosmicSurface))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.cosmicGold.opacity(0.14), lineWidth: 0.5)
+        )
+    }
+
+    private func agencyMetric(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.cosmicMicro)
+                .foregroundStyle(Color.cosmicTextTertiary)
+                .tracking(0.8)
+            Text(value)
+                .font(.cosmicMicro)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.cosmicSurfaceSecondary))
+    }
+
+    private func journalDecisionRow(_ decision: Decision) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "arrow.triangle.branch")
+                .font(.cosmicCallout)
+                .foregroundStyle(Color.cosmicGold)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(Color.cosmicGold.opacity(0.12)))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(decision.promptText)
+                    .font(.cosmicCaptionEmphasis)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .lineLimit(1)
+                Text(decision.decisionClass.label.uppercased())
+                    .font(.cosmicMicro)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .tracking(0.7)
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.cosmicMicro)
+                .foregroundStyle(Color.cosmicTextTertiary)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.cosmicSurfaceSecondary))
     }
 
     private var tabBar: some View {
@@ -202,8 +494,8 @@ struct JournalView: View {
     }
 
     private var timeline: some View {
-        ScrollView(showsIndicators: false) {
-            let items = mergedItems()
+        let items = mergedItems()
+        return Group {
             if items.isEmpty {
                 emptyState
             } else {
@@ -247,12 +539,21 @@ struct JournalView: View {
             Image(systemName: "pencil.line")
                 .font(.system(size: 28, weight: .light))
                 .foregroundStyle(Color.cosmicTextTertiary)
-            Text("Your timeline starts when you save the first entry. Tap +.")
+            Text("Your timeline starts when you save the first signal. Use the command center or tap +.")
                 .font(.cosmicFootnote)
                 .foregroundStyle(Color.cosmicTextSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 40)
         }
         .padding(.top, 100)
+    }
+}
+
+struct NumberLatticeSheetView: View {
+    var body: some View {
+        LoshuGridView(data: .sample)
+            .navigationTitle("Number lattice")
+            .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("numberLatticeView")
     }
 }
 

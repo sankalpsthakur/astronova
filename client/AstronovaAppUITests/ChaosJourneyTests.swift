@@ -11,7 +11,7 @@ import Foundation
 final class ChaosJourneyTests: XCTestCase {
 
     private var app: XCUIApplication!
-    private let homeTabs = ["homeTab", "templeTab", "connectTab", "selfTab", "timeTravelTab"]
+    private let homeTabs = ["homeTab", "timelineTab", "matrixTab", "selfTab", "timeTravelTab"]
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -66,7 +66,7 @@ final class ChaosJourneyTests: XCTestCase {
     private func tabCandidates(for identifier: String) -> [String] {
         switch identifier {
         case "askTab":
-            return ["askTab", "templeTab"]
+            return ["askTab", "timelineTab"]
         case "manageTab":
             return ["manageTab", "selfTab"]
         default:
@@ -155,14 +155,14 @@ final class ChaosJourneyTests: XCTestCase {
 
     // MARK: - Journeys
 
-    private func openTimeTravelFlow(canRepairFromProfile: inout Bool, seed: UInt64) {
+    private func openMapFlow(canRepairFromProfile: inout Bool, seed: UInt64) {
         tapTab("timeTravelTab")
-        let prompt = anyElement("incompleteProfilePrompt")
-        let view = anyElement("timeTravelView")
+        let view = anyElement("mapTabView")
 
-        if prompt.waitForExistence(timeout: 4) {
-            canRepairFromProfile = true
+        if view.waitForExistence(timeout: 6), anyElement("appleMapsGlobeView").waitForExistence(timeout: 4) {
             let completeButton = anyElement("completeBirthDataButton")
+            guard completeButton.waitForExistence(timeout: 2.0) else { return }
+            canRepairFromProfile = true
             if tap(completeButton, timeout: 2.0) {
                 // Best-effort profile completion path for chaos recovery.
                 let placeField = app.textFields.matching(
@@ -186,7 +186,7 @@ final class ChaosJourneyTests: XCTestCase {
                 if done.exists { _ = tap(done, timeout: 1.0) }
 
                 tapTab("timeTravelTab")
-                if view.waitForExistence(timeout: 4) || prompt.waitForExistence(timeout: 2.0) {
+                if view.waitForExistence(timeout: 4) {
                     _ = addVisualCheckpoint(step: Int(seed % 1000), seed: seed)
                 }
             }
@@ -197,32 +197,9 @@ final class ChaosJourneyTests: XCTestCase {
     }
 
     private func openOracleChatFlow() {
-        tapTab("templeTab")
-        let quickAccess = anyElement("oracleQuickAccessButton")
-        if tap(quickAccess, timeout: 2.0) {
-            let input = chatInputElement()
-            if input.waitForExistence(timeout: 5) {
-                input.tap()
-                input.typeText("How is my alignment this cycle?")
-                let send = anyElement("sendMessageButton")
-                _ = tap(send, timeout: 2.0)
-            }
-            return
-        }
-
-        if !tapButton(label: "Ask the Oracle") {
-            let oracleCard = anyElement("Ask the Oracle")
-            _ = tap(oracleCard, timeout: 2.0)
-        }
-
-        let input = chatInputElement()
-        guard input.waitForExistence(timeout: 8) else { return }
-        input.tap()
-        input.typeText("How is my alignment this cycle?")
-        let send = anyElement("sendMessageButton")
-        if tap(send, timeout: 2.0) {
-            sleep(1)
-        }
+        tapTab("timelineTab")
+        _ = tap(anyElement("timeline.systemOverview"), timeout: 5.0)
+        _ = tap(anyElement("timeline.dashaPulse"), timeout: 5.0)
     }
 
     private func openPackagesFlow() {
@@ -248,7 +225,7 @@ final class ChaosJourneyTests: XCTestCase {
             if paywall.waitForExistence(timeout: 4.0) {
                 let proButton = anyElement("startProButton")
                 if tap(proButton, timeout: 2.0) {
-                    let close = anyElement("paywallCloseButton")
+                    let close = anyElement("paywall.close")
                     _ = tap(close, timeout: 2.0)
                     _ = waitForNotExists(paywall, timeout: 8)
                 }
@@ -256,7 +233,7 @@ final class ChaosJourneyTests: XCTestCase {
             return
         }
 
-        let close = anyElement("paywallCloseButton")
+        let close = anyElement("paywall.close")
         _ = tap(close, timeout: 1.5)
     }
 
@@ -289,9 +266,9 @@ final class ChaosJourneyTests: XCTestCase {
     }
 
     private func openConnectFlow() {
-        tapTab("connectTab")
-        _ = tapButton(label: "Add new relationship")
-        _ = tapButton(label: "Import from Contacts")
+        tapTab("matrixTab")
+        _ = tap(anyElement("matrix.eigenvalues"), timeout: 5.0)
+        _ = tap(anyElement("matrix.transformations"), timeout: 5.0)
     }
 
     private func openSelfFoundationFlow() {
@@ -344,7 +321,7 @@ final class ChaosJourneyTests: XCTestCase {
             openConnectFlow()
         case 5:
             var repair = false
-            openTimeTravelFlow(canRepairFromProfile: &repair, seed: seed)
+            openMapFlow(canRepairFromProfile: &repair, seed: seed)
         case 6:
             openSelfFoundationFlow()
         case 7:
@@ -386,7 +363,7 @@ final class ChaosJourneyTests: XCTestCase {
 
         // A final safety pass to ensure no hard deadlock stuck on modal overlays.
         if anyElement("paywallView").exists {
-            _ = tap(anyElement("paywallCloseButton"), timeout: 1.0)
+            _ = tap(anyElement("paywall.close"), timeout: 1.0)
         }
         if anyElement("chatPackagesSheet").exists {
             _ = tap(anyElement("doneButton"), timeout: 1.0)

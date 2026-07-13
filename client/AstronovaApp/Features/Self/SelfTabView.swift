@@ -42,6 +42,12 @@ struct SelfTabView: View {
         case reportDetail(DetailedReport)
         case reportShop
         case reportsLibrary
+        case journalCompose
+        case cosmicMirror
+        case numberLattice
+        case predictionTimeline
+        case astrocartography
+        case freeWillBlend
 
         var id: String {
             switch self {
@@ -61,6 +67,18 @@ struct SelfTabView: View {
                 return "reportShop"
             case .reportsLibrary:
                 return "reportsLibrary"
+            case .journalCompose:
+                return "journalCompose"
+            case .cosmicMirror:
+                return "cosmicMirror"
+            case .numberLattice:
+                return "numberLattice"
+            case .predictionTimeline:
+                return "predictionTimeline"
+            case .astrocartography:
+                return "astrocartography"
+            case .freeWillBlend:
+                return "freeWillBlend"
             }
         }
     }
@@ -93,6 +111,9 @@ struct SelfTabView: View {
 
                     // HERO: Cosmic Pulse (Dasha)
                     cosmicPulseSection
+
+                    // High-value analysis modules from the design bundle.
+                    analysisModulesSection
 
                     // Journey Map (gamified progression)
                     JourneyMapCard(
@@ -237,6 +258,33 @@ struct SelfTabView: View {
                     .environmentObject(auth)
             case .reportsLibrary:
                 ReportsLibraryView(reports: dataService.userReports)
+            case .journalCompose:
+                JournalComposeView()
+            case .cosmicMirror:
+                NavigationStack {
+                    CosmicMirrorView()
+                        .environmentObject(auth)
+                        .environmentObject(gamification)
+                }
+            case .numberLattice:
+                NavigationStack {
+                    NumberLatticeSheetView()
+                }
+            case .predictionTimeline:
+                PredictionTimelineView()
+                    .environmentObject(auth)
+            case .astrocartography:
+                NavigationStack {
+                    AstrocartographyMapView()
+                        .navigationTitle("Best Places")
+                        .navigationBarTitleDisplayMode(.inline)
+                }
+            case .freeWillBlend:
+                NavigationStack {
+                    BayesianSliderView()
+                        .navigationTitle("Free Will")
+                        .navigationBarTitleDisplayMode(.inline)
+                }
             }
         }
     }
@@ -325,6 +373,183 @@ struct SelfTabView: View {
                 CosmicPulseEmptyView(onSetup: { activeSheet = .birthEdit })
             }
         }
+    }
+
+    // MARK: - Analysis Modules Section
+
+    private var analysisModulesSection: some View {
+        VStack(alignment: .leading, spacing: Cosmic.Spacing.m) {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.xs) {
+                Text(analysisEyebrow)
+                    .font(.cosmicMicro)
+                    .tracking(1.4)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .accessibilityIdentifier("analysis.commandCenter.eyebrow")
+                Text("Analysis command center")
+                    .font(.cosmicTitle3)
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                Text("System overview, number lattice, place, transition, and agency before you write.")
+                    .font(.cosmicCaption)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack(spacing: Cosmic.Spacing.xs) {
+                analysisMetric("LIVE", "0.82")
+                analysisMetric("PROC", "9/9")
+                analysisMetric("NEXT", "04 Oct")
+                analysisMetric("CITY", "Dubai 0.91")
+            }
+            .accessibilityIdentifier("analysis.liveState.metrics")
+
+            Button {
+                CosmicHaptics.medium()
+                activeSheet = .journalCompose
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 14, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Log today's signal")
+                            .font(.cosmicCaptionEmphasis)
+                        Text("Turn the live read into a saved decision trace.")
+                            .font(.cosmicMicro)
+                            .foregroundStyle(Color.cosmicVoid.opacity(0.72))
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .foregroundStyle(Color.cosmicVoid)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.cosmicGold))
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Log today's signal")
+            .accessibilityIdentifier("analysis.logTodaySignal.button")
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Cosmic.Spacing.s) {
+                ForEach(analysisModules) { module in
+                    analysisModuleButton(module)
+                }
+            }
+        }
+        .accessibilityIdentifier("analysis.modules.section")
+    }
+
+    private var analysisEyebrow: String {
+        let name = profile.fullName
+            .split(separator: " ")
+            .first
+            .map { String($0).uppercased() }
+        return "\(name ?? "GUEST") · CHART/PROD"
+    }
+
+    private var analysisModules: [AnalysisModule] {
+        [
+            AnalysisModule(title: "System overview", eyebrow: "SYSTEM OVERVIEW", subtitle: "12 server rooms. 9 daemons. 1 you.", metric: "0.82 · 9/9 running", status: "LIVE", icon: "server.rack", identifier: "analysis.cosmicMirror.button", destination: .cosmicMirror),
+            AnalysisModule(title: "Number lattice", eyebrow: "NUMEROLOGY · LOSHU 3x3", subtitle: "Date + phone + name vectors", metric: "Missing 8 · driver 4", status: "CLIENT", icon: "square.grid.3x3.fill", identifier: "analysis.numberLattice.button", destination: .numberLattice),
+            AnalysisModule(title: "Where else", eyebrow: "ASTROCARTOGRAPHY · ACG/v2", subtitle: "Apple Maps globe and ranked cities", metric: "Dubai 0.91 · Singapore 0.82", status: "MAPS", icon: "globe.americas.fill", identifier: "analysis.astrocartography.button", destination: .astrocartography),
+            AnalysisModule(title: "The shift", eyebrow: "MAHA-DASHA · CURRENT > NEXT", subtitle: "Jupiter now, Saturn next", metric: "Migration checklist · 134 days", status: "SERVER", icon: "arrow.left.arrow.right", identifier: "analysis.predictionTimeline.button", destination: .predictionTimeline),
+            AnalysisModule(title: "Free will", eyebrow: "MODEL · BAYESIAN BLEND", subtitle: "Priors meet your likelihoods", metric: "w = 0.55 agency", status: "LIVE", icon: "slider.horizontal.3", identifier: "analysis.freeWill.button", destination: .freeWillBlend)
+        ]
+    }
+
+    private func analysisMetric(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.cosmicMicro)
+                .tracking(0.8)
+                .foregroundStyle(Color.cosmicTextTertiary)
+            Text(value)
+                .font(.cosmicMicro)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 7)
+        .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.hairline)
+        )
+    }
+
+    private func analysisModuleButton(_ module: AnalysisModule) -> some View {
+        Button {
+            CosmicHaptics.medium()
+            activeSheet = module.destination
+        } label: {
+            VStack(alignment: .leading, spacing: Cosmic.Spacing.s) {
+                HStack(alignment: .top) {
+                    Image(systemName: module.icon)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Color.cosmicGold)
+                        .frame(width: 34, height: 34)
+                        .background(Color.cosmicGold.opacity(0.12), in: Circle())
+                    Spacer(minLength: 0)
+                    Text(module.status)
+                        .font(.cosmicMicro)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.cosmicGold)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color.cosmicGold.opacity(0.12)))
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(module.eyebrow)
+                        .font(.cosmicMicro)
+                        .tracking(0.7)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
+                    Text(module.title)
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(module.subtitle)
+                        .font(.cosmicCaption)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .lineLimit(2)
+                    Text(module.metric)
+                        .font(.cosmicMicro)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.cosmicTextPrimary.opacity(0.86))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.68)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, minHeight: 124, alignment: .topLeading)
+            .padding(Cosmic.Spacing.m)
+            .background(Color.cosmicSurface, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                    .stroke(Color.cosmicGold.opacity(0.12), lineWidth: Cosmic.Border.hairline)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(module.identifier)
+    }
+
+    private struct AnalysisModule: Identifiable {
+        let title: String
+        let eyebrow: String
+        let subtitle: String
+        let metric: String
+        let status: String
+        let icon: String
+        let identifier: String
+        let destination: SheetDestination
+
+        var id: String { identifier }
     }
 
     // MARK: - Essence Section

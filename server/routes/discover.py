@@ -14,6 +14,7 @@ from flask import Blueprint, jsonify, request
 from db import get_user_birth_data
 from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
+from utils.time_utils import utc_now_naive
 
 logger = logging.getLogger(__name__)
 
@@ -715,7 +716,7 @@ def discover_domains():
         except ValueError:
             return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
     else:
-        target_date = datetime.utcnow()
+        target_date = utc_now_naive()
 
     # Get current planetary positions
     positions = _ephem.get_positions_for_date(target_date)
@@ -773,7 +774,7 @@ def discover_snapshot():
         except ValueError:
             return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
     else:
-        target_date = datetime.utcnow()
+        target_date = utc_now_naive()
 
     # Get birth data from payload or user_id
     birth_data = payload.get("birthData")
@@ -906,7 +907,7 @@ def discover_snapshot_get():
         except ValueError:
             return jsonify({"error": "Invalid date format, use YYYY-MM-DD"}), 400
     else:
-        target_date = datetime.utcnow()
+        target_date = utc_now_naive()
 
     # Get current planetary positions
     positions = _ephem.get_positions_for_date(target_date)

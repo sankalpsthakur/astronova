@@ -32,7 +32,7 @@ struct ShopCatalog {
     static let pro12MonthCommitmentProductID = "astronova_pro_12_month_commitment"
     static let proIntroOfferDescription = "14-day free trial"
     static let proRenewalCadenceDescription = "then monthly auto-renewal"
-    static let pro12MonthRenewalCadenceDescription = "12 monthly payments, then monthly auto-renewal"
+    static let pro12MonthRenewalCadenceDescription = "then annual auto-renewal"
     static let defaultProProductID = pro12MonthCommitmentProductID
 
     static let proPlans: [ProPlan] = [
@@ -40,10 +40,10 @@ struct ShopCatalog {
             id: "twelve_month_commitment",
             productId: pro12MonthCommitmentProductID,
             title: "12-month plan",
-            badge: "12 payments",
-            fallbackBillingDisplayPrice: "$9.99",
-            fallbackCommitmentDisplayPrice: "$119.88",
-            billingCaption: "per month for 12 months",
+            badge: "ANNUAL",
+            fallbackBillingDisplayPrice: "$49.99",
+            fallbackCommitmentDisplayPrice: "$49.99",
+            billingCaption: "per year",
             renewalCadenceDescription: pro12MonthRenewalCadenceDescription,
             billingPlan: .monthlyCommitment
         ),
@@ -90,7 +90,7 @@ struct ShopCatalog {
 
     static let fallbackPrices: [String: String] = [
         proMonthlyProductID: "$9.99",
-        pro12MonthCommitmentProductID: "$119.88",
+        pro12MonthCommitmentProductID: "$49.99",
         "report_general": "$12.99",
         "report_love": "$12.99",
         "report_career": "$12.99",

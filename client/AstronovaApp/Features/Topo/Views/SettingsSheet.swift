@@ -1,4 +1,5 @@
 import SwiftUI
+import Diagnostics
 
 struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -16,7 +17,15 @@ struct SettingsSheet: View {
     @State private var showingReportShop = false
     @State private var showingOracle = false
     @State private var showingPrivacy = false
+    @State private var showingDataPrivacy = false
+    @State private var showingExportData = false
+    @State private var showingDeleteConfirmation = false
+    @State private var deleteFailed = false
+    @State private var analyticsOptedIn: Bool = !PortfolioAnalytics.shared.isOptedOut
     @State private var restoreMessage: String?
+    @State private var diagnosticsURL: URL?
+    @State private var diagnosticsError: String?
+    @State private var isGeneratingDiagnostics = false
 
     var body: some View {
         NavigationStack {
@@ -45,7 +54,7 @@ struct SettingsSheet: View {
                         ) { showingOracle = true }
 
                         sectionHeader("ACCOUNT")
-                        if auth.isAuthenticated {
+                        if auth.isAuthenticated || auth.state == .signedIn {
                             actionRow(
                                 icon: "person.crop.circle.fill",
                                 title: "Signed in",
@@ -61,6 +70,15 @@ struct SettingsSheet: View {
                             ) {
                                 auth.signOut()
                                 dismiss()
+                            }
+                            actionRow(
+                                icon: "trash.fill",
+                                title: "Delete Account",
+                                subtitle: "Permanently remove this account and local session",
+                                tint: .cosmicError,
+                                accessibilityIdentifier: "settings.deleteAccount.button"
+                            ) {
+                                showingDeleteConfirmation = true
                             }
                         } else {
                             actionRow(
@@ -78,6 +96,34 @@ struct SettingsSheet: View {
 
                         sectionHeader("LEGAL")
                         actionRow(icon: "hand.raised.fill", title: "Privacy", subtitle: nil) { showingPrivacy = true }
+                        actionRow(
+                            icon: "lock.shield.fill",
+                            title: "Data & Privacy",
+                            subtitle: "See what Astronova stores and how to control it",
+                            accessibilityIdentifier: "settings.dataPrivacy.button"
+                        ) {
+                            showingDataPrivacy = true
+                        }
+                        actionRow(
+                            icon: "square.and.arrow.up",
+                            title: "Export My Data",
+                            subtitle: "Prepare a local JSON export for sharing",
+                            accessibilityIdentifier: "settings.exportData.button"
+                        ) {
+                            showingExportData = true
+                        }
+                        anonymousUsageToggleRow
+                        sectionHeader("SUPPORT")
+                        actionRow(
+                            icon: "wrench.and.screwdriver.fill",
+                            title: isGeneratingDiagnostics ? "Preparing Diagnostics…" : "Share Diagnostics Report",
+                            subtitle: "App and system details with privacy-safe support events",
+                            showsChevron: false,
+                            accessibilityIdentifier: "settings.shareDiagnostics.button"
+                        ) {
+                            generateDiagnosticsReport()
+                        }
+                        .disabled(isGeneratingDiagnostics)
                         actionRow(
                             icon: "arrow.counterclockwise",
                             title: "Restore purchases",
@@ -126,7 +172,7 @@ struct SettingsSheet: View {
         .sheet(isPresented: $showingPrivacy) {
             NavigationStack {
                 ScrollView {
-                    Text("Astronova does not sell your data. Birth details, journal entries, decisions, and navigation rules are stored locally on your device. See the in-app Privacy policy for details.")
+                    Text("Astronova does not sell your data. Birth details sync to Astronova's backend when you sign in so charts, reports, and Ask can work across sessions. Journal entries, decisions, and navigation rules stay on this device unless you choose to share them. See the in-app Privacy policy for details.")
                         .font(.cosmicCallout)
                         .foregroundStyle(Color.cosmicTextPrimary)
                         .padding(20)
@@ -135,6 +181,113 @@ struct SettingsSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
             }
         }
+        .sheet(isPresented: $showingDataPrivacy) {
+            NavigationStack {
+                DataPrivacyView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showingDataPrivacy = false }
+                        }
+                    }
+            }
+        }
+        .sheet(isPresented: $showingExportData) {
+            NavigationStack {
+                ExportDataView(auth: auth)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showingExportData = false }
+                        }
+                    }
+            }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { diagnosticsURL != nil },
+                set: { if !$0 { cleanUpDiagnosticsReport() } }
+            ),
+            onDismiss: cleanUpDiagnosticsReport
+        ) {
+            if let diagnosticsURL {
+                ShareSheet(items: [diagnosticsURL])
+            }
+        }
+        .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task {
+                    do {
+                        // Privacy (App Store Guideline 5.1.1): only sign out
+                        // locally once the server confirms the account is gone.
+                        // A failed server delete must NOT sign the user out, or
+                        // their data is orphaned while they believe it's deleted.
+                        try await APIServices.shared.deleteAccount()
+                        await MainActor.run {
+                            auth.signOut()
+                            dismiss()
+                        }
+                    } catch {
+                        await MainActor.run { deleteFailed = true }
+                    }
+                }
+            }
+        } message: {
+            Text("This cannot be undone. All your data will be permanently deleted.")
+        }
+        .alert("Couldn't Delete Account", isPresented: $deleteFailed) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("We couldn't delete your account just now. Your data has not been removed. Please check your connection and try again.")
+        }
+        .alert(
+            "Couldn't Prepare Diagnostics",
+            isPresented: Binding(
+                get: { diagnosticsError != nil },
+                set: { if !$0 { diagnosticsError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { diagnosticsError = nil }
+        } message: {
+            Text(diagnosticsError ?? "Please try again.")
+        }
+    }
+
+    private func generateDiagnosticsReport() {
+        guard !isGeneratingDiagnostics else { return }
+        isGeneratingDiagnostics = true
+        Task {
+            await DiagnosticsSupportLog.shared.record("Diagnostics report requested from Settings")
+            let reporters = DiagnosticsReporter.DefaultReporter.allCases.filter {
+                if case .logs = $0 { return false }
+                return true
+            }.map(\.reporter) + [AstronovaSupportReporter()]
+            let report = await DiagnosticsReporter.create(
+                filename: "Astronova-Diagnostics.html",
+                using: reporters,
+                reportTitle: "Astronova Diagnostics Report"
+            )
+
+            do {
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                    .appendingPathComponent(report.filename)
+                try FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try report.data.write(to: url, options: .atomic)
+                diagnosticsURL = url
+            } catch {
+                diagnosticsError = "The report couldn't be saved for sharing."
+            }
+            isGeneratingDiagnostics = false
+        }
+    }
+
+    private func cleanUpDiagnosticsReport() {
+        guard let diagnosticsURL else { return }
+        try? FileManager.default.removeItem(at: diagnosticsURL.deletingLastPathComponent())
+        self.diagnosticsURL = nil
     }
 
     // MARK: - Voice reading toggle (Wave 3b A1)
@@ -169,6 +322,39 @@ struct SettingsSheet: View {
             if !newValue {
                 SpeechService.shared.stop()
             }
+        }
+    }
+
+    private var anonymousUsageToggleRow: some View {
+        Toggle(isOn: $analyticsOptedIn) {
+            HStack(spacing: 14) {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.cosmicBodyEmphasis)
+                    .foregroundStyle(Color.cosmicGold)
+                    .frame(width: 28, height: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Share Anonymous Usage")
+                        .font(.cosmicCalloutEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                    Text("Helps us improve using a random app ID.")
+                        .font(.cosmicLabel)
+                        .foregroundStyle(Color.cosmicTextTertiary)
+                        .lineLimit(2)
+                }
+            }
+        }
+        .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.cosmicSurface)
+        )
+        .accessibilityIdentifier("settings.analyticsOptIn.toggle")
+        .onChange(of: analyticsOptedIn) { _, newValue in
+            PortfolioAnalytics.shared.isOptedOut = !newValue
+            let projectKey = Bundle.main.infoDictionary?["SMARTLOOK_PROJECT_KEY"] as? String
+            AnalyticsConsentController.applySmartlookConsent(projectKey: projectKey)
         }
     }
 

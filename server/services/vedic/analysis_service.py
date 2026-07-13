@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from services.dasha.timeline import TimelineCalculator
 from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
+from utils.time_utils import utc_now_naive
 
 from .divisional_charts_service import compute_d9_d10
 from .dosha_service import kalsarpa_status, manglik_status
@@ -137,7 +138,7 @@ class VedicAnalysisService:
             dasha_info = self.dashas.calculate_complete_dasha(
                 birth_date=birth_dt_utc,
                 moon_longitude=moon_lon,
-                target_date=datetime.utcnow(),
+                target_date=utc_now_naive(),
                 include_future=True,
                 num_future_periods=9,
             )
@@ -206,7 +207,7 @@ class VedicAnalysisService:
         doshas["kalsarpa"] = kalsarpa_status(longitudes=longitudes, lagna_sign=lagna_sign or None)
 
         # Sade Sati (current transit status only)
-        current_saturn = self.ephemeris.get_positions_for_date(datetime.utcnow(), None, None, system="vedic")
+        current_saturn = self.ephemeris.get_positions_for_date(utc_now_naive(), None, None, system="vedic")
         saturn_sign_now = (
             str(((current_saturn.get("planets") or {}).get("saturn") or {}).get("sign") or "")
             if isinstance(current_saturn, dict)

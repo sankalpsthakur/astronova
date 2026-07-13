@@ -1,0 +1,36 @@
+{
+  "data": {
+    "type": "reviewSubmissions",
+    "id": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+    "attributes": {
+      "submittedDate": null,
+      "platform": null,
+      "state": "READY_FOR_REVIEW"
+    },
+    "relationships": {
+      "appStoreVersionForReview": {
+        "data": null
+      },
+      "items": {
+        "meta": {
+          "paging": {
+            "total": 0,
+            "limit": 10
+          }
+        },
+        "data": [],
+        "links": {
+          "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/relationships/items",
+          "related": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9/items"
+        }
+      }
+    },
+    "links": {
+      "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9"
+    }
+  },
+  "included": [],
+  "links": {
+    "self": "https://api.appstoreconnect.apple.com/v1/reviewSubmissions/821c7af6-6834-4242-a0e1-1f685b89c4b9?include=appStoreVersionForReview%2Citems"
+  }
+}

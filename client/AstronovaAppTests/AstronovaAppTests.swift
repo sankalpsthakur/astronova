@@ -30,9 +30,15 @@ final class AstronovaAppTests: XCTestCase {
             "is_quick_start_user",
             "hasAstronovaPro",
             "chat_credits",
+            "mock_purchases_enabled",
+            "mock_reports",
+            "profile_phone_digits",
+            "profile_context_tags",
+            "profile_context_text",
             "user_profile",
             "last_chart",
         ].forEach { defaults.removeObject(forKey: $0) }
+        ShopCatalog.allProductIDs.forEach { defaults.removeObject(forKey: "purchased_\($0)") }
 
         // Keychain token can also leak between runs and flip AuthState into "signed in".
         ["com.astronova.app.jwtToken", "com.sankalp.AstronovaApp.jwtToken"].forEach { jwtTokenKey in
@@ -122,7 +128,7 @@ final class AstronovaAppTests: XCTestCase {
         XCTAssertTrue(ShopCatalog.allProductIDs.contains(ShopCatalog.pro12MonthCommitmentProductID))
         XCTAssertEqual(ShopCatalog.proIntroOfferDescription, "14-day free trial")
         XCTAssertEqual(ShopCatalog.proRenewalCadenceDescription, "then monthly auto-renewal")
-        XCTAssertEqual(ShopCatalog.pro12MonthRenewalCadenceDescription, "12 monthly payments, then monthly auto-renewal")
+        XCTAssertEqual(ShopCatalog.pro12MonthRenewalCadenceDescription, "then annual auto-renewal")
         XCTAssertTrue(ShopCatalog.isProProduct(ShopCatalog.proMonthlyProductID))
         XCTAssertTrue(ShopCatalog.isProProduct(ShopCatalog.pro12MonthCommitmentProductID))
     }
@@ -132,10 +138,71 @@ final class AstronovaAppTests: XCTestCase {
 
         XCTAssertEqual(defaultPlan.productId, ShopCatalog.pro12MonthCommitmentProductID)
         XCTAssertEqual(defaultPlan.title, "12-month plan")
-        XCTAssertEqual(defaultPlan.fallbackBillingDisplayPrice, "$9.99")
-        XCTAssertEqual(defaultPlan.fallbackCommitmentDisplayPrice, "$119.88")
-        XCTAssertEqual(defaultPlan.billingCaption, "per month for 12 months")
+        XCTAssertEqual(defaultPlan.fallbackBillingDisplayPrice, "$49.99")
+        XCTAssertEqual(defaultPlan.fallbackCommitmentDisplayPrice, "$49.99")
+        XCTAssertEqual(defaultPlan.billingCaption, "per year")
         XCTAssertEqual(defaultPlan.billingPlan, .monthlyCommitment)
+    }
+
+    func testPaywallGateComponentContractKeepsProPrimaryAndReportsSecondary() throws {
+        let primaryCTA = AccessibilityID.startProButton
+        let restoreCTA = AccessibilityID.restorePurchasesButton
+        let secondaryReportCTA = AccessibilityID.buyDetailedReportButton
+
+        XCTAssertEqual(primaryCTA, "startProButton")
+        XCTAssertEqual(restoreCTA, "restorePurchasesButton")
+        XCTAssertEqual(secondaryReportCTA, "buyDetailedReportButton")
+        XCTAssertNotEqual(primaryCTA, secondaryReportCTA)
+        XCTAssertEqual(ShopCatalog.defaultProProductID, ShopCatalog.pro12MonthCommitmentProductID)
+        XCTAssertEqual(ShopCatalog.proPlan(for: ShopCatalog.defaultProProductID).title, "12-month plan")
+    }
+
+    func testReportsShopComponentContractSeparatesBuyAndIncludedStates() throws {
+        let productIds = ShopCatalog.reports.map(\.productId)
+        XCTAssertEqual(Set(productIds).count, productIds.count)
+        XCTAssertFalse(productIds.isEmpty)
+
+        for productId in productIds {
+            let buyIdentifier = AccessibilityID.reportBuyButton(productId)
+            let includedIdentifier = AccessibilityID.reportIncludedBadge(productId)
+
+            XCTAssertTrue(buyIdentifier.hasPrefix("reportBuyButton_"))
+            XCTAssertTrue(includedIdentifier.hasPrefix("reportIncludedBadge_"))
+            XCTAssertTrue(buyIdentifier.hasSuffix(productId))
+            XCTAssertTrue(includedIdentifier.hasSuffix(productId))
+            XCTAssertNotEqual(buyIdentifier, includedIdentifier)
+        }
+    }
+
+    func testReportShopMockPurchasePersistsReportStateForCurrentSession() async throws {
+        let defaults = UserDefaults.standard
+        let offer = try XCTUnwrap(ShopCatalog.reports.first { $0.id == "career" })
+        let userId = "integration-report-shop-user"
+        defaults.set(true, forKey: "mock_purchases_enabled")
+
+        let restoredBeforePurchase = await BasicStoreManager.shared.restorePurchases()
+        XCTAssertFalse(restoredBeforePurchase)
+
+        let purchased = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
+        XCTAssertTrue(purchased)
+        XCTAssertTrue(BasicStoreManager.shared.hasProduct(offer.productId))
+
+        let generated = APIServices.shared.recordMockReportPurchase(
+            for: offer,
+            userId: userId,
+            generatedAt: "2026-05-23T08:55:00Z"
+        )
+        let reports = try await APIServices.shared.getUserReports(userId: userId)
+
+        XCTAssertEqual(reports.first?.reportId, generated.reportId)
+        XCTAssertEqual(reports.first?.type, ShopCatalog.reportType(for: offer))
+        XCTAssertEqual(reports.first?.title, offer.title)
+        XCTAssertEqual(reports.first?.userId, userId)
+        XCTAssertEqual(reports.first?.status, "completed")
+        XCTAssertEqual(reports.first?.keyInsights, ["Mock report ready"])
+
+        let restoredAfterReportOnlyPurchase = await BasicStoreManager.shared.restorePurchases()
+        XCTAssertTrue(restoredAfterReportOnlyPurchase)
     }
 
     func testSecureEnvelopeAESGCMRoundtrip() throws {
@@ -350,6 +417,47 @@ final class AstronovaAppTests: XCTestCase {
         XCTAssertFalse(features.canAccessPremiumFeatures)
         XCTAssertEqual(features.maxChartsPerDay, 5)
     }
+
+    func testInvalidSessionRecoveryReturnsToSignedOutWithMessage() throws {
+        let authState = AuthState()
+        authState.jwtToken = "expired-local-session"
+        authState.isAPIConnected = true
+
+        authState.recoverFromInvalidSession()
+
+        XCTAssertNil(authState.jwtToken)
+        XCTAssertFalse(authState.isAuthenticated)
+        XCTAssertFalse(authState.isAPIConnected)
+        if case .signedOut = authState.state {
+            XCTAssertTrue(true)
+        } else {
+            XCTFail("Invalid session recovery should return to signed-out state")
+        }
+        XCTAssertEqual(authState.authError, "Your session has expired. Please sign in again.")
+    }
+
+    func testOnboardingPriorsMapToServerSynthesisContractWithoutRawPhone() throws {
+        let defaults = UserDefaults.standard
+        defaults.set("9845127736", forKey: "profile_phone_digits")
+        defaults.set("forge,cap,reloc,voice", forKey: "profile_context_tags")
+        defaults.set("Running Forge and looking at Dubai base by Q3.", forKey: "profile_context_text")
+
+        let priors = try XCTUnwrap(UserPriorsRequest.fromStoredOnboarding(userId: "unit-user", defaults: defaults))
+        XCTAssertEqual(UserPriorsRequest.storedPhoneDigitSum(defaults: defaults), 52)
+        XCTAssertEqual(priors.userId, "unit-user")
+        XCTAssertTrue(priors.projects.contains("Building a company"))
+        XCTAssertTrue(priors.projects.contains("Raising capital"))
+        XCTAssertEqual(priors.careerTarget, "Company building")
+        XCTAssertEqual(priors.location, "Considering relocation")
+        XCTAssertEqual(priors.contextTags, ["forge", "cap", "reloc", "voice"])
+
+        let encoded = try JSONEncoder().encode(priors)
+        let json = try XCTUnwrap(String(data: encoded, encoding: .utf8))
+        XCTAssertTrue(json.contains("\"user_id\""))
+        XCTAssertTrue(json.contains("\"career_target\""))
+        XCTAssertTrue(json.contains("\"context_tags\""))
+        XCTAssertFalse(json.contains("9845127736"))
+    }
     
     // MARK: - Location Tests
     
@@ -367,22 +475,6 @@ final class AstronovaAppTests: XCTestCase {
         XCTAssertEqual(location.country, "Test Country")
         XCTAssertEqual(location.timezone, "America/New_York")
         XCTAssertEqual(location.fullName, "Test City, Test State, Test Country")
-    }
-    
-    // MARK: - Skeleton View Tests
-    
-    func testSkeletonViewCreation() throws {
-        // Test disabled - SkeletonView not available in test target
-        // let skeletonView = SkeletonView()
-        // XCTAssertNotNil(skeletonView)
-        XCTAssertTrue(true) // Placeholder test
-    }
-    
-    func testSkeletonTextCreation() throws {
-        // Test disabled - SkeletonText not available in test target
-        // let skeletonText = SkeletonText(lines: 3, lineHeight: 16, spacing: 8)
-        // XCTAssertNotNil(skeletonText)
-        XCTAssertTrue(true) // Placeholder test
     }
     
     // MARK: - Performance Tests

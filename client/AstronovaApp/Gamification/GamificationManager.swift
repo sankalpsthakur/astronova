@@ -34,7 +34,7 @@ final class GamificationManager: ObservableObject {
         var weeklyChapterKey: String?
         var weeklyChapterCheckIns: Int
         var unlockedCardIds: [String]
-        var milestones: [JourneyMilestone]
+        var milestones: [String]
         var archetype: String?
         var completedWeeklyChallengeWeeks: [String] = []
         var firstLaunchDay: String?
@@ -50,7 +50,7 @@ final class GamificationManager: ObservableObject {
             weeklyChapterKey = loaded.weeklyChapterKey
             weeklyChapterCheckIns = loaded.weeklyChapterCheckIns
             unlockedCardIds = Set(loaded.unlockedCardIds)
-            milestones = Set(loaded.milestones)
+            milestones = Set(loaded.milestones.compactMap(JourneyMilestone.init(rawValue:)))
             archetype = loaded.archetype
             completedWeeklyChallengeWeeks = Set(loaded.completedWeeklyChallengeWeeks)
             firstLaunchDay = loaded.firstLaunchDay
@@ -66,7 +66,7 @@ final class GamificationManager: ObservableObject {
             milestones = []
             archetype = nil
             completedWeeklyChallengeWeeks = []
-            firstLaunchDay = Self.dayKey(Date())
+            firstLaunchDay = DailyProgressionMath.dayKey(Date(), calendar: calendar)
             retentionDay7Tracked = false
         }
 
@@ -108,6 +108,32 @@ final class GamificationManager: ObservableObject {
         isWeeklyChallengeCompleted(for: Date())
     }
 
+    /// Whether the seeker has already completed today's daily-signal focus.
+    var hasCheckedInToday: Bool {
+        hasCheckedIn(on: Date())
+    }
+
+    func hasCheckedIn(on date: Date) -> Bool {
+        DailyProgressionMath.hasCheckedInToday(
+            lastCheckInDay: lastCheckInDay,
+            todayKey: DailyProgressionMath.dayKey(date, calendar: calendar)
+        )
+    }
+
+    /// Weekly chapter progress for the current local week (X/7).
+    var weeklyChapterProgress: DailyProgressionMath.ChapterProgress {
+        weeklyChapterProgress(on: Date())
+    }
+
+    func weeklyChapterProgress(on date: Date) -> DailyProgressionMath.ChapterProgress {
+        DailyProgressionMath.chapterProgress(
+            checkIns: weeklyChapterCheckIns,
+            chapterKey: weeklyChapterKey,
+            currentWeekKey: DailyProgressionMath.weekKey(date, calendar: calendar),
+            target: DailyProgressionMath.weeklyChapterTargetDays
+        )
+    }
+
     func weeklyTheme(for date: Date = Date()) -> WeeklyTheme {
         let week = calendar.component(.weekOfYear, from: date)
         let themes = WeeklyTheme.allCases
@@ -115,7 +141,7 @@ final class GamificationManager: ObservableObject {
     }
 
     func isWeeklyChallengeCompleted(for date: Date) -> Bool {
-        completedWeeklyChallengeWeeks.contains(Self.weekKey(date))
+        completedWeeklyChallengeWeeks.contains(DailyProgressionMath.weekKey(date, calendar: calendar))
     }
 
     func isCardUnlocked(_ card: ArcanaCard) -> Bool {
@@ -132,31 +158,53 @@ final class GamificationManager: ObservableObject {
     // MARK: - Daily Return
 
     /// Returns the daily card and whether this draw was a new check-in (streak/xp awarded).
+    /// Opening or engaging the daily signal marks the local calendar day complete once.
     @discardableResult
     func drawTodaysSignal(now: Date = Date()) -> (card: ArcanaCard, isNewCheckIn: Bool) {
-        let dayKey = Self.dayKey(now)
+        let dayKey = DailyProgressionMath.dayKey(now, calendar: calendar)
         let card = Self.dailyCard(for: dayKey, archetype: archetype)
         currentDailyCard = card
 
-        let isNew = (lastCheckInDay != dayKey)
+        let isNew = !DailyProgressionMath.hasCheckedInToday(lastCheckInDay: lastCheckInDay, todayKey: dayKey)
         if isNew {
-            let didContinue = Self.isYesterdayKey(Self.dayKey(now.addingTimeInterval(-24 * 60 * 60)), comparedTo: lastCheckInDay)
-            streak = didContinue ? (streak + 1) : 1
+            streak = DailyProgressionMath.nextStreak(
+                currentStreak: streak,
+                lastCheckInDay: lastCheckInDay,
+                todayKey: dayKey,
+                calendar: calendar
+            )
             lastCheckInDay = dayKey
 
-            awardXP(15, event: .streakCheckIn, properties: ["day": dayKey])
+            let habitProps = DailyProgressionMath.scrubAnalyticsProperties([
+                "day": dayKey,
+                "streak": "\(streak)",
+                "feature": "daily_signal_check_in",
+                "is_new": "true"
+            ])
+            awardXP(15, event: .streakCheckIn, properties: habitProps)
+            trackHabitFeatureUsed(feature: "daily_signal_check_in", properties: habitProps)
             unlockCardIfNeeded(card)
             unlockMilestone(.firstDailySignal)
 
-            // Retention: weekly chapter completion as narrative progression.
-            let chapterKey = Self.weekKey(now)
-            if weeklyChapterKey != chapterKey {
-                weeklyChapterKey = chapterKey
-                weeklyChapterCheckIns = 0
-            }
-            weeklyChapterCheckIns += 1
-            if weeklyChapterCheckIns == 5 {
-                awardXP(30, event: .weeklyChapterCompleted, properties: ["chapter": chapterKey])
+            // Retention: weekly chapter completion as narrative progression (X/7).
+            let chapterKey = DailyProgressionMath.weekKey(now, calendar: calendar)
+            let chapter = DailyProgressionMath.applyChapterCheckIn(
+                storedKey: weeklyChapterKey,
+                storedCheckIns: weeklyChapterCheckIns,
+                currentWeekKey: chapterKey,
+                target: DailyProgressionMath.weeklyChapterTargetDays
+            )
+            weeklyChapterKey = chapter.key
+            weeklyChapterCheckIns = chapter.checkIns
+            if chapter.justCompleted {
+                let chapterProps = DailyProgressionMath.scrubAnalyticsProperties([
+                    "chapter": chapter.key,
+                    "week": chapter.key,
+                    "check_ins": "\(chapter.checkIns)",
+                    "feature": "weekly_chapter_completed"
+                ])
+                awardXP(30, event: .weeklyChapterCompleted, properties: chapterProps)
+                trackHabitFeatureUsed(feature: "weekly_chapter_completed", properties: chapterProps)
                 unlockMilestone(.weeklyChapterComplete)
             }
         }
@@ -185,7 +233,7 @@ final class GamificationManager: ObservableObject {
     }
 
     func markTimeTravelSnapshot() {
-        let dayKey = Self.dayKey(Date())
+        let dayKey = DailyProgressionMath.dayKey(Date(), calendar: calendar)
         if lastTimeTravelXPDay != dayKey {
             lastTimeTravelXPDay = dayKey
             awardXP(10, event: .timeTravelSnapshotViewed, properties: ["day": dayKey])
@@ -196,64 +244,11 @@ final class GamificationManager: ObservableObject {
         persist()
     }
 
-    func markTempleBookingStarted() {
-        awardXP(25, event: .templeEngagementCompleted, properties: ["stage": "started"])
-        unlockMilestone(.firstTempleBooking)
-        persist()
-    }
-
-    func markTempleBookingCompleted() {
-        awardXP(40, event: .templeEngagementCompleted, properties: ["stage": "completed"])
-        persist()
-    }
-
-    func markTempleBellRung(streak: Int) {
-        awardXP(10, event: .templeBellRung, properties: ["streak": "\(streak)"])
-        unlockMilestone(.firstTempleBellRing)
-        if streak == 7 {
-            awardXP(50, event: .templeBellStreakBonus, properties: ["streak": "7"])
-            unlockMilestone(.templeBellStreak7)
-        }
-        if streak == 30 {
-            awardXP(200, event: .templeBellStreakBonus, properties: ["streak": "30"])
-            unlockMilestone(.templeBellStreak30)
-        }
-        unlockActionCard(for: .calm)
-        markWeeklyChallengeIfNeeded(for: .calm)
-        markTempleEngagementSessionCompleted(stage: "temple_bell", properties: ["streak": "\(streak)"])
-        persist()
-    }
-
-    func markDIYPoojaCompleted(poojaName: String) {
-        awardXP(25, event: .diyPoojaCompleted, properties: ["pooja_name": poojaName])
-        unlockMilestone(.firstDIYPooja)
-        markTempleEngagementSessionCompleted(
-            stage: "diy_pooja",
-            properties: ["pooja_name": poojaName]
-        )
-        persist()
-    }
-
-    func markMuhuratChecked() {
-        awardXP(5, event: .muhuratChecked, properties: nil)
-        markTempleEngagementSessionCompleted(stage: "muhurat_check", properties: nil)
-        persist()
-    }
-
-    func markVedicEntryRead(entryId: String) {
-        awardXP(5, event: .vedicEntryRead, properties: ["entry_id": entryId])
-        markTempleEngagementSessionCompleted(
-            stage: "vedic_entry_read",
-            properties: ["entry_id": entryId]
-        )
-        persist()
-    }
-
     // MARK: - Internals
 
     private func ensureRetentionTracking(now: Date = Date()) {
         let firstDay = firstLaunchDay ?? {
-            let launchDay = Self.dayKey(now)
+            let launchDay = DailyProgressionMath.dayKey(now, calendar: calendar)
             firstLaunchDay = launchDay
             return launchDay
         }()
@@ -262,7 +257,7 @@ final class GamificationManager: ObservableObject {
             return
         }
 
-        guard let launchDate = Self.dayDate(firstDay) else { return }
+        guard let launchDate = DailyProgressionMath.dayDate(firstDay, calendar: calendar) else { return }
         let daysSinceLaunch = calendar.dateComponents([.day], from: launchDate, to: now).day ?? 0
         if daysSinceLaunch >= retentionDayThreshold {
             retentionDay7Tracked = true
@@ -275,24 +270,15 @@ final class GamificationManager: ObservableObject {
     }
 
     private func unlockActionCard(for theme: WeeklyTheme) {
-        let key = "\(Self.dayKey(Date()))-\(theme.rawValue)"
+        let key = "\(DailyProgressionMath.dayKey(Date(), calendar: calendar))-\(theme.rawValue)"
         let idx = abs(key.hashValue) % Self.arcanaDeck.count
         unlockCardIfNeeded(Self.arcanaDeck[idx])
-    }
-
-    private func markTempleEngagementSessionCompleted(
-        stage: String,
-        properties: [String: String]? = nil
-    ) {
-        var payload: [String: String] = ["stage": stage]
-        properties?.forEach { payload[$0.key] = $0.value }
-        awardXP(0, event: .templeEngagementCompleted, properties: payload)
     }
 
     private func markWeeklyChallengeIfNeeded(for theme: WeeklyTheme, date: Date = Date()) {
         guard weeklyTheme(for: date) == theme else { return }
 
-        let key = Self.weekKey(date)
+        let key = DailyProgressionMath.weekKey(date, calendar: calendar)
         let inserted = completedWeeklyChallengeWeeks.insert(key).inserted
         if inserted {
             awardXP(
@@ -306,6 +292,13 @@ final class GamificationManager: ObservableObject {
         }
     }
 
+    /// Portfolio-safe habit engagement (no names/birth data).
+    private func trackHabitFeatureUsed(feature: String, properties: [String: String]) {
+        var props = DailyProgressionMath.scrubAnalyticsProperties(properties)
+        props["feature"] = feature
+        PortfolioAnalytics.shared.track(.featureUsed, properties: props)
+    }
+
     private func pruneChallengeHistoryIfNeeded() {
         guard completedWeeklyChallengeWeeks.count > maxChallengeHistory else { return }
         let overflow = completedWeeklyChallengeWeeks.count - maxChallengeHistory
@@ -317,7 +310,7 @@ final class GamificationManager: ObservableObject {
 
     private func migrateChallengeHistory() {
         if firstLaunchDay == nil {
-            firstLaunchDay = Self.dayKey(Date())
+            firstLaunchDay = DailyProgressionMath.dayKey(Date(), calendar: calendar)
         }
         if completedWeeklyChallengeWeeks.count > maxChallengeHistory {
             pruneChallengeHistoryIfNeeded()
@@ -358,42 +351,13 @@ final class GamificationManager: ObservableObject {
             weeklyChapterKey: weeklyChapterKey,
             weeklyChapterCheckIns: weeklyChapterCheckIns,
             unlockedCardIds: Array(unlockedCardIds),
-            milestones: Array(milestones),
+            milestones: milestones.map(\.rawValue),
             archetype: archetype,
             completedWeeklyChallengeWeeks: Array(completedWeeklyChallengeWeeks),
             firstLaunchDay: firstLaunchDay,
             retentionDay7Tracked: retentionDay7Tracked
         )
         Self.save(state, storageKey: storageKey)
-    }
-
-    private static func dayKey(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
-    }
-
-    private static func dayDate(_ dayKey: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: dayKey)
-    }
-
-    private static func weekKey(_ date: Date) -> String {
-        let calendar = Calendar.current
-        let comps = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        let y = comps.yearForWeekOfYear ?? calendar.component(.year, from: date)
-        let w = comps.weekOfYear ?? calendar.component(.weekOfYear, from: date)
-        return "\(y)-W\(w)"
-    }
-
-    private static func isYesterdayKey(_ yesterdayKey: String, comparedTo lastKey: String?) -> Bool {
-        guard let lastKey else { return false }
-        return yesterdayKey == lastKey
     }
 
     private static func dailyCard(for dayKey: String, archetype: String?) -> ArcanaCard {

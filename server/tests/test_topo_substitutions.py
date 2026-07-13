@@ -10,6 +10,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from utils.time_utils import utc_now_naive
 
 try:  # pragma: no cover - optional dep
     import swisseph as _swe  # noqa: F401
@@ -49,7 +50,7 @@ def test_void_end_time_is_in_the_future(client):
     data = resp.get_json()
     iso = data["void_end_time_iso"].rstrip("Z")
     void_dt = datetime.fromisoformat(iso)
-    now = datetime.utcnow()
+    now = utc_now_naive()
     # Must be in the future, capped at moon's max sign-residence (~2.5 days).
     assert void_dt > now
     assert void_dt - now < timedelta(hours=72)
@@ -103,7 +104,7 @@ def test_computed_at_is_recent(client):
     resp = client.get("/api/v1/ephemeris/topo-substitutions")
     data = resp.get_json()
     stamped = datetime.fromisoformat(data["computed_at_iso"].rstrip("Z"))
-    now = datetime.utcnow()
+    now = utc_now_naive()
     delta = abs((now - stamped).total_seconds())
     assert delta < 5, f"computed_at_iso drifted {delta}s from server clock"
 

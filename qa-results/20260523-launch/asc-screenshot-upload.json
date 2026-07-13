@@ -1,0 +1,131 @@
+{
+  "startedAt": "2026-05-23T15:01:43Z",
+  "versionId": "1577f289-33ba-4b51-9143-d488d8020ed9",
+  "sets": [
+    {
+      "displayType": "APP_IPHONE_67",
+      "setId": "a85f2e38-3d6d-4368-8e10-81d2490828c8",
+      "deleted": [
+        "801a500b-503b-4842-8eac-606a32971f14",
+        "9a70f847-26b5-4757-a021-c1147e9fbfa5",
+        "cb8132d3-32a7-4dca-b45b-8be279fbddaf",
+        "efd81661-2ba6-4689-90c5-fefa11be10d3",
+        "2ae38689-c152-478c-a71f-a1e8789e6d56",
+        "56725c52-9bc4-4731-b345-9fe7c00ff2cd"
+      ],
+      "uploaded": [
+        {
+          "id": "35f17107-dad6-4575-be80-6e7e96b7f067",
+          "fileName": "01_hero.png",
+          "fileSize": 2203339,
+          "checksum": "6fd709217a3dd72379ac1a278c7764c1",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "93bfe1bb-57ec-4131-9b33-d08e0042ef49",
+          "fileName": "02_valueprop.png",
+          "fileSize": 3011988,
+          "checksum": "2cee034c79aef9355c9402ed648a3735",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "9df83fcf-9ef1-4558-8cc5-3c76312aa236",
+          "fileName": "03_painpoint.png",
+          "fileSize": 534075,
+          "checksum": "7d0d00dafe37a14fea335957b29b99b0",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "ed3c1edf-e171-4696-a2d6-03d2aa7026c5",
+          "fileName": "04_benefit.png",
+          "fileSize": 389457,
+          "checksum": "b0d624c7bc2f486e8dbe9d50297cfe04",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "2bcb05db-2e36-4a12-a04a-32106961cdf9",
+          "fileName": "05_trust.png",
+          "fileSize": 412607,
+          "checksum": "333dc8e27b8cbd07e02b55b37fe52d6d",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "3f40def4-6a05-4b21-b974-8ac119c17cab",
+          "fileName": "06_cta.png",
+          "fileSize": 694915,
+          "checksum": "745629b74c663b4cb8a776ed158e0d7e",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        }
+      ]
+    },
+    {
+      "displayType": "APP_IPHONE_65",
+      "setId": "c6443cf5-bf29-4dac-9c57-83c2899a6983",
+      "deleted": [
+        "512f7d83-df0f-4efc-96bc-2d5a485abdc7",
+        "767388f0-b2be-49ad-a5e2-28f4905b0c20",
+        "69fece96-9c86-4f6e-9ed6-264f645640b9",
+        "b8aad421-c241-4a6e-a5f0-149798c8850e",
+        "ed522993-e4f8-4754-9312-6de2dcc069c7",
+        "7d9364f1-7b66-478c-a938-1ddd2c52b973"
+      ],
+      "uploaded": [
+        {
+          "id": "b4a38236-b4c9-4f76-b997-2af3535f360e",
+          "fileName": "01_hero.png",
+          "fileSize": 1599668,
+          "checksum": "d0833ff9b811a1d86ae6c3e647e9023c",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "3faf5f46-4341-4e63-8f62-bd6a33307ff0",
+          "fileName": "02_valueprop.png",
+          "fileSize": 2146475,
+          "checksum": "7bf76d266ed5bb98b4041c0d1401fded",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "8a7165ac-9308-4b6b-ae2f-6dae92c0bf00",
+          "fileName": "03_painpoint.png",
+          "fileSize": 916916,
+          "checksum": "7d035246d004df17456c5c1c9baccde2",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "d97b7a35-0771-448a-b52b-7078b03766da",
+          "fileName": "04_benefit.png",
+          "fileSize": 431233,
+          "checksum": "8789f7888d3a8bdaf2016fe32f00957b",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "d2a7a9f5-49b6-410b-b407-e1298d52c99e",
+          "fileName": "05_trust.png",
+          "fileSize": 515858,
+          "checksum": "23df13696fb0810ead5ec5f2eb0f3680",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        },
+        {
+          "id": "9b8aea64-c3b3-48ed-b787-38859bcc1c72",
+          "fileName": "06_cta.png",
+          "fileSize": 687924,
+          "checksum": "b0a1ee15cab22c478cd918debee847b3",
+          "state": "UPLOAD_COMPLETE",
+          "finalState": "COMPLETE"
+        }
+      ]
+    }
+  ],
+  "finishedAt": "2026-05-23T15:02:31Z"
+}

@@ -1,0 +1,106 @@
+{
+  "checkedAt": "2026-05-23T15:43:55Z",
+  "versionId": "1577f289-33ba-4b51-9143-d488d8020ed9",
+  "appStoreVersionResponse": {
+    "status": 200,
+    "data": {
+      "platform": "IOS",
+      "versionString": "1.0",
+      "appStoreState": "PREPARE_FOR_SUBMISSION",
+      "appVersionState": "PREPARE_FOR_SUBMISSION",
+      "copyright": "© 2026 Sankalp Thakur. All rights reserved.",
+      "reviewType": "APP_STORE",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null,
+      "usesIdfa": false,
+      "downloadable": true,
+      "createdDate": "2025-06-08T04:10:05-07:00"
+    }
+  },
+  "reviewSubmissionsResponse": {
+    "status": 200,
+    "count": 5
+  },
+  "reviewSubmissions": [
+    {
+      "id": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+      "state": "READY_FOR_REVIEW",
+      "readyForReview": null,
+      "createdDate": null,
+      "platform": null
+    },
+    {
+      "id": "baf472e0-1891-4014-960f-c8cf4cbeb62b",
+      "state": "READY_FOR_REVIEW",
+      "readyForReview": null,
+      "createdDate": null,
+      "platform": null
+    },
+    {
+      "id": "4829f0a3-5492-436b-ac3c-b01147155e91",
+      "state": "READY_FOR_REVIEW",
+      "readyForReview": null,
+      "createdDate": null,
+      "platform": null
+    },
+    {
+      "id": "b4a24de4-09ec-41d5-b977-b02b83f9f7d6",
+      "state": "READY_FOR_REVIEW",
+      "readyForReview": null,
+      "createdDate": null,
+      "platform": null
+    },
+    {
+      "id": "cfdc0ae3-48fa-45ec-a8f5-c4f503144b50",
+      "state": "READY_FOR_REVIEW",
+      "readyForReview": null,
+      "createdDate": null,
+      "platform": "IOS"
+    }
+  ],
+  "submissionWithRelationships": [],
+  "submitPatchExisting": {
+    "status": 409,
+    "body": {
+      "errors": [
+        {
+          "id": "0600ddee-57c7-4789-a81e-4e4bcb033b32",
+          "status": "409",
+          "code": "ENTITY_ERROR.RELATIONSHIP.REQUIRED",
+          "title": "Relationship is required",
+          "detail": "App 6746982743 must have an approved appStoreVersions for platform IOS, or an appStoreVersions must be included in this review submission.",
+          "source": {
+            "pointer": "/data/relationships/appStoreVersionForReview"
+          }
+        }
+      ]
+    }
+  },
+  "createDraft": {
+    "status": 409,
+    "body": {
+      "errors": [
+        {
+          "id": "7b21c1cb-fcd6-4b96-bf27-abfe84aa0c9b",
+          "status": "409",
+          "code": "STATE_ERROR.ENTITY_STATE_INVALID",
+          "title": "apps with id '6746982743' is not in valid state.",
+          "detail": "This resource cannot be reviewed, please check associated errors to see why.",
+          "meta": {
+            "associatedErrors": {
+              "/apps/6746982743": [
+                {
+                  "id": "bd8f8a1c-902a-4c9f-ae92-7b4fd223e091",
+                  "status": "409",
+                  "code": "STATE_ERROR.CONCURRENT_REVIEW_SUBMISSION_LIMIT_EXCEEDED",
+                  "title": "ReviewSubmission creation concurrency limit is reached",
+                  "detail": "Unable to create reviewSubmission for appId=6746982743 reviewSubmissionType=DEFAULT platform=ANY as maximum limit=5 of concurrency has reached"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -34,7 +34,7 @@ struct TopoSubstitutions: Codable, Equatable {
 /// `refreshIfStale()` — never blocking the UI — and the next render picks
 /// up the fresh values. On network failure the caller falls back to the
 /// deterministic stubs in TerrainComputer.
-final class TopoSubstitutionsService {
+final class TopoSubstitutionsService: @unchecked Sendable {
     static let shared = TopoSubstitutionsService()
 
     private let cacheKey = "topo.substitutions.cache.v1"
@@ -48,6 +48,9 @@ final class TopoSubstitutionsService {
     }()
 
     private let queue = DispatchQueue(label: "TopoSubstitutionsService", qos: .utility)
+
+    // Access is serialized through `queue`; async fetch tasks only cross the
+    // boundary to persist the result and clear this flag back on the queue.
     private var inFlight: Bool = false
 
     private init() {

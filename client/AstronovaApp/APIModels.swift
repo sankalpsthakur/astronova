@@ -592,19 +592,60 @@ struct SubscriptionStatusResponse: Codable {
     let updatedAt: String?
 }
 
-// MARK: - Payments / Entitlement Models (server-authoritative)
-
-/// Server response to POST /api/v1/payments/verify after a StoreKit purchase.
-struct PaymentVerifyResponse: Codable {
-    struct Entitlement: Codable {
-        let hasPremium: Bool
-    }
-    let status: String
-    let entitlement: Entitlement
+struct SubscriptionSyncRequest: Codable {
+    let productId: String
+    let transactionId: String
+    let originalTransactionId: String?
+    let environment: String?
+    let signedTransactionJWS: String
 }
 
-/// Server response to GET /api/v1/payments/credits.
-struct CreditBalanceResponse: Codable {
+struct SubscriptionSyncResponse: Codable {
+    struct Entitlement: Codable {
+        let hasPremium: Bool
+        let source: String?
+    }
+
+    let isActive: Bool
+    let productId: String?
+    let updatedAt: String?
+    let entitlement: Entitlement?
+}
+
+struct ReportEntitlementSyncRequest: Codable {
+    let productId: String
+    let transactionId: String
+    let originalTransactionId: String?
+    let environment: String?
+    let signedTransactionJWS: String
+}
+
+struct ReportEntitlementSyncResponse: Codable {
+    let isAvailable: Bool
+    let productId: String?
+    let reportType: String?
+    let transactionId: String?
+    let consumedReportId: String?
+    let createdAt: String?
+}
+
+struct OracleCreditSyncRequest: Codable {
+    let productId: String
+    let transactionId: String
+    let originalTransactionId: String?
+    let environment: String?
+    let signedTransactionJWS: String
+}
+
+struct OracleCreditSyncResponse: Codable {
+    let productId: String
+    let balance: Int
+    let creditedUnits: Int
+    let replayed: Bool
+    let updatedAt: String
+}
+
+struct OracleCreditBalanceResponse: Codable {
     let balance: Int
 }
 

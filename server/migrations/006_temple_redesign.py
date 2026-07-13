@@ -16,7 +16,8 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from datetime import datetime
+
+from utils.time_utils import utc_now_iso
 
 VERSION = 6
 NAME = "temple_redesign"
@@ -100,7 +101,7 @@ def _seed_vedic_entries(cur: sqlite3.Cursor) -> None:
     if cur.fetchone()[0] > 0:
         return
 
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
 
     entries = [
         # ===== Dharma (10) =====
@@ -592,9 +593,8 @@ def _seed_vedic_entries(cur: sqlite3.Cursor) -> None:
 
 def _seed_pooja_steps(cur: sqlite3.Cursor) -> None:
     import json
-    from datetime import datetime
 
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
 
     # Steps for existing pooja types
     steps_data = {

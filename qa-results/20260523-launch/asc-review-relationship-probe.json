@@ -1,0 +1,20 @@
+{
+  "readySubmission": "821c7af6-6834-4242-a0e1-1f685b89c4b9",
+  "relationGet": {
+    "status": {
+      "errors": [
+        {
+          "id": "d128d367-dc74-4500-a1b3-c80cb1baa8d3",
+          "status": "403",
+          "code": "FORBIDDEN_ERROR",
+          "title": "The given operation is not allowed",
+          "detail": "The relationship 'appStoreVersionForReview' has no allowed operations defined."
+        }
+      ]
+    }
+  },
+  "patchRelationships": {
+    "status": 409
+  },
+  "createWithVersion": null
+}

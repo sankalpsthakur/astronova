@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -21,23 +22,26 @@ from flask_babel import gettext as _
 from db import get_connection
 from middleware import require_auth
 from routes.admin import require_admin_token
+from utils.time_utils import utc_now_iso, utc_now_naive
 
 logger = logging.getLogger(__name__)
 temple_bp = Blueprint("temple", __name__)
 
 
 def get_base_url() -> str:
-    """Get base URL for session links (environment-aware)"""
-    import os
-    # Check if we're in production (Render sets PORT env var)
-    port = os.environ.get("PORT", "8080")
+    """Get the public base URL for generated session links."""
+    configured = (
+        os.environ.get("PUBLIC_BASE_URL")
+        or os.environ.get("ASTRONOVA_PUBLIC_BASE_URL")
+        or os.environ.get("RENDER_EXTERNAL_URL")
+    )
+    if configured:
+        return configured.rstrip("/")
 
-    # If running on default port 8080 locally, use localhost
-    if port == "8080":
-        return "http://127.0.0.1:8080"
+    if os.environ.get("FLASK_ENV", "").lower() == "development":
+        return os.environ.get("ASTRONOVA_LOCAL_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
 
-    # Production: use onrender.com domain
-    return "https://astronova.onrender.com"
+    return "https://astronova-ghcr.onrender.com"
 
 
 # =============================================================================
@@ -120,7 +124,7 @@ def _log_contact_filter(
         conn = get_connection()
         try:
             cur = conn.cursor()
-            now = datetime.utcnow().isoformat()
+            now = utc_now_iso()
             log_id = str(uuid.uuid4())
 
             cur.execute("""
@@ -371,8 +375,8 @@ def get_pandit_availability(pandit_id: str):
         start_date = date_str
         end_date = date_str
     else:
-        start_date = datetime.utcnow().strftime("%Y-%m-%d")
-        end_date = (datetime.utcnow() + timedelta(days=7)).strftime("%Y-%m-%d")
+        start_date = utc_now_naive().strftime("%Y-%m-%d")
+        end_date = (utc_now_naive() + timedelta(days=7)).strftime("%Y-%m-%d")
 
     cur.execute("""
         SELECT scheduled_date, scheduled_time
@@ -497,7 +501,7 @@ def create_booking():
 
         # Create booking
         booking_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = utc_now_iso()
 
         cur.execute("""
             INSERT INTO pooja_bookings
@@ -697,7 +701,7 @@ def cancel_booking(booking_id: str):
         }), 400
 
     # Update status
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     cur.execute("""
         UPDATE pooja_bookings
         SET status = 'cancelled',
@@ -841,7 +845,7 @@ def generate_session_link(booking_id: str):
     base_url = get_base_url()
     session_link = f"{base_url}/api/v1/temple/session/{session_id}"
 
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
 
     # Create session record
     cur.execute("""
@@ -1157,7 +1161,7 @@ def get_muhurats():
 
     date_str = request.args.get("date")
     if not date_str:
-        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        date_str = utc_now_naive().strftime("%Y-%m-%d")
 
     try:
         target_date = datetime.strptime(date_str, "%Y-%m-%d")
@@ -1388,7 +1392,7 @@ def record_bell_ring():
     data = request.get_json() or {}
 
     activity_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
 
     activity_data = json.dumps({
         "streak": data.get("streak", 0),
@@ -1466,7 +1470,7 @@ def _count_active_shastriji_bookings(cur) -> int:
 
 def _calculate_next_shastriji_slot(cur, now: datetime | None = None) -> datetime:
     """Choose the next slot using both queue depth and the latest scheduled active booking."""
-    now = now or datetime.utcnow()
+    now = now or utc_now_naive()
     queue_count = _count_active_shastriji_bookings(cur)
     queue_based_slot = now + timedelta(minutes=max(2, queue_count * SLOT_DURATION_MINUTES))
 
@@ -1704,7 +1708,7 @@ def book_shastriji():
 
     # Create booking
     booking_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = utc_now_naive()
     now_iso = now.isoformat()
     scheduled_dt = _calculate_next_shastriji_slot(cur, now=now)
     scheduled_date = scheduled_dt.strftime("%Y-%m-%d")
@@ -1834,7 +1838,7 @@ def update_call_state(booking_id: str):
             "allowedTransitions": allowed,
         }), 400
 
-    now = datetime.utcnow()
+    now = utc_now_naive()
     now_iso = now.isoformat()
 
     # Apply state-specific side effects

@@ -8,7 +8,7 @@ info:
     email: admin@100xai.engineering
     
 servers:
-  - url: https://astronova.onrender.com
+  - url: https://astronova-ghcr.onrender.com
     description: Production server
   - url: http://localhost:8080
     description: Development server
@@ -23,7 +23,7 @@ components:
       type: apiKey
       in: header
       name: X-Admin-Token
-      description: Admin API token. Production admin endpoints also accept Authorization: Bearer <ADMIN_API_TOKEN>.
+      description: "Admin API token. Production admin endpoints also accept Authorization: Bearer <ADMIN_API_TOKEN>."
       
   schemas:
     Error:
@@ -1199,11 +1199,6 @@ paths:
                     format: date-time
         '401':
           description: Authorization required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /api/v1/auth/logout:
     post:
       summary: Logout (no-op)
@@ -1243,12 +1238,9 @@ paths:
       summary: Get saved birth data
       tags:
         - Chat
-      parameters:
-        - in: query
-          name: userId
-          schema:
-            type: string
-          description: User id (or provide X-User-Id header)
+      security:
+        - bearerAuth: []
+      description: Uses the authenticated Bearer JWT subject. userId query parameters and X-User-Id headers are ignored for authorization.
       responses:
         '200':
           description: Birth data payload
@@ -1261,8 +1253,8 @@ paths:
                     type: boolean
                   birthData:
                     type: object
-        '400':
-          description: Missing userId
+        '401':
+          description: Authorization required
           content:
             application/json:
               schema:
@@ -1271,6 +1263,9 @@ paths:
       summary: Save birth data for personalization
       tags:
         - Chat
+      security:
+        - bearerAuth: []
+      description: Saves birth data for the authenticated Bearer JWT subject. userId fields and X-User-Id headers are ignored for authorization.
       requestBody:
         required: true
         content:
@@ -1278,11 +1273,11 @@ paths:
             schema:
               type: object
               required:
-                - userId
                 - birthData
               properties:
                 userId:
                   type: string
+                  description: Ignored compatibility field; the authenticated JWT subject is used.
                 birthData:
                   $ref: '#/components/schemas/BirthData'
       responses:
@@ -1297,6 +1292,12 @@ paths:
                     type: string
                   message:
                     type: string
+        '401':
+          description: Authorization required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/v1/horoscope/daily:
     get:
@@ -1709,7 +1710,7 @@ paths:
 
   /api/v1/astrology/dashas/complete:
     post:
-      summary: Get Time Travel dashas (complete)
+      summary: Get Timeline dashas (complete)
       tags:
         - Astrology
       requestBody:
@@ -2062,6 +2063,453 @@ paths:
           description: Authorization required
         '403':
           description: Authenticated user does not match requested user
+
+  /api/v1/subscription/sync:
+    post:
+      summary: Sync native StoreKit Pro entitlement
+      tags:
+        - Subscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - transactionId
+                - signedTransactionJWS
+              properties:
+                productId:
+                  type: string
+                  enum:
+                    - astronova_pro_monthly
+                    - astronova_pro_12_month_commitment
+                transactionId:
+                  type: string
+                  description: StoreKit transaction identifier from the native client
+                signedTransactionJWS:
+                  type: string
+                  description: Apple-signed StoreKit transaction JWS used for server-side verification before entitlement mutation
+                originalTransactionId:
+                  type: string
+                  description: StoreKit original transaction identifier for restore/idempotency
+                environment:
+                  type: string
+                  description: StoreKit environment, such as Sandbox or Production
+      responses:
+        '200':
+          description: Server premium entitlement activated for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isActive:
+                    type: boolean
+                  productId:
+                    type: string
+                  updatedAt:
+                    type: string
+                  entitlement:
+                    type: object
+                    properties:
+                      hasPremium:
+                        type: boolean
+                      source:
+                        type: string
+        '400':
+          description: Invalid payload or unsupported product
+        '401':
+          description: Authorization required
+        '409':
+          description: Verified transaction was already claimed by a conflicting delivery
+
+  /api/v1/report-entitlements/sync:
+    post:
+      summary: Sync native StoreKit individual report entitlement
+      tags:
+        - Subscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - transactionId
+                - signedTransactionJWS
+              properties:
+                productId:
+                  type: string
+                  enum:
+                    - report_general
+                    - report_love
+                    - report_career
+                    - report_money
+                    - report_health
+                    - report_family
+                    - report_spiritual
+                transactionId:
+                  type: string
+                  description: StoreKit transaction identifier from the native client
+                signedTransactionJWS:
+                  type: string
+                  description: Apple-signed StoreKit transaction JWS used for server-side verification before entitlement mutation
+                originalTransactionId:
+                  type: string
+                  description: StoreKit original transaction identifier for restore/idempotency
+                environment:
+                  type: string
+                  description: StoreKit environment, such as Sandbox or Production
+      responses:
+        '200':
+          description: Individual report entitlement is available for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isAvailable:
+                    type: boolean
+                  productId:
+                    type: string
+                  reportType:
+                    type: string
+                  transactionId:
+                    type: string
+                  consumedReportId:
+                    type: string
+                    nullable: true
+                  createdAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid payload or unsupported product
+        '401':
+          description: Authorization required
+        '409':
+          description: Verified transaction was already claimed by a conflicting delivery
+
+  /api/v1/oracle-credits/status:
+    get:
+      summary: Get durable Oracle credit balance
+      tags:
+        - Subscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authoritative credit balance for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - balance
+                properties:
+                  balance:
+                    type: integer
+                    minimum: 0
+        '401':
+          description: Authorization required
+
+  /api/v1/oracle-credits/sync:
+    post:
+      summary: Deliver a verified StoreKit Oracle credit purchase
+      tags:
+        - Subscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - transactionId
+                - signedTransactionJWS
+              properties:
+                productId:
+                  type: string
+                  enum:
+                    - chat_credits_5
+                    - chat_credits_15
+                    - chat_credits_50
+                transactionId:
+                  type: string
+                originalTransactionId:
+                  type: string
+                environment:
+                  type: string
+                signedTransactionJWS:
+                  type: string
+                  description: Apple-signed transaction; never logged or persisted
+      responses:
+        '200':
+          description: Durable idempotent credit delivery result
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - productId
+                  - balance
+                  - creditedUnits
+                  - replayed
+                  - updatedAt
+                properties:
+                  productId:
+                    type: string
+                  balance:
+                    type: integer
+                    minimum: 0
+                  creditedUnits:
+                    type: integer
+                    minimum: 0
+                  replayed:
+                    type: boolean
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid, unsupported, or unverified transaction
+        '401':
+          description: Authorization required
+        '409':
+          description: Verified transaction was already claimed by a conflicting delivery
+
+  /api/v1/numerology/report:
+    post:
+      summary: Generate Loshu numerology report
+      tags:
+        - Numerology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dob
+              properties:
+                dob:
+                  type: string
+                  example: "1999-12-24"
+                phone_digit_sum:
+                  type: integer
+      responses:
+        '200':
+          description: Numerology report generated
+        '400':
+          description: Invalid date of birth or payload
+
+  /api/v1/rajayoga/report:
+    post:
+      summary: Generate full Raja Yoga report
+      tags:
+        - Raja Yoga
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - planet_data
+                - lagna
+              properties:
+                planet_data:
+                  type: object
+                lagna:
+                  type: string
+      responses:
+        '200':
+          description: Raja Yoga report generated
+        '400':
+          description: Invalid chart payload
+
+  /api/v1/rajayoga/matrix:
+    post:
+      summary: Generate Raja Yoga optimization matrix
+      tags:
+        - Raja Yoga
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - planet_data
+                - lagna
+              properties:
+                planet_data:
+                  type: object
+                lagna:
+                  type: string
+      responses:
+        '200':
+          description: Optimization matrix generated
+        '400':
+          description: Invalid chart payload
+
+  /api/v1/predictions/timeline:
+    post:
+      summary: Generate prediction timeline
+      tags:
+        - Predictions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - birth_data
+                - dasha_state
+                - start_date
+                - end_date
+              properties:
+                birth_data:
+                  type: object
+                dasha_state:
+                  type: object
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                user_priors:
+                  type: object
+      responses:
+        '200':
+          description: Prediction timeline generated
+        '400':
+          description: Invalid prediction request
+
+  /api/v1/predictions/peaks:
+    get:
+      summary: Get lightweight prediction peak windows
+      tags:
+        - Predictions
+      parameters:
+        - in: query
+          name: birth_date
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: lat
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: lon
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: lookahead_months
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Peak windows returned
+        '400':
+          description: Invalid query parameters
+
+  /api/v1/synthesis/mirror:
+    post:
+      summary: Compose full Cosmic Mirror response
+      tags:
+        - Synthesis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - birth_data
+                - planet_data
+                - lagna
+                - dasha_state
+              properties:
+                birth_data:
+                  type: object
+                planet_data:
+                  type: object
+                lagna:
+                  type: string
+                dasha_state:
+                  type: object
+                user_priors:
+                  type: object
+                phone_digit_sum:
+                  type: integer
+      responses:
+        '200':
+          description: Cosmic Mirror response composed
+        '400':
+          description: Invalid synthesis request
+        '503':
+          description: Synthesis engine unavailable
+
+  /api/v1/synthesis/narrative:
+    post:
+      summary: Compose lightweight synthesis narrative
+      tags:
+        - Synthesis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - birth_data
+                - planet_data
+                - lagna
+                - dasha_state
+              properties:
+                birth_data:
+                  type: object
+                planet_data:
+                  type: object
+                lagna:
+                  type: string
+                dasha_state:
+                  type: object
+                user_priors:
+                  type: object
+                phone_digit_sum:
+                  type: integer
+      responses:
+        '200':
+          description: Narrative and archetype generated
+        '400':
+          description: Invalid synthesis request
+        '503':
+          description: Synthesis engine unavailable
+
+  /api/v1/synthesis/status:
+    get:
+      summary: Check synthesis sub-service availability
+      tags:
+        - Synthesis
+      responses:
+        '200':
+          description: Synthesis service status
 
   /api/v1/system-status:
     get:
@@ -2425,7 +2873,7 @@ paths:
   /api/v1/seed-test-user:
     post:
       summary: Seed a test user for development or authorized App Store review setup
-      description: Allowed without an admin token only outside production. In production, ADMIN_API_TOKEN is required via X-Admin-Token or Authorization: Bearer.
+      description: "Allowed without an admin token only outside production. In production, ADMIN_API_TOKEN is required via X-Admin-Token or Authorization: Bearer."
       tags:
         - Admin
       security:
@@ -2772,7 +3220,7 @@ tags:
   - name: System
     description: System health and status endpoints
   - name: Astrology
-    description: Kundali, transits, and Time Travel dashas
+    description: Kundali, transits, and Timeline dashas
   - name: Authentication
     description: User authentication and authorization
   - name: Chat

@@ -630,7 +630,8 @@ class APIServices: ObservableObject, APIServicesProtocol {
     /// Get user reports
     func getUserReports(userId: String) async throws -> [DetailedReport] {
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+            TestEnvironment.shared.hasArgument(.mockPurchases) {
             return loadMockReports()
         }
         #endif
@@ -647,6 +648,28 @@ class APIServices: ObservableObject, APIServicesProtocol {
         var reports = loadMockReports()
         reports.insert(report, at: 0)
         saveMockReports(reports)
+    }
+
+    @discardableResult
+    func recordMockReportPurchase(
+        for offer: ShopCatalog.Report,
+        userId: String,
+        generatedAt: String = ISO8601DateFormatter().string(from: Date())
+    ) -> DetailedReport {
+        let report = DetailedReport(
+            reportId: UUID().uuidString,
+            type: ShopCatalog.reportType(for: offer),
+            title: offer.title,
+            content: "Purchase confirmed. Your report will appear after sync.",
+            summary: "Mock report generated for UI testing.",
+            keyInsights: ["Mock report ready"],
+            downloadUrl: nil,
+            generatedAt: generatedAt,
+            userId: userId,
+            status: "completed"
+        )
+        appendMockReport(report)
+        return report
     }
 
     private func loadMockReports() -> [DetailedReport] {
@@ -803,28 +826,86 @@ class APIServices: ObservableObject, APIServicesProtocol {
         return response.isActive
     }
 
-    /// Verify a StoreKit 2 signed transaction with the server, which is the
-    /// source of truth for entitlements. Returns whether the server now
-    /// recognizes the user as premium.
-    @discardableResult
-    func verifyTransaction(signedTransaction: String) async throws -> Bool {
-        struct Body: Encodable { let signedTransaction: String }
-        let response = try await networkClient.request(
-            endpoint: "/api/v1/payments/verify",
-            method: HTTPMethod.POST,
-            body: Body(signedTransaction: signedTransaction),
-            responseType: PaymentVerifyResponse.self
+    /// Sync a StoreKit-verified Pro entitlement to the server so premium gates
+    /// use the same state after purchase/restore as the native UI.
+    func syncSubscriptionEntitlement(
+        productId: String,
+        transactionId: String,
+        originalTransactionId: String?,
+        environment: String?,
+        signedTransactionJWS: String
+    ) async throws -> SubscriptionSyncResponse {
+        let request = SubscriptionSyncRequest(
+            productId: productId,
+            transactionId: transactionId,
+            originalTransactionId: originalTransactionId,
+            environment: environment,
+            signedTransactionJWS: signedTransactionJWS
         )
-        return response.entitlement.hasPremium
+
+        return try await networkClient.request(
+            endpoint: "/api/v1/subscription/sync",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: SubscriptionSyncResponse.self
+        )
     }
 
-    /// Fetch the server-held chat-credit balance (the authoritative count).
-    func fetchCreditBalance() async throws -> Int {
+    /// Sync a StoreKit-verified individual report entitlement before trying
+    /// server-side report generation for non-Pro users.
+    func syncReportEntitlement(
+        productId: String,
+        transactionId: String,
+        originalTransactionId: String?,
+        environment: String?,
+        signedTransactionJWS: String
+    ) async throws -> ReportEntitlementSyncResponse {
+        let request = ReportEntitlementSyncRequest(
+            productId: productId,
+            transactionId: transactionId,
+            originalTransactionId: originalTransactionId,
+            environment: environment,
+            signedTransactionJWS: signedTransactionJWS
+        )
+
+        return try await networkClient.request(
+            endpoint: "/api/v1/report-entitlements/sync",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: ReportEntitlementSyncResponse.self
+        )
+    }
+
+    /// Deliver a verified consumable transaction to the server-owned credit
+    /// ledger. The returned absolute balance is authoritative.
+    func syncOracleCredits(
+        productId: String,
+        transactionId: String,
+        originalTransactionId: String?,
+        environment: String?,
+        signedTransactionJWS: String
+    ) async throws -> OracleCreditSyncResponse {
+        let request = OracleCreditSyncRequest(
+            productId: productId,
+            transactionId: transactionId,
+            originalTransactionId: originalTransactionId,
+            environment: environment,
+            signedTransactionJWS: signedTransactionJWS
+        )
+        return try await networkClient.request(
+            endpoint: "/api/v1/oracle-credits/sync",
+            method: HTTPMethod.POST,
+            body: request,
+            responseType: OracleCreditSyncResponse.self
+        )
+    }
+
+    func getOracleCreditBalance() async throws -> Int {
         let response = try await networkClient.request(
-            endpoint: "/api/v1/payments/credits",
+            endpoint: "/api/v1/oracle-credits/status",
             method: HTTPMethod.GET,
             body: nil,
-            responseType: CreditBalanceResponse.self
+            responseType: OracleCreditBalanceResponse.self
         )
         return response.balance
     }
@@ -1199,286 +1280,112 @@ class APIServices: ObservableObject, APIServicesProtocol {
         )
     }
 
-    // MARK: - Temple & Pooja Services
+    // MARK: - Synthesis + Predictions
 
-    /// List available pooja types
-    func listPoojaTypes() async throws -> [PoojaType] {
-        struct PoojaTypesResponse: Codable {
-            let poojas: [PoojaType]
+    /// Fetch the unified Cosmic Mirror from the live synthesis endpoint.
+    func fetchCosmicMirror(
+        birthData: BirthDataRequest,
+        planetData: [String: PlanetPositionData],
+        lagna: String,
+        dashaState: DashaStateRequest,
+        userPriors: UserPriorsRequest?,
+        phoneDigitSum: Int? = nil
+    ) async throws -> CosmicMirrorResponse {
+        struct CosmicMirrorRequest: Codable {
+            let birthData: BirthDataRequest
+            let planetData: [String: PlanetPositionData]
+            let lagna: String
+            let dashaState: DashaStateRequest
+            let userPriors: UserPriorsRequest?
+            let phoneDigitSum: Int?
+
+            enum CodingKeys: String, CodingKey {
+                case birthData = "birth_data"
+                case planetData = "planet_data"
+                case lagna
+                case dashaState = "dasha_state"
+                case userPriors = "user_priors"
+                case phoneDigitSum = "phone_digit_sum"
+            }
         }
 
-        let response: PoojaTypesResponse = try await networkClient.request(
-            endpoint: "/api/v1/temple/poojas",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: PoojaTypesResponse.self
-        )
-        return response.poojas
-    }
-
-    /// Get pooja type details
-    func getPoojaType(poojaId: String) async throws -> PoojaType {
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/poojas/\(poojaId)",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: PoojaType.self
-        )
-    }
-
-    /// List available guides
-    func listGuides(specialization: String? = nil, language: String? = nil, availableOnly: Bool = true) async throws -> [GuideProfile] {
-        struct GuidesResponse: Codable {
-            let pandits: [GuideProfile]
-        }
-
-        var queryItems: [String] = []
-        if let spec = specialization { queryItems.append("specialization=\(spec)") }
-        if let lang = language { queryItems.append("language=\(lang)") }
-        queryItems.append("available=\(availableOnly)")
-
-        let queryString = queryItems.isEmpty ? "" : "?" + queryItems.joined(separator: "&")
-
-        let response: GuidesResponse = try await networkClient.request(
-            endpoint: "/api/v1/temple/pandits\(queryString)",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: GuidesResponse.self
-        )
-        return response.pandits
-    }
-
-    /// Get guide availability slots
-    func getGuideAvailability(guideId: String, date: Date? = nil) async throws -> [AvailabilitySlot] {
-        struct AvailabilityResponse: Codable {
-            let slots: [AvailabilitySlot]
-        }
-
-        var endpoint = "/api/v1/temple/pandits/\(guideId)/availability"
-        if let date = date {
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "yyyy-MM-dd"
-            endpoint += "?date=\(formatter.string(from: date))"
-        }
-
-        let response: AvailabilityResponse = try await networkClient.request(
-            endpoint: endpoint,
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: AvailabilityResponse.self
-        )
-        return response.slots
-    }
-
-    /// Create a pooja booking
-    func createPoojaBooking(
-        poojaTypeId: String,
-        guideId: String?,
-        scheduledDate: Date,
-        scheduledTime: String,
-        timezone: String = "Asia/Kolkata",
-        sankalpName: String?,
-        sankalpGotra: String?,
-        sankalpNakshatra: String?,
-        specialRequests: String?
-    ) async throws -> PoojaBookingResponse {
-        struct BookingRequest: Codable {
-            let poojaTypeId: String
-            let panditId: String?
-            let scheduledDate: String
-            let scheduledTime: String
-            let timezone: String
-            let sankalpName: String?
-            let sankalpGotra: String?
-            let sankalpNakshatra: String?
-            let specialRequests: String?
-        }
-
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-
-        let request = BookingRequest(
-            poojaTypeId: poojaTypeId,
-            panditId: guideId,
-            scheduledDate: dateFormatter.string(from: scheduledDate),
-            scheduledTime: scheduledTime,
-            timezone: timezone,
-            sankalpName: sankalpName,
-            sankalpGotra: sankalpGotra,
-            sankalpNakshatra: sankalpNakshatra,
-            specialRequests: specialRequests
+        let request = CosmicMirrorRequest(
+            birthData: birthData,
+            planetData: planetData,
+            lagna: lagna,
+            dashaState: dashaState,
+            userPriors: userPriors,
+            phoneDigitSum: phoneDigitSum
         )
 
         return try await networkClient.request(
-            endpoint: "/api/v1/temple/bookings",
-            method: HTTPMethod.POST,
+            endpoint: "/api/v1/synthesis/mirror",
+            method: .POST,
             body: request,
-            responseType: PoojaBookingResponse.self
+            responseType: CosmicMirrorResponse.self
         )
     }
 
-    /// List user's pooja bookings
-    func listPoojaBookings(status: String? = nil) async throws -> [PoojaBooking] {
-        struct BookingsResponse: Codable {
-            let bookings: [PoojaBooking]
+    /// Fetch the live Loshu numerology report from the server.
+    func fetchNumerologyReport(
+        dob: String,
+        phoneDigitSum: Int? = nil
+    ) async throws -> NumerologyReportResponse {
+        struct NumerologyReportRequest: Codable {
+            let dob: String
+            let phoneDigitSum: Int?
+
+            enum CodingKeys: String, CodingKey {
+                case dob
+                case phoneDigitSum = "phone_digit_sum"
+            }
         }
 
-        var endpoint = "/api/v1/temple/bookings"
-        if let status = status {
-            endpoint += "?status=\(status)"
+        return try await networkClient.request(
+            endpoint: "/api/v1/numerology/report",
+            method: .POST,
+            body: NumerologyReportRequest(dob: dob, phoneDigitSum: phoneDigitSum),
+            responseType: NumerologyReportResponse.self
+        )
+    }
+
+    /// Fetch the 12-month action forecast from the live prediction endpoint.
+    func fetchPredictionTimeline(
+        birthData: BirthDataRequest,
+        dashaState: DashaStateRequest,
+        startDate: String,
+        endDate: String,
+        userPriors: UserPriorsRequest?
+    ) async throws -> PredictionTimelineResponse {
+        struct PredictionTimelineRequest: Codable {
+            let birthData: BirthDataRequest
+            let dashaState: DashaStateRequest
+            let startDate: String
+            let endDate: String
+            let userPriors: UserPriorsRequest?
+
+            enum CodingKeys: String, CodingKey {
+                case birthData = "birth_data"
+                case dashaState = "dasha_state"
+                case startDate = "start_date"
+                case endDate = "end_date"
+                case userPriors = "user_priors"
+            }
         }
 
-        let response: BookingsResponse = try await networkClient.request(
-            endpoint: endpoint,
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: BookingsResponse.self
+        let request = PredictionTimelineRequest(
+            birthData: birthData,
+            dashaState: dashaState,
+            startDate: startDate,
+            endDate: endDate,
+            userPriors: userPriors
         )
-        return response.bookings
-    }
-
-    /// Get booking details
-    func getPoojaBooking(bookingId: String) async throws -> PoojaBookingDetail {
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/bookings/\(bookingId)",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: PoojaBookingDetail.self
-        )
-    }
-
-    /// Cancel a booking
-    func cancelPoojaBooking(bookingId: String) async throws -> CancelBookingResponse {
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/bookings/\(bookingId)/cancel",
-            method: HTTPMethod.POST,
-            body: nil,
-            responseType: CancelBookingResponse.self
-        )
-    }
-
-    /// Generate session link for confirmed booking
-    func generatePoojaSessionLink(bookingId: String) async throws -> SessionLinkResponse {
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/bookings/\(bookingId)/session",
-            method: HTTPMethod.POST,
-            body: nil,
-            responseType: SessionLinkResponse.self
-        )
-    }
-
-    // MARK: - Temple Redesign (DIY Pooja, Muhurat, Vedic Library, Bell)
-
-    /// Fetch muhurat times and panchang data for a given date
-    func fetchMuhurats(date: Date = Date(), latitude: Double? = nil, longitude: Double? = nil) async throws -> MuhuratResponse {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        var endpoint = "/api/v1/temple/muhurats?date=\(formatter.string(from: date))"
-        if let lat = latitude { endpoint += "&lat=\(lat)" }
-        if let lon = longitude { endpoint += "&lon=\(lon)" }
 
         return try await networkClient.request(
-            endpoint: endpoint,
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: MuhuratResponse.self
-        )
-    }
-
-    /// Fetch DIY pooja guides with steps and mantras
-    func fetchDIYPoojas() async throws -> [DIYPooja] {
-        let response: DIYPoojasResponse = try await networkClient.request(
-            endpoint: "/api/v1/temple/diy-poojas",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: DIYPoojasResponse.self
-        )
-        return response.poojas
-    }
-
-    /// Fetch vedic library entries with optional category/search filters
-    func fetchVedicLibrary(category: String? = nil, search: String? = nil) async throws -> VedicLibraryResponse {
-        var queryItems: [String] = []
-        if let cat = category { queryItems.append("category=\(cat)") }
-        if let q = search { queryItems.append("search=\(q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? q)") }
-        let queryString = queryItems.isEmpty ? "" : "?" + queryItems.joined(separator: "&")
-
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/vedic-library\(queryString)",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: VedicLibraryResponse.self
-        )
-    }
-
-    /// Record a temple bell ring (fire-and-forget, non-blocking)
-    func recordBellRing(streak: Int, totalRings: Int) async {
-        struct BellRingRequest: Codable {
-            let streak: Int
-            let totalRings: Int
-        }
-        do {
-            let body = try JSONEncoder().encode(BellRingRequest(streak: streak, totalRings: totalRings))
-            let _: EmptyResponse = try await networkClient.request(
-                endpoint: "/api/v1/temple/bell/ring",
-                method: HTTPMethod.POST,
-                body: body,
-                responseType: EmptyResponse.self
-            )
-        } catch {
-            // Fire and forget - don't fail the bell ring if server is down
-        }
-    }
-
-    // MARK: - Shastriji Consultation
-
-    /// Get Shastriji availability status and queue info
-    func getShastrijiStatus() async throws -> ShastrijiStatus {
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/shastriji/status",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: ShastrijiStatus.self
-        )
-    }
-
-    /// Book a consultation with Shastriji
-    func bookShastriji(poojaTypeId: String? = nil, specialRequests: String? = nil) async throws -> ShastrijiBookingResponse {
-        struct BookRequest: Codable {
-            let poojaTypeId: String?
-            let specialRequests: String?
-        }
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/shastriji/book",
-            method: HTTPMethod.POST,
-            body: BookRequest(poojaTypeId: poojaTypeId, specialRequests: specialRequests),
-            responseType: ShastrijiBookingResponse.self
-        )
-    }
-
-    /// Get current queue status for an active Shastriji booking
-    func getShastrijiQueue() async throws -> ShastrijiQueueStatus {
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/shastriji/queue",
-            method: HTTPMethod.GET,
-            body: nil,
-            responseType: ShastrijiQueueStatus.self
-        )
-    }
-
-    /// Update call state for a booking (queued -> ringing -> connected -> ended)
-    func updateCallState(bookingId: String, callState: String) async throws -> CallStateResponse {
-        struct CallStateRequest: Codable {
-            let callState: String
-        }
-        return try await networkClient.request(
-            endpoint: "/api/v1/temple/bookings/\(bookingId)/call-state",
-            method: HTTPMethod.PATCH,
-            body: CallStateRequest(callState: callState),
-            responseType: CallStateResponse.self
+            endpoint: "/api/v1/predictions/timeline",
+            method: .POST,
+            body: request,
+            responseType: PredictionTimelineResponse.self
         )
     }
 }

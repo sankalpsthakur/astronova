@@ -1,7 +1,30 @@
 import SwiftUI
 
-/// Renders the paywall variant assigned to this user for the
-/// `astronova_paywall_v1` experiment. Wire this in at every existing
+enum PaywallVariantAssignment {
+    static let key = "paywall_variant"
+    static let legacyKey = "astronova_paywall_v1"
+
+    static func normalized(_ rawValue: String) -> String {
+        switch rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "tiered_v1", "b":
+            return "tiered_v1"
+        case "tiered_v2", "c":
+            return "tiered_v2"
+        default:
+            return "control"
+        }
+    }
+
+    static func resolvedVariant() -> String {
+        if RemoteConfigService.shared.hasValue(forKey: key) {
+            return normalized(RemoteConfigService.shared.string(forKey: key, default: "control"))
+        }
+        return normalized(RemoteConfigService.shared.string(forKey: legacyKey, default: "control"))
+    }
+}
+
+/// Renders the paywall variant assigned to this user for the canonical
+/// `paywall_variant` experiment. Wire this in at every existing
 /// `PaywallView()` call site:
 ///
 /// ```swift
@@ -25,18 +48,13 @@ struct PaywallVariantRouter: View {
 
     /// The variant string assigned to this user. Resolution priority:
     ///   1. `IOSAppsExperiments.shared.assign(...)` once linked.
-    ///   2. `RemoteConfigService.string(forKey: "astronova_paywall_v1")`.
-    ///   3. `"control"`.
+    ///   2. `RemoteConfigService.string(forKey: "paywall_variant")`.
+    ///   3. legacy `astronova_paywall_v1`, if the canonical key is absent.
+    ///   4. `"control"`.
     private var variant: String {
         // TODO: replace with IOSAppsExperiments.shared.assign(...) once the
         // package is added as a Swift Package dependency to AstronovaApp.
-        let raw = RemoteConfigService.shared.string(forKey: "astronova_paywall_v1", default: "control")
-        switch raw {
-        case "tiered_v1", "tiered_v2", "control":
-            return raw
-        default:
-            return "control"
-        }
+        PaywallVariantAssignment.resolvedVariant()
     }
 
     var body: some View {

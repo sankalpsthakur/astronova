@@ -254,7 +254,7 @@ struct AccountFooter: View {
             .accessibilityIdentifier("settingsButton")
 
             // Help
-            Link(destination: URL(string: "https://astronova.app/help")!) {
+            Link(destination: URL(string: "https://astronova-ghcr.onrender.com/support")!) {
                 Image(systemName: "questionmark.circle")
                     .font(.system(size: 18))
                     .foregroundStyle(Color.cosmicTextTertiary)

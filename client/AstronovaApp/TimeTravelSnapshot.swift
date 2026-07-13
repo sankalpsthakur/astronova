@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 
-// MARK: - Time Travel Snapshot
-// Single atomic unit that drives the Time Travel UI for a given targetDate.
+// MARK: - Timeline Snapshot
+// Single atomic unit that drives the Timeline UI for a given targetDate.
 
 struct TimeTravelSnapshot: Equatable {
     let targetDate: Date

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Enhanced Time Travel View with interactive Dasha Chakra Wheel,
+/// Enhanced Timeline View with interactive Dasha Chakra Wheel,
 /// impact analysis, educational content, and comparison features
 struct EnhancedTimeTravelView: View {
     @EnvironmentObject private var auth: AuthState
@@ -213,7 +213,7 @@ struct EnhancedTimeTravelView: View {
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("Time Travel")
+            .navigationTitle("Timeline")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -235,10 +235,10 @@ struct EnhancedTimeTravelView: View {
                                     .font(.cosmicDisplay)
                                     .foregroundStyle(Color.cosmicGold)
 
-                                Text("Learn About Time Travel")
+                                Text("Learn About Timeline")
                                     .font(.cosmicTitle2)
 
-                                Text("Time Travel uses Vedic astrology's Vimshottari Dasha system to show you the planetary periods influencing your life.")
+                                Text("Timeline uses Vedic astrology's Vimshottari Dasha system to show you the planetary periods influencing your life.")
                                     .font(.cosmicBody)
                                     .multilineTextAlignment(.center)
                                     .foregroundStyle(Color.cosmicTextSecondary)
@@ -865,7 +865,7 @@ class TimeTravelViewModel: ObservableObject {
         guard let timezone = profile.timezone,
               let latitude = profile.birthLatitude,
               let longitude = profile.birthLongitude else {
-            self.error = "Add your birth location and timezone to unlock Time Travel insights."
+            self.error = "Add your birth location and timezone to unlock Timeline insights."
             self.isProfileIncomplete = true
             dashaData = nil
             isLoading = false

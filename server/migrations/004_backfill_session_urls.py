@@ -2,8 +2,8 @@
 Migration 004: Backfill session URLs with correct production domain
 
 This migration updates all session_link URLs in pooja_bookings and pooja_sessions
-from the old placeholder domain (astronova.app) to the correct production domain
-(astronova.onrender.com).
+    from the old placeholder domain (astronova.app) to the correct production domain
+    (astronova-ghcr.onrender.com).
 
 Background:
 - The temple.py code previously hardcoded 'https://astronova.app' URLs
@@ -19,7 +19,7 @@ NAME = "backfill_session_urls"
 
 def up(conn: sqlite3.Connection) -> None:
     """
-    Update all session_link URLs from astronova.app to astronova.onrender.com
+    Update all session_link URLs from astronova.app to astronova-ghcr.onrender.com
     """
     cur = conn.cursor()
 
@@ -28,7 +28,7 @@ def up(conn: sqlite3.Connection) -> None:
         UPDATE pooja_bookings
         SET session_link = REPLACE(session_link,
             'https://astronova.app',
-            'https://astronova.onrender.com')
+            'https://astronova-ghcr.onrender.com')
         WHERE session_link LIKE 'https://astronova.app%'
     """)
     bookings_updated = cur.rowcount
@@ -38,7 +38,7 @@ def up(conn: sqlite3.Connection) -> None:
         UPDATE pooja_sessions
         SET user_link = REPLACE(user_link,
             'https://astronova.app',
-            'https://astronova.onrender.com')
+            'https://astronova-ghcr.onrender.com')
         WHERE user_link LIKE 'https://astronova.app%'
     """)
     user_links_updated = cur.rowcount
@@ -47,7 +47,7 @@ def up(conn: sqlite3.Connection) -> None:
         UPDATE pooja_sessions
         SET pandit_link = REPLACE(pandit_link,
             'https://astronova.app',
-            'https://astronova.onrender.com')
+            'https://astronova-ghcr.onrender.com')
         WHERE pandit_link LIKE 'https://astronova.app%'
     """)
     pandit_links_updated = cur.rowcount
@@ -71,26 +71,26 @@ def down(conn: sqlite3.Connection) -> None:
     cur.execute("""
         UPDATE pooja_bookings
         SET session_link = REPLACE(session_link,
-            'https://astronova.onrender.com',
+            'https://astronova-ghcr.onrender.com',
             'https://astronova.app')
-        WHERE session_link LIKE 'https://astronova.onrender.com%'
+        WHERE session_link LIKE 'https://astronova-ghcr.onrender.com%'
     """)
 
     # Revert pooja_sessions
     cur.execute("""
         UPDATE pooja_sessions
         SET user_link = REPLACE(user_link,
-            'https://astronova.onrender.com',
+            'https://astronova-ghcr.onrender.com',
             'https://astronova.app')
-        WHERE user_link LIKE 'https://astronova.onrender.com%'
+        WHERE user_link LIKE 'https://astronova-ghcr.onrender.com%'
     """)
 
     cur.execute("""
         UPDATE pooja_sessions
         SET pandit_link = REPLACE(pandit_link,
-            'https://astronova.onrender.com',
+            'https://astronova-ghcr.onrender.com',
             'https://astronova.app')
-        WHERE pandit_link LIKE 'https://astronova.onrender.com%'
+        WHERE pandit_link LIKE 'https://astronova-ghcr.onrender.com%'
     """)
 
     conn.commit()

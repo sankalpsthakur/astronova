@@ -125,6 +125,17 @@ SQLite database with WAL mode for concurrent reads.
 - `reports` — Generated astrology reports
 - `chat_conversations` / `chat_messages` — Chat history
 - `subscription_status` — In-app purchase state
+- `storekit_transaction_ledger` — one immutable owner/product/kind claim per verified Apple transaction ID
+- `oracle_credit_balances` — server-authoritative Oracle consumable balance per signed-in user
+- `report_purchase_entitlements` — verified single-report delivery and consumption state
+
+### Paid entitlement delivery
+
+Production purchase and restore handling is server-authoritative. The client accepts only StoreKit-verified transactions and sends the signed transaction JWS to an authenticated sync endpoint. The server verifies Apple certificate trust, bundle ID, product ID, transaction ID, expiry, and revocation before claiming the transaction in `storekit_transaction_ledger`. A transaction replay for the same owner and product is an idempotent success; reuse for another owner, product, kind, or quantity is rejected.
+
+Oracle credit delivery atomically inserts the transaction claim and increments `oracle_credit_balances`. The response carries the absolute balance, which replaces the client cache. Pro/report state and purchase-completion notifications are likewise applied only after server delivery succeeds. Failed delivery leaves the StoreKit transaction unfinished so StoreKit can replay it. Local `UITEST_MOCK_PURCHASES` behavior remains a debug/UI-test-only path and is not evidence of App Store Connect or sandbox readiness.
+
+Account deletion removes balances and entitlements, then tombstones each ledger row by clearing its direct `user_id` while retaining transaction/product/kind/units. The tombstone permanently rejects redelivery after deletion or re-registration without retaining a direct account identifier.
 
 ## iOS Client Architecture
 

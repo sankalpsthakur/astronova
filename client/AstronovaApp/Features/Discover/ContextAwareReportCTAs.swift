@@ -178,7 +178,7 @@ struct SuggestedReport: Identifiable {
         if let productId = productId {
             return ShopCatalog.price(for: productId)
         }
-        return "$14.99"  // Fallback for unmapped reports
+        return "$12.99"  // Fallback for unmapped reports
     }
 }
 

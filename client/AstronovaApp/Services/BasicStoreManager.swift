@@ -38,7 +38,11 @@ final class BasicStoreManager: ObservableObject {
 
     @discardableResult
     func restorePurchases() async -> Bool {
-        // In mock mode, simulate a successful restore if user has Pro
-        return await MainActor.run { hasProSubscription }
+        await MainActor.run {
+            if hasProSubscription { return true }
+            return ShopCatalog.allProductIDs.contains { productId in
+                UserDefaults.standard.bool(forKey: "purchased_\(productId)")
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ from extensions import limiter
 from services.dasha_service import DashaService
 from services.ephemeris_service import EphemerisService
 from utils.birth_data import parse_birth_data, BirthDataError
+from utils.time_utils import utc_now_naive
 
 chart_bp = Blueprint("chart", __name__)
 _ephem = EphemerisService()
@@ -299,7 +300,7 @@ def generate_chart():
             dasha_info = _dasha.calculate_complete_dasha(
                 birth_date=dt,
                 moon_longitude=moon_longitude,
-                target_date=datetime.utcnow(),
+                target_date=utc_now_naive(),
                 include_future=True,
                 num_future_periods=5,
             )
@@ -350,7 +351,7 @@ def chart_aspects():
             dt, lat, lon, tz = _parse_birth_payload(payload)
         else:
             # Use current time if no birth data provided (empty {} or no keys)
-            dt, lat, lon, _tz = datetime.utcnow(), None, None, "UTC"  # type: ignore[assignment]
+            dt, lat, lon, _tz = utc_now_naive(), None, None, "UTC"  # type: ignore[assignment]
     except ValueError as e:
         return jsonify({"error": str(e), "code": "VALIDATION_ERROR"}), 400
     except Exception as e:

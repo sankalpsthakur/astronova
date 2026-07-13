@@ -11,7 +11,11 @@ from .horoscope import horoscope_bp
 from .locations import locations_bp
 from .misc import misc_bp
 from .payments import payments_bp
+from .numerology import numerology_bp
+from .predictions import predictions_bp
+from .rajayoga import rajayoga_bp
 from .reports import reports_bp
+from .synthesis import synthesis_bp
 from .temple import temple_bp
 
 __all__ = [
@@ -28,6 +32,10 @@ __all__ = [
     "locations_bp",
     "misc_bp",
     "payments_bp",
+    "numerology_bp",
+    "predictions_bp",
+    "rajayoga_bp",
     "reports_bp",
+    "synthesis_bp",
     "temple_bp",
 ]

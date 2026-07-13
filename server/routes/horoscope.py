@@ -11,6 +11,7 @@ from flask_babel import gettext as _
 
 from db import get_user_birth_data
 from services.ephemeris_service import EphemerisService
+from utils.time_utils import utc_now_naive
 
 logger = logging.getLogger(__name__)
 
@@ -405,7 +406,7 @@ def _grounded_lucky_elements(sign: str, planets: dict, natal_aspects: list, dt: 
     traits = SIGN_TRAITS.get(sign, SIGN_TRAITS["aries"])
 
     # Day-of-year drives rotation so a user sampling the year sees every value.
-    when = dt or datetime.utcnow()
+    when = dt or utc_now_naive()
     day_of_year = when.timetuple().tm_yday  # 1..366
 
     colors = traits["colors"]
@@ -570,7 +571,7 @@ def horoscope():
         except ValueError:
             return jsonify({"error": _("Invalid date format, use YYYY-MM-DD")}), 400
     else:
-        dt = datetime.utcnow()
+        dt = utc_now_naive()
 
     # Get natal chart data if user_id provided
     natal_planets = None
@@ -641,7 +642,7 @@ def personalized_horoscope():
         except ValueError:
             return jsonify({"error": _("Invalid date format, use YYYY-MM-DD")}), 400
     else:
-        dt = datetime.utcnow()
+        dt = utc_now_naive()
 
     period = payload.get("type", "daily").lower()
 
@@ -717,7 +718,7 @@ def daily_horoscope():
         except ValueError:
             return jsonify({"error": _("Invalid date format, use YYYY-MM-DD")}), 400
     else:
-        dt = datetime.utcnow()
+        dt = utc_now_naive()
 
     # Get natal chart data if user_id provided
     natal_planets = None

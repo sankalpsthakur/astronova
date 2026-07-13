@@ -43,6 +43,9 @@ struct ProfileSetupContentView: View {
     @Binding var birthTime: Date
     @Binding var birthTimeUnknown: Bool
     @Binding var birthPlace: String
+    @Binding var phoneDigits: String
+    @Binding var contextTags: [String]
+    @Binding var contextText: String
     @Binding var showingPersonalizedInsight: Bool
     @Binding var personalizedInsight: String
     
@@ -58,8 +61,9 @@ struct ProfileSetupContentView: View {
                 // Elegant progress indicator
                 VStack(spacing: Cosmic.Spacing.s) {
                     HStack {
-                        (Text("✨ ") + Text(L10n.Onboarding.progressTitle))
-                            .font(.cosmicTitle3)
+                        Text("CALIBRATION")
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .tracking(2.6)
                             .foregroundStyle(Color.cosmicTextPrimary)
                             .accessibilityIdentifier(AccessibilityID.profileSetupView)
                         Spacer()
@@ -87,21 +91,21 @@ struct ProfileSetupContentView: View {
             Group {
                 switch currentStep {
                 case 0:
-                    EnhancedWelcomeStepView()
+                    CalibrationSplashStepView()
                 case 1:
-                    EnhancedNameStepView(fullName: $fullName)
-                case 2:
-                    EnhancedBirthDateStepView(birthDate: $birthDate, onQuickStart: handleQuickStart)
-                case 3:
-                    EnhancedBirthTimeStepView(birthTime: $birthTime, unknownTime: $birthTimeUnknown)
-                default:
-                    EnhancedBirthPlaceStepView(
-                        birthPlace: $birthPlace,
-                        onComplete: { insight in
-                            personalizedInsight = insight
-                            showPersonalizedInsight()
-                        }
+                    BirthCoordinatesCalibrationStepView(
+                        fullName: $fullName,
+                        birthDate: $birthDate,
+                        birthTime: $birthTime,
+                        birthTimeUnknown: $birthTimeUnknown,
+                        birthPlace: $birthPlace
                     )
+                case 2:
+                    PhoneVectorStepView(phoneDigits: $phoneDigits, birthDate: birthDate)
+                case 3:
+                    ContextPriorsStepView(selectedTags: $contextTags, freeTextContext: $contextText)
+                default:
+                    ContextPriorsStepView(selectedTags: $contextTags, freeTextContext: $contextText)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -118,17 +122,15 @@ struct ProfileSetupContentView: View {
                             if currentStep == totalSteps - 1 {
                                 Image(systemName: "moon.stars.circle.fill")
                                     .font(.cosmicTitle3)
-                                Text(L10n.Onboarding.Actions.createProfile)
+                                Text("Compute chart")
                                     .font(.cosmicTitle3)
                             } else {
                                 let buttonText = currentStep == 0
-                                    ? L10n.Onboarding.Actions.beginJourney
-                                    : currentStep == 4
-                                        ? (birthPlace.isEmpty ? L10n.Onboarding.Actions.skipForNow : L10n.Actions.continueLabel)
-                                        : L10n.Actions.continueLabel
+                                    ? "Begin calibration"
+                                    : L10n.Actions.continueLabel
                                 Text(buttonText)
                                     .font(.cosmicTitle3)
-                                Image(systemName: currentStep == 4 && birthPlace.isEmpty ? "forward.end" : "arrow.right")
+                                Image(systemName: "arrow.right")
                                     .font(.cosmicTitle3)
                             }
                         }
@@ -142,7 +144,7 @@ struct ProfileSetupContentView: View {
                     .disabled(!canContinue)
                     .scaleEffect(canContinue ? 1.0 : 0.95)
                     .animation(.cosmicQuick, value: canContinue)
-                    .accessibilityLabel(currentStep == 0 ? L10n.Onboarding.Actions.beginJourney : L10n.Actions.continueLabel)
+                    .accessibilityLabel(currentStep == 0 ? "Begin calibration" : currentStep == totalSteps - 1 ? "Compute chart" : L10n.Actions.continueLabel)
                     .accessibilityIdentifier(AccessibilityID.saveProfileButton)
 
                     if currentStep > 0 {
@@ -201,6 +203,340 @@ struct FloatingStarsView: View {
                 .offset(y: animateStars ? -12 : 12)
                 .animation(!reduceMotion ? .easeInOut(duration: Double.random(in: 2...4)).repeatForever(autoreverses: true).delay(Double(i) * 0.2) : nil, value: animateStars)
         }
+    }
+}
+
+struct CalibrationSplashStepView: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 48)
+
+            ZStack {
+                Circle()
+                    .stroke(Color.cosmicTextPrimary.opacity(0.12), lineWidth: 0.8)
+                    .frame(width: 220, height: 220)
+                Circle()
+                    .stroke(Color.cosmicTextPrimary.opacity(0.08), style: StrokeStyle(lineWidth: 0.8, dash: [2, 6]))
+                    .frame(width: 164, height: 164)
+
+                ForEach(0..<12, id: \.self) { index in
+                    Capsule()
+                        .fill(Color.cosmicTextPrimary.opacity(0.35))
+                        .frame(width: 1, height: 10)
+                        .offset(y: -114)
+                        .rotationEffect(.degrees(Double(index) * 30))
+                }
+
+                ForEach(Array([30.0, 95.0, 165.0, 220.0, 300.0].enumerated()), id: \.offset) { item in
+                    Circle()
+                        .fill([Color.cosmicSuccess, Color.cosmicGold, Color.cosmicCopper, Color.cosmicError, Color.cosmicTeal][item.offset].opacity(0.9))
+                        .frame(width: item.offset == 1 ? 10 : 7, height: item.offset == 1 ? 10 : 7)
+                        .offset(y: -110)
+                        .rotationEffect(.degrees(item.element))
+                }
+
+                VStack(spacing: 7) {
+                    Text("SYSTEM ACQUIRING")
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .tracking(3.8)
+                        .foregroundStyle(Color.cosmicGold)
+                    Text("9 processes · 12 houses · 1 you")
+                        .font(.system(size: 13, weight: .regular, design: .serif))
+                        .italic()
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                }
+            }
+
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text("v.26.05 · DELHI MERIDIAN")
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .tracking(3.2)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+
+                (Text("Astro")
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                 + Text("nova")
+                    .italic()
+                    .foregroundStyle(Color.cosmicGold))
+                    .font(.system(size: 62, weight: .bold, design: .serif))
+                    .minimumScaleFactor(0.75)
+
+                Text("A working model of your life — derived from sky, number, and timing. Engineered, not divined.")
+                    .font(.cosmicBody)
+                    .foregroundStyle(Color.cosmicTextSecondary)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Cosmic.Spacing.screen)
+            .padding(.bottom, 28)
+        }
+        .accessibilityIdentifier("onboarding.calibrationSplash")
+    }
+}
+
+struct BirthCoordinatesCalibrationStepView: View {
+    @Binding var fullName: String
+    @Binding var birthDate: Date
+    @Binding var birthTime: Date
+    @Binding var birthTimeUnknown: Bool
+    @Binding var birthPlace: String
+
+    @EnvironmentObject private var auth: AuthState
+    @FocusState private var isPlaceFocused: Bool
+    @State private var searchResults: [LocationResult] = []
+    @State private var isSearching = false
+    @State private var showDropdown = false
+    @State private var searchTask: Task<Void, Never>?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("When and where\ndid you arrive.")
+                        .font(.system(size: 38, weight: .bold, design: .serif))
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                        .lineSpacing(2)
+                    Text("The chart resolves to within 2 arcminutes. Wrong time, wrong life — get it from a birth certificate if you can.")
+                        .font(.cosmicBody)
+                        .foregroundStyle(Color.cosmicTextSecondary)
+                        .lineSpacing(4)
+                }
+                .padding(.top, Cosmic.Spacing.lg)
+
+                dateCard
+                nameCard
+                timeCard
+                placeCard
+                accuracyNote
+            }
+            .padding(.horizontal, Cosmic.Spacing.screen)
+            .padding(.bottom, 24)
+        }
+        .scrollIndicators(.hidden)
+        .accessibilityIdentifier("onboarding.birthCoordinates")
+    }
+
+    private var nameCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("NAME")
+                .font(.cosmicMicro)
+                .tracking(CosmicTypography.Tracking.uppercase)
+                .foregroundStyle(Color.cosmicTextTertiary)
+            TextField("Your full name", text: $fullName)
+                .font(.system(size: 21, weight: .semibold, design: .serif))
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .accessibilityIdentifier(AccessibilityID.profileNameField)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(calibrationCardBackground)
+    }
+
+    private var dateCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("DATE")
+                .font(.cosmicMicro)
+                .tracking(CosmicTypography.Tracking.uppercase)
+                .foregroundStyle(Color.cosmicTextTertiary)
+            DatePicker("", selection: $birthDate, in: validBirthDateRange, displayedComponents: .date)
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .tint(Color.cosmicGold)
+                .accessibilityIdentifier(AccessibilityID.birthDatePicker)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(calibrationCardBackground)
+    }
+
+    private var timeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("TIME")
+                    .font(.cosmicMicro)
+                    .tracking(CosmicTypography.Tracking.uppercase)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                Spacer()
+                Text(birthTimeUnknown ? "NOON STAND-IN" : "±0:02")
+                    .font(.cosmicMicro)
+                    .foregroundStyle(Color.cosmicGold)
+            }
+
+            DatePicker("", selection: $birthTime, displayedComponents: .hourAndMinute)
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .tint(Color.cosmicGold)
+                .disabled(birthTimeUnknown)
+                .opacity(birthTimeUnknown ? 0.5 : 1)
+                .accessibilityIdentifier(AccessibilityID.birthTimePicker)
+
+            Toggle("I don't know my birth time", isOn: $birthTimeUnknown)
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .toggleStyle(SwitchToggleStyle(tint: .cosmicGold))
+                .onChange(of: birthTimeUnknown) { _, newValue in
+                    if newValue {
+                        var comps = Calendar.current.dateComponents([.year, .month, .day], from: birthTime)
+                        comps.hour = 12
+                        comps.minute = 0
+                        birthTime = Calendar.current.date(from: comps) ?? birthTime
+                    }
+                }
+        }
+        .padding(16)
+        .background(calibrationCardBackground)
+    }
+
+    private var placeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("PLACE")
+                    .font(.cosmicMicro)
+                    .tracking(CosmicTypography.Tracking.uppercase)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                Spacer()
+                if let coordinate = auth.profileManager.profile.birthCoordinates,
+                   let timezone = auth.profileManager.profile.timezone {
+                    Text("\(coordinate.latitude, specifier: "%.2f")° · \(coordinate.longitude, specifier: "%.2f")° · \(timezone)")
+                        .font(.cosmicMicro)
+                        .foregroundStyle(Color.cosmicGold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                }
+            }
+
+            ZStack(alignment: .trailing) {
+                TextField("City, State/Country", text: $birthPlace)
+                    .font(.system(size: 21, weight: .semibold, design: .serif))
+                    .foregroundStyle(Color.cosmicTextPrimary)
+                    .focused($isPlaceFocused)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .accessibilityIdentifier(AccessibilityID.locationSearchField)
+                    .onChange(of: birthPlace) { _, newValue in
+                        handleLocationSearch(newValue)
+                    }
+
+                if isSearching {
+                    ProgressView()
+                        .tint(Color.cosmicGold)
+                }
+            }
+
+            if showDropdown && !searchResults.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(searchResults.prefix(4), id: \.fullName) { location in
+                        Button {
+                            selectLocation(location)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(location.name)
+                                        .font(.cosmicCallout)
+                                        .foregroundStyle(Color.cosmicTextPrimary)
+                                    Text(location.fullName)
+                                        .font(.cosmicCaption)
+                                        .foregroundStyle(Color.cosmicTextSecondary)
+                                        .lineLimit(1)
+                                }
+                                Spacer()
+                                Image(systemName: "mappin.and.ellipse")
+                                    .foregroundStyle(Color.cosmicTextTertiary)
+                            }
+                            .padding(.vertical, 10)
+                        }
+                        .buttonStyle(.plain)
+                        Divider().background(Color.cosmicTextTertiary.opacity(0.16))
+                    }
+                }
+            } else if !birthPlace.isEmpty {
+                Label(
+                    auth.profileManager.profile.birthCoordinates == nil ? "Select a location result for best accuracy." : "Location validated with coordinates and timezone.",
+                    systemImage: auth.profileManager.profile.birthCoordinates == nil ? "exclamationmark.diamond.fill" : "checkmark.seal.fill"
+                )
+                .font(.cosmicCaption)
+                .foregroundStyle(auth.profileManager.profile.birthCoordinates == nil ? Color.cosmicCopper : Color.cosmicSuccess)
+            }
+        }
+        .padding(16)
+        .background(calibrationCardBackground)
+    }
+
+    private var accuracyNote: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("◆")
+                .font(.system(size: 18, weight: .semibold, design: .serif))
+                .foregroundStyle(Color.cosmicGold)
+            Text("Time precision tracks the ascendant, which rotates roughly 1° every 4 minutes. A vague time degrades every downstream prediction.")
+                .font(.cosmicCaption)
+                .foregroundStyle(Color.cosmicTextSecondary)
+                .lineSpacing(4)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .fill(Color.cosmicGold.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                        .stroke(Color.cosmicGold.opacity(0.18), lineWidth: Cosmic.Border.hairline)
+                )
+        )
+    }
+
+    private var calibrationCardBackground: some View {
+        RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+            .fill(Color.cosmicSurface)
+            .overlay(
+                RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                    .stroke(Color.cosmicTextTertiary.opacity(0.16), lineWidth: Cosmic.Border.hairline)
+            )
+    }
+
+    private var validBirthDateRange: ClosedRange<Date> {
+        let earliestDate = Calendar.current.date(byAdding: .year, value: -120, to: Date()) ?? Date()
+        return earliestDate...Date()
+    }
+
+    private func handleLocationSearch(_ query: String) {
+        searchTask?.cancel()
+        guard query.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 else {
+            searchResults = []
+            showDropdown = false
+            isSearching = false
+            return
+        }
+
+        isSearching = true
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+
+            let results: [LocationResult]
+            do {
+                results = try await MapKitLocationService.shared.searchPlaces(query: query)
+            } catch {
+                results = await auth.profileManager.searchLocations(query: query)
+            }
+
+            await MainActor.run {
+                guard !Task.isCancelled else { return }
+                searchResults = results
+                isSearching = false
+                showDropdown = !results.isEmpty
+            }
+        }
+    }
+
+    private func selectLocation(_ location: LocationResult) {
+        birthPlace = location.fullName
+        auth.profileManager.setBirthLocation(location)
+        showDropdown = false
+        isPlaceFocused = false
     }
 }
 
@@ -438,6 +774,9 @@ struct SimpleProfileSetupView: View {
         (Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()).timeIntervalSince1970
     }
     @AppStorage("profile_setup_birth_place") private var birthPlace = ""
+    @AppStorage("profile_setup_phone_digits") private var phoneDigits = ""
+    @AppStorage("profile_setup_context_tags") private var contextTagsStorage = ""
+    @AppStorage("profile_setup_context_text") private var contextText = ""
     @State private var showingPersonalizedInsight = false
     @State private var showingConfetti = false
     @State private var personalizedInsight = ""
@@ -463,8 +802,22 @@ struct SimpleProfileSetupView: View {
             set: { birthTimeTimestamp = $0.timeIntervalSince1970 }
         )
     }
+
+    private var contextTags: Binding<[String]> {
+        Binding(
+            get: {
+                contextTagsStorage
+                    .split(separator: ",")
+                    .map(String.init)
+                    .filter { !$0.isEmpty }
+            },
+            set: { tags in
+                contextTagsStorage = tags.joined(separator: ",")
+            }
+        )
+    }
     
-    private let totalSteps = 5
+    private let totalSteps = 4
     
     private var completionPercentage: Double {
         Double(currentStep) / Double(totalSteps - 1)
@@ -483,6 +836,9 @@ struct SimpleProfileSetupView: View {
                 birthTime: birthTime,
                 birthTimeUnknown: $birthTimeUnknown,
                 birthPlace: $birthPlace,
+                phoneDigits: $phoneDigits,
+                contextTags: contextTags,
+                contextText: $contextText,
                 showingPersonalizedInsight: $showingPersonalizedInsight,
                 personalizedInsight: $personalizedInsight,
                 handleQuickStart: handleQuickStart,
@@ -569,10 +925,9 @@ struct SimpleProfileSetupView: View {
     private var canContinue: Bool {
         switch currentStep {
         case 0: return true
-        case 1: return isValidName(fullName)
-        case 2: return isValidBirthDate(birthDate.wrappedValue)
-        case 3: return true // Birth time is optional but always valid
-        case 4: return true // Birth place is optional - can skip or provide
+        case 1: return isValidName(fullName) && isValidBirthDate(birthDate.wrappedValue)
+        case 2: return true // Phone vector is useful but optional
+        case 3: return true // Context priors are useful but optional
         default: return false
         }
     }
@@ -673,6 +1028,9 @@ struct SimpleProfileSetupView: View {
         auth.profileManager.profile.birthTime = birthTime.wrappedValue
         auth.profileManager.profile.isBirthTimeKnown = !birthTimeUnknown
         auth.profileManager.profile.birthPlace = birthPlace
+        UserDefaults.standard.set(phoneDigits, forKey: "profile_phone_digits")
+        UserDefaults.standard.set(contextTagsStorage, forKey: "profile_context_tags")
+        UserDefaults.standard.set(contextText, forKey: "profile_context_text")
         
         // For birth place, search for coordinates and timezone only if provided
         Task {
@@ -783,6 +1141,9 @@ struct SimpleProfileSetupView: View {
         birthTimeTimestamp = Date().timeIntervalSince1970
         birthTimeUnknown = false
         birthPlace = ""
+        phoneDigits = ""
+        contextTagsStorage = ""
+        contextText = ""
     }
 
     private func restoreProfileProgress() {
@@ -1982,8 +2343,8 @@ struct SimpleTabBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Content area
-            // SUNSET 2026-05-18: legacy tab views (DiscoverView, SelfTabView, ConnectView,
-            // TempleView, TimeTravelTab) replaced by Topo overlay tabs. Files retained
+            // SUNSET 2026-05-18: legacy tab views were replaced by Topo overlay tabs.
+            // Files are retained
             // in repo for git-history reference and may be deleted in a follow-up.
             //
             // 2026-05-21 audit pass — still-live legacy references (do NOT delete):
@@ -1992,8 +2353,8 @@ struct SimpleTabBarView: View {
             //   * ChatPackagesSheet    — used by all 3 paywall variants + Oracle
             //   * EnhancedTimeTravelView — used by SelfTabView (itself unreachable)
             //
-            // Truly dead from the active TabBar (Today/Map/Pulse/Decide/Journal):
-            //   * DiscoverView, SelfTabView, TempleView, HomeView, TimeTravelTab,
+            // Truly dead from the active TabBar (Today/Map/Timeline/Matrix/Journal):
+            //   * DiscoverView, SelfTabView, HomeView, TimeTravelTab,
             //     `switchToTimeTravelTab()` (posts to a notification with no
             //     active listener now that the Topo tab IDs replaced 0–4).
             //
@@ -2006,9 +2367,9 @@ struct SimpleTabBarView: View {
                 case 1:
                     MyMapView()
                 case 2:
-                    PauseLayerView(showsCloseButton: false)
+                    TimelineTabView()
                 case 3:
-                    DecisionSimulatorView()
+                    MatrixDeepDiveView()
                 case 4:
                     JournalView()
                 default:
@@ -2091,26 +2452,6 @@ struct SimpleTabBarView: View {
                 return
             }
 
-            // Handle video session deep links
-            // Example: astronova://session/abc-123 or https://astronova.app/api/v1/temple/session/abc-123
-            if url.absoluteString.contains("/temple/session/") || url.host == "session" {
-                let sessionId: String
-                if url.host == "session" {
-                    // Deep link format: astronova://session/abc-123
-                    sessionId = url.pathComponents.last ?? ""
-                } else {
-                    // Web URL format: https://astronova.app/api/v1/temple/session/abc-123
-                    sessionId = url.pathComponents.last ?? ""
-                }
-
-                if !sessionId.isEmpty {
-                    // Post notification to open video session
-                    NotificationCenter.default.post(
-                        name: .openVideoSession,
-                        object: sessionId
-                    )
-                }
-            }
         }
         .keyboardDismissButton()
     }
@@ -2123,15 +2464,13 @@ struct SimpleTabBarView: View {
         guard let route = AstronovaIntentRouteStore.consume() else { return }
 
         // SUNSET 2026-05-18: legacy routes remap to the new Topo tab structure.
-        // .timeTravel → Map (closest astrological-time surface).
-        // .temple → Pulse (the in-the-moment ritual surface).
-        // .connect → Decide.
+        // .timeTravel route → Timeline (current astrological-time surface).
+        // .connect → Matrix (legacy index 3, numerology analysis).
         // .profile → Journal (the user's data lives there now; Settings is sheet-based).
         let targetTab: Int
         switch route {
         case .today:      targetTab = 0
-        case .timeTravel: targetTab = 1
-        case .temple:     targetTab = 2
+        case .timeTravel: targetTab = 2
         case .connect:    targetTab = 3
         case .profile:    targetTab = 4
         }
@@ -2319,9 +2658,9 @@ struct CustomTabBar: View {
     // SUNSET 2026-05-18: TopoSelf tab labels.
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
         (title: "Today", icon: "sun.max.fill", customIcon: nil),
-        (title: "Map", icon: "hexagon.fill", customIcon: nil),
-        (title: "Pulse", icon: "waveform.path.ecg", customIcon: nil),
-        (title: "Decide", icon: "arrow.triangle.branch", customIcon: nil),
+        (title: "Map", icon: "globe.americas.fill", customIcon: nil),
+        (title: "Timeline", icon: "chart.line.uptrend.xyaxis", customIcon: nil),
+        (title: "Matrix", icon: "square.grid.3x3.fill", customIcon: nil),
         (title: "Journal", icon: "book.closed.fill", customIcon: nil)
     ]
 
@@ -2329,8 +2668,8 @@ struct CustomTabBar: View {
         switch index {
         case 0: return AccessibilityID.homeTab
         case 1: return AccessibilityID.timeTravelTab
-        case 2: return AccessibilityID.templeTab
-        case 3: return AccessibilityID.connectTab
+        case 2: return AccessibilityID.timelineTab
+        case 3: return AccessibilityID.matrixTab
         case 4: return AccessibilityID.selfTab
         default: return "tab_\(index)"
         }
@@ -2415,9 +2754,9 @@ struct FloatingTabBar: View {
     // SUNSET 2026-05-18: TopoSelf tab labels.
     private let tabs: [(title: String, icon: String, customIcon: String?)] = [
         (title: "Today", icon: "sun.max.fill", customIcon: nil),
-        (title: "Map", icon: "hexagon.fill", customIcon: nil),
-        (title: "Pulse", icon: "waveform.path.ecg", customIcon: nil),
-        (title: "Decide", icon: "arrow.triangle.branch", customIcon: nil),
+        (title: "Map", icon: "globe.americas.fill", customIcon: nil),
+        (title: "Timeline", icon: "chart.line.uptrend.xyaxis", customIcon: nil),
+        (title: "Matrix", icon: "square.grid.3x3.fill", customIcon: nil),
         (title: "Journal", icon: "book.closed.fill", customIcon: nil)
     ]
 
@@ -2425,8 +2764,8 @@ struct FloatingTabBar: View {
         switch index {
         case 0: return AccessibilityID.homeTab
         case 1: return AccessibilityID.timeTravelTab
-        case 2: return AccessibilityID.templeTab
-        case 3: return AccessibilityID.connectTab
+        case 2: return AccessibilityID.timelineTab
+        case 3: return AccessibilityID.matrixTab
         case 4: return AccessibilityID.selfTab
         default: return "tab_\(index)"
         }
@@ -2515,731 +2854,6 @@ struct FloatingTabBar: View {
         )
         .padding(.horizontal, Cosmic.Spacing.md)
         .padding(.bottom, Cosmic.Spacing.xs)
-    }
-}
-
-// MARK: - Simple Tab Views
-
-struct TodayTab: View {
-    @EnvironmentObject private var auth: AuthState
-    @State private var showingWelcome = false
-    @State private var animateWelcome = false
-    @State private var planetaryPositions: [PlanetaryPosition] = []
-    @State private var showingReportSheet = false
-    @State private var showingReportsLibrary = false
-    @State private var selectedReportType: String = ""
-    @State private var userReports: [DetailedReport] = []
-    @AppStorage("hasAstronovaPro") private var hasSubscription = false
-    @State private var showingReportShop = false
-    @AppStorage("trigger_show_report_shop") private var triggerShowReportShop: Bool = false
-    
-    private let apiServices = APIServices.shared
-    
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 24) {
-                    // Today's date header
-                    HStack {
-                        Text("Today's Horoscope")
-                            .font(.title2.weight(.semibold))
-                        Spacer()
-                        Text(Date().formatted(date: .abbreviated, time: .omitted))
-                            .font(.cosmicCaption)
-                            .foregroundStyle(Color.secondary)
-                    }
-                    
-                    todaysHoroscopeSection
-                    
-                    // Premium Insights Section (moved from Daily tab)
-                    PremiumInsightsSection(
-                        hasSubscription: hasSubscription,
-                        onInsightTap: { reportType in
-                            selectedReportType = reportType
-                            showingReportSheet = true
-                        },
-                        onViewReports: {
-                            showingReportsLibrary = true
-                        },
-                        savedReports: userReports
-                    )
-
-                    Button {
-                        showingReportShop = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "doc.text.magnifyingglass")
-                            Text("Explore all journeys (from $12.99)")
-                            Spacer()
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    planetaryPositionsSection
-                    
-                    // Primary CTAs moved to bottom
-                    PrimaryCTASection()
-                    
-                    Spacer(minLength: 120) // Extra padding for floating tab bar
-                }
-                .padding()
-                .padding(.bottom, 120) // Ensure last content is visible above floating tab bar
-            }
-            .navigationTitle("Today")
-        }
-        .onAppear {
-            if shouldShowWelcome {
-                showingWelcome = true
-                let springAnimation = Animation.spring(response: 0.3, dampingFraction: 0.6)
-                let delayedAnimation = springAnimation.delay(0.5)
-                withAnimation(delayedAnimation) {
-                    animateWelcome = true
-                }
-            }
-            planetaryPositions = []
-            checkSubscriptionStatus()
-            loadUserReports()
-            if triggerShowReportShop {
-                triggerShowReportShop = false
-                showingReportShop = true
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .reportPurchased)) { _ in
-            loadUserReports()
-        }
-        .sheet(isPresented: $showingReportSheet) {
-            ReportGenerationSheet(
-                reportType: selectedReportType,
-                onGenerate: generateReport,
-                onDismiss: {
-                    showingReportSheet = false
-                }
-            )
-            .environmentObject(auth)
-        }
-        .sheet(isPresented: $showingReportsLibrary) {
-            ReportsLibraryView(reports: userReports)
-        }
-        .sheet(isPresented: $showingReportShop, onDismiss: { loadUserReports() }) {
-            InlineReportsStoreSheet().environmentObject(auth)
-        }
-    }
-    
-    @ViewBuilder
-    private var todaysHoroscopeSection: some View {
-        // Horoscope content with enhanced visuals
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("🌟")
-                    .font(.cosmicDisplay)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading) {
-                    Text("Daily Insight")
-                        .font(.cosmicHeadline)
-                    Text("Cosmic Guidance")
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.secondary)
-                }
-                Spacer()
-            }
-
-            Text("Today brings powerful energies for transformation and growth. The planetary alignments suggest this is an excellent time for introspection and setting new intentions. Trust your intuition as you navigate the day's opportunities.")
-                .font(.cosmicBody)
-                .lineSpacing(4)
-
-            Divider()
-
-            luckyElementsSection
-        }
-        .padding(16)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(.blue.opacity(0.1), lineWidth: 1)
-        )
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Today's daily insight card")
-    }
-    
-    @ViewBuilder
-    private var keyThemesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Key Themes")
-                .font(.cosmicHeadline)
-            
-            HStack {
-                VStack {
-                    Text("💼")
-                        .font(.cosmicHeadline)
-                    Text("Career")
-                        .font(.cosmicCaption)
-                }
-                .frame(maxWidth: .infinity)
-                
-                VStack {
-                    Text("❤️")
-                        .font(.cosmicHeadline)
-                    Text("Love")
-                        .font(.cosmicCaption)
-                }
-                .frame(maxWidth: .infinity)
-                
-                VStack {
-                    Text("🌱")
-                        .font(.cosmicHeadline)
-                    Text("Growth")
-                        .font(.cosmicCaption)
-                }
-                .frame(maxWidth: .infinity)
-                
-                VStack {
-                    Text("⚖️")
-                        .font(.cosmicHeadline)
-                    Text("Balance")
-                        .font(.cosmicCaption)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .padding(.vertical, 8)
-        }
-    }
-    
-    @ViewBuilder
-    private var luckyElementsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Today's Lucky Elements")
-                .font(.cosmicHeadline)
-            
-            HStack(spacing: 32) {
-                // Lucky Color
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Lucky Color")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                        .textCase(.uppercase)
-                    
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color.cosmicAmethyst)
-                            .frame(width: 24, height: 24)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.cosmicAmethyst.opacity(0.3), lineWidth: 3)
-                            )
-                        
-                        Text("Purple")
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(Color.cosmicAmethyst)
-                    }
-                }
-                
-                Spacer()
-                
-                // Lucky Number
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Lucky Number")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                        .textCase(.uppercase)
-                    
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.yellow.opacity(0.2))
-                                .frame(width: 24, height: 24)
-                            
-                            Text("7")
-                                .font(.body.weight(.bold))
-                                .foregroundStyle(Color.primary)
-                        }
-                        
-                        Text("Seven")
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(Color.primary)
-                    }
-                }
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.secondary.opacity(0.1))
-            )
-        }
-    }
-    
-    @ViewBuilder
-    private var planetaryPositionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Current Planetary Energies")
-                .font(.cosmicHeadline)
-            
-            PlanetaryEnergiesView()
-        }
-    }
-    
-    // MARK: - Helper Functions
-    
-    private func checkSubscriptionStatus() {
-        Task {
-            _ = await StoreKitManager.shared.refreshEntitlements()
-        }
-    }
-    
-    private func loadUserReports() {
-        Task {
-            do {
-                let reports = try await apiServices.getUserReports(userId: ClientUserId.value())
-                await MainActor.run {
-                    var loaded = reports
-                    // Deterministic UI-test fallback: ensure at least one report so the library CTA renders.
-                    if loaded.isEmpty && TestEnvironment.shared.isUITest {
-                        let now = ISO8601DateFormatter().string(from: Date())
-                        let dummy = DetailedReport(
-                            reportId: UUID().uuidString,
-                            type: "birth_chart",
-                            title: "Test Report",
-                            content: "UITEST placeholder content",
-                            summary: "UITEST placeholder summary",
-                            keyInsights: ["UITEST insight"],
-                            downloadUrl: "/api/v1/reports/dummy/pdf",
-                            generatedAt: now,
-                            userId: ClientUserId.value(),
-                            status: "completed"
-                        )
-                        loaded = [dummy]
-                    }
-                    self.userReports = loaded
-                }
-            } catch {
-                #if DEBUG
-                debugPrint("[RootView] Failed to load user reports: \(error)")
-                #endif
-                await MainActor.run {
-                    // Even on failure, surface a placeholder in UI tests so flows remain unblocked.
-                    if TestEnvironment.shared.isUITest {
-                        let now = ISO8601DateFormatter().string(from: Date())
-                        self.userReports = [
-                            DetailedReport(
-                                reportId: UUID().uuidString,
-                                type: "birth_chart",
-                                title: "Test Report",
-                                content: "UITEST placeholder content",
-                                summary: "UITEST placeholder summary",
-                                keyInsights: ["UITEST insight"],
-                                downloadUrl: "/api/v1/reports/dummy/pdf",
-                                generatedAt: now,
-                                userId: ClientUserId.value(),
-                                status: "completed"
-                            )
-                        ]
-                    } else {
-                        self.userReports = []
-                    }
-                }
-            }
-        }
-    }
-    
-    private func generateReport(reportType: String) {
-        Task {
-            do {
-                let birthData = try BirthData(from: auth.profileManager.profile)
-                _ = try await apiServices.generateReport(birthData: birthData, type: reportType, userId: ClientUserId.value())
-                
-                // Reload user reports after generation
-                loadUserReports()
-            } catch {
-                #if DEBUG
-                debugPrint("[RootView] Failed to generate report: \(error)")
-                #endif
-            }
-        }
-    }
-
-    private var shouldShowWelcome: Bool {
-        return !hasCompletedOnboarding
-    }
-
-    private var hasCompletedOnboarding: Bool {
-        UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") ||
-        UserDefaults.standard.bool(forKey: "onboarding_complete")
-    }
-}
-
-struct PlanetaryEnergiesView: View {
-    @State private var planetaryPositions: [DetailedPlanetaryPosition] = []
-    @State private var isLoading = true
-    @State private var errorMessage: String?
-    
-    var body: some View {
-        Group {
-            if isLoading {
-                HStack {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                    Text("Loading planetary energies...")
-                        .font(.callout)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-            } else if let errorMessage = errorMessage {
-                VStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
-                    Text(errorMessage)
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                        .multilineTextAlignment(.center)
-                    Button("Retry") {
-                        loadPlanetaryData()
-                    }
-                    .font(.cosmicCaption)
-                    .foregroundStyle(.blue)
-                }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-            } else {
-                LazyVStack(spacing: 8) {
-                    ForEach(planetaryPositions.prefix(5), id: \.id) { planet in
-                        HStack {
-                            Text(planet.symbol)
-                                .font(.cosmicTitle2)
-                                .frame(width: 30)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(planet.name)
-                                    .font(.subheadline.weight(.medium))
-                                Text("\(planet.sign) \(String(format: "%.1f", planet.degree))°")
-                                    .font(.cosmicCaption)
-                                    .foregroundStyle(Color.cosmicTextSecondary)
-                            }
-                            
-                            Spacer()
-                            
-                            if planet.retrograde {
-                                Text("℞")
-                                    .font(.cosmicCaption)
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
-                    }
-                }
-            }
-        }
-        .onAppear {
-            loadPlanetaryData()
-        }
-    }
-    
-    private func loadPlanetaryData() {
-        isLoading = true
-        errorMessage = nil
-
-        Task {
-            do {
-                // Primary: fetch via API (now with robust fallbacks inside APIServices)
-                let positions = try await APIServices.shared.getDetailedPlanetaryPositions()
-                await MainActor.run {
-                    self.planetaryPositions = positions
-                    self.isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Unable to load planetary data"
-                    self.isLoading = false
-                }
-            }
-        }
-    }
-}
-
-struct PlanetCard: View {
-    let symbol: String
-    let name: String
-    let sign: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(symbol)
-                .font(.cosmicTitle2)
-            Text(name)
-                .font(.cosmicMicro)
-                .fontWeight(.medium)
-            Text(sign)
-                .font(.cosmicMicro)
-                .foregroundStyle(Color.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(Color.cosmicNebula.opacity(0.1))
-        .cornerRadius(8)
-    }
-}
-
-// MARK: - Welcome and CTA Components
-
-struct WelcomeToTodayCard: View {
-    let onDismiss: () -> Void
-    @State private var animateIcon = false
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Image(systemName: "sparkles")
-                    .font(.cosmicTitle2)
-                    .foregroundStyle(.blue)
-                    .scaleEffect(animateIcon ? 1.2 : 1.0)
-                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: animateIcon)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Welcome to Your Cosmic Journey!")
-                        .font(.headline.weight(.semibold))
-                    Text("Your personalized daily guidance awaits")
-                        .font(.callout)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                }
-                
-                Spacer()
-                
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.seal.fill")
-                        .font(.cosmicHeadline)
-                        .foregroundStyle(.gray.opacity(0.6))
-                }
-            }
-            
-            HStack(spacing: 12) {
-                Text("💫")
-                    .font(.cosmicTitle1)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Time Travel")
-                        .font(.callout.weight(.medium))
-                    Text("• Check daily insights below")
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                    Text("• Find compatibility matches")
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                    Text("• Ask anything")
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                }
-                
-                Spacer()
-            }
-        }
-        .padding(20)
-        .background(.blue.opacity(0.05), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(.blue.opacity(0.2), lineWidth: 1)
-        )
-        .onAppear {
-            animateIcon = true
-        }
-    }
-}
-
-struct PrimaryCTASection: View {
-    @State private var animateGradient = false
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text("Quick Actions")
-                    .font(.cosmicHeadline)
-                Spacer()
-            }
-            
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                CTACard(
-                    title: "Check Compatibility",
-                    subtitle: "With someone special",
-                    icon: "heart.circle.fill",
-                    color: .pink,
-                    action: {
-                        switchToTab(1) // Switch to Match tab
-                    }
-                )
-                
-                CTACard(
-                    title: "Ask the Stars",
-                    subtitle: "AI guidance & insights",
-                    icon: "message.circle.fill",
-                    color: .blue,
-                    action: {
-                        switchToTab(3) // Switch to NexusTab (Ask page)
-                    }
-                )
-            }
-        }
-    }
-    
-    private func switchToTab(_ index: Int) {
-        HapticFeedbackService.shared.mediumImpact()
-
-        // Post notification to switch tabs
-        NotificationCenter.default.post(name: .switchToTab, object: index)
-    }
-}
-
-struct CTACard: View {
-    let title: String
-    let subtitle: String
-    let icon: String
-    let color: Color
-    let action: () -> Void
-    @State private var isPressed = false
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.cosmicTitle2)
-                    .foregroundStyle(color)
-                
-                VStack(spacing: 2) {
-                    Text(title)
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(16)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(color.opacity(0.3), lineWidth: 1)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-        .scaleEffect(isPressed ? 0.95 : 1.0)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            withAnimation(.easeInOut(duration: 0.1)) {
-                isPressed = pressing
-            }
-        }, perform: {})
-    }
-}
-
-struct DiscoveryCTASection: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text("Discover More")
-                    .font(.cosmicHeadline)
-                Spacer()
-            }
-            
-            VStack(spacing: 12) {
-                DiscoveryCard(
-                    title: "Time Travel Through Years",
-                    description: "Dive deep into your cosmic blueprint and personality insights",
-                    icon: "circle.grid.cross.fill",
-                    color: .purple,
-                    action: {
-                        switchToTimeTravelTab()
-                    }
-                )
-                
-                DiscoveryCard(
-                    title: "Track Planetary Transits",
-                    description: "See how current cosmic events affect your daily life",
-                    icon: "globe",
-                    color: .green,
-                    action: {
-                        switchToProfileCharts()
-                    }
-                )
-                
-                DiscoveryCard(
-                    title: "Save Your Favorite Readings",
-                    description: "Bookmark insights that resonate with you for future reference",
-                    icon: "bookmark.circle.fill",
-                    color: .orange,
-                    action: {
-                        switchToProfileBookmarks()
-                    }
-                )
-            }
-        }
-    }
-    
-    private func switchToProfileCharts() {
-        HapticFeedbackService.shared.lightImpact()
-
-        // Switch to Profile (Manage) tab and then to Charts section
-        NotificationCenter.default.post(name: .switchToTab, object: 4)
-        NotificationCenter.default.post(name: .switchToProfileSection, object: 1)
-    }
-    
-    private func switchToTimeTravelTab() {
-        HapticFeedbackService.shared.lightImpact()
-        NotificationCenter.default.post(name: .switchToTab, object: 1)
-    }
-
-    private func switchToProfileBookmarks() {
-        HapticFeedbackService.shared.lightImpact()
-
-        // Switch to Profile (Manage) tab and then to Bookmarks section
-        NotificationCenter.default.post(name: .switchToTab, object: 4)
-        NotificationCenter.default.post(name: .switchToProfileSection, object: 2)
-    }
-}
-
-struct DiscoveryCard: View {
-    let title: String
-    let description: String
-    let icon: String
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.cosmicTitle2)
-                    .foregroundStyle(color)
-                    .frame(width: 24)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.leading)
-                    
-                    Text(description)
-                        .font(.cosmicCaption)
-                        .foregroundStyle(Color.cosmicTextSecondary)
-                        .multilineTextAlignment(.leading)
-                        .lineSpacing(2)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.cosmicCaption)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-            }
-            .padding(16)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(color.opacity(0.2), lineWidth: 1)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -3833,6 +3447,7 @@ final class OracleViewModel: ObservableObject {
 // MARK: - Oracle View
 
 struct OracleView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = OracleViewModel()
     @ObservedObject private var quotaManager = OracleQuotaManager.shared
     @EnvironmentObject private var auth: AuthState
@@ -3840,6 +3455,7 @@ struct OracleView: View {
     @State private var activeSheet: OracleSheet?
     private let onBuyCredits: (() -> Void)?
     private let onUpgrade: (() -> Void)?
+    private let showsCloseButton: Bool
 
     private enum OracleSheet: Identifiable {
         case paywall
@@ -3857,10 +3473,12 @@ struct OracleView: View {
 
     init(
         onBuyCredits: (() -> Void)? = nil,
-        onUpgrade: (() -> Void)? = nil
+        onUpgrade: (() -> Void)? = nil,
+        showsCloseButton: Bool = true
     ) {
         self.onBuyCredits = onBuyCredits
         self.onUpgrade = onUpgrade
+        self.showsCloseButton = showsCloseButton
     }
 
     private var allowsOracleInteraction: Bool {
@@ -3868,7 +3486,7 @@ struct OracleView: View {
     }
 
     private var shouldShowSignInOverlay: Bool {
-        !auth.isAuthenticated && !TestEnvironment.shared.isUITest
+        !auth.isAuthenticated && !TestEnvironment.shared.isUITest && showingSignInPrompt
     }
 
     var body: some View {
@@ -3961,13 +3579,19 @@ struct OracleView: View {
                 ToolbarItem(placement: .principal) {
                     OracleNavTitle()
                 }
+                if showsCloseButton {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                    }
+                }
             }
         }
         .onAppear {
             quotaManager.refresh()
 
-            // Show sign-in prompt if not authenticated
-            if shouldShowSignInOverlay {
+            if !auth.isAuthenticated && !TestEnvironment.shared.isUITest {
                 showingSignInPrompt = true
             }
         }
@@ -4511,7 +4135,8 @@ struct SubscriptionSheet: View {
                             let plan = ShopCatalog.proPlan(for: ShopCatalog.defaultProProductID)
                             let success: Bool
                             #if DEBUG
-                            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+                            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+                                TestEnvironment.shared.hasArgument(.mockPurchases) {
                                 success = await BasicStoreManager.shared.purchaseProduct(productId: plan.productId)
                             } else {
                                 success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
@@ -5235,7 +4860,7 @@ struct ManageDashboardView: View {
                     Label("Contact Support", systemImage: "message.badge.filled.fill")
                 }
                 
-                Link(destination: URL(string: "https://astronova.app/help")!) {
+                Link(destination: URL(string: "https://astronova-ghcr.onrender.com/support")!) {
                     Label("Help Center", systemImage: "questionmark.app.fill")
                 }
             }
@@ -5883,7 +5508,7 @@ struct EnhancedSettingsView: View {
                         Label("Contact Support", systemImage: "message.badge.filled.fill")
                     }
                     
-                    Link(destination: URL(string: "https://astronova.app/help")!) {
+                    Link(destination: URL(string: "https://astronova-ghcr.onrender.com/support")!) {
                         Label("Help Center", systemImage: "questionmark.app.fill")
                     }
                     
@@ -6145,124 +5770,13 @@ private struct PolicySection: View {
     }
 }
 
-struct DataPrivacyView: View {
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("We take your privacy seriously. Here's how we handle your data:")
-                    .font(.cosmicBody)
-                
-                PrivacySection(
-                    title: "What We Collect",
-                    content: "• Birth date, time, and location\n• Astrological preferences\n• Pseudonymous usage events tied to a random app UUID\n• Session diagnostics when Share Anonymous Usage is enabled\n\nYou can turn off anonymous analytics in Settings → Privacy → Share Anonymous Usage. Turning it off stops analytics forwarding, clears buffered portfolio events, rotates the analytics UUID, and stops Smartlook diagnostics."
-                )
-                
-                PrivacySection(
-                    title: "How We Use It",
-                    content: "• Generate personalized horoscopes\n• Calculate astrological charts\n• Improve app experience"
-                )
-                
-                PrivacySection(
-                    title: "Data Security",
-                    content: "• All data is encrypted in transit\n• Stored securely on your device and our servers\n• Access controlled with authentication"
-                )
-            }
-            .padding()
-        }
-        .navigationTitle("Data & Privacy")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct PrivacySection: View {
-    let title: String
-    let content: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.cosmicHeadline)
-            
-            Text(content)
-                .font(.cosmicBody)
-                .foregroundStyle(Color.cosmicTextSecondary)
-        }
-    }
-}
-
-struct ExportDataView: View {
-    @ObservedObject var auth: AuthState
-    @State private var showingShareSheet = false
-    @State private var exportData: String = ""
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "square.and.arrow.up.circle.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.blue)
-            
-            VStack(spacing: 12) {
-                Text("Export Your Data")
-                    .font(.title2.weight(.semibold))
-                
-                Text("Download all your astrological data including birth information, preferences, and saved readings.")
-                    .font(.cosmicBody)
-                    .foregroundStyle(Color.cosmicTextSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            
-            Button("Export Data") {
-                generateExportData()
-                showingShareSheet = true
-            }
-            .font(.cosmicHeadline)
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(.blue)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            Spacer()
-        }
-        .padding()
-        .navigationTitle("Export Data")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingShareSheet) {
-            ShareSheet(items: [exportData])
-        }
-    }
-    
-    private func generateExportData() {
-        let profile = auth.profileManager.profile
-        
-        // Create JSON format for better structure and safety
-        let exportDict: [String: Any] = [
-            "app": "Astronova",
-            "version": "1.0.0",
-            "exportDate": Date().ISO8601Format(),
-            "profile": [
-                "fullName": profile.fullName,
-                "birthDate": profile.birthDate.ISO8601Format(),
-                "birthTime": profile.birthTime?.ISO8601Format() ?? "",
-                "birthPlace": profile.birthPlace ?? "",
-                "sunSign": profile.sunSign ?? "",
-                "moonSign": profile.moonSign ?? "",
-                "risingSign": profile.risingSign ?? ""
-            ]
-        ]
-        
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: exportDict, options: .prettyPrinted)
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                exportData = jsonString
-            } else {
-                exportData = "Error: Could not convert export data to string"
-            }
-        } catch {
-            exportData = "Error generating export data: \(error.localizedDescription)"
-        }
-    }
-}
+// NOTE: `DataPrivacyView` and `ExportDataView` were moved out of this file into
+// dedicated, fully-featured implementations:
+//   client/AstronovaApp/Features/Topo/Views/DataPrivacyView.swift
+//   client/AstronovaApp/Features/Topo/Views/ExportDataView.swift
+// The old `PrivacySection` helper moved with them (it was only used by the old
+// DataPrivacyView). `ShareSheet` stays here — it is shared by ExportDataView and
+// any other share affordance.
 
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -7224,6 +6738,7 @@ struct ReportGenerationSheet: View {
                             
                             // Individual Report - Secondary Option
                             if let offer = mappedReportOffer {
+                                let unavailable = isReportProductUnavailable(offer)
                                 Button {
                                     purchaseIndividualReport(offer)
                                 } label: {
@@ -7234,7 +6749,7 @@ struct ReportGenerationSheet: View {
                                                 .foregroundStyle(Color.cosmicTextSecondary)
                                             Text("Open \(reportInfo.title)")
                                                 .font(.subheadline.weight(.medium))
-                                            Text(priceLabel(for: offer))
+                                            Text(unavailable ? "Unavailable" : priceLabel(for: offer))
                                                 .font(.headline.weight(.bold))
                                         }
                                         Spacer()
@@ -7247,6 +6762,8 @@ struct ReportGenerationSheet: View {
                                     .background(.quaternary)
                                     .cornerRadius(12)
                                 }
+                                .disabled(unavailable)
+                                .accessibilityHint(unavailable ? "This report is unavailable right now. You will not be charged." : "")
                             }
                         }
                     }
@@ -7273,6 +6790,9 @@ struct ReportGenerationSheet: View {
         .onAppear {
             hasSubscription = UserDefaults.standard.bool(forKey: "hasAstronovaPro")
         }
+        .task {
+            await storeKitManager.loadProducts()
+        }
         .sheet(isPresented: $showingSubscription) {
             PaywallVariantRouter(context: .report)
         }
@@ -7298,7 +6818,7 @@ struct ReportGenerationSheet: View {
         .alert("Purchase Error", isPresented: $showPurchaseError) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Unable to complete purchase. Please try again.")
+            Text("This report is unavailable right now. You were not charged.")
         }
     }
     
@@ -7312,12 +6832,27 @@ struct ReportGenerationSheet: View {
         Task {
             let success: Bool
             #if DEBUG
-            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+                TestEnvironment.shared.hasArgument(.mockPurchases) {
                 success = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
             } else {
+                guard storeKitManager.isProductAvailableForPurchase(offer.productId) else {
+                    await MainActor.run {
+                        isGenerating = false
+                        showPurchaseError = true
+                    }
+                    return
+                }
                 success = await storeKitManager.purchaseProduct(productId: offer.productId)
             }
             #else
+            guard storeKitManager.isProductAvailableForPurchase(offer.productId) else {
+                await MainActor.run {
+                    isGenerating = false
+                    showPurchaseError = true
+                }
+                return
+            }
             success = await storeKitManager.purchaseProduct(productId: offer.productId)
             #endif
             await MainActor.run {
@@ -7333,6 +6868,17 @@ struct ReportGenerationSheet: View {
 
     private func priceLabel(for offer: ShopCatalog.Report) -> String {
         storeKitManager.products[offer.productId] ?? ShopCatalog.price(for: offer.productId)
+    }
+
+    private func isReportProductUnavailable(_ offer: ShopCatalog.Report) -> Bool {
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+            TestEnvironment.shared.hasArgument(.mockPurchases) {
+            return false
+        }
+        #endif
+        return storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(offer.productId)
     }
     
     private func getSampleOverview() -> String {
@@ -7423,6 +6969,7 @@ struct PaymentOptionsSheet: View {
     let onSubscribe: () -> Void
     
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var storeKitManager = StoreKitManager.shared
     
     var body: some View {
         NavigationStack {
@@ -7494,6 +7041,7 @@ struct PaymentOptionsSheet: View {
                     
                     // Individual Report Option
                     if let offer = reportOffer {
+                        let unavailable = isReportProductUnavailable(offer)
                         Button {
                             onPurchaseIndividual()
                         } label: {
@@ -7504,7 +7052,7 @@ struct PaymentOptionsSheet: View {
                                         .foregroundStyle(Color.cosmicTextSecondary)
                                     Text(reportInfo.title)
                                         .font(.cosmicHeadline)
-                                    Text(ShopCatalog.price(for: offer.productId))
+                                    Text(unavailable ? "Unavailable" : ShopCatalog.price(for: offer.productId))
                                         .font(.title3.weight(.bold))
                                 }
                                 
@@ -7520,6 +7068,8 @@ struct PaymentOptionsSheet: View {
                             .cornerRadius(12)
                         }
                         .buttonStyle(.plain)
+                        .disabled(unavailable)
+                        .accessibilityHint(unavailable ? "This report is unavailable right now. You will not be charged." : "")
                     }
                 }
                 
@@ -7536,6 +7086,20 @@ struct PaymentOptionsSheet: View {
                 }
             }
         }
+        .task {
+            await storeKitManager.loadProducts()
+        }
+    }
+
+    private func isReportProductUnavailable(_ offer: ShopCatalog.Report) -> Bool {
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+            TestEnvironment.shared.hasArgument(.mockPurchases) {
+            return false
+        }
+        #endif
+        return storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(offer.productId)
     }
 }
 
@@ -7553,6 +7117,11 @@ struct InlineReportsStoreSheet: View {
     // App Store compliance URLs
     private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
     private let privacyURL = URL(string: "https://astronova-ghcr.onrender.com/privacy")!
+
+    private var canUseReportPurchases: Bool {
+        auth.isAuthenticated ||
+        (TestEnvironment.shared.isUITest && UserDefaults.standard.bool(forKey: "has_signed_in"))
+    }
 
     private enum AlertState: Identifiable {
         case purchaseSuccess(String)
@@ -7598,6 +7167,13 @@ struct InlineReportsStoreSheet: View {
         NavigationStack {
             List {
                 Section("Detailed Reports") {
+                    if !canUseReportPurchases {
+                        Text("Sign in with Apple before buying reports so purchases can be saved to your account and generated immediately.")
+                            .font(.cosmicCaption)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                            .listRowBackground(Color.cosmicSurface)
+                    }
+
                     ForEach(offers) { offer in
                         #if DEBUG
                         let testProEntitled = TestEnvironment.shared.hasArgument(.setProSubscribed)
@@ -7607,6 +7183,7 @@ struct InlineReportsStoreSheet: View {
                         let proEntitled = hasProSubscription || UserDefaults.standard.bool(forKey: "hasAstronovaPro") || testProEntitled
                         let purchased = isPurchased(offer)
                         let isEntitled = proEntitled || purchased
+                        let unavailable = isReportProductUnavailable(offer)
                         HStack(spacing: 12) {
                             Circle().fill(offer.color.opacity(0.15)).frame(width: 28, height: 28)
                             VStack(alignment: .leading, spacing: 2) {
@@ -7633,12 +7210,13 @@ struct InlineReportsStoreSheet: View {
                                 } label: {
                                     HStack(spacing: 6) {
                                         if isPurchasing == offer.productId { ProgressView().tint(.white) }
-                                        Text(isPurchasing == offer.productId ? "Processing..." : priceLabel(for: offer))
+                                        Text(isPurchasing == offer.productId ? "Processing..." : (unavailable ? "Unavailable" : (canUseReportPurchases ? priceLabel(for: offer) : "Sign in required")))
                                     }
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .disabled(isPurchasing != nil)
+                                .disabled(isPurchasing != nil || unavailable)
                                 .accessibilityIdentifier(AccessibilityID.reportBuyButton(offer.productId))
+                                .accessibilityHint(unavailable ? "This report is unavailable right now. You will not be charged." : "")
                             }
                         }
                         .listRowBackground(Color.cosmicSurface)
@@ -7650,7 +7228,8 @@ struct InlineReportsStoreSheet: View {
                     Button {
                         Task {
                             #if DEBUG
-                            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+                            if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+                                TestEnvironment.shared.hasArgument(.mockPurchases) {
                                 let restored = await BasicStoreManager.shared.restorePurchases()
                                 await MainActor.run {
                                     activeAlert = .restore(restored)
@@ -7671,13 +7250,14 @@ struct InlineReportsStoreSheet: View {
                         }
                     }
                     .foregroundStyle(Color.cosmicGold)
+                    .accessibilityIdentifier("reportsStore.restorePurchasesButton")
                     .listRowBackground(Color.cosmicSurface)
                 }
 
                 // App Store compliance: Terms and Privacy links
                 Section {
                     VStack(spacing: Cosmic.Spacing.xs) {
-                        Text("One-time purchase. Reports available immediately.")
+                        Text(reportAvailabilityText)
                             .font(.cosmicCaption)
                             .foregroundStyle(Color.cosmicTextTertiary)
                             .multilineTextAlignment(.center)
@@ -7716,12 +7296,15 @@ struct InlineReportsStoreSheet: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
+            .task {
+                await storeKitManager.loadProducts()
+            }
         }
     }
 
     private var reportsShopFooter: some View {
         VStack(spacing: Cosmic.Spacing.xs) {
-            Text("One-time purchase. Reports available immediately.")
+            Text(reportAvailabilityText)
                 .font(.cosmicCaption)
                 .foregroundStyle(Color.cosmicTextTertiary)
                 .multilineTextAlignment(.center)
@@ -7752,14 +7335,27 @@ struct InlineReportsStoreSheet: View {
         .accessibilityIdentifier(AccessibilityID.reportsShopFooter)
     }
 
+    private var reportAvailabilityText: String {
+        canUseReportPurchases
+            ? "One-time purchase. Reports available immediately."
+            : "Sign in with Apple before buying reports so purchases can be saved and generated."
+    }
+
     private func buy(_ offer: ShopCatalog.Report) async {
         guard isPurchasing == nil else { return }
+        guard canUseReportPurchases else {
+            await MainActor.run {
+                activeAlert = .purchaseError("Sign in with Apple before buying reports so your purchase can be saved and generated.")
+            }
+            return
+        }
         await MainActor.run { isPurchasing = offer.productId }
         defer { Task { @MainActor in isPurchasing = nil } }
 
         #if DEBUG
         // UI tests only: use mock store
-        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+            TestEnvironment.shared.hasArgument(.mockPurchases) {
             let ok = await BasicStoreManager.shared.purchaseProduct(productId: offer.productId)
             guard ok else {
                 await MainActor.run {
@@ -7777,6 +7373,13 @@ struct InlineReportsStoreSheet: View {
         #endif
 
         // Production: Use StoreKit
+        guard storeKitManager.isProductAvailableForPurchase(offer.productId) else {
+            await MainActor.run {
+                activeAlert = .purchaseError("This report is unavailable right now. You were not charged.")
+            }
+            return
+        }
+
         let ok = await storeKitManager.purchaseProduct(productId: offer.productId)
         guard ok else {
             await MainActor.run {
@@ -7794,21 +7397,9 @@ struct InlineReportsStoreSheet: View {
 
     private func generateReportAfterPurchase(_ offer: ShopCatalog.Report) async -> Bool {
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
-            let now = ISO8601DateFormatter().string(from: Date())
-            let report = DetailedReport(
-                reportId: UUID().uuidString,
-                type: mapReportType(offer.id),
-                title: offer.title,
-                content: "Purchase confirmed. Your report will appear after sync.",
-                summary: "Mock report generated for UI testing.",
-                keyInsights: ["Mock report ready"],
-                downloadUrl: nil,
-                generatedAt: now,
-                userId: ClientUserId.value(),
-                status: "completed"
-            )
-            APIServices.shared.appendMockReport(report)
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+            TestEnvironment.shared.hasArgument(.mockPurchases) {
+            APIServices.shared.recordMockReportPurchase(for: offer, userId: ClientUserId.value())
             return true
         }
         #endif
@@ -7842,9 +7433,21 @@ struct InlineReportsStoreSheet: View {
         storeKitManager.products[offer.productId] ?? ShopCatalog.price(for: offer.productId)
     }
 
+    private func isReportProductUnavailable(_ offer: ShopCatalog.Report) -> Bool {
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+            TestEnvironment.shared.hasArgument(.mockPurchases) {
+            return false
+        }
+        #endif
+        return storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(offer.productId)
+    }
+
     private func isPurchased(_ offer: ShopCatalog.Report) -> Bool {
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") {
+        if UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+            TestEnvironment.shared.hasArgument(.mockPurchases) {
             return BasicStoreManager.shared.hasProduct(offer.productId)
         }
         #endif
@@ -8414,33 +8017,33 @@ struct TabGuideOverlay: View {
     
     private let guides = [
         TabGuideContent(
-            title: "Discover",
-            description: "Start with your daily horoscope — personal, love, career, wealth, and health — plus planetary highlights and lucky elements.",
+            title: "Today",
+            description: "Start with daily terrain, timing context, current dasha, and one practical action for the day.",
             icon: "sun.and.horizon.circle.fill",
             color: .cosmicGold
         ),
         TabGuideContent(
-            title: "Time Travel",
-            description: "Explore timelines and meanings across dates — see how energies shift and what stays consistent.",
-            icon: "clock.arrow.circlepath",
+            title: "Map",
+            description: "Explore personal map signals and life-domain surfaces for a spatial read on your chart.",
+            icon: "map.fill",
             color: .cosmicAmethyst
         ),
         TabGuideContent(
-            title: "Temple",
-            description: "Book poojas, explore guidance options, and align with trusted Vedic traditions when you want deeper support.",
-            icon: "building.columns.fill",
+            title: "Timeline",
+            description: "Review timing windows, predictions, and longer-range shifts as your periods unfold.",
+            icon: "clock.arrow.circlepath",
             color: .cosmicCopper
         ),
         TabGuideContent(
-            title: "Connect",
-            description: "Check compatibility and relationship insights — compare charts and explore your dynamic with someone.",
-            icon: "person.2.square.stack.fill",
+            title: "Matrix",
+            description: "Study numerology, Loshu patterns, archetype signals, and deeper pattern analysis.",
+            icon: "square.grid.3x3.fill",
             color: .cosmicSuccess
         ),
         TabGuideContent(
-            title: "Self",
-            description: "Your saved readings, profile details, and long‑term journey — everything about you in one place.",
-            icon: "person.crop.circle.badge.moon",
+            title: "Journal",
+            description: "Capture reflections, inspect daily signals, and keep a free-will log alongside the guidance.",
+            icon: "book.closed.fill",
             color: .cosmicBrass
         )
     ]
@@ -8588,42 +8191,40 @@ struct CompellingLandingView: View {
     
     private var cosmicBackground: some View {
         ZStack {
-            // Deep space gradient
-            LinearGradient(
-                colors: [
-                    Color(red: 0.05, green: 0.05, blue: 0.15),
-                    Color(red: 0.1, green: 0.05, blue: 0.25),
-                    Color(red: 0.15, green: 0.1, blue: 0.35),
-                    Color(red: 0.2, green: 0.15, blue: 0.4)
-                ],
-                startPoint: animateGradient ? .topLeading : .bottomTrailing,
-                endPoint: animateGradient ? .bottomTrailing : .topLeading
-            )
+            Color.cosmicVoid
             .ignoresSafeArea()
-            .animation(.easeInOut(duration: 8).repeatForever(autoreverses: true), value: animateGradient)
-            
-            // Animated constellation
-            ForEach(0..<50, id: \.self) { i in
+
+            ForEach(0..<64, id: \.self) { index in
                 Circle()
-                    .fill(.white.opacity(Double.random(in: 0.3...0.8)))
-                    .frame(width: CGFloat.random(in: 1...3))
+                    .fill(Color.cosmicTextPrimary.opacity(index.isMultiple(of: 5) ? 0.72 : 0.34))
+                    .frame(width: index.isMultiple(of: 7) ? 2.2 : 1.2)
                     .position(
-                        x: CGFloat.random(in: 0...UIScreen.main.bounds.width),
-                        y: CGFloat.random(in: 0...UIScreen.main.bounds.height)
+                        x: CGFloat((index * 47) % 390),
+                        y: CGFloat((index * 83) % 820)
                     )
                     .scaleEffect(animateStars ? 1.2 : 0.8)
                     .animation(
-                        .easeInOut(duration: Double.random(in: 2...4))
-                        .repeatForever(autoreverses: true)
-                        .delay(Double.random(in: 0...2)),
+                        .easeInOut(duration: 2.6 + Double(index % 4) * 0.4)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index % 6) * 0.22),
                         value: animateStars
                     )
             }
-            
-            // Flowing cosmic particles
-            ForEach(0..<15, id: \.self) { i in
-                cosmicParticle(index: i)
+
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [
+                        Color.cosmicGold.opacity(0.18),
+                        Color.cosmicAmethyst.opacity(0.08),
+                        .clear
+                    ],
+                    startPoint: .bottom,
+                    endPoint: .top
+                )
+                .frame(height: 260)
             }
+            .ignoresSafeArea()
         }
     }
     
@@ -8659,86 +8260,87 @@ struct CompellingLandingView: View {
     private var cosmicHookPhase: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                Spacer()
-                
-                VStack(spacing: 32) {
-                    // Cosmic symbol
+                VStack(spacing: 18) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("ASTRONOVA")
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .tracking(4)
+                                .foregroundStyle(Color.cosmicGold)
+                                .accessibilityIdentifier("auth.calibrationLanding")
+                            Text("v.26.05 · DELHI MERIDIAN")
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .tracking(2.4)
+                                .foregroundStyle(Color.cosmicTextTertiary)
+                        }
+                        Spacer()
+                        Text("LIVE SKY")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .tracking(2.2)
+                            .foregroundStyle(Color.cosmicTextSecondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(Color.cosmicSurface.opacity(0.72))
+                                    .overlay(Capsule().stroke(Color.cosmicGold.opacity(0.22), lineWidth: 1))
+                            )
+                    }
+
+                    Spacer(minLength: 24)
+
                     ZStack {
                         Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [.purple.opacity(0.3), .clear],
-                                    center: .center,
-                                    startRadius: 20,
-                                    endRadius: 60
-                                )
-                            )
-                            .frame(width: 100, height: 100)
-                            .scaleEffect(animateStars ? 1.1 : 0.9)
-                            .animation(.easeInOut(duration: 3).repeatForever(autoreverses: true), value: animateStars)
-                        
-                        Text("🌟")
-                            .font(.system(size: 32))
-                            .rotationEffect(.degrees(animateStars ? 360 : 0))
-                            .animation(.linear(duration: 20).repeatForever(autoreverses: false), value: animateStars)
+                            .stroke(Color.cosmicTextPrimary.opacity(0.12), lineWidth: 0.8)
+                            .frame(width: min(geometry.size.width * 0.68, 270))
+                        Circle()
+                            .stroke(Color.cosmicTextPrimary.opacity(0.08), style: StrokeStyle(lineWidth: 0.8, dash: [2, 7]))
+                            .frame(width: min(geometry.size.width * 0.48, 190))
+
+                        ForEach(0..<12, id: \.self) { index in
+                            Capsule()
+                                .fill(Color.cosmicTextPrimary.opacity(0.34))
+                                .frame(width: 1, height: 11)
+                                .offset(y: -min(geometry.size.width * 0.34, 135))
+                                .rotationEffect(.degrees(Double(index) * 30))
+                        }
+
+                        VStack(spacing: 8) {
+                            Text("SYSTEM ACQUIRING")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .tracking(3.6)
+                                .foregroundStyle(Color.cosmicGold)
+                            Text("9 processes · 12 houses · 1 you")
+                                .font(.system(size: 14, weight: .regular, design: .serif))
+                                .italic()
+                                .foregroundStyle(Color.cosmicTextSecondary)
+                        }
                     }
-                    
-                    // Main headline
-                    VStack(spacing: 12) {
-                        Text("Get today's move in under a minute")
-                            .font(.title.weight(.bold))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                        
-                        Text("Start with one clear action for right now, then build the full map when you're ready.")
+
+                    Spacer(minLength: 18)
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        (Text("Astro")
+                            .foregroundStyle(Color.cosmicTextPrimary)
+                         + Text("nova")
+                            .italic()
+                            .foregroundStyle(Color.cosmicGold))
+                            .font(.system(size: 64, weight: .bold, design: .serif))
+                            .minimumScaleFactor(0.72)
+
+                        Text("A working model of your life, calibrated from birth time, place, number patterns, and live sky state.")
                             .font(.cosmicBody)
-                            .foregroundStyle(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
+                            .foregroundStyle(Color.cosmicTextSecondary)
                             .lineSpacing(4)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    
-                    // Quick cosmic data preview
-                    HStack(spacing: 20) {
-                        VStack(spacing: 4) {
-                            Text(currentMoonPhase)
-                                .font(.cosmicTitle2)
-                            Text("Moon")
-                                .font(.cosmicCaption)
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                        
-                        VStack(spacing: 4) {
-                            Text("⚡")
-                                .font(.cosmicTitle2)
-                                .foregroundStyle(.yellow)
-                            Text("Energy")
-                                .font(.cosmicCaption)
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                        
-                        VStack(spacing: 4) {
-                            Text("🌟")
-                                .font(.cosmicTitle2)
-                            Text("Insight")
-                                .font(.cosmicCaption)
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
-                    }
-                    .padding(16)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                    
-                    // Call to action
-                    Text("Fastest path to value")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                    
-                    // Sign in buttons
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                     signInButtons
                 }
-                .padding(.horizontal, 24)
-                
-                Spacer()
+                .padding(.horizontal, Cosmic.Spacing.screen)
+                .padding(.top, 24)
+                .padding(.bottom, 24)
             }
             .frame(height: geometry.size.height)
         }
@@ -8822,16 +8424,18 @@ struct CompellingLandingView: View {
             Spacer()
             
             VStack(spacing: 16) {
-                Text("🌌")
-                    .font(.system(size: 60))
-                
-                Text("Complete Your Profile")
-                    .font(.title.weight(.bold))
-                    .foregroundStyle(.white)
-                
-                Text("Get personalized insights and your complete birth chart")
+                Text("ASTRONOVA")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .tracking(4)
+                    .foregroundStyle(Color.cosmicGold)
+
+                Text("Complete calibration")
+                    .font(.system(size: 40, weight: .bold, design: .serif))
+                    .foregroundStyle(Color.cosmicTextPrimary)
+
+                Text("Sign in to carry your chart, reports, gates, and purchases across devices.")
                     .font(.cosmicCallout)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(Color.cosmicTextSecondary)
                     .multilineTextAlignment(.center)
             }
             
@@ -8875,23 +8479,23 @@ struct CompellingLandingView: View {
                 Button {
                     handleSkipSignIn()
                 } label: {
-                    Text("Preview today without signing in")
+                    Text("Preview calibration without signing in")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.cosmicTextPrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(.white.opacity(0.12))
+                                .fill(Color.cosmicSurface.opacity(0.74))
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(.white.opacity(0.28), lineWidth: 1)
+                                .stroke(Color.cosmicGold.opacity(0.28), lineWidth: 1)
                         )
                 }
                 .buttonStyle(.plain)
                 .disabled(inProgress)
-                .accessibilityLabel("Preview today without signing in")
+                .accessibilityLabel("Preview calibration without signing in")
                 .accessibilityIdentifier(AccessibilityID.continueWithoutSigningInButton)
                 .accessibilityAddTraits(.isButton)
 
@@ -8900,9 +8504,9 @@ struct CompellingLandingView: View {
                 // isn't a surprise to anyone reading the App Store Privacy
                 // Nutrition Label later. The full controls live in
                 // Settings → Privacy → Share Anonymous Usage.
-                Text("Fast preview stays on this device. Usage is tied to a random app UUID; toggle off in Settings → Privacy.")
+                Text("Guest calibration stays on this device. Usage is tied to a random app UUID; toggle off in Settings → Privacy.")
                     .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(Color.cosmicTextTertiary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
                     .accessibilityIdentifier("guestModeDisclosure")
@@ -9026,7 +8630,10 @@ struct CompellingLandingView: View {
             "profile_setup_birth_date",
             "profile_setup_birth_time",
             "profile_setup_birth_time_unknown",
-            "profile_setup_birth_place"
+            "profile_setup_birth_place",
+            "profile_setup_phone_digits",
+            "profile_setup_context_tags",
+            "profile_setup_context_text"
         ].forEach { UserDefaults.standard.removeObject(forKey: $0) }
         UserDefaults.standard.set(true, forKey: "profile_setup_restart_requested")
         UserDefaults.standard.synchronize()

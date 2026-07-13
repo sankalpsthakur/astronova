@@ -21,9 +21,10 @@ pyopenssl>=26.0.0,<27.0.0
 # Security (2026-05-20): bumped to >=3.10 to resolve idna 3.13 DoS CVE.
 idna>=3.10
 requests>=2.31.0,<3.0.0
+certifi>=2025.11.12
 
 # AI chat services (Gemini preferred, OpenAI fallback)
-google-generativeai>=0.8.0,<1.0.0
+google-genai>=1.0.0,<2.0.0
 openai>=1.0.0,<2.0.0
 
 # Required: Swiss Ephemeris (high-accuracy planetary positions)

@@ -30,7 +30,7 @@ struct NextUpTimeline: View {
                     onTimeTravelTap?()
                 } label: {
                     HStack(spacing: Cosmic.Spacing.xxs) {
-                        Text("Time Travel")
+                        Text("Timeline")
                         Image(systemName: "chevron.right")
                             .font(.cosmicMicro)
                     }
@@ -342,7 +342,7 @@ private struct TimelineMarkerView: View {
             },
             onTimeTravelTap: {
                 #if DEBUG
-                debugPrint("[NextUpTimeline] Open Time Travel")
+                debugPrint("[NextUpTimeline] Open Timeline")
                 #endif
             }
         )

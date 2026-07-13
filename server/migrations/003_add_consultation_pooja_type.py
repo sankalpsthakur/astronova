@@ -8,7 +8,8 @@ through the existing booking endpoint.
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime
+
+from utils.time_utils import utc_now_iso
 
 VERSION = 3
 NAME = "add_consultation_pooja_type"
@@ -20,7 +21,7 @@ def up(conn: sqlite3.Connection) -> None:
     if cur.fetchone():
         return
 
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     cur.execute(
         """
         INSERT INTO pooja_types (

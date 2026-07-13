@@ -2,10 +2,17 @@ import json
 import logging
 import os
 import sqlite3
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from utils.time_utils import utc_now_iso
+
 logger = logging.getLogger(__name__)
+
+
+class StoreKitTransactionConflict(ValueError):
+    """A verified App Store transaction was already claimed differently."""
 
 
 def _resolve_db_path() -> str:
@@ -126,7 +133,7 @@ def _seed_content(conn: sqlite3.Connection) -> None:
 
 
 def upsert_user(user_id: str, email: Optional[str], first_name: Optional[str], last_name: Optional[str], full_name: str):
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     try:
         # Atomic upsert: two concurrent first sign-ins for the same user must
@@ -161,7 +168,7 @@ def get_user_preferred_language(user_id: str) -> Optional[str]:
 
 
 def insert_report(report_id: str, user_id: Optional[str], type_: str, title: str, content: str, status: str = "completed"):
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -308,7 +315,7 @@ def get_content_management() -> dict:
 def ensure_conversation(conversation_id: Optional[str], user_id: Optional[str]) -> str:
     conn = get_connection()
     cur = conn.cursor()
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     if conversation_id:
         cur.execute("SELECT id FROM chat_conversations WHERE id=?", (conversation_id,))
         row = cur.fetchone()
@@ -334,7 +341,7 @@ def add_chat_message(conversation_id: str, role: str, content: str, user_id: Opt
     import uuid
 
     message_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -474,7 +481,7 @@ def has_premium_entitlement(user_id: Optional[str]) -> bool:
 
 def set_subscription(user_id: str, is_active: bool, product_id: Optional[str] = None) -> None:
     """Create or update a user's subscription status."""
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -501,12 +508,8 @@ def set_subscription_from_transaction(
     environment: Optional[str] = None,
     auto_renew: Optional[bool] = None,
 ) -> None:
-    """Record an App Store-verified subscription state.
-
-    Unlike set_subscription, this persists the transaction metadata used to
-    reason about renewals, expiry and revocations.
-    """
-    now = datetime.utcnow().isoformat()
+    """Persist an App Store-verified subscription and its renewal metadata."""
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -524,15 +527,9 @@ def set_subscription_from_transaction(
              auto_renew = excluded.auto_renew,
              updated_at = excluded.updated_at""",
         (
-            user_id,
-            int(is_active),
-            product_id,
-            expires_at,
-            original_transaction_id,
-            latest_transaction_id,
-            environment,
-            None if auto_renew is None else int(auto_renew),
-            now,
+            user_id, int(is_active), product_id, expires_at,
+            original_transaction_id, latest_transaction_id, environment,
+            None if auto_renew is None else int(auto_renew), now,
         ),
     )
     conn.commit()
@@ -540,29 +537,24 @@ def set_subscription_from_transaction(
 
 
 def deactivate_subscription(user_id: str, *, reason: Optional[str] = None) -> None:
-    """Revoke a user's subscription (refund, expiry, revocation)."""
-    now = datetime.utcnow().isoformat()
+    """Revoke a user's subscription after expiry, refund, or revocation."""
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
+    conn.execute(
         "UPDATE subscription_status SET is_active=0, auto_renew=0, updated_at=? WHERE user_id=?",
-        (now, user_id),
+        (utc_now_iso(), user_id),
     )
     conn.commit()
     conn.close()
 
 
-# Transaction idempotency helpers
 def is_transaction_processed(transaction_id: str) -> bool:
     if not transaction_id:
         return False
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
+    row = conn.execute(
         "SELECT 1 FROM processed_transactions WHERE transaction_id=?",
         (transaction_id,),
-    )
-    row = cur.fetchone()
+    ).fetchone()
     conn.close()
     return row is not None
 
@@ -575,46 +567,35 @@ def record_processed_transaction(
     type: Optional[str],
     environment: Optional[str] = None,
 ) -> bool:
-    """Record a transaction as processed. Returns False if already present."""
+    """Record a verified transaction once; return False for a replay."""
     if not transaction_id:
         return False
-    now = datetime.utcnow().isoformat()
     conn = get_connection()
-    cur = conn.cursor()
     try:
-        cur.execute(
+        conn.execute(
             """INSERT INTO processed_transactions
                  (transaction_id, user_id, product_id, type, environment, processed_at)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (transaction_id, user_id, product_id, type, environment, now),
+            (transaction_id, user_id, product_id, type, environment, utc_now_iso()),
         )
         conn.commit()
         return True
     except sqlite3.IntegrityError:
-        # Already recorded - replay.
         return False
     finally:
         conn.close()
 
 
 def has_report_entitlement(user_id: Optional[str], domain: Optional[str]) -> bool:
-    """Whether the user has purchased the non-consumable report for ``domain``.
-
-    Report SKUs are named ``report_<domain>`` (e.g. report_love) and recorded in
-    processed_transactions when verified. This lets a one-off report purchase
-    unlock generation without a full Pro subscription.
-    """
     if not user_id or not domain:
         return False
-    product_id = f"report_{domain}"
     conn = get_connection()
-    cur = conn.cursor()
     try:
-        cur.execute(
+        row = conn.execute(
             "SELECT 1 FROM processed_transactions WHERE user_id=? AND product_id=? LIMIT 1",
-            (user_id, product_id),
-        )
-        return cur.fetchone() is not None
+            (user_id, f"report_{domain}"),
+        ).fetchone()
+        return row is not None
     except sqlite3.OperationalError:
         return False
     finally:
@@ -622,22 +603,251 @@ def has_report_entitlement(user_id: Optional[str], domain: Optional[str]) -> boo
 
 
 def find_user_by_original_transaction(original_transaction_id: str) -> Optional[str]:
-    """Resolve which user owns a subscription by its original transaction id.
-
-    Used by App Store Server Notifications, which identify the subscription by
-    originalTransactionId rather than our user id.
-    """
     if not original_transaction_id:
         return None
     conn = get_connection()
-    cur = conn.cursor()
-    cur.execute(
+    row = conn.execute(
         "SELECT user_id FROM subscription_status WHERE original_transaction_id=?",
         (original_transaction_id,),
+    ).fetchone()
+    conn.close()
+    return row["user_id"] if row else None
+
+
+def record_storekit_transaction(
+    user_id: str,
+    product_id: str,
+    purchase_kind: str,
+    transaction_id: str,
+    original_transaction_id: Optional[str] = None,
+    units: int = 0,
+    environment: Optional[str] = None,
+) -> bool:
+    """Claim a verified transaction once, returning True only for first delivery."""
+    now = utc_now_iso()
+    conn = get_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT user_id, product_id, purchase_kind, units
+               FROM storekit_transaction_ledger WHERE transaction_id=?""",
+            (transaction_id,),
+        ).fetchone()
+        if row:
+            if row["user_id"] is None:
+                raise StoreKitTransactionConflict("StoreKit transaction was previously claimed")
+            if (
+                row["user_id"] != user_id
+                or row["product_id"] != product_id
+                or row["purchase_kind"] != purchase_kind
+                or row["units"] != units
+            ):
+                raise StoreKitTransactionConflict("StoreKit transaction is already claimed")
+            conn.commit()
+            return False
+
+        conn.execute(
+            """INSERT INTO storekit_transaction_ledger
+               (transaction_id, original_transaction_id, user_id, product_id,
+                purchase_kind, units, environment, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                transaction_id,
+                original_transaction_id,
+                user_id,
+                product_id,
+                purchase_kind,
+                units,
+                environment,
+                now,
+            ),
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def sync_oracle_credit_purchase(
+    user_id: str,
+    product_id: str,
+    transaction_id: str,
+    credits: int,
+    original_transaction_id: Optional[str] = None,
+    environment: Optional[str] = None,
+) -> dict:
+    """Atomically claim a verified consumable transaction and credit its owner."""
+    now = utc_now_iso()
+    conn = get_connection()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            """SELECT user_id, product_id, purchase_kind, units
+               FROM storekit_transaction_ledger WHERE transaction_id=?""",
+            (transaction_id,),
+        ).fetchone()
+        replayed = row is not None
+        if row:
+            if row["user_id"] is None:
+                raise StoreKitTransactionConflict("StoreKit transaction was previously claimed")
+            if (
+                row["user_id"] != user_id
+                or row["product_id"] != product_id
+                or row["purchase_kind"] != "oracle_credits"
+                or row["units"] != credits
+            ):
+                raise StoreKitTransactionConflict("StoreKit transaction is already claimed")
+        else:
+            conn.execute(
+                """INSERT INTO storekit_transaction_ledger
+                   (transaction_id, original_transaction_id, user_id, product_id,
+                    purchase_kind, units, environment, created_at)
+                   VALUES (?, ?, ?, ?, 'oracle_credits', ?, ?, ?)""",
+                (
+                    transaction_id,
+                    original_transaction_id,
+                    user_id,
+                    product_id,
+                    credits,
+                    environment,
+                    now,
+                ),
+            )
+            conn.execute(
+                """INSERT INTO oracle_credit_balances (user_id, balance, updated_at)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(user_id) DO UPDATE SET
+                     balance = oracle_credit_balances.balance + excluded.balance,
+                     updated_at = excluded.updated_at""",
+                (user_id, credits, now),
+            )
+
+        balance_row = conn.execute(
+            "SELECT balance, updated_at FROM oracle_credit_balances WHERE user_id=?",
+            (user_id,),
+        ).fetchone()
+        conn.commit()
+        return {
+            "balance": int(balance_row["balance"]) if balance_row else 0,
+            "creditedUnits": 0 if replayed else credits,
+            "replayed": replayed,
+            "updatedAt": balance_row["updated_at"] if balance_row else now,
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_oracle_credit_balance(user_id: Optional[str]) -> int:
+    if not user_id:
+        return 0
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT balance FROM oracle_credit_balances WHERE user_id=?",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+    return int(row["balance"]) if row else 0
+
+
+# Individual report purchase helpers
+def sync_report_purchase_entitlement(
+    user_id: str,
+    product_id: str,
+    report_type: str,
+    transaction_id: str,
+    original_transaction_id: Optional[str] = None,
+    environment: Optional[str] = None,
+) -> dict:
+    """Create or return a StoreKit-backed individual report entitlement."""
+    now = utc_now_iso()
+    entitlement_id = str(uuid.uuid4())
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """INSERT INTO report_purchase_entitlements
+           (id, user_id, product_id, report_type, transaction_id, original_transaction_id, environment, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(transaction_id) DO UPDATE SET
+             original_transaction_id = COALESCE(excluded.original_transaction_id, original_transaction_id),
+             environment = COALESCE(excluded.environment, environment)""",
+        (
+            entitlement_id,
+            user_id,
+            product_id,
+            report_type,
+            transaction_id,
+            original_transaction_id,
+            environment,
+            now,
+        ),
+    )
+    cur.execute(
+        """SELECT id, user_id, product_id, report_type, transaction_id,
+                  original_transaction_id, environment, consumed_report_id, created_at, consumed_at
+           FROM report_purchase_entitlements
+           WHERE transaction_id=?""",
+        (transaction_id,),
+    )
+    row = cur.fetchone()
+    conn.commit()
+    conn.close()
+    return _report_purchase_row_to_dict(row)
+
+
+def get_available_report_purchase(user_id: str, report_type: str) -> Optional[dict]:
+    """Return one unconsumed individual report entitlement for the report type."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """SELECT id, user_id, product_id, report_type, transaction_id,
+                  original_transaction_id, environment, consumed_report_id, created_at, consumed_at
+           FROM report_purchase_entitlements
+           WHERE user_id=? AND report_type=? AND consumed_at IS NULL
+           ORDER BY created_at ASC
+           LIMIT 1""",
+        (user_id, report_type),
     )
     row = cur.fetchone()
     conn.close()
-    return row["user_id"] if row else None
+    return _report_purchase_row_to_dict(row) if row else None
+
+
+def consume_report_purchase(entitlement_id: str, report_id: str) -> None:
+    now = utc_now_iso()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE report_purchase_entitlements
+           SET consumed_report_id=?, consumed_at=?
+           WHERE id=? AND consumed_at IS NULL""",
+        (report_id, now, entitlement_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _report_purchase_row_to_dict(row) -> dict:
+    if not row:
+        return {}
+    return {
+        "id": row["id"],
+        "userId": row["user_id"],
+        "productId": row["product_id"],
+        "reportType": row["report_type"],
+        "transactionId": row["transaction_id"],
+        "originalTransactionId": row["original_transaction_id"],
+        "environment": row["environment"],
+        "consumedReportId": row["consumed_report_id"],
+        "createdAt": row["created_at"],
+        "consumedAt": row["consumed_at"],
+        "isAvailable": row["consumed_at"] is None,
+    }
 
 
 # Server-side chat-credit helpers
@@ -659,16 +869,11 @@ def add_credits(
     reason: Optional[str] = None,
     transaction_id: Optional[str] = None,
 ) -> int:
-    """Add (or remove, if negative) credits and append to the ledger.
-
-    Returns the new balance. Does not allow the balance to go below zero.
-    """
-    now = datetime.utcnow().isoformat()
+    """Atomically adjust a user's chat-credit balance and append the ledger."""
+    now = utc_now_iso()
     conn = get_connection()
     try:
         cur = conn.cursor()
-        # Take the write lock before reading so two concurrent grants can't
-        # both read the same balance and overwrite each other's credit.
         cur.execute("BEGIN IMMEDIATE")
         cur.execute("SELECT balance FROM user_credits WHERE user_id=?", (user_id,))
         row = cur.fetchone()
@@ -694,12 +899,11 @@ def add_credits(
 
 
 def consume_credit(user_id: str, *, reason: Optional[str] = None) -> bool:
-    """Atomically spend one credit. Returns True if a credit was available."""
-    now = datetime.utcnow().isoformat()
+    """Atomically spend one credit, returning whether a credit was available."""
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     try:
-        # Conditional decrement guards against concurrent double-spend.
         cur.execute(
             "UPDATE user_credits SET balance = balance - 1, updated_at=? WHERE user_id=? AND balance > 0",
             (now, user_id),
@@ -753,7 +957,7 @@ def upsert_user_birth_data(
     location_name: Optional[str] = None,
 ):
     """Store or update user's birth data."""
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute("SELECT user_id FROM user_birth_data WHERE user_id=?", (user_id,))
@@ -787,7 +991,7 @@ def create_relationship(
     import uuid
 
     relationship_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -904,7 +1108,7 @@ def delete_relationship(relationship_id: str, user_id: str) -> bool:
 
 def update_relationship_last_viewed(relationship_id: str) -> None:
     """Update the last_viewed_at timestamp for a relationship."""
-    now = datetime.utcnow().isoformat()
+    now = utc_now_iso()
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
@@ -928,8 +1132,47 @@ def delete_user_data(user_id: str) -> dict:
     cur = conn.cursor()
     deleted_counts = {}
 
-    # Delete from all tables that reference user_id
+    cur.execute("SELECT id FROM pooja_bookings WHERE user_id=?", (user_id,))
+    pooja_booking_ids = [row["id"] for row in cur.fetchall()]
+
+    pooja_session_ids = []
+    if pooja_booking_ids:
+        placeholders = ",".join("?" for _ in pooja_booking_ids)
+        cur.execute(f"SELECT id FROM pooja_sessions WHERE booking_id IN ({placeholders})", pooja_booking_ids)
+        pooja_session_ids = [row["id"] for row in cur.fetchall()]
+
+        context_ids = pooja_booking_ids + pooja_session_ids
+        context_placeholders = ",".join("?" for _ in context_ids)
+        cur.execute(
+            f"DELETE FROM contact_filter_logs WHERE sender_id=? OR context_id IN ({context_placeholders})",
+            [user_id, *context_ids],
+        )
+        deleted_counts["contact_filter_logs"] = cur.rowcount
+
+        cur.execute(f"DELETE FROM pooja_sessions WHERE booking_id IN ({placeholders})", pooja_booking_ids)
+        deleted_counts["pooja_sessions"] = cur.rowcount
+    else:
+        cur.execute("DELETE FROM contact_filter_logs WHERE sender_id=?", (user_id,))
+        deleted_counts["contact_filter_logs"] = cur.rowcount
+        deleted_counts["pooja_sessions"] = 0
+
+    # Keep the transaction ID/product/kind claim as a replay tombstone while
+    # removing its direct account identifier. A deleted/re-registered account
+    # must never be able to deliver the same signed purchase again.
+    now = utc_now_iso()
+    cur.execute(
+        """UPDATE storekit_transaction_ledger
+           SET user_id=NULL, tombstoned_at=?
+           WHERE user_id=?""",
+        (now, user_id),
+    )
+    deleted_counts["storekit_transaction_ledger_anonymized"] = cur.rowcount
+
+    # Delete from all remaining tables that reference user_id.
     tables_to_clean = [
+        ("oracle_credit_balances", "user_id"),
+        ("report_purchase_entitlements", "user_id"),
+        ("user_temple_activity", "user_id"),
         ("pooja_bookings", "user_id"),  # Temple/Pooja bookings
         ("relationships", "user_id"),
         ("chat_messages", "user_id"),

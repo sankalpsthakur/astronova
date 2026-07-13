@@ -172,6 +172,12 @@ class AuthState: ObservableObject {
         
         // Validate stored token if we have one
         if jwtToken != nil {
+            #if DEBUG
+            if TestEnvironment.shared.shouldTrustSeededAuthSession {
+                apiServices.jwtToken = jwtToken
+                return
+            }
+            #endif
             await validateStoredToken()
         }
     }
@@ -301,6 +307,7 @@ class AuthState: ObservableObject {
         jwtToken = nil
         authenticatedUser = nil as AuthenticatedUser?
         deleteJWTToken()
+        apiServices.jwtToken = nil
 
         hasSignedIn = false
         isAnonymousUser = false
@@ -342,7 +349,11 @@ class AuthState: ObservableObject {
             "profile_setup_name",
             "profile_setup_birth_date",
             "profile_setup_birth_time",
-            "profile_setup_birth_place"
+            "profile_setup_birth_time_unknown",
+            "profile_setup_birth_place",
+            "profile_setup_phone_digits",
+            "profile_setup_context_tags",
+            "profile_setup_context_text"
         ]
 
         for key in keys {
@@ -501,6 +512,7 @@ extension AuthState {
             if profileManager.hasCompleteLocationData {
                 await profileManager.syncBirthDataToServer(userId: authResponse.user.id)
             }
+            await syncStoreKitEntitlementsForAuthenticatedSession()
 
         } catch {
             #if DEBUG
@@ -555,17 +567,19 @@ extension AuthState {
         
         // Try to use the token with a simple API call
         do {
-            let isValid = try await apiServices.validateToken()
-            if isValid {
-                // Token is valid, user remains signed in
+            let valid = try await apiServices.validateToken()
+            guard valid else {
                 await MainActor.run {
-                    self.authError = nil
+                    self.recoverFromInvalidSession()
                 }
-            } else {
-                // Server explicitly rejected the token — attempt a refresh
-                // (with backoff) before forcing the user to re-authenticate.
-                await handleTokenExpiry()
+                return
             }
+
+            // Token is valid, user remains signed in
+            await MainActor.run {
+                self.authError = nil
+            }
+            await syncStoreKitEntitlementsForAuthenticatedSession()
         } catch {
             // Handle token validation failure
             if let networkError = error as? NetworkError {
@@ -573,7 +587,7 @@ extension AuthState {
                 case .tokenExpired, .authenticationFailed:
                     // Token is expired/invalid, sign out user
                     await MainActor.run {
-                        self.signOut()
+                        self.recoverFromInvalidSession()
                     }
                 case .offline, .timeout:
                     // Network issues, keep user signed in but show warning
@@ -618,6 +632,7 @@ extension AuthState {
                     self.connectionError = nil
                 }
                 Analytics.shared.track(.tokenRefreshSuccess, properties: nil)
+                await syncStoreKitEntitlementsForAuthenticatedSession()
                 return
             } catch {
                 let networkError = error as? NetworkError
@@ -625,28 +640,32 @@ extension AuthState {
                 let isLastAttempt = attempt == backoffSeconds.count - 1
 
                 if isAuthFailure {
-                    // The refresh token is invalid/expired — re-auth is required.
                     Analytics.shared.track(.tokenRefreshFailed, properties: nil)
                     await MainActor.run {
-                        self.authError = "Your session has expired. Please sign in again."
-                        self.signOut()
+                        self.recoverFromInvalidSession()
                     }
                     return
                 }
 
                 if isLastAttempt {
-                    // Transient failures exhausted: keep the user signed in (the
-                    // token may still work once the network recovers) and surface
-                    // a soft connection warning instead of ejecting them.
                     Analytics.shared.track(.tokenRefreshFailed, properties: nil)
                     await MainActor.run {
                         self.connectionError = "Unable to refresh your session. Some features may be limited until you reconnect."
                     }
                     return
                 }
-                // Otherwise loop and retry after backoff.
             }
         }
+    }
+
+    func recoverFromInvalidSession(message: String = "Your session has expired. Please sign in again.") {
+        signOut()
+        authError = message
+    }
+
+    private func syncStoreKitEntitlementsForAuthenticatedSession() async {
+        guard jwtToken != nil else { return }
+        _ = await StoreKitManager.shared.refreshEntitlements()
     }
     
     /// Refresh user data and chart from API

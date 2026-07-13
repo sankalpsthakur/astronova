@@ -15,10 +15,14 @@ final class PortfolioAnalyticsTests: XCTestCase {
         let exp = expectation(description: "event captured")
         var captured: (PortfolioEvent, [String: String])?
         PortfolioAnalytics.shared.testEventSink = { event, props in
+            guard event == .chartViewed, captured == nil else { return }
             captured = (event, props)
             exp.fulfill()
         }
 
+        // App lifecycle analytics can arrive while the hosted test app is
+        // active. The expectation must observe only the event under test.
+        PortfolioAnalytics.shared.track(.appOpen)
         PortfolioAnalytics.shared.track(.chartViewed, properties: [
             "chart_type": "natal",
             "is_paid": "false"
@@ -74,6 +78,7 @@ final class PortfolioAnalyticsTests: XCTestCase {
         let exp = expectation(description: "fanout fired")
         var captured: PortfolioEvent?
         PortfolioAnalytics.shared.testEventSink = { event, _ in
+            guard event == .chartViewed, captured == nil else { return }
             captured = event
             exp.fulfill()
         }

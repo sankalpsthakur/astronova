@@ -137,6 +137,8 @@ struct DiscoverView: View {
                 SeekerProgressHeader(
                     levelTitle: gamification.level.title,
                     streak: gamification.streak,
+                    isTodayComplete: gamification.hasCheckedInToday,
+                    chapterProgress: gamification.weeklyChapterProgress,
                     xpProgress: gamification.xpProgressToNextLevel,
                     weeklyTheme: gamification.weeklyTheme()
                 ) {
@@ -222,8 +224,8 @@ struct DiscoverView: View {
                             #endif
                         },
                         onTimeTravelTap: {
-                            // Navigate to Time Travel tab (index 1)
-                            NotificationCenter.default.post(name: .switchToTab, object: 1)
+                            // Navigate legacy timeline affordance to the current Timeline tab.
+                            NotificationCenter.default.post(name: .switchToTab, object: 2)
                         }
                     )
                     .padding(.horizontal, Cosmic.Spacing.m)
@@ -922,6 +924,8 @@ class DiscoverSnapshotCache {
 private struct SeekerProgressHeader: View {
     let levelTitle: String
     let streak: Int
+    let isTodayComplete: Bool
+    let chapterProgress: DailyProgressionMath.ChapterProgress
     let xpProgress: Double
     let weeklyTheme: WeeklyTheme
     let onDrawSignal: () -> Void
@@ -950,10 +954,41 @@ private struct SeekerProgressHeader: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Weekly theme: \(weeklyTheme.title)")
+            HStack(spacing: Cosmic.Spacing.sm) {
+                Label {
+                    Text(isTodayComplete ? "Today complete" : "Today's focus")
+                        .font(.cosmicCaptionEmphasis)
+                } icon: {
+                    Image(systemName: isTodayComplete ? "checkmark.circle.fill" : "circle")
+                }
+                .foregroundStyle(isTodayComplete ? Color.cosmicSuccess : Color.cosmicTextPrimary)
+                .accessibilityIdentifier("discover.progress.todayFocus")
+
+                Spacer()
+
+                Text("Chapter \(chapterProgress.label)")
                     .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicTextPrimary)
+                    .monospacedDigit()
+                    .accessibilityIdentifier("discover.progress.chapter")
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(
+                isTodayComplete
+                    ? "Today complete. Weekly chapter \(chapterProgress.label)."
+                    : "Today's focus incomplete. Weekly chapter \(chapterProgress.label)."
+            )
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Weekly theme: \(weeklyTheme.title)")
+                        .font(.cosmicCaptionEmphasis)
+                        .foregroundStyle(Color.cosmicTextPrimary)
+                    Spacer()
+                    Text(chapterProgress.isComplete ? "Chapter complete" : "Chapter \(chapterProgress.label)")
+                        .font(.cosmicCaption)
+                        .foregroundStyle(chapterProgress.isComplete ? Color.cosmicSuccess : Color.cosmicTextSecondary)
+                }
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
@@ -961,12 +996,18 @@ private struct SeekerProgressHeader: View {
                             .fill(Color.cosmicSurface)
                         RoundedRectangle(cornerRadius: 6)
                             .fill(Color.cosmicGold.opacity(0.8))
-                            .frame(width: max(10, geo.size.width * xpProgress))
+                            .frame(width: max(chapterProgress.fraction > 0 ? 8 : 0, geo.size.width * chapterProgress.fraction))
                     }
                 }
                 .frame(height: 10)
-                .accessibilityLabel("Level progress")
-                .accessibilityValue("\(Int(xpProgress * 100)) percent")
+                .accessibilityLabel("Weekly chapter progress")
+                .accessibilityValue(chapterProgress.label)
+
+                Text("Level XP \(Int(xpProgress * 100))%")
+                    .font(.cosmicMicro)
+                    .foregroundStyle(Color.cosmicTextTertiary)
+                    .accessibilityLabel("Level progress")
+                    .accessibilityValue("\(Int(xpProgress * 100)) percent")
             }
 
             Button {
@@ -974,8 +1015,8 @@ private struct SeekerProgressHeader: View {
                 onDrawSignal()
             } label: {
                 HStack(spacing: Cosmic.Spacing.xs) {
-                    Image(systemName: "sparkles")
-                    Text("Draw today's signal")
+                    Image(systemName: isTodayComplete ? "seal.fill" : "sparkles")
+                    Text(isTodayComplete ? "Review today's signal" : "Draw today's signal")
                         .font(.cosmicCalloutEmphasis)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -992,6 +1033,7 @@ private struct SeekerProgressHeader: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("discover.progress.drawSignal")
         }
         .padding(14)
         .background(Color.cosmicBackground, in: RoundedRectangle(cornerRadius: Cosmic.Radius.card))

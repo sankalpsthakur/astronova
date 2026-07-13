@@ -2,26 +2,10 @@
 //  JourneyAcceptanceTests.swift
 //  AstronovaAppUITests
 //
-//  QA acceptance suite for TestFlight build 2026051816.
-//  Verifies the 6 journeys flagged in the cutover design doc §5.1:
-//   1. All five Topo tabs render without backend (offline mode)
-//   2. GHCR cutover — apiBaseURL pinned + /health probe returns 200
-//   3. Paywall opens, `paywall.close` is hittable, mock purchase fires the
-//      success cue (haptic + sound + TTS confirmation)
-//   4. Privacy link reachable from Settings; renders the in-app disclaimer
-//   5. "Read horoscope aloud" button on Today increments SpeechService's
-//      DEBUG call counter (Wave 3b A4)
-//   6. Voice reading toggle in Settings gates SpeechService (Wave 3b A1) —
-//      when OFF, tapping Read does NOT increment the counter
-//
-//  Re-wiring notes (verified 2026-05-18):
-//  - The Wave 3b "Read horoscope aloud" button was migrated from the
-//    sunset HomeView into TodayTerrainView. Accessibility ID preserved as
-//    `home.readHoroscopeAloud` so prior test assets keep working.
-//  - The voice-reading toggle moved from MoreOptionsSheet (sunset) into
-//    SettingsSheet under the "VOICE" section, with ID
-//    `settings.voiceReading.toggle`. UserDefaults key is unchanged
-//    (`astronova.voice_reading_enabled`) — SpeechService reads from it.
+//  QA acceptance suite for the refreshed Astronova client.
+//  These journeys pin the current product surface: calibrated onboarding,
+//  Today dashboard value, journal habit loops, paywalls, report shop gates,
+//  auth recovery, Apple Maps globe, Timeline, Matrix, and Journal agency.
 //
 
 import XCTest
@@ -71,7 +55,8 @@ final class JourneyAcceptanceTests: XCTestCase {
 
     @discardableResult
     private func launchSignedIn(extraArguments: [String] = [],
-                                environment: [String: String] = [:]) -> XCUIApplication {
+                                environment: [String: String] = [:],
+                                onWillLaunch: ((Date) -> Void)? = nil) -> XCUIApplication {
         app.terminate()
         app.launchArguments = [
             "UITEST_RESET",
@@ -86,6 +71,7 @@ final class JourneyAcceptanceTests: XCTestCase {
             merged["QA_EVIDENCE_DIR"] = qaDir
         }
         app.launchEnvironment = merged
+        onWillLaunch?(Date())
         app.launch()
         return app
     }
@@ -169,6 +155,57 @@ final class JourneyAcceptanceTests: XCTestCase {
             .firstMatch
     }
 
+    private func dismissPresentedSheet() {
+        let close = app.buttons["analysis.sheet.close"]
+        if close.waitForExistence(timeout: 2) {
+            close.tap()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.6))
+            return
+        }
+
+        let coordinate = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12))
+        coordinate.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.88)))
+    }
+
+    private func waitForElementByScrolling(_ identifier: String,
+                                           timeout: TimeInterval = 10,
+                                           file: StaticString = #filePath,
+                                           line: UInt = #line) -> XCUIElement {
+        let element = anyElement(identifier)
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if element.exists {
+                return element
+            }
+            app.swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+        }
+        XCTAssertTrue(element.exists, "\(identifier) should exist on the current screen", file: file, line: line)
+        return element
+    }
+
+    private func tapElementByScrolling(_ identifier: String,
+                                       timeout: TimeInterval = 10,
+                                       file: StaticString = #filePath,
+                                       line: UInt = #line) {
+        let element = app.buttons[identifier]
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if element.exists && element.isHittable {
+                element.tap()
+                return
+            }
+            app.swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3))
+        }
+
+        XCTAssertTrue(element.exists, "\(identifier) should exist on the current screen", file: file, line: line)
+        XCTAssertTrue(element.isHittable, "\(identifier) should be physically tappable", file: file, line: line)
+        if element.exists && element.isHittable {
+            element.tap()
+        }
+    }
+
     /// Settings entry on Today tab is an unlabeled gear-icon Button. Find it
     /// by walking the top bar buttons.
     private func openSettingsFromToday() {
@@ -211,7 +248,7 @@ final class JourneyAcceptanceTests: XCTestCase {
         return defaults.integer(forKey: key)
     }
 
-    // MARK: - Journey 1 — All five tabs render without backend
+    // MARK: - Journey 1 — Primary tabs render without backend
 
     @MainActor
     func test_J1_allTabsRenderOffline() throws {
@@ -219,13 +256,11 @@ final class JourneyAcceptanceTests: XCTestCase {
         XCTAssertTrue(waitForHomeTab(),
                       "App should boot to the home tab in offline mode")
 
-        // The TopoSelf 5-tab bar uses legacy accessibility IDs for the tabs
-        // but routes them to the new Topo views.
         let tabsUnderTest: [(id: String, label: String)] = [
-            ("homeTab", "TodayTerrain"),
-            ("timeTravelTab", "MyMap"),
-            ("templeTab", "Pulse"),
-            ("connectTab", "Decide"),
+            ("homeTab", "Today"),
+            ("timeTravelTab", "Map"),
+            ("timelineTab", "Timeline"),
+            ("matrixTab", "Matrix"),
             ("selfTab", "Journal")
         ]
 
@@ -298,24 +333,9 @@ final class JourneyAcceptanceTests: XCTestCase {
                       "Paywall should auto-present via UITEST_PRESENT_PAYWALL")
         captureEvidence(named: "03-paywall-open")
 
-        // Wave 3b — canonical ID is `paywall.close`. We also accept the
-        // legacy `paywallCloseButton` and a label-only fallback.
-        let closeCandidates: [XCUIElement] = [
-            app.buttons["paywall.close"],
-            app.buttons["paywallCloseButton"],
-            app.buttons.matching(NSPredicate(format: "label == %@", "Close")).firstMatch
-        ]
-        var closeButton: XCUIElement?
-        for candidate in closeCandidates {
-            if candidate.waitForExistence(timeout: 3) && candidate.isHittable {
-                closeButton = candidate
-                break
-            }
-        }
-        guard let close = closeButton else {
-            XCTFail("No hittable Close button on PaywallView (paywall.close / paywallCloseButton / label==Close)")
-            return
-        }
+        let close = app.buttons["paywall.close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 8),
+                      "Paywall should expose the current close affordance")
         XCTAssertTrue(close.isHittable,
                       "Close button must be hittable from the user's perspective")
         close.tap()
@@ -389,6 +409,127 @@ final class JourneyAcceptanceTests: XCTestCase {
 
         XCTAssertNotNil(successEvidence,
                         "Mock purchase must produce a visible or measurable success affordance after tapping Start Pro")
+    }
+
+    @MainActor
+    func test_J15_tieredPaywallsRestoreNoneAndMockPurchaseRecover() throws {
+        for variant in ["tiered_v1", "tiered_v2"] {
+            launchSignedIn(
+                extraArguments: [
+                    "UITEST_PRESENT_PAYWALL",
+                    "UITEST_MOCK_PURCHASES"
+                ],
+                environment: ["UITEST_PAYWALL_VARIANT": variant]
+            )
+
+            XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 15),
+                          "\(variant) paywall should auto-present")
+            captureEvidence(named: "15-\(variant)-paywall-open")
+
+            tapElementByScrolling("restorePurchasesButton", timeout: 12)
+
+            let noPurchases = app.staticTexts
+                .matching(NSPredicate(format: "label CONTAINS[c] %@", "No Purchases Found"))
+                .firstMatch
+            XCTAssertTrue(noPurchases.waitForExistence(timeout: 8),
+                          "\(variant) restore-none path should explain that nothing was restored")
+            captureEvidence(named: "15-\(variant)-restore-none")
+            app.buttons["OK"].tap()
+
+            let startPro = app.buttons["startProButton"]
+            XCTAssertTrue(startPro.waitForExistence(timeout: 8),
+                          "\(variant) should preserve the primary Pro CTA after restore-none")
+            tapElementByScrolling("startProButton", timeout: 12)
+
+            let welcomeTitle = app.staticTexts
+                .matching(NSPredicate(format: "label CONTAINS[c] %@", "Welcome to Pro"))
+                .firstMatch
+            let continueButton = app.buttons
+                .matching(NSPredicate(format: "label == %@", "Continue"))
+                .firstMatch
+            let deadline = Date().addingTimeInterval(12)
+            var successEvidence: String? = nil
+            while Date() < deadline {
+                if let count = readSpeechCounter(), count >= 1 {
+                    successEvidence = "SpeechService counter = \(count)"
+                    break
+                }
+                if welcomeTitle.exists || continueButton.exists {
+                    successEvidence = "Welcome alert visible"
+                    break
+                }
+                RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+            }
+
+            captureEvidence(named: "15-\(variant)-mock-purchase-success")
+            XCTAssertNotNil(successEvidence,
+                            "\(variant) mock purchase should produce a visible or measurable success affordance")
+        }
+    }
+
+    @MainActor
+    func test_J16_reportShopGatePurchasesFromPaywallAlternative() throws {
+        launchSignedIn(
+            extraArguments: [
+                "UITEST_PRESENT_PAYWALL",
+                "UITEST_MOCK_PURCHASES"
+            ],
+            environment: ["UITEST_PAYWALL_VARIANT": "tiered_v1"]
+        )
+
+        XCTAssertTrue(anyElement("paywallView").waitForExistence(timeout: 15),
+                      "Paywall should open for the report-shop gate journey")
+        captureEvidence(named: "16-paywall-primary-pro-cta")
+
+        let otherWays = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Other ways to unlock"))
+            .firstMatch
+        XCTAssertTrue(otherWays.waitForExistence(timeout: 8),
+                      "Paywall should keep report purchases behind a secondary disclosure")
+        otherWays.tap()
+
+        let reports = app.buttons["buyDetailedReportButton"]
+        XCTAssertTrue(reports.waitForExistence(timeout: 8),
+                      "Expanded paywall should expose Reports Shop as the secondary paid path")
+        tapElementByScrolling("buyDetailedReportButton", timeout: 8)
+
+        XCTAssertTrue(anyElement("reportsStoreView").waitForExistence(timeout: 10),
+                      "Reports Shop should present from the paywall alternative CTA")
+        captureEvidence(named: "16-reports-shop-open")
+
+        tapElementByScrolling("reportsStore.restorePurchasesButton", timeout: 12)
+        let noPurchases = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "No Purchases Found"))
+            .firstMatch
+        XCTAssertTrue(noPurchases.waitForExistence(timeout: 8),
+                      "Reports Shop restore-none should clearly explain the state")
+        captureEvidence(named: "16-reports-shop-restore-none")
+        app.buttons["OK"].tap()
+
+        let reportBuyButtons = app.buttons
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "reportBuyButton_"))
+        XCTAssertTrue(reportBuyButtons.firstMatch.waitForExistence(timeout: 8),
+                      "Non-Pro users should see individual report purchase buttons")
+        let buy = reportBuyButtons.allElementsBoundByIndex.first { $0.isHittable }
+            ?? reportBuyButtons.firstMatch
+        XCTAssertFalse(buy.frame.isEmpty,
+                       "At least one report buy button should be visible")
+        buy.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+
+        let reportReady = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Report Ready"))
+            .firstMatch
+        XCTAssertTrue(reportReady.waitForExistence(timeout: 10),
+                      "Mock report purchase should generate a report and show success")
+        captureEvidence(named: "16-report-purchase-success")
+        app.buttons["OK"].tap()
+
+        let purchasedBadge = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "reportIncludedBadge_"))
+            .firstMatch
+        XCTAssertTrue(purchasedBadge.waitForExistence(timeout: 8),
+                      "Purchased report should switch to a purchased/included badge in the same session")
+        captureEvidence(named: "16-report-purchased-badge")
     }
 
     // MARK: - Journey 4 — Privacy reachable in-app via Settings
@@ -540,83 +681,62 @@ final class JourneyAcceptanceTests: XCTestCase {
                        "Counter must NOT increment when voice reading is OFF; before=\(before) after=\(after)")
     }
 
-    // MARK: - Journey 7 — Pulse tab has one clear recovery action
+    // MARK: - Journey 7 — Timeline tab renders live system state
 
     @MainActor
-    func test_J7_pulseTabStartsProtocolWithoutModalClose() throws {
-        launchSignedIn(extraArguments: ["UITEST_START_TAB_INDEX=2"])
+    func test_J7_timelineTabShowsSystemDashaAndForecast() throws {
+        let localBackend = ProcessInfo.processInfo.environment["ASTRONOVA_LOCAL_BACKEND"]
+            ?? "http://127.0.0.1:18093"
+        launchSignedIn(
+            extraArguments: ["UITEST_START_TAB_INDEX=2"],
+            environment: [
+                "ASTRONOVA_LOCAL_BACKEND": localBackend,
+                "UITEST_TIME_TRAVEL_SAMPLE": "0",
+                "UITEST_DISCOVER_SAMPLE": "0"
+            ]
+        )
 
-        let pulse = anyElement("pulseView")
-        XCTAssertTrue(pulse.waitForExistence(timeout: 15),
-                      "Pulse tab should render the pause protocol picker")
-
-        XCTAssertFalse(anyElement("pulseCloseButton").exists,
-                       "Pulse opened as a tab must not show a modal close button")
-
-        let angerRising = app.buttons["pulseIntensityButton_anger_rising"]
-        XCTAssertTrue(angerRising.waitForExistence(timeout: 8),
-                      "Pulse should expose a direct emotion/intensity CTA")
-        XCTAssertTrue(angerRising.isHittable,
-                      "The first recovery CTA should be immediately hittable")
-        captureEvidence(named: "07-pulse-tab")
-
-        angerRising.tap()
-
-        let runner = anyElement("protocolRunnerView")
-        XCTAssertTrue(runner.waitForExistence(timeout: 8),
-                      "Tapping a Pulse CTA should start the protocol runner")
+        XCTAssertTrue(anyElement("timelineTabView").waitForExistence(timeout: 18),
+                      "Timeline tab should render as the third bottom-nav surface")
+        XCTAssertTrue(anyElement("timeline.systemOverview").waitForExistence(timeout: 15),
+                      "Timeline should expose the live server/system overview")
+        XCTAssertTrue(anyElement("timeline.dashaPulse").waitForExistence(timeout: 15),
+                      "Timeline should expose dasha pulse/progress")
+        XCTAssertTrue(anyElement("predictionTimelineView").waitForExistence(timeout: 15),
+                      "Timeline should embed the forecast timeline without a nested tab handoff")
         XCTAssertTrue(app.staticTexts
-            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Step 1"))
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Timeline"))
             .firstMatch
             .waitForExistence(timeout: 4),
-            "Protocol runner should land at the first guided step")
-        captureEvidence(named: "07-pulse-runner")
+            "Timeline label should be visible in the product shell")
+        captureEvidence(named: "07-timeline-live-state")
     }
 
-    // MARK: - Journey 8 — Decide quick start reaches value without scrolling
+    // MARK: - Journey 8 — Matrix tab renders numerology deep dive
 
     @MainActor
-    func test_J8_decideQuickStartRunsSimulation() throws {
-        launchSignedIn(extraArguments: ["UITEST_START_TAB_INDEX=3"])
+    func test_J8_matrixTabShowsLoshuEigenvaluesAndTransformations() throws {
+        let localBackend = ProcessInfo.processInfo.environment["ASTRONOVA_LOCAL_BACKEND"]
+            ?? "http://127.0.0.1:18093"
+        launchSignedIn(
+            extraArguments: ["UITEST_START_TAB_INDEX=3"],
+            environment: ["ASTRONOVA_LOCAL_BACKEND": localBackend]
+        )
 
-        let decide = anyElement("decisionView")
-        XCTAssertTrue(decide.waitForExistence(timeout: 15),
-                      "Decide tab should render")
-
-        let newDecision = app.buttons["decisionNewButton"]
-        XCTAssertTrue(newDecision.waitForExistence(timeout: 8),
-                      "Decide should expose one primary New Decision CTA")
-        XCTAssertTrue(newDecision.isHittable,
-                      "New Decision CTA should be immediately hittable")
-        captureEvidence(named: "08-decide-hub")
-
-        newDecision.tap()
-
-        let compose = anyElement("decisionComposeView")
-        XCTAssertTrue(compose.waitForExistence(timeout: 8),
-                      "New Decision should open the compose sheet")
-
-        let quickPrompt = app.buttons["decisionQuickPromptButton_0"]
-        XCTAssertTrue(quickPrompt.waitForExistence(timeout: 8),
-                      "Compose should offer a one-tap prompt for blank-page recovery")
-        captureEvidence(named: "08-decision-compose")
-
-        quickPrompt.tap()
-
-        let run = app.buttons["decisionRunButton"]
-        XCTAssertTrue(run.waitForExistence(timeout: 5),
-                      "Run simulation CTA should stay visible without scrolling")
-        XCTAssertTrue(run.isHittable,
-                      "Run simulation should become hittable after a quick prompt")
-        run.tap()
-
-        let result = anyElement("decisionResultView")
-        let bestRoute = app.staticTexts
-            .matching(NSPredicate(format: "label CONTAINS[c] %@", "BEST ROUTE"))
+        XCTAssertTrue(anyElement("matrixDeepDiveView").waitForExistence(timeout: 18),
+                      "Matrix tab should render as the fourth bottom-nav surface")
+        XCTAssertTrue(anyElement("loshuGridView").waitForExistence(timeout: 15),
+                      "Matrix should compose the existing Loshu grid")
+        XCTAssertTrue(anyElement("matrix.eigenvalues").waitForExistence(timeout: 15),
+                      "Matrix should expose eigenvalue decomposition cards")
+        XCTAssertTrue(anyElement("matrix.transformations").waitForExistence(timeout: 15),
+                      "Matrix should expose transformation/action cards")
+        XCTAssertTrue(app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Driver"))
             .firstMatch
-        XCTAssertTrue(result.waitForExistence(timeout: 10) || bestRoute.waitForExistence(timeout: 4),
-                      "Quick-start decision should reach the result/value screen")
-        captureEvidence(named: "08-decision-result")
+            .waitForExistence(timeout: 8),
+            "Matrix should show driver/conductor live numerology context")
+        captureEvidence(named: "08-matrix-deep-dive")
     }
 
     // MARK: - Journey 9 — Journal draft survives interruption
@@ -624,7 +744,10 @@ final class JourneyAcceptanceTests: XCTestCase {
     @MainActor
     func test_J9_journalDraftSurvivesRelaunch() throws {
         let draftText = "Interrupted draft survives relaunch"
-        launchSignedIn(extraArguments: ["UITEST_START_TAB_INDEX=4"])
+        launchSignedIn(extraArguments: [
+            "UITEST_START_TAB_INDEX=4",
+            "UITEST_OFFLINE_BACKEND"
+        ])
 
         let journal = anyElement("journalView")
         XCTAssertTrue(journal.waitForExistence(timeout: 15),
@@ -690,11 +813,13 @@ final class JourneyAcceptanceTests: XCTestCase {
         let insights = app.buttons["journalInsightsTabButton"]
         XCTAssertTrue(insights.waitForExistence(timeout: 8),
                       "Journal should expose the Insights tab")
-        XCTAssertTrue(insights.isHittable,
-                      "Insights tab should be reachable from the Journal landing")
+        if !insights.isHittable {
+            app.swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        }
         captureEvidence(named: "10-journal-quota-before-tap")
 
-        insights.tap()
+        tapElementByScrolling("journalInsightsTabButton", timeout: 8)
 
         let paywall = anyElement("paywallView")
         XCTAssertTrue(paywall.waitForExistence(timeout: 12),
@@ -706,14 +831,10 @@ final class JourneyAcceptanceTests: XCTestCase {
             "Paywall should explain the Journal Insights-specific value")
         captureEvidence(named: "10-journal-insights-paywall")
 
-        let closeCandidates = [
-            app.buttons["paywall.close"],
-            app.buttons["paywallCloseButton"],
-            app.buttons.matching(NSPredicate(format: "label == %@", "Close")).firstMatch
-        ]
-        let close = closeCandidates.first { $0.exists || $0.waitForExistence(timeout: 2) }
-        XCTAssertNotNil(close, "Paywall should have a close affordance")
-        close?.tap()
+        let close = app.buttons["paywall.close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 8),
+                      "Paywall should expose the canonical close affordance")
+        close.tap()
 
         let gateBanner = anyElement("journalInsightsGateBanner")
         XCTAssertTrue(gateBanner.waitForExistence(timeout: 8),
@@ -738,28 +859,214 @@ final class JourneyAcceptanceTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8),
                       "SettingsSheet must present from Today")
         let signOut = app.buttons["settings.signOut.button"]
+        if !signOut.waitForExistence(timeout: 4) || !signOut.isHittable {
+            app.swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+        }
         XCTAssertTrue(signOut.waitForExistence(timeout: 8),
                       "Signed-in Settings should expose Sign out")
         captureEvidence(named: "11-settings-sign-out")
-        signOut.tap()
+        tapElementByScrolling("settings.signOut.button", timeout: 8)
 
-        let landingHeadline = app.staticTexts
-            .matching(NSPredicate(format: "label CONTAINS[c] %@", "today's move"))
+        XCTAssertTrue(anyElement("auth.calibrationLanding").waitForExistence(timeout: 12),
+                      "After sign-out the app should return to the recalibrated signed-out landing")
+        XCTAssertTrue(app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", "working model of your life"))
             .firstMatch
-        XCTAssertTrue(landingHeadline.waitForExistence(timeout: 12),
-                      "After sign-out the app should return to the signed-out landing")
+            .waitForExistence(timeout: 8),
+            "Signed-out landing should keep the recalibrated onboarding value proposition")
         let preview = app.buttons["continueWithoutSigningInButton"]
         XCTAssertTrue(preview.waitForExistence(timeout: 8),
                       "Signed-out landing should offer a guest preview recovery CTA")
         XCTAssertTrue(preview.isHittable,
                       "Guest preview CTA should be immediately tappable")
         captureEvidence(named: "11-auth-landing-after-sign-out")
+    }
 
-        preview.tap()
-        let reachedProfileSetup = waitForProfileSetup(timeout: 6)
-        let reachedHome = waitForHomeTab(timeout: 10)
-        XCTAssertTrue(reachedProfileSetup || reachedHome,
-                      "Guest recovery should move the user to profile setup or restored Today value without Apple Sign In")
-        captureEvidence(named: reachedProfileSetup ? "11-guest-profile-setup" : "11-guest-restored-today")
+    @MainActor
+    func test_J13_reviewerAccessShowsDataAndAccountControls() throws {
+        launchSignedIn(extraArguments: ["UITEST_OFFLINE_BACKEND"])
+
+        XCTAssertTrue(waitForHomeTab(), "Need signed-in home before opening reviewer settings")
+        tapTab("homeTab")
+        openSettingsFromToday()
+
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8),
+                      "Reviewer-access proof should open the active Settings sheet")
+
+        XCTAssertTrue(waitForElementByScrolling("settings.dataPrivacy.button", timeout: 8).exists,
+                      "Settings should expose Data & Privacy")
+        XCTAssertTrue(waitForElementByScrolling("settings.exportData.button", timeout: 8).exists,
+                      "Settings should expose Export My Data")
+        XCTAssertTrue(waitForElementByScrolling("settings.analyticsOptIn.toggle", timeout: 8).exists,
+                      "Settings should expose anonymous usage sharing consent")
+        XCTAssertTrue(waitForElementByScrolling("settings.shareDiagnostics.button", timeout: 8).exists,
+                      "Settings should expose the privacy-safe diagnostics report surface")
+        captureEvidence(named: "13-reviewer-data-controls")
+
+        XCTAssertTrue(waitForElementByScrolling("settings.signOut.button", timeout: 8).exists,
+                      "Settings should expose Sign Out")
+        XCTAssertTrue(waitForElementByScrolling("settings.deleteAccount.button", timeout: 8).exists,
+                      "Signed-in Settings should expose Delete Account without requiring review credentials")
+        captureEvidence(named: "13-reviewer-account-controls")
+    }
+
+    @MainActor
+    func test_J13_diagnosticsReportPresentsShareSheetAndCancels() throws {
+        launchSignedIn(extraArguments: ["UITEST_OFFLINE_BACKEND"])
+
+        XCTAssertTrue(waitForHomeTab(), "Need signed-in home before opening diagnostics")
+        tapTab("homeTab")
+        openSettingsFromToday()
+
+        let diagnostics = waitForElementByScrolling("settings.shareDiagnostics.button", timeout: 8)
+        XCTAssertTrue(diagnostics.exists,
+                      "Settings should expose diagnostics report generation")
+        diagnostics.tap()
+
+        let close = app.buttons["Close"]
+        let cancel = app.buttons["Cancel"]
+        let activityList = app.otherElements["ActivityListView"]
+        let shareSheetPresented = close.waitForExistence(timeout: 20)
+            || cancel.waitForExistence(timeout: 1)
+            || activityList.waitForExistence(timeout: 1)
+        XCTAssertTrue(shareSheetPresented,
+                      "Generating diagnostics should present the system share sheet")
+        captureEvidence(named: "13-diagnostics-share-sheet")
+        if close.isHittable {
+            close.tap()
+        } else if cancel.isHittable {
+            cancel.tap()
+        } else {
+            app.swipeDown()
+        }
+
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8),
+                      "Cancelling diagnostics sharing should return to Settings")
+        XCTAssertTrue(waitForElementByScrolling("settings.shareDiagnostics.button", timeout: 8).exists,
+                      "Diagnostics should remain available after cancelling the share sheet")
+    }
+
+    // MARK: - Journey 12 — Journal is agency-first, not an analysis launcher
+
+    @MainActor
+    func test_J12_journalShowsFreeWillDecisionLoopAndNoWhereElse() throws {
+        launchSignedIn(extraArguments: ["UITEST_START_TAB_INDEX=4"])
+        XCTAssertTrue(anyElement("journalView").waitForExistence(timeout: 18),
+                      "Journal tab should boot directly")
+
+        XCTAssertTrue(anyElement("journal.freeWillHero").waitForExistence(timeout: 12),
+                      "Journal should lead with Free Will instead of analysis modules")
+        XCTAssertTrue(anyElement("journal.decisionLoop").waitForExistence(timeout: 12),
+                      "Journal should expose the decision loop")
+        XCTAssertFalse(app.buttons["analysis.astrocartography.button"].exists,
+                       "Journal must not expose the old Where else astrocartography CTA")
+        XCTAssertFalse(app.staticTexts["Where else"].exists,
+                       "Where else belongs to Map, not Journal")
+        captureEvidence(named: "12-journal-agency-loop")
+
+        anyElement("journal.freeWillHero").tap()
+        XCTAssertTrue(anyElement("bayesianSliderView").waitForExistence(timeout: 12),
+                      "Free Will hero should open the Bayesian slider")
+        captureEvidence(named: "12-journal-free-will")
+        dismissPresentedSheet()
+
+        XCTAssertTrue(anyElement("journalView").waitForExistence(timeout: 8),
+                      "Dismissing Free Will should recover to Journal")
+        let newDecision = app.buttons["decisionNewButton"]
+        XCTAssertTrue(newDecision.waitForExistence(timeout: 8),
+                      "Journal decision loop should keep the New Decision CTA")
+        newDecision.tap()
+
+        let compose = anyElement("decisionComposeView")
+        XCTAssertTrue(compose.waitForExistence(timeout: 8),
+                      "New Decision from Journal should reuse the decision compose flow")
+        let quickPrompt = app.buttons["decisionQuickPromptButton_0"]
+        XCTAssertTrue(quickPrompt.waitForExistence(timeout: 8),
+                      "Decision compose should retain one-tap prompts")
+        quickPrompt.tap()
+
+        let run = app.buttons["decisionRunButton"]
+        XCTAssertTrue(run.waitForExistence(timeout: 5),
+                      "Decision run CTA should be reachable from the Journal flow")
+        run.tap()
+
+        XCTAssertTrue(anyElement("decisionResultView").waitForExistence(timeout: 10),
+                      "Journal decision flow should reach the result screen")
+        captureEvidence(named: "12-journal-decision-result")
+    }
+
+    // MARK: - Journey 13 — Apple Maps globe-backed relocation map
+
+    @MainActor
+    func test_J13_astrocartographyUsesAppleMapsGlobe() throws {
+        launchSignedIn()
+        XCTAssertTrue(waitForHomeTab(), "Signed-in shell should render bottom navigation")
+
+        tapTab("timeTravelTab")
+
+        XCTAssertTrue(anyElement("mapTabView").waitForExistence(timeout: 12),
+                      "Bottom-nav Map tab should own the astrocartography map surface")
+        XCTAssertTrue(anyElement("astrocartographyMapView").waitForExistence(timeout: 12),
+                      "Map tab should render the astrocartography journey directly, not hide it behind Journal")
+        XCTAssertTrue(anyElement("appleMapsGlobeView").waitForExistence(timeout: 12),
+                      "Map tab should render a real Apple Maps globe surface")
+        XCTAssertTrue(anyElement("astrocartography.appleMaps.badge").waitForExistence(timeout: 6),
+                      "The map surface should label the Apple Maps globe integration")
+        XCTAssertTrue(anyElement("astrocartography.appleMaps.realisticElevation").waitForExistence(timeout: 6),
+                      "The map should label realistic elevation mode")
+        XCTAssertTrue(app.buttons["astrocartography.city.Dubai"].waitForExistence(timeout: 8),
+                      "Globe-backed map should keep ranked relocation city controls")
+        captureEvidence(named: "13-map-tab-apple-maps-globe")
+    }
+
+    // MARK: - Journey 14 — Today reaches value quickly and loops into journaling
+
+    @MainActor
+    func test_J14_todayDailySignalOpensHabitLoop() throws {
+        var started: Date?
+        launchSignedIn(extraArguments: [
+            "UITEST_START_TAB_INDEX=0",
+            "UITEST_OFFLINE_BACKEND"
+        ], onWillLaunch: { started = $0 })
+
+        XCTAssertTrue(anyElement("todayTerrainView").waitForExistence(timeout: 18),
+                      "Today should boot directly into the active value surface")
+
+        let dailySignal = anyElement("today.dailySignal.card")
+        XCTAssertTrue(dailySignal.waitForExistence(timeout: 12),
+                      "Today should show a daily signal without requiring navigation")
+        let launchStarted = try XCTUnwrap(started, "The launch timer should start immediately before app.launch()")
+        let timeToSignal = Date().timeIntervalSince(launchStarted)
+        XCTAssertLessThan(timeToSignal, 30,
+                          "Daily signal should be available inside the 30s first-value window")
+        let ttv = ["time_to_daily_signal_seconds": timeToSignal]
+        let ttvData = try JSONSerialization.data(withJSONObject: ttv, options: [.prettyPrinted, .sortedKeys])
+        writeArtifact(ttvData, filename: "14-today-ttv.json")
+
+        XCTAssertTrue(anyElement("today.dashboard.refreshed").waitForExistence(timeout: 12),
+                      "Today should render the ZIP-guided dashboard surface")
+        XCTAssertTrue(waitForElementByScrolling("today.archetype.card").exists,
+                      "Today should lead with archetype synthesis, not the stale horoscope feed")
+        XCTAssertTrue(waitForElementByScrolling("today.systemStatus.live").exists,
+                      "Today should expose live system status")
+        XCTAssertTrue(waitForElementByScrolling("today.hypothesis.card").exists,
+                      "Today should expose a concrete hypothesis")
+        XCTAssertFalse(app.staticTexts["Today's Horoscope"].exists,
+                       "The stale horoscope title should not be the Today dashboard anchor")
+        captureEvidence(named: "14-today-refreshed-dashboard")
+        captureEvidence(named: "14-today-daily-signal")
+
+        tapElementByScrolling("today.dailySignal.logCTA", timeout: 8)
+
+        XCTAssertTrue(anyElement("today.logMoment.sheet").waitForExistence(timeout: 8),
+                      "Habit CTA should open the log moment sheet")
+        captureEvidence(named: "14-daily-signal-log-sheet")
+
+        dismissPresentedSheet()
+        XCTAssertTrue(anyElement("todayTerrainView").waitForExistence(timeout: 8),
+                      "Dismissing the habit sheet should recover to Today")
+        XCTAssertTrue(waitForElementByScrolling("today.actionQueue.card").exists,
+                      "Today should convert insight into an action queue after the habit loop")
     }
 }

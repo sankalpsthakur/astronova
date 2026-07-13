@@ -1,0 +1,102 @@
+{
+  "checkedAt": "2026-05-23T14:58:25Z",
+  "appId": "6746982743",
+  "builds": [
+    {
+      "id": "404987cd-e113-47dc-8240-093b1c7e79ab",
+      "version": "2026052202",
+      "uploadedDate": "2026-05-21T18:39:55-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "38748667-c5e5-4378-9657-161b853547de",
+      "version": "2026052201",
+      "uploadedDate": "2026-05-21T18:15:38-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "70cb69d9-64f4-4ecb-9a79-2ce2802201fb",
+      "version": "2026052004",
+      "uploadedDate": "2026-05-21T18:03:58-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "87063fd3-7d7d-4996-8793-22a8056feeb3",
+      "version": "2026052003",
+      "uploadedDate": "2026-05-20T15:54:16-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "a2a0ae72-e6d4-4cb8-8d93-d6affc5df325",
+      "version": "2026052001",
+      "uploadedDate": "2026-05-20T07:43:41-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "baa0d964-aca8-4138-9b14-a63f9ea7b6db",
+      "version": "2026051902",
+      "uploadedDate": "2026-05-19T13:05:23-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "1192a9b2-4bfd-4b4b-a3df-25e029967430",
+      "version": "2026051816",
+      "uploadedDate": "2026-05-18T07:21:01-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "631f24e0-32f9-4d85-b110-1bb477efd956",
+      "version": "2026051815",
+      "uploadedDate": "2026-05-18T07:12:42-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "ed2d3730-3d1b-482b-b456-2880a7d903b5",
+      "version": "2026051814",
+      "uploadedDate": "2026-05-18T07:07:30-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "2ec1092a-b3b7-450c-87ec-9a6f5e666df8",
+      "version": "2026051813",
+      "uploadedDate": "2026-05-18T07:01:33-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "67ab33e4-cca7-45f6-926e-542ddf7943d4",
+      "version": "2026051812",
+      "uploadedDate": "2026-05-18T06:49:59-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    },
+    {
+      "id": "d128e869-8806-428a-a5a0-84a89693925a",
+      "version": "2026051811",
+      "uploadedDate": "2026-05-18T06:43:00-07:00",
+      "processingState": "VALID",
+      "expired": false,
+      "usesNonExemptEncryption": false
+    }
+  ]
+}

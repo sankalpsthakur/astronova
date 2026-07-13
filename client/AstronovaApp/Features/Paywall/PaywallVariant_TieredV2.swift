@@ -4,12 +4,12 @@ import UIKit
 
 /// Astronova paywall — tiered_v2 variant.
 ///
-/// Difference vs tiered_v1: adds a "Try 7-day Cosmic trial then auto-revert to
-/// Pro" CTA above the standard footer. The trial SKU is not yet provisioned
-/// in App Store Connect — when the user taps the trial CTA we fall back to
-/// the regular 12-month purchase and stamp `cosmic_trial_requested=true` on
-/// the analytics event so the server-side join knows demand exists. Once the
-/// trial SKU lands, the StoreKit call here can switch over without UI work.
+/// Difference vs tiered_v1: leads with the 14-day free Pro trial above the
+/// standard footer. The trial is the introductory offer attached to the
+/// selected Pro subscription (`P2W` free in `AstronovaProducts.storekit` /
+/// App Store Connect), so the purchase routes through the real subscription
+/// product. The analytics event stamps `cosmic_trial_requested=true` so the
+/// server-side join can attribute trial-led conversions.
 struct PaywallVariant_TieredV2: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var storeKitManager = StoreKitManager.shared
@@ -51,32 +51,49 @@ struct PaywallVariant_TieredV2: View {
         ShopCatalog.proPlan(for: selectedPlanProductId)
     }
 
+    private var mockPurchasesEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "mock_purchases_enabled") ||
+        TestEnvironment.shared.hasArgument(.mockPurchases)
+    }
+
     private var ctaTitle: String {
         if isPurchasing { return "Starting trial..." }
         if allProductsUnavailable { return "Plans loading..." }
-        return "Start 7-day Cosmic trial"
+        return "Start 14-day free trial"
     }
 
     private var heroTitle: String {
-        context == .journalInsights ? "Unlock Journal Insights" : "Try Cosmic. Keep Pro."
+        context == .journalInsights ? "Unlock Journal Insights" : "Try Pro free for 14 days."
     }
 
     private var heroSubtitle: String {
         if context == .journalInsights {
             return "You used this month's free insight sessions. Pro keeps pattern, body, and mood trends available."
         }
-        return "7 days of Cosmic, then your Pro plan keeps running."
+        return "14 days of full Pro access, then it auto-renews at the plan price you pick below."
     }
 
     private var trialHeadline: String {
-        context == .journalInsights ? "Keep every trend visible" : "Highest-tier insights for a week"
+        context == .journalInsights ? "Keep every trend visible" : "Full Pro access for two weeks"
     }
 
+    /// Plain-language disclosure of the introductory offer terms. References
+    /// the *full* recurring price of the selected plan (annual total for the
+    /// 12-month plan, monthly price for the monthly plan) so there is no
+    /// installment-style framing.
     private var trialBody: String {
         if context == .journalInsights {
             return "Use Journal Insights whenever you need a read on your patterns, body signals, and mood movement."
         }
-        return "After 7 days you're billed for the 12-month Pro plan you selected below. Cancel any time in Settings."
+        let plan = selectedPlan
+        let pricePhrase: String
+        if let commitment = commitmentDisplayPrice(for: plan) {
+            // Annual plan — disclose the full yearly charge.
+            pricePhrase = "\(commitment) per year"
+        } else {
+            pricePhrase = "\(billingDisplayPrice(for: plan)) per month"
+        }
+        return "Free for 14 days. After the trial it auto-renews at \(pricePhrase) unless you cancel at least 24 hours before it ends. Cancel any time in Settings."
     }
 
     private func billingDisplayPrice(for plan: ShopCatalog.ProPlan) -> String {
@@ -89,8 +106,8 @@ struct PaywallVariant_TieredV2: View {
         plan.fallbackCommitmentDisplayPrice
     }
 
-    /// Wave-0 guard: if the 12-month commitment SKU failed to load (e.g.
-    /// `MISSING_METADATA` in App Store Connect) the trial/Subscribe tap
+    /// Wave-0 guard: if the 12-month commitment SKU failed to load (for
+    /// example because product metadata is unavailable) the trial/Subscribe tap
     /// would route through a SKU StoreKit never returned and silently
     /// fail. When the loaded catalog is missing it, fall back to monthly
     /// so the default action is purchasable. Only adjusts the *default*
@@ -100,10 +117,13 @@ struct PaywallVariant_TieredV2: View {
     /// back to anything purchasable, so we raise `allProductsUnavailable`
     /// and let the view disable the CTA + surface a banner.
     private func adjustDefaultPlanIfAnnualUnavailable() {
-        let loaded = storeKitManager.products
-        guard !loaded.isEmpty else { return }
-        let annualMissing = loaded[ShopCatalog.pro12MonthCommitmentProductID] == nil
-        let monthlyMissing = loaded[ShopCatalog.proMonthlyProductID] == nil
+        if mockPurchasesEnabled {
+            allProductsUnavailable = false
+            return
+        }
+        guard storeKitManager.productLoadCompleted else { return }
+        let annualMissing = !storeKitManager.isProductAvailableForPurchase(ShopCatalog.pro12MonthCommitmentProductID)
+        let monthlyMissing = !storeKitManager.isProductAvailableForPurchase(ShopCatalog.proMonthlyProductID)
         if annualMissing && monthlyMissing {
             allProductsUnavailable = true
             return
@@ -120,9 +140,8 @@ struct PaywallVariant_TieredV2: View {
     /// can't pick a SKU that will silently fail to purchase. Returns `false`
     /// while products are still loading (empty catalog).
     private func isPlanUnavailable(_ plan: ShopCatalog.ProPlan) -> Bool {
-        let loaded = storeKitManager.products
-        guard !loaded.isEmpty else { return false }
-        return loaded[plan.productId] == nil
+        storeKitManager.productLoadCompleted &&
+        !storeKitManager.isProductAvailableForPurchase(plan.productId)
     }
 
     private let termsURL = URL(string: "https://astronova-ghcr.onrender.com/terms")!
@@ -217,7 +236,7 @@ struct PaywallVariant_TieredV2: View {
     private var cosmicTrialCard: some View {
         VStack(alignment: .leading, spacing: Cosmic.Spacing.sm) {
             HStack {
-                Text("7-DAY COSMIC TRIAL")
+                Text("14-DAY COSMIC TRIAL")
                     .font(.cosmicCaptionEmphasis)
                     .foregroundStyle(Color.cosmicVoid)
                     .padding(.horizontal, Cosmic.Spacing.xs)
@@ -443,9 +462,9 @@ struct PaywallVariant_TieredV2: View {
                 }
             }
             .buttonStyle(.cosmicPrimary)
-            .disabled(allProductsUnavailable)
+            .disabled(allProductsUnavailable && !mockPurchasesEnabled)
             .accessibilityIdentifier(AccessibilityID.startProButton)
-            .accessibilityHint(allProductsUnavailable ? "Plans loading. Try again in a moment." : "")
+            .accessibilityHint(allProductsUnavailable && !mockPurchasesEnabled ? "Plans loading. Try again in a moment." : "")
 
             Button {
                 CosmicHaptics.light()
@@ -471,6 +490,7 @@ struct PaywallVariant_TieredV2: View {
         .padding(.top, Cosmic.Spacing.sm)
         .padding(.bottom, Cosmic.Spacing.xs)
         .background(.regularMaterial)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AccessibilityID.paywallFooter)
     }
 
@@ -480,10 +500,24 @@ struct PaywallVariant_TieredV2: View {
         let plan = await MainActor.run { selectedPlan }
         defer { Task { @MainActor in isPurchasing = false } }
 
-        // Until the dedicated Cosmic-trial SKU lands, this falls through to
-        // the standard 12-month purchase and tags the event so demand for the
-        // trial offering is measurable independent of conversion.
-        let success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
+        // Routes through the selected Pro subscription product, which carries
+        // the 14-day free introductory offer. Tags the event with
+        // `cosmic_trial_requested` so trial-led conversions are measurable.
+        let success: Bool
+        if mockPurchasesEnabled {
+            success = await BasicStoreManager.shared.purchaseProduct(productId: plan.productId)
+        } else {
+            guard await MainActor.run(body: {
+                storeKitManager.isProductAvailableForPurchase(plan.productId)
+            }) else {
+                await MainActor.run {
+                    purchaseResult = .error("This plan is unavailable right now. You were not charged.")
+                }
+                return
+            }
+            success = await storeKitManager.purchaseProduct(productId: plan.productId, billingPlan: plan.billingPlan)
+        }
+
         if success {
             Analytics.shared.track(
                 .paywallConversion,
@@ -514,7 +548,9 @@ struct PaywallVariant_TieredV2: View {
         await MainActor.run { isRestoring = true }
         defer { Task { @MainActor in isRestoring = false } }
 
-        let restored = await storeKitManager.restorePurchases()
+        let restored = mockPurchasesEnabled
+            ? await BasicStoreManager.shared.restorePurchases()
+            : await storeKitManager.restorePurchases()
         await MainActor.run {
             OracleQuotaManager.shared.checkSubscription()
             purchaseResult = restored ? .restored : .restoredNone
