@@ -142,4 +142,8 @@ def readiness_report() -> dict:
         "ai_provider": {"ok": ai_ok, "detail": ai_msg},
     }
     ready = db_ok and eph_ok
-    return {"ready": ready, "checks": checks}
+    report = {"ready": ready, "checks": checks}
+    commit = os.environ.get("RENDER_GIT_COMMIT") or os.environ.get("GIT_COMMIT")
+    if commit:
+        report["commit"] = commit[:12]
+    return report

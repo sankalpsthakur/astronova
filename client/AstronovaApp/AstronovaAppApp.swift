@@ -140,6 +140,7 @@ struct AstronovaAppApp: App {
                     switch newPhase {
                     case .active:
                         Self.startStoreKitObservationForForeground()
+                        Task { await authState.checkAPIConnectivity() }
                     case .background:
                         StoreKitManager.shared.stopSubscriptionStatusObservation()
                     case .inactive:

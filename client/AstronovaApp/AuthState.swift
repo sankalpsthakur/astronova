@@ -199,11 +199,15 @@ class AuthState: ObservableObject {
                 if let networkError = error as? NetworkError {
                     switch networkError {
                     case .offline:
-                        self.connectionError = "Offline mode - some features may be limited"
+                        self.connectionError = "Offline mode — charts and chat need a connection."
                     case .timeout:
-                        self.connectionError = "Connection timeout - check your internet"
+                        self.connectionError = "Connection timeout — check your internet and retry."
+                    case .serverError(let code, _) where code == 503:
+                        self.connectionError = "The cosmic engine is waking up. Retry shortly."
                     case .serverError(let code, _):
-                        self.connectionError = "Server issue (\(code)) - please try again later"
+                        self.connectionError = "Server issue (\(code)) — please try again later."
+                    case .decodingError:
+                        self.connectionError = "The cosmic engine is temporarily unavailable. Retry shortly."
                     default:
                         self.connectionError = networkError.localizedDescription
                     }

@@ -157,6 +157,13 @@ final class AstronovaAppTests: XCTestCase {
         XCTAssertEqual(ShopCatalog.proPlan(for: ShopCatalog.defaultProProductID).title, "12-month plan")
     }
 
+    func testShopCatalogFallsBackToMonthlyWhenAnnualProductMissing() throws {
+        let available = Set([ShopCatalog.proMonthlyProductID])
+        let resolved = ShopCatalog.proPlans.first { available.contains($0.productId) }
+        XCTAssertEqual(resolved?.productId, ShopCatalog.proMonthlyProductID)
+        XCTAssertEqual(resolved?.billingPlan, .standard)
+    }
+
     func testReportsShopComponentContractSeparatesBuyAndIncludedStates() throws {
         let productIds = ShopCatalog.reports.map(\.productId)
         XCTAssertEqual(Set(productIds).count, productIds.count)

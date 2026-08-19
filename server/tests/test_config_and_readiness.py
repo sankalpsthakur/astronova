@@ -64,3 +64,18 @@ def test_readiness_endpoint(client):
     assert "ready" in body and "checks" in body
     # Database must be healthy in the test environment.
     assert body["checks"]["database"]["ok"] is True
+
+
+def test_root_health_includes_commit_when_configured(client, monkeypatch):
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "abcdef1234567890")
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["status"] == "ok"
+    assert body["commit"] == "abcdef123456"
+
+
+def test_readiness_includes_commit_when_configured(monkeypatch):
+    monkeypatch.setenv("GIT_COMMIT", "deadbeefcafebabe")
+    report = readiness_report()
+    assert report["commit"] == "deadbeefcafe"

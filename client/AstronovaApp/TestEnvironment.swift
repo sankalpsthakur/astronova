@@ -513,4 +513,6 @@ enum AccessibilityID {
     static let errorMessage = "errorMessage"
     static let dismissButton = "dismissButton"
     static let doneButton = "doneButton"
+    static let backendStatusBanner = "backendStatusBanner"
+    static let retryConnectionButton = "retryConnectionButton"
 }
