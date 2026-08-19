@@ -639,6 +639,21 @@ struct RootView: View {
                 SimpleTabBarView()
             }
         }
+        .overlay(alignment: .top) {
+            if auth.state != .loading, !auth.isAPIConnected, let message = auth.connectionError {
+                BackendStatusBanner(
+                    message: message,
+                    isRetrying: auth.isRetryingConnection
+                ) {
+                    Task { await auth.retryConnection() }
+                }
+                .padding(.top, 8)
+                .padding(.horizontal, Cosmic.Spacing.m)
+            }
+        }
+        .task {
+            await auth.checkAPIConnectivity()
+        }
         // Wave 13 — Global NPS sheet driver. Surfaces from NPSService after
         // Oracle session #5 or first Cosmic Diary entry (see NPSService).
         .sheet(isPresented: Binding(
@@ -657,6 +672,46 @@ struct RootView: View {
                 )
             }
         }
+    }
+}
+
+private struct BackendStatusBanner: View {
+    let message: String
+    let isRetrying: Bool
+    let onRetry: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: Cosmic.Spacing.s) {
+            Image(systemName: "wifi.exclamationmark")
+                .foregroundStyle(Color.cosmicGold)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(.cosmicCaptionEmphasis)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: Cosmic.Spacing.s)
+            Button(action: onRetry) {
+                if isRetrying {
+                    ProgressView()
+                        .tint(Color.cosmicGold)
+                } else {
+                    Text("Retry")
+                        .font(.cosmicCaptionEmphasis)
+                }
+            }
+            .disabled(isRetrying)
+            .accessibilityIdentifier(AccessibilityID.retryConnectionButton)
+        }
+        .padding(.horizontal, Cosmic.Spacing.m)
+        .padding(.vertical, Cosmic.Spacing.s)
+        .background(Color.cosmicSurface.opacity(0.96))
+        .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .stroke(Color.cosmicGold.opacity(0.35), lineWidth: Cosmic.Border.thin)
+        )
+        .accessibilityIdentifier(AccessibilityID.backendStatusBanner)
+        .accessibilityElement(children: .contain)
     }
 }
 
