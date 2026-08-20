@@ -16,7 +16,9 @@ on:
 jobs:
   swift-ios-build:
     name: iOS Simulator tests
-    runs-on: macos-15
+    # Diagnostics 7.0.0 needs Swift 6.2 (nonisolated(nonsending)).
+    # macos-15 ships Xcode 16.4; macos-26 ships Xcode 26.6 by default.
+    runs-on: macos-26
     timeout-minutes: 45
 
     defaults:
@@ -36,7 +38,7 @@ jobs:
             | python3 -c "
           import json, sys
           d = json.load(sys.stdin)
-          preferred = ('iPhone 16 Pro', 'iPhone 16', 'iPhone 15 Pro', 'iPhone 15')
+          preferred = ('iPhone 17 Pro', 'iPhone 17', 'iPhone 16 Pro', 'iPhone 16', 'iPhone 15 Pro', 'iPhone 15')
           found = []
           for runtime, devs in d['devices'].items():
               for dev in devs:
@@ -139,7 +141,7 @@ jobs:
 
   swift-lint:
     name: Swift Linting
-    runs-on: macos-15
+    runs-on: macos-26
 
     defaults:
       run:
