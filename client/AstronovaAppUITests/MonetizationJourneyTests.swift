@@ -101,26 +101,32 @@ final class MonetizationJourneyTests: XCTestCase {
         XCTFail("Tab '\(identifier)' should exist (tried: \(candidates.joined(separator: ", ")))", file: file, line: line)
     }
 
+    @discardableResult
+    private func tapIdentifier(_ identifier: String, timeout: TimeInterval) -> Bool {
+        let button = app.buttons[identifier]
+        guard button.waitForExistence(timeout: timeout) else { return false }
+        // Prefer accessibility activate over a coordinate tap. Coordinate
+        // taps hit whatever is on screen (e.g. the backend-down banner).
+        button.tap()
+        return true
+    }
+
+    private func settingsIsPresented(timeout: TimeInterval = 8) -> Bool {
+        if app.navigationBars["Settings"].waitForExistence(timeout: timeout) {
+            return true
+        }
+        return app.otherElements["settings.sheet"].waitForExistence(timeout: 1)
+    }
+
     private func openSettingsFromToday(file: StaticString = #filePath, line: UInt = #line) {
         tapTab("homeTab", file: file, line: line)
-
-        let byImage = app.buttons["gearshape"]
-        if byImage.waitForExistence(timeout: 4), byImage.isHittable {
-            byImage.tap()
-        } else {
-            let candidates = app.buttons.allElementsBoundByIndex
-            if let topTrailing = candidates.reversed().first(where: { button in
-                let frame = button.frame
-                return button.isHittable && frame.minY < 200 && frame.minX > 250
-            }) {
-                topTrailing.tap()
-            } else {
-                XCTFail("Could not find the Today settings button", file: file, line: line)
-                return
-            }
-        }
-
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8), "Settings should open from Today", file: file, line: line)
+        _ = app.otherElements["todayTerrainView"].waitForExistence(timeout: 8)
+        XCTAssertTrue(tapIdentifier("today.settings.button", timeout: 8),
+                      "Today settings button should exist",
+                      file: file, line: line)
+        XCTAssertTrue(settingsIsPresented(timeout: 8),
+                      "Settings should open from Today",
+                      file: file, line: line)
     }
 
     private func openOracleFromSettings(file: StaticString = #filePath, line: UInt = #line) {

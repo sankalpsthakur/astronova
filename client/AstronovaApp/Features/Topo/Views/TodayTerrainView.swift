@@ -114,6 +114,7 @@ struct TodayTerrainView: View {
                     .font(.cosmicTitle2)
                     .foregroundStyle(Color.cosmicTextPrimary)
             }
+            .accessibilityIdentifier(AccessibilityID.todayPauseButton)
             .accessibilityLabel("Pause")
             .accessibilityHint("Opens the pause protocol")
             Button {
@@ -124,6 +125,7 @@ struct TodayTerrainView: View {
                     .font(.cosmicTitle2)
                     .foregroundStyle(Color.cosmicTextPrimary)
             }
+            .accessibilityIdentifier(AccessibilityID.todaySettingsButton)
             .accessibilityLabel("Settings")
             .accessibilityHint("Opens settings, including subscription and reports")
         }

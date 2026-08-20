@@ -627,19 +627,7 @@ struct RootView: View {
     @StateObject private var nps = NPSService.shared
 
     var body: some View {
-        Group {
-            switch auth.state {
-            case .loading:
-                LoadingView()
-            case .signedOut:
-                CompellingLandingView()
-            case .needsProfileSetup:
-                SimpleProfileSetupView()
-            case .signedIn:
-                SimpleTabBarView()
-            }
-        }
-        .overlay(alignment: .top) {
+        VStack(spacing: 0) {
             if auth.state != .loading, !auth.isAPIConnected, let message = auth.connectionError {
                 BackendStatusBanner(
                     message: message,
@@ -649,6 +637,20 @@ struct RootView: View {
                 }
                 .padding(.top, 8)
                 .padding(.horizontal, Cosmic.Spacing.m)
+                .padding(.bottom, 8)
+            }
+
+            Group {
+                switch auth.state {
+                case .loading:
+                    LoadingView()
+                case .signedOut:
+                    CompellingLandingView()
+                case .needsProfileSetup:
+                    SimpleProfileSetupView()
+                case .signedIn:
+                    SimpleTabBarView()
+                }
             }
         }
         .task {
