@@ -144,6 +144,7 @@ struct SettingsSheet: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier(AccessibilityID.settingsSheet)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
