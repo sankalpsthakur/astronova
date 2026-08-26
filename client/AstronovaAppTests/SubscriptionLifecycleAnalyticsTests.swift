@@ -202,13 +202,15 @@ final class SubscriptionLifecycleAnalyticsTests: XCTestCase {
             state: .gracePeriod,
             willAutoRenew: true
         )
+        let firstReceived = expectation(description: "first subscription status received")
 
-        XCTAssertTrue(observer.start { received.append($0) })
+        XCTAssertTrue(observer.start {
+            received.append($0)
+            firstReceived.fulfill()
+        })
         XCTAssertFalse(observer.start { received.append($0) })
         continuation?.yield(first)
-        for _ in 0..<20 where received.isEmpty {
-            await Task.yield()
-        }
+        await fulfillment(of: [firstReceived], timeout: 1.0)
         XCTAssertEqual(received, [first])
 
         XCTAssertTrue(observer.cancel())
@@ -216,9 +218,7 @@ final class SubscriptionLifecycleAnalyticsTests: XCTestCase {
         XCTAssertFalse(observer.isRunning)
         continuation?.yield(.init(sku: first.sku, state: .expired, willAutoRenew: false))
         continuation?.finish()
-        for _ in 0..<5 {
-            await Task.yield()
-        }
+        try? await Task.sleep(nanoseconds: 50_000_000)
         XCTAssertEqual(received, [first])
     }
 
