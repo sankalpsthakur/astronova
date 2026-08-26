@@ -1,8 +1,11 @@
 FROM python:3.11-slim
 
+ARG GIT_COMMIT=unknown
+
 # Ensure Python output is unbuffered and avoid .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    GIT_COMMIT=${GIT_COMMIT} \
     PORT=8080
 
 WORKDIR /app

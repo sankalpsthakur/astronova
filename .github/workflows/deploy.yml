@@ -88,7 +88,7 @@ jobs:
       - name: Wait for deployment
         run: |
           echo "Running post-deploy verification for staging..."
-          bash scripts/deploy-post-push-check.sh --base-url https://astronova-staging.onrender.com --wait-seconds 300 --health-retries 30 --health-delay 10
+          bash scripts/deploy-post-push-check.sh --base-url https://astronova-staging.onrender.com --wait-seconds 300 --health-retries 30 --health-delay 10 --expected-commit "${GITHUB_SHA}"
 
       - name: Record deployment state
         id: deployment-state
@@ -152,7 +152,7 @@ jobs:
       - name: Wait for deployment
         run: |
           echo "Running post-deploy verification for production..."
-          bash scripts/deploy-post-push-check.sh --base-url https://astronova-ghcr.onrender.com --wait-seconds 300 --health-retries 30 --health-delay 10
+          bash scripts/deploy-post-push-check.sh --base-url https://astronova-ghcr.onrender.com --wait-seconds 300 --health-retries 30 --health-delay 10 --expected-commit "${GITHUB_SHA}"
 
       - name: Record deployment state
         id: deployment-state
