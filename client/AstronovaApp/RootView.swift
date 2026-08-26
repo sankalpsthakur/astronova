@@ -628,7 +628,10 @@ struct RootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if auth.state != .loading, !auth.isAPIConnected, let message = auth.connectionError {
+            if !TestEnvironment.shared.isUITest,
+               auth.state != .loading,
+               !auth.isAPIConnected,
+               let message = auth.connectionError {
                 BackendStatusBanner(
                     message: message,
                     isRetrying: auth.isRetryingConnection
@@ -654,7 +657,9 @@ struct RootView: View {
             }
         }
         .task {
-            await auth.checkAPIConnectivity()
+            if !TestEnvironment.shared.isUITest {
+                await auth.checkAPIConnectivity()
+            }
         }
         // Wave 13 — Global NPS sheet driver. Surfaces from NPSService after
         // Oracle session #5 or first Cosmic Diary entry (see NPSService).

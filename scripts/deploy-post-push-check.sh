@@ -10,6 +10,7 @@ HEALTH_RETRY_DELAY=6
 ALLOW_CHAT_503=0
 SKIP_CHAT=0
 SKIP_CHARGED_REPORTS=0
+EXPECTED_COMMIT=""
 
 log() {
     printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1"
@@ -30,6 +31,7 @@ Options:
   --timeout <seconds>       Curl timeout per request (default: 25)
   --health-retries <n>      Health-retry attempts (default: 25)
   --health-delay <seconds>  Delay between health checks (default: 6)
+  --expected-commit <sha>   Require /health to report this deployed commit
   --allow-chat-503          Consider HTTP 503 as acceptable for /api/v1/chat
   --skip-chat               Skip chat endpoint check
   --skip-charged-reports     Skip report generation/download checks
@@ -57,6 +59,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --health-delay)
             HEALTH_RETRY_DELAY="$2"
+            shift 2
+            ;;
+        --expected-commit)
+            EXPECTED_COMMIT="$2"
             shift 2
             ;;
         --allow-chat-503)
@@ -174,8 +180,18 @@ wait_for_health() {
         status="$(curl -sS --max-time "$REQUEST_TIMEOUT" -D /tmp/astronova_health_headers.txt -o /tmp/astronova_health_check.txt -w "%{http_code}" "${BASE_URL}/health" || true)"
         routing="$(awk -F': ' 'tolower($1)=="x-render-routing" {gsub(sprintf("%c",13),"",$2); print $2}' /tmp/astronova_health_headers.txt 2>/dev/null || true)"
         if [[ "${status//$'\n'/}" == "200" ]]; then
-            rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
-            return 0
+            if [[ -n "${EXPECTED_COMMIT}" ]]; then
+                local deployed_commit
+                deployed_commit="$(extract_json_field /tmp/astronova_health_check.txt commit || true)"
+                if [[ -n "${deployed_commit}" && "${EXPECTED_COMMIT}" == "${deployed_commit}"* ]]; then
+                    rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
+                    return 0
+                fi
+                log "Health is up, but commit is ${deployed_commit:-missing}; waiting for ${EXPECTED_COMMIT:0:12}."
+            else
+                rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
+                return 0
+            fi
         fi
 
         if [[ "${routing}" == *suspend* ]] || grep -qi "Service Suspended" /tmp/astronova_health_check.txt 2>/dev/null; then
