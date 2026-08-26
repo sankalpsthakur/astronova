@@ -64,7 +64,9 @@ jobs:
         # CloudKit CI test validates code structure without requiring live CloudKit connection
 
   swift-ios:
-    runs-on: macos-14
+    # ExceptionCatcher 2.2.0 uses Swift tools 6.0, so Xcode 15 cannot
+    # resolve the package graph. Keep this build aligned with ios.yml.
+    runs-on: macos-26
     defaults:
       run:
         working-directory: client
@@ -74,13 +76,13 @@ jobs:
 
     - name: Select Xcode version
       run: |
-        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
         xcodebuild -version
 
     - name: Build iOS app
       run: |
         xcodebuild -project astronova.xcodeproj -scheme AstronovaApp \
-          -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+          -destination 'generic/platform=iOS Simulator' \
           -configuration Debug \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
