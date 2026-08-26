@@ -3,7 +3,7 @@
 [![Test Suite](https://github.com/yourusername/astronova/actions/workflows/test.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/test.yml)
 [![iOS Build](https://github.com/yourusername/astronova/actions/workflows/ios.yml/badge.svg)](https://github.com/yourusername/astronova/actions/workflows/ios.yml)
 [![codecov](https://codecov.io/gh/yourusername/astronova/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/astronova)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Swift 5.9](https://img.shields.io/badge/swift-5.9-orange.svg)](https://swift.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -121,7 +121,7 @@ xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp \
 ## Technology Stack
 
 **Backend:**
-- Python 3.9+ with Flask
+- Python 3.10+ with Flask
 - Swiss Ephemeris (pyswisseph) for planetary calculations
 - SQLite database
 - OpenAI GPT-4o-mini for chat
@@ -140,7 +140,7 @@ xcodebuild test -project astronova.xcodeproj -scheme AstronovaApp \
 ## CI/CD
 
 GitHub Actions workflows:
-- **test.yml** — Python tests across 3.9-3.12, coverage enforcement (80%)
+- **test.yml** — Python tests across 3.10-3.12, coverage enforcement (80%)
 - **ios.yml** — Xcode build and tests
 - **deploy.yml** — Staging/production deployment to Render
 
