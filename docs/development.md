@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- **Python**: 3.9+ (3.11 recommended)
+- **Python**: 3.10+ (3.11 recommended)
 - **Xcode**: 15+ with iOS 17 SDK
 - **Node.js**: 18+ (for pre-commit prettier)
 - **Git**: 2.30+

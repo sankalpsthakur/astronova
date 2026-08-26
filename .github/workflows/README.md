@@ -9,7 +9,7 @@ This directory contains GitHub Actions workflow configurations for the Astronova
 Comprehensive testing workflow that runs on every push and pull request.
 
 **Features:**
-- Matrix testing across Python 3.9, 3.10, 3.11, 3.12
+- Matrix testing across Python 3.10, 3.11, 3.12
 - Code coverage with 80% minimum threshold
 - Security scanning (Bandit, Safety, Trivy)
 - Performance benchmarks

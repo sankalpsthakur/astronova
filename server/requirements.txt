@@ -32,12 +32,3 @@ pyswisseph>=2.10.0,<3.0.0
 
 # Optional: geocoding for location search (fallback provided if missing)
 geopy>=2.4.0,<3.0.0
-
-# Testing
-# Security (2026-05-20): bumped to >=9.0.3 to resolve CVE-2025-71176 in pytest
-#   (dev-only path, but eliminated to keep audit clean).
-pytest>=9.0.3,<10.0.0
-pytest-benchmark>=4.0.0,<6.0.0
-pytest-cov>=4.1.0,<7.0.0
-memory-profiler>=0.61.0,<1.0.0
-freezegun>=1.5.0,<2.0.0
