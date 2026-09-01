@@ -1,13 +1,13 @@
-"""UTC timestamp helpers for Python 3.14-safe current time access."""
+"""UTC timestamp helpers for Python 3.10+ (`timezone.utc`; `datetime.UTC` is 3.11-only)."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 
 def utc_now_naive() -> datetime:
     """Return the current UTC time in the existing naive-datetime format."""
-    return datetime.now(UTC).replace(tzinfo=None)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def utc_now_iso() -> str:
