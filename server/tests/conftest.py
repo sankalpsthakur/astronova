@@ -81,6 +81,11 @@ class ThreadSafeTestClient:
         self._app = app
         self.environ_base: dict = {}
 
+    @property
+    def application(self):
+        """Match FlaskClient.application so tests can reach the wrapped app."""
+        return self._app
+
     def _call(self, method_name: str, *args, **kwargs):
         with self._app.test_client() as client:
             if self.environ_base:
