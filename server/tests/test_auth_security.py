@@ -1071,7 +1071,7 @@ class TestRateLimiting:
         # The broad test suite disables rate limits to avoid cross-test bucket
         # leakage. Re-initialize this test's isolated app with the real limiter
         # so the assertion cannot silently exercise an unwrapped route.
-        test_app = authenticated_client._app
+        test_app = authenticated_client.application
         monkeypatch.setitem(test_app.config, "RATELIMIT_ENABLED", True)
         limiter.init_app(test_app)
         statuses = []
