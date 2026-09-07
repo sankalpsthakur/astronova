@@ -30,6 +30,7 @@ class AuthState: ObservableObject {
     private let legacyJWTTokenKey = "com.sankalp.AstronovaApp.jwtToken"
     private let onboardingCompletedKey = "hasCompletedOnboarding"
     private let legacyOnboardingCompletedKey = "onboarding_complete"
+    private var connectivityCheckGeneration = 0
     
     // MARK: - Keychain Helper Methods
     
@@ -183,33 +184,38 @@ class AuthState: ObservableObject {
     }
     
     /// Check API connectivity and update status
+    @MainActor
     func checkAPIConnectivity() async {
+        connectivityCheckGeneration += 1
+        let generation = connectivityCheckGeneration
         do {
             let health = try await apiServices.healthCheck()
-            await MainActor.run {
-                self.isAPIConnected = health.status == "ok" || health.status == "healthy"
-                self.connectionError = nil
-                self.isRetryingConnection = false
-            }
+            guard generation == connectivityCheckGeneration else { return }
+            isAPIConnected = health.status == "ok" || health.status == "healthy"
+            connectionError = nil
+            isRetryingConnection = false
         } catch {
-            await MainActor.run {
-                self.isAPIConnected = false
-                self.isRetryingConnection = false
+            guard generation == connectivityCheckGeneration else { return }
+            isAPIConnected = false
+            isRetryingConnection = false
                 
-                if let networkError = error as? NetworkError {
-                    switch networkError {
-                    case .offline:
-                        self.connectionError = "Offline mode - some features may be limited"
-                    case .timeout:
-                        self.connectionError = "Connection timeout - check your internet"
-                    case .serverError(let code, _):
-                        self.connectionError = "Server issue (\(code)) - please try again later"
-                    default:
-                        self.connectionError = networkError.localizedDescription
-                    }
-                } else {
-                    self.connectionError = error.localizedDescription
+            if let networkError = error as? NetworkError {
+                switch networkError {
+                case .offline:
+                    connectionError = "Offline mode — charts and chat need a connection."
+                case .timeout:
+                    connectionError = "Connection timeout — check your internet and retry."
+                case .serverError(let code, _) where code == 503:
+                    connectionError = "The cosmic engine is waking up. Retry shortly."
+                case .serverError(let code, _):
+                    connectionError = "Server issue (\(code)) — please try again later."
+                case .decodingError:
+                    connectionError = "The cosmic engine is temporarily unavailable. Retry shortly."
+                default:
+                    connectionError = networkError.localizedDescription
                 }
+            } else {
+                connectionError = error.localizedDescription
             }
             #if DEBUG
             debugPrint("[Auth] API connectivity check failed: \(error.localizedDescription)")

@@ -65,6 +65,8 @@ jobs:
           provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            GIT_COMMIT=${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/sankalpsthakur/astronova
             org.opencontainers.image.revision=${{ github.sha }}

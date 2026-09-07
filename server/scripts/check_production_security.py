@@ -60,12 +60,40 @@ def check(condition: bool, passed: str, failed: str, failures: list[str]) -> Non
         failures.append(failed)
 
 
+def is_render_suspended(response: Response) -> bool:
+    routing = (response.headers.get("X-Render-Routing") or response.headers.get("x-render-routing") or "").lower()
+    if "suspend" in routing:
+        return True
+    text = response.body.decode("utf-8", errors="replace").lower()
+    return response.status == 503 and "service suspended" in text
+
+
 def main() -> int:
     failures: list[str] = []
     print(f"Checking Astronova production security at {BASE_URL.rstrip('/')}")
 
     health = fetch("/health")
+    if is_render_suspended(health):
+        check(
+            False,
+            "",
+            "GET /health is Render suspend-by-user HTML, not JSON. Resume astronova-backend before launch.",
+            failures,
+        )
+        print(f"\n{len(failures)} production security check(s) failed.")
+        return 1
     check(health.status == 200, "GET /health returns 200", f"GET /health returned {health.status}", failures)
+    if health.status == 200:
+        try:
+            payload = json.loads(health.body.decode("utf-8"))
+        except json.JSONDecodeError:
+            payload = {}
+        check(
+            payload.get("status") == "ok",
+            "GET /health returns JSON status=ok",
+            "GET /health 200 body is not JSON {status: ok}",
+            failures,
+        )
 
     admin_list = fetch("/api/v1/admin/list-users?limit=1")
     check(
@@ -140,6 +168,27 @@ def main() -> int:
         "localhost CORS origin is allowed by production",
         failures,
     )
+
+    api_health = fetch("/api/v1/health")
+    check(
+        api_health.status == 200,
+        "GET /api/v1/health returns 200",
+        f"GET /api/v1/health returned {api_health.status}",
+        failures,
+    )
+
+    webhook = fetch("/api/v1/payments/notifications", method="POST", json_body={})
+    check(
+        webhook.status == 400,
+        "POST /api/v1/payments/notifications rejects empty payload",
+        f"POST /api/v1/payments/notifications returned {webhook.status}",
+        failures,
+    )
+
+    privacy = fetch("/privacy")
+    terms = fetch("/terms")
+    check(privacy.status == 200, "GET /privacy is live", f"GET /privacy returned {privacy.status}", failures)
+    check(terms.status == 200, "GET /terms is live", f"GET /terms returned {terms.status}", failures)
 
     if failures:
         print(f"\n{len(failures)} production security check(s) failed.")

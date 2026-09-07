@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-BASE_URL="https://astronova.onrender.com"
+BASE_URL="https://astronova-ghcr.onrender.com"
 WAIT_SECONDS=300
 REQUEST_TIMEOUT=25
 MAX_HEALTH_RETRIES=25
@@ -10,6 +10,7 @@ HEALTH_RETRY_DELAY=6
 ALLOW_CHAT_503=0
 SKIP_CHAT=0
 SKIP_CHARGED_REPORTS=0
+EXPECTED_COMMIT=""
 
 log() {
     printf '[%s] %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1"
@@ -30,6 +31,7 @@ Options:
   --timeout <seconds>       Curl timeout per request (default: 25)
   --health-retries <n>      Health-retry attempts (default: 25)
   --health-delay <seconds>  Delay between health checks (default: 6)
+  --expected-commit <sha>   Require /health to report this deployed commit
   --allow-chat-503          Consider HTTP 503 as acceptable for /api/v1/chat
   --skip-chat               Skip chat endpoint check
   --skip-charged-reports     Skip report generation/download checks
@@ -57,6 +59,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --health-delay)
             HEALTH_RETRY_DELAY="$2"
+            shift 2
+            ;;
+        --expected-commit)
+            EXPECTED_COMMIT="$2"
             shift 2
             ;;
         --allow-chat-503)
@@ -170,13 +176,31 @@ wait_for_health() {
     local attempt=1
     while (( attempt <= MAX_HEALTH_RETRIES )); do
         local status
-        status="$(curl -sS --max-time "$REQUEST_TIMEOUT" -o /tmp/astronova_health_check.txt -w "%{http_code}" "${BASE_URL}/api/v1/health" || true)"
+        local routing
+        status="$(curl -sS --max-time "$REQUEST_TIMEOUT" -D /tmp/astronova_health_headers.txt -o /tmp/astronova_health_check.txt -w "%{http_code}" "${BASE_URL}/health" || true)"
+        routing="$(awk -F': ' 'tolower($1)=="x-render-routing" {gsub(sprintf("%c",13),"",$2); print $2}' /tmp/astronova_health_headers.txt 2>/dev/null || true)"
         if [[ "${status//$'\n'/}" == "200" ]]; then
-            rm -f /tmp/astronova_health_check.txt
-            return 0
+            if [[ -n "${EXPECTED_COMMIT}" ]]; then
+                local deployed_commit
+                deployed_commit="$(extract_json_field /tmp/astronova_health_check.txt commit || true)"
+                if [[ -n "${deployed_commit}" && "${EXPECTED_COMMIT}" == "${deployed_commit}"* ]]; then
+                    rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
+                    return 0
+                fi
+                log "Health is up, but commit is ${deployed_commit:-missing}; waiting for ${EXPECTED_COMMIT:0:12}."
+            else
+                rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
+                return 0
+            fi
         fi
 
-        rm -f /tmp/astronova_health_check.txt
+        if [[ "${routing}" == *suspend* ]] || grep -qi "Service Suspended" /tmp/astronova_health_check.txt 2>/dev/null; then
+            log "Render reports the service is suspended (${routing:-no routing header}). Resume it, then rerun."
+            rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
+            return 1
+        fi
+
+        rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
         attempt=$((attempt + 1))
         log "Health check attempt ${attempt}/${MAX_HEALTH_RETRIES} failed (status=$status); retrying in ${HEALTH_RETRY_DELAY}s."
         sleep "$HEALTH_RETRY_DELAY"
@@ -228,10 +252,20 @@ AUTH_USER_ID=""
 REPORT_ID=""
 
 if ! wait_for_health; then
-    die "Health endpoint never became available at ${BASE_URL}/api/v1/health"
+    die "Health endpoint never became available at ${BASE_URL}/health"
 fi
 
 record_result "Initial Health Check" 1 "healthy"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SECURITY_CHECK="${SCRIPT_DIR}/../server/scripts/check_production_security.py"
+if [[ -f "$SECURITY_CHECK" ]]; then
+    if ASTRONOVA_BASE_URL="${BASE_URL}" python3 "$SECURITY_CHECK"; then
+        record_result "Production security smoke" 1 "passed"
+    else
+        record_result "Production security smoke" 0 "check_production_security.py failed"
+    fi
+fi
 
 # Public endpoint checks
 check_endpoint "System status" "GET" "/api/v1/system-status" "200" "__NO_BODY__" || true
@@ -268,55 +302,56 @@ check_endpoint "Location search" "GET" "/api/v1/location/search?q=New%20York" "2
 rm -f "$LAST_OUTPUT_FILE"
 
 # Auth + protected endpoints
-check_endpoint "Auth (Apple fallback)" "POST" "/api/v1/auth/apple" "200" '{"userIdentifier":"astronova-deploy-check","email":"deploy-check@astronova.app","firstName":"Deploy","lastName":"Checker"}' || true
-if [[ -f "$LAST_OUTPUT_FILE" ]]; then
-    AUTH_TOKEN="$(extract_json_field "$LAST_OUTPUT_FILE" "jwtToken" || true)"
-    AUTH_USER_ID="$(extract_json_field "$LAST_OUTPUT_FILE" "user.id" || true)"
+# Tokenless Apple Sign In must fail closed in production. Do not mint a JWT
+# from userIdentifier-only payloads (that was the stale-backend hole in #46).
+check_endpoint "Auth rejects tokenless Apple" "POST" "/api/v1/auth/apple" "401" '{"userIdentifier":"astronova-deploy-check","email":"deploy-check@astronova.app"}' || true
+rm -f "$LAST_OUTPUT_FILE"
+
+if [[ -n "${ASTRONOVA_DEPLOY_JWT:-}" && -n "${ASTRONOVA_DEPLOY_USER_ID:-}" ]]; then
+    AUTH_TOKEN="${ASTRONOVA_DEPLOY_JWT}"
+    AUTH_USER_ID="${ASTRONOVA_DEPLOY_USER_ID}"
+    AUTH_HEADERS=(
+        "Authorization: Bearer ${AUTH_TOKEN}"
+        "X-User-Id: ${AUTH_USER_ID}"
+    )
+    record_result "Auth payload parse" 1 "using ASTRONOVA_DEPLOY_JWT"
+
+    check_endpoint "Auth validate" "GET" "/api/v1/auth/validate" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
     rm -f "$LAST_OUTPUT_FILE"
-    if [[ -n "$AUTH_TOKEN" && -n "$AUTH_USER_ID" ]]; then
-        AUTH_HEADERS=(
-            "Authorization: Bearer ${AUTH_TOKEN}"
-            "X-User-Id: ${AUTH_USER_ID}"
-        )
-        record_result "Auth payload parse" 1 "user_id=${AUTH_USER_ID}"
 
-        check_endpoint "Auth validate" "GET" "/api/v1/auth/validate" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
-        rm -f "$LAST_OUTPUT_FILE"
+    check_endpoint "Subscription status" "GET" "/api/v1/subscription/status?userId=${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
+    rm -f "$LAST_OUTPUT_FILE"
 
-        check_endpoint "Subscription status" "GET" "/api/v1/subscription/status?userId=${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
-        rm -f "$LAST_OUTPUT_FILE"
-
-        if (( SKIP_CHAT == 0 )); then
-            expected_chat="200"
-            if (( ALLOW_CHAT_503 == 1 )); then
-                expected_chat="200,503"
-            fi
-            check_endpoint "Protected chat" "POST" "/api/v1/chat" "${expected_chat}" '{"message":"What is my cosmic trend today?","userId":"'"${AUTH_USER_ID}"'"}' "${AUTH_HEADERS[@]}" || true
-            rm -f "$LAST_OUTPUT_FILE"
+    if (( SKIP_CHAT == 0 )); then
+        expected_chat="200"
+        if (( ALLOW_CHAT_503 == 1 )); then
+            expected_chat="200,503"
         fi
+        check_endpoint "Protected chat" "POST" "/api/v1/chat" "${expected_chat}" '{"message":"What is my cosmic trend today?","userId":"'"${AUTH_USER_ID}"'"}' "${AUTH_HEADERS[@]}" || true
+        rm -f "$LAST_OUTPUT_FILE"
+    fi
 
-        if (( SKIP_CHARGED_REPORTS == 0 )); then
-            check_endpoint "Generate report" "POST" "/api/v1/reports/generate" "200,201" '{"reportType":"birth_chart","userId":"'"${AUTH_USER_ID}"'","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' "${AUTH_HEADERS[@]}" || true
-            REPORT_ID="$(extract_json_field "$LAST_OUTPUT_FILE" "reportId" || true)"
-            if [[ -n "$REPORT_ID" ]]; then
-                record_result "Report id extraction" 1 "${REPORT_ID}"
-                rm -f "$LAST_OUTPUT_FILE"
+    if (( SKIP_CHARGED_REPORTS == 0 )); then
+        check_endpoint "Generate report" "POST" "/api/v1/reports/generate" "200,201,402" '{"reportType":"birth_chart","userId":"'"${AUTH_USER_ID}"'","birthData":{"date":"1990-01-15","time":"14:30","timezone":"America/New_York","latitude":40.7128,"longitude":-74.006}}' "${AUTH_HEADERS[@]}" || true
+        REPORT_ID="$(extract_json_field "$LAST_OUTPUT_FILE" "reportId" || true)"
+        if [[ -n "$REPORT_ID" ]]; then
+            record_result "Report id extraction" 1 "${REPORT_ID}"
+            rm -f "$LAST_OUTPUT_FILE"
 
-                check_endpoint "Reports list" "GET" "/api/v1/reports/user/${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
-                rm -f "$LAST_OUTPUT_FILE"
+            check_endpoint "Reports list" "GET" "/api/v1/reports/user/${AUTH_USER_ID}" "200" "__NO_BODY__" "${AUTH_HEADERS[@]}" || true
+            rm -f "$LAST_OUTPUT_FILE"
 
-                check_endpoint "Report PDF" "GET" "/api/v1/reports/${REPORT_ID}/pdf" "200" "__NO_BODY__" || true
-                rm -f "$LAST_OUTPUT_FILE"
-            else
-                rm -f "$LAST_OUTPUT_FILE"
-                record_result "Report id extraction" 0 "missing reportId"
-            fi
+            check_endpoint "Report PDF" "GET" "/api/v1/reports/${REPORT_ID}/pdf" "200" "__NO_BODY__" || true
+            rm -f "$LAST_OUTPUT_FILE"
         else
-            record_result "Reports checks skipped" 1 "by flag"
+            rm -f "$LAST_OUTPUT_FILE"
+            record_result "Charged report (optional)" 1 "skipped — no reportId (expected without Pro)"
         fi
     else
-        record_result "Auth payload parse" 0 "jwtToken or user.id missing"
+        record_result "Reports checks skipped" 1 "by flag"
     fi
+else
+    record_result "Authenticated checks" 1 "skipped — set ASTRONOVA_DEPLOY_JWT to exercise paid paths"
 fi
 
 if (( FAILED_CHECKS > 0 )); then

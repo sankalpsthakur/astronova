@@ -31,6 +31,10 @@ services:
       # Set to the PEM contents of "Apple Root CA - G3" via the dashboard.
       - key: APPLE_ROOT_CA_PEM
         sync: false  # Set via Render dashboard (multi-line PEM)
+      # App Store Server Notifications V2 URL:
+      #   https://astronova-ghcr.onrender.com/api/v1/payments/notifications
+      # Configure this in App Store Connect → App → App Information →
+      # App Store Server Notifications (Production + Sandbox).
       # Shared rate-limit store. Only needed if you scale to multiple workers/
       # instances; with the single-process start command below, in-memory is
       # fine. Set to a redis:// URL when scaling.

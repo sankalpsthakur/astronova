@@ -9,7 +9,7 @@ This directory contains GitHub Actions workflow configurations for the Astronova
 Comprehensive testing workflow that runs on every push and pull request.
 
 **Features:**
-- Matrix testing across Python 3.9, 3.10, 3.11, 3.12
+- Matrix testing across Python 3.10, 3.11, 3.12
 - Code coverage with 80% minimum threshold
 - Security scanning (Bandit, Safety, Trivy)
 - Performance benchmarks
@@ -106,7 +106,7 @@ The `deploy-post-push-check.sh` script performs comprehensive endpoint validatio
 **Usage:**
 ```bash
 bash scripts/deploy-post-push-check.sh \
-  --base-url https://astronova.onrender.com \
+  --base-url https://astronova-ghcr.onrender.com \
   --wait-seconds 300 \
   --health-retries 30 \
   --health-delay 10
@@ -146,9 +146,10 @@ Add these secrets to your GitHub repository (Settings > Secrets and variables > 
    - Sign up at https://codecov.io
    - Get token from repository settings
 
-2. **RENDER_API_KEY** (Optional)
-   - For automatic deployments
-   - Get from Render dashboard > Account Settings > API Keys
+2. **RENDER_API_KEY** + **RENDER_SERVICE_ID** (or **RENDER_DEPLOY_HOOK_URL**)
+   - Required for `deploy.yml` staging/production jobs. The workflow now calls `scripts/render-deploy.sh` (Render resume + deploy) instead of skipping.
+   - Production URL is `https://astronova-ghcr.onrender.com` (the iOS client base URL). `astronova.onrender.com` is not a live service.
+   - Optional: `RENDER_STAGING_SERVICE_ID` / `RENDER_STAGING_DEPLOY_HOOK_URL` for staging.
 
 3. **ANTHROPIC_API_KEY** (Optional)
    - For Claude Code integration

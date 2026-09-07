@@ -627,16 +627,38 @@ struct RootView: View {
     @StateObject private var nps = NPSService.shared
 
     var body: some View {
-        Group {
-            switch auth.state {
-            case .loading:
-                LoadingView()
-            case .signedOut:
-                CompellingLandingView()
-            case .needsProfileSetup:
-                SimpleProfileSetupView()
-            case .signedIn:
-                SimpleTabBarView()
+        VStack(spacing: 0) {
+            if !TestEnvironment.shared.isUITest,
+               auth.state != .loading,
+               !auth.isAPIConnected,
+               let message = auth.connectionError {
+                BackendStatusBanner(
+                    message: message,
+                    isRetrying: auth.isRetryingConnection
+                ) {
+                    Task { await auth.retryConnection() }
+                }
+                .padding(.top, 8)
+                .padding(.horizontal, Cosmic.Spacing.m)
+                .padding(.bottom, 8)
+            }
+
+            Group {
+                switch auth.state {
+                case .loading:
+                    LoadingView()
+                case .signedOut:
+                    CompellingLandingView()
+                case .needsProfileSetup:
+                    SimpleProfileSetupView()
+                case .signedIn:
+                    SimpleTabBarView()
+                }
+            }
+        }
+        .task {
+            if !TestEnvironment.shared.isUITest {
+                await auth.checkAPIConnectivity()
             }
         }
         // Wave 13 — Global NPS sheet driver. Surfaces from NPSService after
@@ -657,6 +679,46 @@ struct RootView: View {
                 )
             }
         }
+    }
+}
+
+private struct BackendStatusBanner: View {
+    let message: String
+    let isRetrying: Bool
+    let onRetry: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: Cosmic.Spacing.s) {
+            Image(systemName: "wifi.exclamationmark")
+                .foregroundStyle(Color.cosmicGold)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(.cosmicCaptionEmphasis)
+                .foregroundStyle(Color.cosmicTextPrimary)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: Cosmic.Spacing.s)
+            Button(action: onRetry) {
+                if isRetrying {
+                    ProgressView()
+                        .tint(Color.cosmicGold)
+                } else {
+                    Text("Retry")
+                        .font(.cosmicCaptionEmphasis)
+                }
+            }
+            .disabled(isRetrying)
+            .accessibilityIdentifier(AccessibilityID.retryConnectionButton)
+        }
+        .padding(.horizontal, Cosmic.Spacing.m)
+        .padding(.vertical, Cosmic.Spacing.s)
+        .background(Color.cosmicSurface.opacity(0.96))
+        .clipShape(RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Cosmic.Radius.card, style: .continuous)
+                .stroke(Color.cosmicGold.opacity(0.35), lineWidth: Cosmic.Border.thin)
+        )
+        .accessibilityIdentifier(AccessibilityID.backendStatusBanner)
+        .accessibilityElement(children: .contain)
     }
 }
 

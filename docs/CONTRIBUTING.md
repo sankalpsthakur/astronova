@@ -15,7 +15,7 @@ Thank you for your interest in contributing to Astronova! This document provides
 
 ### Prerequisites
 
-- Python 3.9+ for backend development
+- Python 3.10+ for backend development
 - Xcode 15+ for iOS development
 - Git for version control
 
@@ -148,7 +148,7 @@ The project uses GitHub Actions for CI. The following workflows run automaticall
 
 1. **Test Suite** (`.github/workflows/test.yml`)
    - Triggers: Push to main/dev, Pull requests
-   - Runs on Python 3.9, 3.10, 3.11, 3.12
+   - Runs on Python 3.10, 3.11, 3.12
    - Executes all tests with coverage
    - Performs security scanning
    - Uploads coverage to Codecov

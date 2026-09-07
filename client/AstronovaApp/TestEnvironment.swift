@@ -454,6 +454,9 @@ enum AccessibilityID {
     static let continueWithoutSigningInButton = "continueWithoutSigningInButton"
     static let authContinueAsGuestButton = "authContinueAsGuestButton"
     static let authSignInWithAppleButton = "authSignInWithAppleButton"
+    static let todayPauseButton = "today.pause.button"
+    static let todaySettingsButton = "today.settings.button"
+    static let settingsSheet = "settings.sheet"
     static let settingsSignOutButton = "settings.signOut.button"
     static let settingsSignInButton = "settings.signIn.button"
     static let profileSetupView = "profileSetupView"
@@ -513,4 +516,6 @@ enum AccessibilityID {
     static let errorMessage = "errorMessage"
     static let dismissButton = "dismissButton"
     static let doneButton = "doneButton"
+    static let backendStatusBanner = "backendStatusBanner"
+    static let retryConnectionButton = "retryConnectionButton"
 }

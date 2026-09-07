@@ -32,11 +32,11 @@ without claiming a completed TestFlight upload or live App Store listing.
 
 ## Release Pipeline Notes
 - `client/ExportOptions.plist` is configured for App Store Connect upload with team ID `ZBSZPCY34Y`.
-- Release build settings currently use bundle ID `com.astronova.app`, marketing version `1.0`, build number `2026051601`, automatic signing, and team ID `ZBSZPCY34Y` for the app target.
+- Release build settings currently use bundle ID `com.astronova.app`, marketing version `1.0`, build number `2026053101`, automatic signing, and team ID `ZBSZPCY34Y` for the app target.
 - `.github/workflows/ios-distribution.yml` is manual and preflight-only by default. A real TestFlight upload is gated behind `upload_to_testflight=true` plus App Store Connect API key secrets.
-- No uploaded TestFlight build is confirmed here. Verify upload/build presence in App Store Connect before marking release status as complete.
-- No public App Store URL is confirmed here. Keep any store link hidden or marked pending until the Astronova listing is approved/live.
-- Remaining external gates: App Store Connect API key, Apple Developer team access, signing/provisioning/certificate availability for automatic signing, bundle ID/App ID ownership, App Store Connect app record availability, sandbox IAP records, reviewer/test account creation, support/privacy/terms URL verification, and acceptance of build `2026051601` or a later unique build number.
+- `.github/workflows/deploy.yml` now calls `scripts/render-deploy.sh` against `https://astronova-ghcr.onrender.com`. Add `RENDER_DEPLOY_HOOK_URL` or `RENDER_API_KEY`+`RENDER_SERVICE_ID`. The unused `astronova.onrender.com` host 404s.
+- Post-deploy verification runs `check_production_security.py` (tokenless Apple auth must 401) and no longer mints a JWT from `userIdentifier` alone.
+- Remaining external gates: resume the suspended Render service, add Render deploy secrets (`RENDER_DEPLOY_HOOK_URL` or `RENDER_API_KEY`+`RENDER_SERVICE_ID`), complete annual Pro metadata (#51), sandbox IAP, and live privacy/terms URLs on GHCR. ASC API key secrets are already present on the GitHub repo.
 - Request-correlation production proof remains open until a deployed request ID
   is verified in the configured log drain. `SECURITY-CLOUDKIT-ROTATION.md`
   remains an active owner-only secret-rotation gate; this pass did not inspect,

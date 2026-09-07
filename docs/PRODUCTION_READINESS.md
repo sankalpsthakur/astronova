@@ -84,11 +84,23 @@ changes follow existing patterns but **need an Xcode build to verify**.
   correct as written.
 
 ### Needs human / external resources
+- **2026-08-19:** `https://astronova-ghcr.onrender.com` returns Render `suspend-by-user` (HTTP 503 HTML). Resume the `astronova-backend` service, then `workflow_dispatch` `deploy.yml` → production (requires `RENDER_DEPLOY_HOOK_URL` or `RENDER_API_KEY`+`RENDER_SERVICE_ID`). Confirm with `ASTRONOVA_BASE_URL=https://astronova-ghcr.onrender.com python server/scripts/check_production_security.py`.
 - Xcode build + TestFlight verification of all client changes.
-- Apple sandbox E2E: purchase → entitlement → refund.
-- Render env values: `APPLE_ROOT_CA_PEM`, webhook registration (templated in
-  `render.yaml`).
+- Apple sandbox E2E: purchase → entitlement → refund. Wire App Store Server Notifications to `https://astronova-ghcr.onrender.com/api/v1/payments/notifications`.
+- Render env values: `APPLE_ROOT_CA_PEM` (payments fail closed without it).
+- App Store Connect: complete `astronova_pro_12_month_commitment` metadata (#51). Client paywall already falls back to monthly if StoreKit omits the annual SKU.
+- GitHub TestFlight secrets (`APP_STORE_CONNECT_API_KEY_ID` / `ISSUER_ID` / `API_KEY_BASE64`) are already on the repo. Still missing Render deploy secrets: `RENDER_DEPLOY_HOOK_URL` or `RENDER_API_KEY`+`RENDER_SERVICE_ID`.
 - hi/ta/te/bn paywall translations.
+
+## Launch sequence (client + server)
+
+1. Resume Render `astronova-backend` (Dashboard → Resume, or `RENDER_RESUME=1` via `scripts/render-deploy.sh`).
+2. Confirm `/health` is JSON `{ "status": "ok" }` on `https://astronova-ghcr.onrender.com`.
+3. Run `python server/scripts/check_production_security.py` (tokenless Apple auth must be 401).
+4. Dispatch `.github/workflows/deploy.yml` with `environment=production` so main is live on GHCR.
+5. Dispatch `.github/workflows/ios-distribution.yml` with `upload_to_testflight=true` after ASC secrets are in GitHub.
+6. Sandbox: monthly Pro purchase → `/payments/verify` → restore; skip claiming annual until ASC metadata is READY_TO_SUBMIT.
+7. Submit for review only after `/privacy` and `/terms` load from the live GHCR host (the binary links those URLs).
 
 ## Accepted risks (deliberate decisions)
 - Sandbox transactions are accepted in production: App Review exercises

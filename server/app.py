@@ -563,7 +563,14 @@ def create_app():
     @app.route("/health", methods=["GET"])
     @limiter.exempt
     def root_health():
-        return jsonify({"status": "ok"})
+        payload = {"status": "ok"}
+        commit = os.environ.get("RENDER_GIT_COMMIT") or os.environ.get("GIT_COMMIT")
+        if commit:
+            payload["commit"] = commit[:12]
+        service = os.environ.get("RENDER_SERVICE_NAME")
+        if service:
+            payload["service"] = service
+        return jsonify(payload)
 
     # Global error handlers
     @app.errorhandler(404)

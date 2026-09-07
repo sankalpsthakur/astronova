@@ -15,15 +15,11 @@ on:
 
 jobs:
   swift-ios-build:
-    name: iOS Build (Xcode ${{ matrix.xcode }})
-    runs-on: macos-14
-    timeout-minutes: 25
-
-    strategy:
-      fail-fast: false
-      matrix:
-        xcode: ['15.4']
-        destination: ['platform=iOS Simulator,name=iPhone 15,OS=17.5']
+    name: iOS Simulator tests
+    # Diagnostics 7.0.0 needs Swift 6.2 (nonisolated(nonsending)).
+    # macos-15 ships Xcode 16.4; macos-26 ships Xcode 26.6 by default.
+    runs-on: macos-26
+    timeout-minutes: 45
 
     defaults:
       run:
@@ -33,14 +29,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
-
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: List available simulators
-        run: xcrun simctl list devices available
+      - name: Resolve iPhone simulator
+        run: |
+          SIM_ID=$(xcrun simctl list devices available -j \
+            | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          preferred = ('iPhone 17 Pro', 'iPhone 17', 'iPhone 16 Pro', 'iPhone 16', 'iPhone 15 Pro', 'iPhone 15')
+          found = []
+          for runtime, devs in d['devices'].items():
+              for dev in devs:
+                  if dev.get('isAvailable') and 'iPhone' in dev.get('name', ''):
+                      found.append(dev)
+          for name in preferred:
+              for dev in found:
+                  if dev.get('name') == name:
+                      print(dev['udid'])
+                      raise SystemExit(0)
+          if found:
+              print(found[0]['udid'])
+              raise SystemExit(0)
+          raise SystemExit(1)
+          ")
+          if [ -z "$SIM_ID" ]; then
+            echo "No available iPhone simulator found; listing for debugging:" >&2
+            xcrun simctl list runtimes >&2
+            xcrun simctl list devices available >&2
+            exit 1
+          fi
+          echo "SIM_ID=$SIM_ID" >> "$GITHUB_ENV"
+          echo "Selected simulator: $SIM_ID"
+          xcrun simctl list devices available
 
       - name: Cache Swift Package Manager
         uses: actions/cache@v4
@@ -52,24 +74,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Check for compiler warnings
+      - name: Build for Simulator
         run: |
           set -o pipefail
-          xcodebuild clean build \
+          xcodebuild build \
             -project astronova.xcodeproj \
             -scheme AstronovaApp \
-            -destination '${{ matrix.destination }}' \
+            -destination "platform=iOS Simulator,id=$SIM_ID" \
             -configuration Debug \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            ONLY_ACTIVE_ARCH=NO \
+            ONLY_ACTIVE_ARCH=YES \
             | tee build.log
-
-          # Check for warnings
-          if grep -q "warning:" build.log; then
-            echo "::warning::Compiler warnings detected"
-            grep "warning:" build.log || true
-          fi
 
       - name: Run Swift unit tests
         run: |
@@ -77,37 +93,55 @@ jobs:
           xcodebuild test \
             -project astronova.xcodeproj \
             -scheme AstronovaApp \
-            -destination '${{ matrix.destination }}' \
+            -destination "platform=iOS Simulator,id=$SIM_ID" \
             -configuration Debug \
             -enableCodeCoverage YES \
             -only-testing:AstronovaAppTests \
-            -skip-testing:AstronovaAppUITests \
             -parallel-testing-enabled NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            ONLY_ACTIVE_ARCH=NO \
+            ONLY_ACTIVE_ARCH=YES \
             | tee test.log
+
+      - name: Run Simulator UI tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project astronova.xcodeproj \
+            -scheme AstronovaApp \
+            -destination "platform=iOS Simulator,id=$SIM_ID" \
+            -configuration Debug \
+            -only-testing:AstronovaAppUITests \
+            -parallel-testing-enabled NO \
+            -resultBundlePath ../TestResults.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            | tee uitest.log
 
       - name: Check for test failures
         run: |
-          if grep -q "Test Suite.*failed" test.log; then
+          if grep -q "Test Suite.*failed" test.log uitest.log 2>/dev/null; then
             echo "::error::Some tests failed"
-            grep "Test Suite.*failed" test.log || true
+            grep "Test Suite.*failed" test.log uitest.log || true
             exit 1
           fi
 
-      - name: Upload build logs
+      - name: Upload build and test logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ios-build-logs-${{ matrix.xcode }}
+          name: ios-simulator-logs
           path: |
             client/build.log
             client/test.log
+            client/uitest.log
+            TestResults.xcresult
+          if-no-files-found: ignore
 
   swift-lint:
     name: Swift Linting
-    runs-on: macos-14
+    runs-on: macos-26
 
     defaults:
       run:
@@ -118,12 +152,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install SwiftLint
-        run: |
-          brew install swiftlint
+        run: brew install swiftlint
 
       - name: Run SwiftLint
-        run: |
-          swiftlint lint --reporter github-actions-logging || true
+        run: swiftlint lint --reporter github-actions-logging || true
         continue-on-error: true
 
   ios-summary:
@@ -135,7 +167,7 @@ jobs:
     steps:
       - name: Check build results
         run: |
-          echo "iOS build completed"
+          echo "iOS simulator tests completed"
           echo "Build result: ${{ needs.swift-ios-build.result }}"
           echo "Lint result: ${{ needs.swift-lint.result }}"
 

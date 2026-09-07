@@ -26,6 +26,7 @@ if str(SERVER_ROOT) not in sys.path:
 
 from app import create_app
 from db import get_connection
+from extensions import limiter
 from routes.auth import generate_jwt, get_jwt_secret, reset_auth_rate_limits_for_tests, validate_jwt
 from utils.time_utils import utc_now_iso, utc_now_naive
 
@@ -1063,8 +1064,16 @@ class TestRateLimiting:
         assert responses[:3] == [401, 401, 401]
         assert responses[3] == 429
 
-    def test_expensive_endpoint_rate_limit_ignores_spoofable_user_header(self, authenticated_client, sample_birth_data):
+    def test_expensive_endpoint_rate_limit_ignores_spoofable_user_header(
+        self, authenticated_client, sample_birth_data, monkeypatch
+    ):
         """Rotating X-User-Id must not bypass expensive endpoint throttles."""
+        # The broad test suite disables rate limits to avoid cross-test bucket
+        # leakage. Re-initialize this test's isolated app with the real limiter
+        # so the assertion cannot silently exercise an unwrapped route.
+        test_app = authenticated_client.application
+        monkeypatch.setitem(test_app.config, "RATELIMIT_ENABLED", True)
+        limiter.init_app(test_app)
         statuses = []
         for i in range(21):
             response = authenticated_client.post(
