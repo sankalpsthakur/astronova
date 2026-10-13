@@ -172,8 +172,10 @@ check_endpoint() {
     return 1
 }
 
+LAST_DEPLOYED_COMMIT=""
 wait_for_health() {
     local attempt=1
+    LAST_DEPLOYED_COMMIT=""
     while (( attempt <= MAX_HEALTH_RETRIES )); do
         local status
         local routing
@@ -187,6 +189,7 @@ wait_for_health() {
                     rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
                     return 0
                 fi
+                LAST_DEPLOYED_COMMIT="${deployed_commit:-missing}"
                 log "Health is up, but commit is ${deployed_commit:-missing}; waiting for ${EXPECTED_COMMIT:0:12}."
             else
                 rm -f /tmp/astronova_health_check.txt /tmp/astronova_health_headers.txt
@@ -252,6 +255,9 @@ AUTH_USER_ID=""
 REPORT_ID=""
 
 if ! wait_for_health; then
+    if [[ -n "${LAST_DEPLOYED_COMMIT}" ]]; then
+        die "Health is up but reports commit ${LAST_DEPLOYED_COMMIT}, expected ${EXPECTED_COMMIT:0:12}"
+    fi
     die "Health endpoint never became available at ${BASE_URL}/health"
 fi
 
