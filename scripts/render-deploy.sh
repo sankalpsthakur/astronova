@@ -60,14 +60,17 @@ if [[ "${RENDER_RESUME:-}" == "1" ]]; then
             log "Render service is already reachable; resume is unnecessary."
         else
             log "Resuming Render service ${RENDER_SERVICE_ID}…"
-            curl -sS --fail-with-body -X POST \
+            if curl -sS --fail-with-body -X POST \
                 --max-time 30 \
                 -H "Authorization: Bearer ${RENDER_API_KEY}" \
                 -H "Accept: application/json" \
                 "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/resume" \
                 -o /tmp/render-resume.json \
-                -w "resume HTTP %{http_code}\n"
-            wait_for_resume
+                -w "resume HTTP %{http_code}\n"; then
+                wait_for_resume
+            else
+                log "Resume failed (service may not be suspended); continuing with deploy."
+            fi
         fi
     else
         log "Render API credentials are absent; continuing with the deploy hook without resume."
